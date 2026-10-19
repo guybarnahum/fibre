@@ -1,9 +1,10 @@
 import { assertIsoTimestamp, assertNonEmpty } from "./persistence-common.mjs";
-import { planThreadPresentationAssetSlots } from "./thread-presentation-asset-planner.mjs";
+import { planThreadPresentationAssetSlotsWithAdmittedAges } from "./thread-presentation-asset-planner.mjs";
 
 export function createThreadPresentationAssetDemandTrigger({
   presentationServer,
   demandService,
+  infra=null,
   providerProfile = "presentation-image-default-v1",
 } = {}) {
   if (!presentationServer || typeof presentationServer.getSnapshot !== "function") {
@@ -29,7 +30,8 @@ export function createThreadPresentationAssetDemandTrigger({
       const current = await presentationServer.getSnapshot(channelId);
       if (current === null) return null;
 
-      const slotPlan = planThreadPresentationAssetSlots({
+      const slotPlan = await planThreadPresentationAssetSlotsWithAdmittedAges({
+        infra,
         bundle: {
           presentation: current.snapshot.presentation,
           media: current.snapshot.media,
