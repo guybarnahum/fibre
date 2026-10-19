@@ -100,6 +100,11 @@ export function inspectThreadJourneys(observatory){
         authoredAt:plan.authoredAt,
         ownerKind:plan.owner?.kind??"unknown",
         modelProvider:plan.cognition?.provider??null,
+        // This is the Thread's stated plan purpose, not causal proof that
+        // Body pressure or an editorial listing motivated the decision.
+        activity:to.activity??null,
+        purpose:to.purpose??null,
+        travelFromPrevious:to.travelFromPrevious??null,
         fromPlaceRef:from.physicalPlaceRef,
         toPlaceRef:to.physicalPlaceRef,
         destination:place===null?null:{
