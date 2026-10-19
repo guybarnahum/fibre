@@ -38,6 +38,8 @@ import { planThreadPresentationAssetSlotsWithAdmittedAges } from "#services/worl
 import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
 import { createThreadPresentationEmbodimentRewriteService } from "#services/world-kernel/src/thread-presentation-embodiment-rewrite-service.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
+import {readVisualAgeAnchorAdmissions} from "#services/world-kernel/src/visual-age-anchor-catalog.mjs";
+import {admittedVisualAgeAnchors} from "#services/world-kernel/src/visual-age-anchors.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import localDeploymentYaml from "../../environments/local.yaml";
@@ -406,6 +408,25 @@ async function completionActivityIdentity(infra, rawCompletion) {
   }
 }
 
+
+async function readEncounterAgeReferences({infra,presentationServer,threadId}){
+  const current=await presentationServer.getSnapshot(channelIdForThread(threadId));
+  if(current===null||current.pointer.threadId!==threadId)return null;
+  const roots=current.snapshot.presentation.visualIdentity?.referenceObjectRefs??[];
+  if(roots.length!==1)return {canonicalReferenceDigest:null,ageAnchorAdmissions:[]};
+  const admissions=await readVisualAgeAnchorAdmissions(infra.catalog,threadId);
+  if(admissions.length===0)return {canonicalReferenceDigest:null,ageAnchorAdmissions:[]};
+  const root=await infra.objects.head(roots[0]);
+  if(!root?.digest)throw new Error("Admitted canonical portrait is unavailable");
+  return {
+    canonicalReferenceDigest:root.digest,
+    ageAnchorAdmissions:admittedVisualAgeAnchors({
+      threadId,canonicalReferenceObjectRef:roots[0],
+      canonicalReferenceDigest:root.digest,admissions,
+    }),
+  };
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -419,6 +440,22 @@ export default {
     const adminRealtime = createAdminRealtime(env);
     const activityRecorder = createCloudflareActivityRecorder({ env, service: "thread-presentation" });
     const presentationServer = createThreadPresentationServer({ infra });
+    const ageRefsMatch=new RegExp("^/internal/threads/([A-Za-z0-9._:-]+)/visual-age-anchors$").exec(url.pathname);
+    if(request.method==="GET" && ageRefsMatch){
+      if(!env.FIBRE_PRIVATE_TOKEN
+        ||request.headers.get("x-fibre-private-token")!==env.FIBRE_PRIVATE_TOKEN){
+        return Response.json({error:"unauthorized"},{status:401});
+      }
+      const threadId=ageRefsMatch[1];
+      try{
+        const references=await readEncounterAgeReferences({infra,presentationServer,threadId});
+        return references===null
+          ?Response.json({error:"thread_presentation_not_found"},{status:404})
+          :Response.json({threadId,...references});
+      }catch(error){
+        return Response.json({error:"visual_age_references_unavailable",detail:error.message},{status:503});
+      }
+    }
     const genesisWriteApi = createGenesisPresentationWriteApi({ presentationServer, privateToken: env.FIBRE_PRIVATE_TOKEN ?? null });
     const genesisWriteResponse = await genesisWriteApi.fetch(request);
     if (genesisWriteResponse !== null) return genesisWriteResponse;
