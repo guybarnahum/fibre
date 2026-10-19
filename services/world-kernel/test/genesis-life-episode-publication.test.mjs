@@ -258,15 +258,17 @@ test("Genesis publishes Pass-A episodes as uncommanded authoritative history wit
 
     const world = openWorldStore(localWorldStateStorage(databasePath));
     const events = world.listEvents(thread.threadId);
-    const origins=world.listGenesisLifeEpisodes(thread.threadId);
-    assert.equal(world.getGenesisPublicationSeed(thread.threadId)?.occurredAt,
+    const genesis = new GenesisStore(localWorldStateStorage(databasePath),{readOnly:true});
+    const origins = genesis.listGenesisLifeEpisodes(thread.threadId);
+    assert.equal(genesis.getGenesisPublicationSeed(thread.threadId)?.occurredAt,
       result.manifest.publication.publishedAt,
-      "the birth execution clock was confused with a historical childhood episode");
+      "World publication time differs from the admitted Genesis seed");
     assert.deepEqual(origins.map(item=>[item.eventId,item.occurredAt]),
       events.slice(1).map(item=>[item.eventId,item.occurredAt]),
-      "Origins omitted an admitted childhood episode or included the publication seed");
-    assert.equal(world.listGenesisLifeEpisodes(thread.threadId,{limit:1}).length,1,
-      "Origins inspection ignored its explicit read bound");
+      "Admitted childhood history differs from the Genesis inspection");
+    assert.equal(genesis.listGenesisLifeEpisodes(thread.threadId,{limit:1}).length,1,
+      "Genesis inspection did not respect the bounded read");
+    genesis.close();
     assert.equal(events.length, 1 + publishedEpisodes.length);
     assert.deepEqual(events.map((item) => item.eventType), [
       "THREAD_SEEDED",
