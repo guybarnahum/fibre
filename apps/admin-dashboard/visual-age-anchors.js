@@ -1,4 +1,5 @@
 import {openThreadActionDialog} from "./thread-action-dialog.js";
+import {setWaitingContent} from "./fa-icons.js";
 
 const make=(tag,className,text)=>{
   const element=document.createElement(tag);
@@ -55,11 +56,13 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
         `Age ${anchor.targetAgeYears}`,
       ));
     }
-    status.textContent=anchors.length
+    if(pending===null)status.textContent=anchors.length
       ?`${anchors.length} approved age ${anchors.length===1?"portrait":"portraits"} available.`
       :"No additional age portraits have been approved.";
   }
-  void reload().catch(error=>{status.textContent="Age portraits unavailable: "+error.message;});
+  void reload().catch(error=>{
+    if(pending===null)status.textContent="Age portraits unavailable: "+error.message;
+  });
 
   let pending=null;
   async function showCandidate(candidateId,targetAgeYears){
@@ -132,7 +135,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
           ? pending.candidateId : newCandidateId();
         pending={candidateId,targetAgeYears};
         generate.disabled=true;
-        status.textContent=`Generating age-${targetAgeYears} candidate…`;
+        setWaitingContent(status,`Generating age-${targetAgeYears} candidate…`);
         try{
           await api(base(threadId)+"/candidates/"+encodeURIComponent(candidateId),{
             method:"POST",body:{targetAgeYears},
