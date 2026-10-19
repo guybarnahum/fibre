@@ -342,9 +342,16 @@ from authority; no on-demand LLM-generated explanation of causality.
    The historical view is bounded by currently exposed World records;
    age-spanning Genesis formation and a true lifetime cursor remain
    subject to later source work.
-3. **Genesis:** split compiler Birth execution from the published
-   person's historically realized Formation, with truthful
-   failed/unadmitted candidate handling.
+3. **Genesis (source implemented; validation pending):** Birth Center
+   pending and stillborn records now link to a dedicated Birth execution
+   inspector. The inspector uses bounded Birth Center request/disposition
+   and development-inspection evidence; missing candidates remain
+   unresolved rather than fabricated. Published Threads can select Origins
+   for an explicit World read of up to 64 early published historical
+   episodes, up to 24 retained Memories, and the exact seed-publication
+   timestamp. Historical events use occurredAt; the World publication
+   seam retains its own execution clock. No unbounded world-event
+   replay or automatic Origins load occurs.
 4. **Witness & Consequence:** capture missing event-time Body/World
    context at existing decision seams; join admitted shared World
    encounters to each person's independent consequences.
