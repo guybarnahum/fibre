@@ -54,8 +54,12 @@ same read-only investigation. The existing Activity operation tree is
 **not** evidence of a person's motivations. Raw Activity remains an
 engineering diagnostic.
 
-**No new UI or runtime decision witness is claimed as implemented by
-this documentation decision.** Future scoped slices will join existing
+**The first Admin UI source slice is committed, not yet locally or
+staging validated:** Explore/Operate navigation, removal of Activity's
+Causal Trail tree, and the separate /life?thread=... bounded recent-life
+inspector. Existing full Thread Observatory and world/genesis histories
+have not been migrated, and no new decision witness is persisted.
+Future scoped slices will join existing
 World, Genesis, Experience, Memory and social authority and capture
 only missing event-time conditions alongside consequential Flight Plan
 and social decisions. A historical plan's selected venue and stated
