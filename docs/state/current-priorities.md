@@ -16,10 +16,10 @@ Activity Causal Trail's operation nesting with compact Thread
 detail and a separate Life & Causes Timeline/selected-moment
 Why/After inspector. Birth Center supplies provisional Genesis execution and
 published formative life as separate clocks; World Events supplies the
-shared occurrence-first entrance. The first practical work is a
-read-only semantic UX over existing authority; compact Causal Witness
-capture for decision-time Body/context and social choice follows only
-where missing. The accepted design is **not** a staging UI result and
+shared occurrence-first entrance. Slice 4 source now captures a
+compact decision-time Body/World witness with existing Flight Plan and
+social-opportunity authority, without additional cognition. The later
+behavioral impact of a retained Memory remains separately unproven. The accepted design is **not** a staging UI result and
 does not displace the priority of real independent World life and
 consequential encounters. See [ADR-0026](../decisions/ADR-0026-life-observatory.md).
 
