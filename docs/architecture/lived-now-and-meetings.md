@@ -529,6 +529,16 @@ Each offered situation has one durable claim. If a model call or outward express
 
 Guy locally validated and deployed the initial autonomous opportunity source at `6ae2d0e` on October 13. The subsequent corrected venue query and read-only `world-social:probe` await their own local validation and staging deployment. The probe samples up to 40 discoverable Threads and reports actual opportunity records and the shared-place scene without issuing meeting requests or waking anyone to socialize; absence from that bounded scan cannot prove population-wide absence.
 
+**Operator output (October 19):** `npm run world-social:probe -- --env staging --thread thr_...`
+prints a readable current-life, social-opportunity, Experience/Memory-continuity,
+and evidence-limitations report. `--json` preserves the previous single-line
+machine event for scripts. Both forms save the same bounded detailed evidence
+under `.fibre/world-social/<environment>/`; neither performs any additional
+World reads, wakes a Thread or presents a temporal Memory/contact chain as proof
+that Memory caused the later choice. A deployed-revision mismatch appears as
+a provenance note instead of obscuring substantive World findings. Private
+home descriptions and exact addresses are omitted from human summaries.
+
 ### Scene discovery, not caller-selected counterparties
 
 Thread-to-Thread social consideration now begins from one Thread's World-owned current life. The caller may choose **whose life to advance/inspect**, but not which nearby Thread she should consider.
