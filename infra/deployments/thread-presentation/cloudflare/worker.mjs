@@ -34,7 +34,7 @@ import { publishPublicPortraitThumbnail, cloudflarePortraitThumbnail } from "#se
 import { createVisualPublicationWriteApi } from "#services/thread-presentation/src/http/visual-publication-write-api.mjs";
 import { createPresentationAssetCompletionService } from "#services/world-kernel/src/presentation-asset-completion-service.mjs";
 import { createPresentationAssetDemandService } from "#services/world-kernel/src/presentation-asset-demand-service.mjs";
-import { planThreadPresentationAssetSlots } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
+import { planThreadPresentationAssetSlotsWithAdmittedAges } from "#services/world-kernel/src/thread-presentation-asset-planner.mjs";
 import { createThreadPresentationAssetPublisher } from "#services/world-kernel/src/thread-presentation-asset-publisher.mjs";
 import { createThreadPresentationEmbodimentRewriteService } from "#services/world-kernel/src/thread-presentation-embodiment-rewrite-service.mjs";
 import { createThreadPresentationServer } from "#services/world-kernel/src/thread-presentation-server.mjs";
@@ -211,11 +211,12 @@ function sameFixtureBundle(snapshot, bundle) {
     && existing.provenance === incoming.provenance;
 }
 
-async function p3Slot(presentationServer, { threadId, mediaId }) {
+async function p3Slot(presentationServer, infra, { threadId, mediaId }) {
   const channelId = channelIdForThread(threadId);
   const current = await presentationServer.getSnapshot(channelId);
   if (current === null) throw new Error(`seed fixture Thread ${threadId} before generating media`);
-  const plan = planThreadPresentationAssetSlots({
+  const plan = await planThreadPresentationAssetSlotsWithAdmittedAges({
+    infra,
     bundle: {
       presentation: current.snapshot.presentation,
       media: current.snapshot.media,
@@ -261,7 +262,7 @@ async function scheduleP3Media({
   primaryProfile = null,
 }) {
   if (!["primary", "secondary"].includes(providerMode)) throw new TypeError("providerMode must be primary or secondary");
-  const slot = await p3Slot(presentationServer, { threadId, mediaId });
+  const slot = await p3Slot(presentationServer, infra, { threadId, mediaId });
   const requestedAt = new Date().toISOString();
   const deployment = assetGeneratorDeployment(env);
   const requiresReferenceObjects = slot.referenceObjectRefs.length > 0;
