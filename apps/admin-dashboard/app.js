@@ -51,64 +51,13 @@ function exactActivityTime(input){
 function queryLabel(record) { return record.threadId ?? record.genesisId ?? record.requestId ?? record.correlationId ?? "—"; }
 function singleValue(values) { const unique = [...new Set(values.filter(Boolean))]; return unique.length === 1 ? unique[0] : null; }
 
-function journeyPhase(stage) {
-  if (stage === "presentation.encounter.world_submit" || stage.startsWith("encounter.cognition.")) return "Encounter";
-  if (stage.startsWith("encounter.history.") || stage.startsWith("encounter.journal.") || stage.startsWith("encounter.experience.") || stage.startsWith("encounter.memory.")) return "Experience";
-  if (stage.startsWith("continuity.") || stage.startsWith("life.continue.")) return "Continuity";
-  if (stage.startsWith("life.") || stage.startsWith("lived.")) return "Life";
-  if (stage.startsWith("birth.")) return "Birth";
-  if (stage.startsWith("presentation.") || stage.startsWith("asset.") || stage.includes(".presentation")) return "Presentation";
-  return "System";
-}
-
-function causalLineage(records) {
-  const byOperation = new Map();
-  const childCounts = new Map();
-  for (const record of records) {
-    if (record.operationId) byOperation.set(record.operationId, record);
-    if (record.parentOperationId) childCounts.set(record.parentOperationId, (childCounts.get(record.parentOperationId) ?? 0) + 1);
-  }
-  return records.map((record) => {
-    const directParent = record.parentOperationId ? byOperation.get(record.parentOperationId) ?? null : null;
-    const seen = new Set(record.operationId ? [record.operationId] : []);
-    let ancestorId = record.parentOperationId;
-    let depth = 0;
-    while (ancestorId && depth < 4 && !seen.has(ancestorId)) {
-      depth += 1;
-      seen.add(ancestorId);
-      const ancestor = byOperation.get(ancestorId);
-      if (!ancestor) break;
-      ancestorId = ancestor.parentOperationId;
-    }
-    return Object.freeze({
-      record,
-      depth,
-      directParent,
-      childCount: record.operationId ? childCounts.get(record.operationId) ?? 0 : 0,
-    });
-  });
-}
-
-function causalWitness(record, childCount) {
-  const failedGate = record.evidence?.failedGate;
-  if (failedGate) {
-    const ordinal = record.evidence?.repairOrdinal;
-    return `repair · ${failedGate}${ordinal ? ` #${ordinal}` : ""}`;
-  }
-  const witness = record.evidence?.eventId ?? record.evidence?.objectRef ?? null;
-  if (witness) return shortId(witness);
-  if (childCount > 0) return `${childCount} child operation${childCount === 1 ? "" : "s"}`;
-  return record.status;
-}
-
 function syncFromUrl() {
   const params = new URLSearchParams(location.search);
   kind.value = params.get("kind") ?? "recent";
   value.value = params.get("value") ?? "";
   service.value = params.get("service") ?? "";
   status.value = params.get("status") ?? "";
-  mode = params.get("mode") ?? (kind.value === "thread" ? "causal" : "raw");
-  if (!["causal", "raw", "threads", "stillborn"].includes(mode)) mode = "raw";
+  mode = "raw"; // Former Causal Trail URLs resolve to truthful Raw Activity.
   updateIdentityState();
   renderMode();
 }
@@ -142,10 +91,9 @@ function setLoading(loading) {
 }
 
 function renderMode() {
-  $("#causal-view").hidden = mode !== "causal";
   $("#raw-view").hidden = mode !== "raw";
   for (const button of document.querySelectorAll(".view-switch button")) button.classList.toggle("active", button.dataset.mode === mode);
-  text($("#metric-view"), mode === "threads" ? "Threads" : mode === "stillborn" ? "Stillborn" : mode === "causal" ? "Causal" : "Raw");
+  text($("#metric-view"), mode === "threads" ? "Threads" : mode === "stillborn" ? "Stillborn" : "Raw");
 }
 
 function renderMetrics(records) {
@@ -204,46 +152,6 @@ function recordRow(record) {
 function renderRaw(records) {
   rows.replaceChildren(...records.map(recordRow));
   empty.hidden = records.length !== 0;
-}
-
-function renderCausal(records) {
-  const rail = $("#journey-rail");
-  rail.replaceChildren(...causalLineage(records).map(({ record, depth, directParent, childCount }) => {
-    const event = document.createElement("button");
-    event.type = "button";
-    event.className = `journey-event journey-event-${record.status}`;
-    if (depth > 0) event.classList.add("journey-event-child");
-    if (childCount > 0) event.classList.add("journey-event-parent");
-    event.style.setProperty("--journey-indent", `${Math.min(depth, 4) * 18}px`);
-    event.title = record.operationId
-      ? `Operation ${record.operationId}${record.parentOperationId ? ` · parent ${record.parentOperationId}` : ""}`
-      : record.causationId
-        ? `Caused by ${record.causationId}`
-        : "Activity without operation lineage";
-    const when = document.createElement("span"); when.className = "journey-time"; when.textContent = activityTime(record.occurredAt); when.title=exactActivityTime(record.occurredAt);
-    const copy = document.createElement("span"); copy.className = "journey-copy";
-    const heading = document.createElement("strong"); heading.textContent = `${depth > 0 ? "↳ " : ""}${journeyPhase(record.stage)} · ${titleCase(record.service)}`;
-    const stage = document.createElement("span"); stage.textContent = record.stage;
-    copy.append(heading, stage);
-    if (record.parentOperationId) {
-      const parent = document.createElement("small");
-      parent.className = "journey-parent";
-      parent.textContent = directParent ? `child of ${directParent.stage}` : `child of ${shortId(record.parentOperationId)}`;
-      copy.append(parent);
-    } else if (record.causationId) {
-      const cause = document.createElement("small");
-      cause.className = "journey-parent";
-      cause.textContent = `caused by ${shortId(record.causationId)}`;
-      copy.append(cause);
-    }
-    const evidence = document.createElement("span"); evidence.className = "journey-evidence"; evidence.textContent = causalWitness(record, childCount);
-    event.append(when, copy, evidence);
-    event.addEventListener("click", () => showRecord(record));
-    return event;
-  }));
-  const gap = $("#journey-gap");
-  gap.hidden = records.length !== 0;
-  gap.textContent = "No meaningful terminal or retry activity on this page.";
 }
 
 function detail(label, input, { wide = false, mono = false } = {}) {
@@ -552,14 +460,12 @@ async function loadPage({ pushState = false, delta = false } = {}) {
     const scope = currentPayload.total === null
       ? `${records.length} on this page${currentPayload.nextCursor ? " · more available" : ""}`
       : `${currentPayload.total} total`;
-    text($("#chain-summary"), mode === "causal"
-      ? `Meaningful terminal and retry operations · ${scope}.`
-      : `Raw Activity records exactly as logged · ${scope}.`);
-    renderMetrics(records); renderMode(); renderRaw(mode === "raw" ? records : []); renderCausal(mode === "causal" ? records : []); populateServices(records); renderPager(currentPayload);
+    text($("#chain-summary"),`Raw Activity records exactly as logged · ${scope}.`);
+    renderMetrics(records); renderMode(); renderRaw(mode === "raw" ? records : []); populateServices(records); renderPager(currentPayload);
   } catch (error) {
     currentPayload = null;
     $("#export-button").disabled = true;
-    renderMetrics([]); renderRaw([]); renderCausal([]);
+    renderMetrics([]); renderRaw([]);
     text($("#chain-summary"), `Activity unavailable: ${error.message}`);
   } finally { setLoading(false); if (currentPayload) renderPager(currentPayload); }
 }
@@ -612,7 +518,6 @@ form.addEventListener("submit", (event) => { event.preventDefault(); nav = { edg
 kind.addEventListener("change", updateIdentityState);
 $("#refresh-button").addEventListener("click", () => loadPage());
 $("#auto-refresh").addEventListener("change", scheduleRefresh);
-$("#view-causal").addEventListener("click", () => selectMode("causal"));
 $("#view-raw").addEventListener("click", () => selectMode("raw"));
 $("#page-first").addEventListener("click", firstPage);
 $("#page-prev").addEventListener("click", previousPage);
