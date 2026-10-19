@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {formatWorldSocialReport,summarizeSocialContinuity} from "./world-social-probe.mjs";
+import {formatWorldSocialReport,groundedLifeSummary,summarizeSocialContinuity} from "./world-social-probe.mjs";
 
 test("an admitted memory follows personal experience into later contact without claiming causation",()=>{
   const story={
@@ -126,4 +126,60 @@ test("operator report separates deployed-version warning from grounded social ev
     "operator display leaked a nonpublic place description");
   assert.match(report,/\/tmp\/social-evidence.json/,
     "the complete evidence file was not identified");
+});
+
+test("one observed venue visit never masquerades as a co-presence check",()=>{
+  const threadId="thr_london";
+  const visitAt="2026-10-19T17:45:02.408Z";
+  const person={
+    thread:{identity:{name:"Amelia Shah"}},
+    livedNow:{
+      currentSituation:{
+        situationId:"sit_southbank",phase:"at_place",wakefulness:"awake",
+        location:{kind:"place",placeRef:"wpl_southbank"},
+        establishedAt:visitAt,
+      },
+      worldPlaces:[{
+        ref:"wpl_southbank",authority:"world-public-place-v1",
+        displayName:"Southbank Centre",locality:"London",countryCode:"GB",
+        physicalVenue:{ref:"venue_southbank",displayName:"Southbank Centre"},
+      }],
+      recentSituations:[{
+        situationId:"sit_southbank",phase:"at_place",
+        location:{kind:"place",placeRef:"wpl_southbank"},establishedAt:visitAt,
+      }],
+      nextAutonomousBoundary:{dueAt:"2026-10-19T20:00:00.000Z"},
+    },
+    environmentalOpportunities:[],
+  };
+  const life=groundedLifeSummary(threadId,person,"2026-10-19T18:59:15.000Z");
+  assert.equal(life.currentPublicLocality,"London, GB",
+    "an attested current public venue lost its grounded locality");
+  const evidence={
+    environment:"staging",checkedAt:"2026-10-19T18:59:15.000Z",
+    targetedThreadId:threadId,scannedThreadCount:1,availableThreadCount:1,
+    unavailableThreadIds:[],deployedGitSha:"dda3bf669ebf7789f3644f8af1394783bb597440",
+    runtimeSourceMatches:false,worldBlocker:"co_presence_not_scanned",
+    coPresenceChecked:false,
+    groundedLife:{withVenues:[life],withoutVenues:[]},
+    sharedCurrentVenues:[],
+    socialOpportunities:[{
+      threadId,outcome:"no_co_presence",
+      dueAt:"2026-10-18T10:16:02.000Z",
+    }],
+    causalContinuity:{
+      inspectedSharedStoryCount:0,distinctExperiencePairCount:0,
+      retainedMemoryChainCount:0,laterContactAfterRetentionCount:0,
+      episodes:[],
+    },
+  };
+  const report=formatWorldSocialReport(evidence,"/tmp/world.json");
+  assert.match(report,/Locality: London, GB/,
+    "operator report omitted the verified public venue's city");
+  assert.match(report,/Shared public venues now: not checked/,
+    "single-Thread inspection claimed population-wide co-presence knowledge");
+  assert.match(report,/Visited Southbank Centre/,
+    "actual enacted World arrival disappeared from the report");
+  assert.match(report,/earlier social consideration found no eligible peer then/i,
+    "historical absence of peers was confused with today's visit");
 });
