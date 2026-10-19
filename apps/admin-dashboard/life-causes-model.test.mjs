@@ -106,6 +106,7 @@ test("recorded life preserves separate World history, personal Encounter experie
 
 test("Origins stays a birth fact and a selective Memory, not synthetic childhood",()=>{
   const moments=formativeLifeMoments({
+    publicationAt:"2026-10-19T21:00:00Z",
     identity:{birthDate:"2011-02-08",birthPlace:"Tbilisi, Georgia",
       world:{thread:{threadId:"thr_one"}}},
     genesisEpisodes:[{
