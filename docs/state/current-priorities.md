@@ -91,6 +91,21 @@ counterparty. Report any missing link honestly; bounded inspection is
 not evidence of global absence or proof of subjective causation.
 No live staging case has been supplied yet.
 
+**Read-only candidate discovery (October 19, local validation pending):**
+`world-social:candidates -- --env staging --limit 64` now compares
+World-attested public venue cities with the enacted current locations of
+a small public-directory Thread sample. It reports paired cities,
+public-venue plans, actual shared venue co-presence (when present),
+and grounded Thread IDs for a narrow follow-up. A Thread's Genesis
+city or birth location never substitutes for its present life. Kisumu's
+single inspected Thread is awake in its formative home setting;
+Guy's staging `world-place list` returned no attested public Kisumu
+venues. Tbilisi had historical evidence of a verified public library
+and multiple independently situated Threads, but their **current**
+locations, listing and visits still require this live probe. This
+source-only operator enhancement does not require World deployment and
+does not itself establish any real social contact.
+
 ## Public World-place discovery and natural social co-presence (October 18)
 
 **Current source change — local validation and staging installation pending:**
