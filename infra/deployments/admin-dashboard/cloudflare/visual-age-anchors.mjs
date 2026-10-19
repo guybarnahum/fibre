@@ -143,10 +143,8 @@ function makeJob({source,candidateId,targetAgeYears,references}){
     }),
   };
 }
-export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=()=>null}={}){
-  const readSource=async threadId=>source!==null && source!==undefined && source.constructor?.name!=="Function"
-    ? source : (source && source!==null && source.toString()!=="()=>null"
-      ? await source(threadId) : await identitySource(env,infra,threadId));
+export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null}={}){
+  const readSource=threadId=>source===null?identitySource(env,infra,threadId):source(threadId);
   return Object.freeze({
     async list(threadId){
       identifier("threadId",threadId);
@@ -203,7 +201,7 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=()=>
       return image.bytes;
     },
     async admit(threadId,candidateId,approvedBy){
-      identifier("approvedBy",approvedBy.replaceAll("@","_")); // authenticated operator must be supplied by Admin
+      if(typeof approvedBy!=="string"||approvedBy.trim()==="")throw new TypeError("authenticated operator is required");
       const manifest=await readManifest(infra,threadId,candidateId);
       const source=await readSource(threadId);ensureCurrent(source,manifest);
       const catalogKey=ADMISSIONS+threadId+":"+candidateId;
@@ -212,14 +210,26 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=()=>
       const result=await verifiedImage(infra,manifest);
       if(result===null)throw new Error("Age anchor must be generated before approval");
       const approvalRef="visualageapproval_"+sha(threadId+"\0"+candidateId).slice(7);
-      const approval={threadId,candidateId,approvedBy,approvedAt:new Date().toISOString(),
-        canonicalReferenceObjectRef:source.objectRef,canonicalReferenceDigest:source.digest,
-        portraitObjectRef:result.receipt.objectRef,portraitDigest:result.receipt.sha256,
-        generationReceiptRef:manifest.job.receiptObjectRef};
-      const approvalBytes=bytes(approval);
-      await infra.objects.putImmutable(approvalRef,approvalBytes,sha(approvalBytes),{
-        kind:"visual_age_anchor_approval",threadId,candidateId,mediaType:"application/json",
-      });
+      let approval=await stored(infra,approvalRef);
+      if(approval!==null){
+        if(approval.threadId!==threadId||approval.candidateId!==candidateId
+          ||approval.canonicalReferenceObjectRef!==source.objectRef
+          ||approval.canonicalReferenceDigest!==source.digest
+          ||approval.portraitObjectRef!==result.receipt.objectRef
+          ||approval.portraitDigest!==result.receipt.sha256
+          ||approval.generationReceiptRef!==manifest.job.receiptObjectRef){
+          throw new Error("Prior operator approval does not match this candidate");
+        }
+      }else{
+        approval={threadId,candidateId,approvedBy,approvedAt:new Date().toISOString(),
+          canonicalReferenceObjectRef:source.objectRef,canonicalReferenceDigest:source.digest,
+          portraitObjectRef:result.receipt.objectRef,portraitDigest:result.receipt.sha256,
+          generationReceiptRef:manifest.job.receiptObjectRef};
+        const approvalBytes=bytes(approval);
+        await infra.objects.putImmutable(approvalRef,approvalBytes,sha(approvalBytes),{
+          kind:"visual_age_anchor_approval",threadId,candidateId,mediaType:"application/json",
+        });
+      }
       const admissionId="visualageadmission_"+sha(threadId+"\0"+candidateId).slice(7);
       const record=normalizeVisualAgeAnchorAdmission({
         contract:VISUAL_AGE_ANCHOR_ADMISSION_VERSION,admissionId,threadId,
