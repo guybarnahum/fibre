@@ -75,6 +75,24 @@ test("a social decision witnesses Body and consent without equating co-presence 
     "World invented a conversation from the opportunity alone");
 });
 
+test("a recipient's recorded refusal stays distinct from any actual conversation",()=>{
+  const moments=recordedLifeMoments({
+    threadId:"thr_reader",
+    socialInteractions:[{
+      interactionId:"social_decline",occurredAt:"2026-10-19T18:30:00Z",
+      initiatorThreadId:"thr_guest",recipientThreadId:"thr_reader",
+      requestText:"Would you like to talk?",responseDecision:"decline",
+      responseExpression:"Not right now.",suggestedAt:null,
+    }],
+  });
+  const choice=moments.find(item=>item.kind==="social_interaction");
+  assert.equal(choice.role,"recipient");
+  assert.equal(choice.responseDecision,"decline",
+    "the recipient's consent decision was lost");
+  assert.equal(moments.some(item=>item.kind==="encounter"),false,
+    "a refused invitation became a conversation");
+});
+
 test("recorded life preserves separate World history, personal Encounter experience and remembered meaning",()=>{
   const history={
     livedNow:{
