@@ -239,7 +239,7 @@ export function formatWorldSocialReport(evidence,evidencePath){
   const short=(value,length=84)=>typeof value==="string"&&value.length>length
     ?value.slice(0,length-1)+"…":value??"unknown";
   const time=(value)=>typeof value==="string"&&Number.isFinite(Date.parse(value))
-    ?value.replace("T"," ").replace(/(?:\\.\\d+)?Z$/u," UTC")
+    ?value.replace("T"," ").replace(/(?:\.\d+)?Z$/u," UTC")
     :"not scheduled";
   const lines=[
     "Fibre · World social observation",
