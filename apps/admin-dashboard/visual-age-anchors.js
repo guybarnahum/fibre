@@ -192,13 +192,16 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     const anchors=info.anchors??[];
     approvedByAge=new Map(anchors.map(item=>[item.targetAgeYears,item]));
     if(active===null)updateLabel();
-    gallery.replaceChildren(portrait(base(threadId)+"/canonical","Canonical · 25"));
-    for(const anchor of anchors){
-      gallery.append(portrait(
-        base(threadId)+"/portraits/"+encodeURIComponent(anchor.admissionId),
-        `Age ${anchor.targetAgeYears}`,
-      ));
-    }
+    const agePortraits=[
+      {age:25,url:base(threadId)+"/canonical",title:"Canonical · 25"},
+      ...anchors.map(anchor=>({
+        age:anchor.targetAgeYears,
+        url:base(threadId)+"/portraits/"+encodeURIComponent(anchor.admissionId),
+        title:`Age ${anchor.targetAgeYears}`,
+      })),
+    ];
+    agePortraits.sort((a,b)=>a.age-b.age);
+    gallery.replaceChildren(...agePortraits.map(item=>portrait(item.url,item.title)));
     galleryStatus.textContent=anchors.length
       ?`${anchors.length} approved age ${anchors.length===1?"portrait":"portraits"} available.`
       :"No approved age portraits yet.";
