@@ -725,6 +725,13 @@ function stillbornRow(thread) {
     location.assign(`${location.pathname}?${params}`);
   });
   action.append(raw);
+  if(thread.requestId){
+    const inspect=document.createElement("a");
+    inspect.className="button-link secondary";
+    inspect.href="/life?birth="+encodeURIComponent(thread.requestId);
+    inspect.textContent="Inspect birth →";
+    action.append(inspect);
+  }
 
   tr.append(identifier, lastActivity, health, meaning, action);
   return tr;
@@ -1266,6 +1273,13 @@ function renderPendingBirths(births) {
       stageBadge.classList.add("thread-birth-stage-badge", `stage-${stage}`, "thread-pending-throb");
       statuses.append(stageBadge);
       if (birth.stale === true) statuses.append(badge("stale", "failed"));
+      if(birth.requestId){
+        const inspect=document.createElement("a");
+        inspect.className="button-link secondary thread-birth-investigate";
+        inspect.href="/life?birth="+encodeURIComponent(birth.requestId);
+        inspect.textContent="Inspect birth →";
+        statuses.append(inspect);
+      }
       row.append(copy, statuses);
       birthPending.append(row);
     }
