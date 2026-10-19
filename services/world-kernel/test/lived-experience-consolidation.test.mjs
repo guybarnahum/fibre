@@ -668,14 +668,15 @@ test("retained lived Memory, not archived history, changes a later voluntary soc
                 assert.equal(references[0].text,memoryMeaning,
                   "the retained personal meaning did not reach private judgment");
               }
+              const recall=references.length>0;
               return {output:{
                 result:{
-                  decision:retain?"initiate":"not_initiate",
-                  requestText:retain?"Would you like to talk for a moment?":null,
-                  reason:retain?"The remembered encounter matters to me.":
+                  decision:recall?"initiate":"not_initiate",
+                  requestText:recall?"Would you like to talk for a moment?":null,
+                  reason:recall?"The remembered encounter matters to me.":
                     "I do not feel like starting a conversation.",
                 },
-                evidenceRefs:retain?[references[0].ref]:[],
+                evidenceRefs:recall?[references[0].ref]:[],
                 conflictingMotives:[],uncertainty:null,
               },provenance:{provider:"fixture",modelId:"memory-choice"}};
             }
