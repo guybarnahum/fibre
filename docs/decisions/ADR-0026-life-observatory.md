@@ -8,10 +8,13 @@ last-reviewed: 2026-10-19
 
 ## Status
 
-Accepted operator UX and causal-evidence design, **not yet implemented in
-the Admin dashboard**. The existing Causal Trail and Raw Activity pages
-remain current source behavior until their scoped replacement is locally
-validated and deployed. [Life Observatory UX contract](../architecture/life-observatory.md)
+Accepted operator UX and causal-evidence design. **Slice 1 is committed
+as Admin source; local and staging validation are pending.** The old
+indented Causal Trail is removed from the current Activity source,
+Raw Activity remains, and the separate /life?thread=... workspace
+shows bounded enacted situations and exact-plan intent without
+claiming missing motives. Lifetime history, Genesis and decision-time
+Causal Witnesses remain later slices. [Life Observatory UX contract](../architecture/life-observatory.md)
 specifies the workflow, evidence semantics and acceptance.
 
 ## Context
