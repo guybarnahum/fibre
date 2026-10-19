@@ -272,6 +272,42 @@ differential gate, a naturally authored staging Experience, or a mature
 relationship/development system. Live staging testimony and real retained
 Memory changing a still-later choice remain open.
 
+## Retained Memory changes next-day social choice — October 19
+
+The existing consolidation authority can select `retained` or
+`not_remembered` after one admitted Thread Experience. When retained,
+it persists a first-person autobiographical Memory with actual Experience
+references and separately owned remembered meaning. Ordinary Interior
+Cognition already resolves bounded, accessible **Memory content**, rather
+than only record IDs, using the Thread's own memory store.
+
+A new end-to-end local proof exercises this unchanged production path:
+one identical admitted World Story and noticed personal Experience,
+independently consolidated with either `retained` or `not_remembered`.
+At an otherwise equivalent café encounter **the next day**, beyond the
+short-lived recent-Experience window, the ordinary social engine
+retrieves the Memory when retained and leaves absent what was not
+remembered. A controlled social cognition fixture responds to that
+Fibre-selected evidence, resulting in an outward invitation and recorded
+decline in the retained case; it chooses `not_initiate` and produces no
+outward social history without retention. Neither branch invents a
+reciprocal meeting. No new memory store, model call, scheduler or social
+policy is introduced.
+
+One source correction ensures autobiographical Memory is eligible for
+Interior Cognition only after both its `asOf` and `recordedAt` times.
+A separate negative test prohibits Memory admitted in the future from
+changing a historically earlier private choice.
+
+**Acceptance boundary:** source-implemented, Guy's local validation
+pending. This is a controlled **retention/decision differential**, not
+a natural staging Memory, not independently spontaneous model behavior,
+not a relationship mutation, and not the standing two-Thread
+causal-individuality gate. Future work must observe actual live
+retention/non-retention and later autonomous divergence, and eventually
+replace the provisional six-hour recent-availability threshold with an
+accepted ephemeral-availability policy.
+
 ## Execution slices and acceptance
 
 1. **Actor occurrence contract.** Project actual LivedNow changes into

@@ -191,6 +191,18 @@ retained-Memory-caused behavioral divergence, cross-scene witness physics,
 generalized actors, complete legacy ambient queue retirement and real
 developmental consequences.
 
+**Sixth source cut (October 19; local validation pending):** the already
+accepted Memory consolidation and Interior Cognition authorities now
+have one joined test across a day: admitted personal Experience may
+be retained or `not_remembered`; only the actually retained
+autobiographical content can influence a later social request when
+immediate recent Experience is no longer available. The retained case
+can lead to an outward invitation and recorded decline; the
+unretained case can remain privately silent. Interior Cognition now
+excludes autobiographical memories not yet admitted at the decision
+time. These are source/controlled-cognition proofs, not evidence of
+naturally authored staging memory or mature personhood.
+
 ## World encounters and private experience
 
 An **encounter** is the common primitive; a meeting is one voluntary social form. The admitted causal distinction is:

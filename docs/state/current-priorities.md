@@ -71,6 +71,15 @@ an optionally noticed actor/ambient occurrence; voluntary human/Thread
 or Thread/Thread encounter; and individual history bending a later choice.
 Do not let the World-event replacement become a generic scheduler project.
 
+**Next-day retained-Memory slice (October 19):** source now tests the
+actual Experience → delayed consolidation → selectively retained
+autobiographical Memory → ordinary social judgment → outward consequence
+path across separate World/Memory stores. `not_remembered` does not
+reveal archived history to private cognition, and later-admitted
+Memory cannot reach an earlier choice. Guy's focused and full local
+validation is required before staging. A real live Thread remembering
+something and changing tomorrow's choice remains unproven.
+
 ## Public World-place discovery and natural social co-presence (October 18)
 
 **Current source change — local validation and staging installation pending:**
