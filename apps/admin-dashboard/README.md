@@ -52,8 +52,8 @@ World-event runtime replacement, not proof that replacement is complete.
 
 The [Life Observatory](../../docs/architecture/life-observatory.md)
 accepts a **Thread-first, meaningful-life** successor to Activity's
-existing indented Causal Trail. Threads → person → Life Overview →
-Life Timeline → selected moment opens the shared investigation of
+existing indented Causal Trail. Threads → compact person detail →
+dedicated Life & Causes → selected moment opens the investigation of
 conditions, choice, World occurrence and individually admitted
 consequences. World Events can instead open at one shared occurrence;
 Birth Center opens at a candidate's execution or a published person's
