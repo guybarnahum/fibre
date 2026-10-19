@@ -401,7 +401,7 @@ async function threadSnapshot(presentationBaseUrl, viewerOrigin, threadId) {
   );
 }
 
-async function renderPlans({ encounterStory, presentationBaseUrl, viewerOrigin }) {
+async function renderPlans({ encounterStory, presentationBaseUrl, viewerOrigin, privateToken }) {
   const depicted = encounterStory?.visualization?.depictedThreadRefs ?? [];
   if (!Array.isArray(depicted) || depicted.length === 0) return null;
   const visualIdentities = [];
@@ -410,10 +410,19 @@ async function renderPlans({ encounterStory, presentationBaseUrl, viewerOrigin }
     const presentation = snapshot?.snapshot?.presentation;
     const visualIdentity = presentation?.visualIdentity ?? null;
     if (visualIdentity === null) return null;
+    const ageReferences=await privateGet(
+      presentationBaseUrl,
+      `/internal/threads/${encodeURIComponent(threadId)}/visual-age-anchors`,
+      privateToken,
+      `Approved age portraits for ${threadId}`,
+    );
+    if(ageReferences.threadId!==threadId)throw new Error("Encounter age references belong to another Thread");
     visualIdentities.push({
       threadId,
       birthDate:presentation.subject?.birthDate ?? null,
       visualIdentity,
+      canonicalReferenceDigest:ageReferences.canonicalReferenceDigest,
+      ageAnchorAdmissions:ageReferences.ageAnchorAdmissions,
     });
   }
   const suffix = sha256(encounterStory.encounterId).slice(0, 16);
@@ -542,6 +551,7 @@ async function findSocialProofs({
         encounterStory:attempt.encounterStory,
         presentationBaseUrl,
         viewerOrigin,
+        privateToken,
       }).catch(() => null);
 
       const qualifies = participantIds.every((threadId) => presence.has(threadId))
