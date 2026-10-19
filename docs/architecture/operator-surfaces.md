@@ -135,9 +135,11 @@ Dead-letter reconciliation state and its last failure should be visible in Threa
 [Life Observatory](life-observatory.md) and
 [ADR-0026](../decisions/ADR-0026-life-observatory.md) accept replacing the
 low-value Activity **Causal Trail** nesting with **Life & Causes**.
-The default workflow is **Threads → person → Life Overview → age/time
-Life Timeline → selected moment → conditions/choice/World outcome/
-consequence**. Birth Center opens the same investigation at one
+The default workflow is **Threads → compact Thread detail →
+dedicated Life & Causes workspace → selected meaningful moment →
+conditions/choice/World outcome/consequence**. Do not append the
+lifetime timeline to Thread Observatory. Birth Center opens the same
+investigation at one
 candidate's **Birth execution** or a published person's historical
 **Formation**. World Events opens the same inspector from one objective
 place/event and separates each participant's subjective history.
