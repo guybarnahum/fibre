@@ -135,7 +135,9 @@ export function createWorldEnvironmentOpportunity({
             }
             const observableCandidates=eligible?[...byThread.values()]:[];
             const candidateScenes=observableCandidates.map((item)=>{
-              const place=item.threadId===opportunity.threadId
+              // A moved former scene anchor must resolve its *current*
+              // place, never inherit the venue it left.
+              const place=item.situationId===opportunity.situationId
                 ?origin:observedPlace(livedNowStore,item.threadId,
                   item.location.placeRef,opportunity.threadId);
               return {

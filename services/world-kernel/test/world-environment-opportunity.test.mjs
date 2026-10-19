@@ -270,3 +270,83 @@ test("a scene has one sparse ambient consideration with independently perceiving
     rmSync(directory,{recursive:true,force:true});
   }
 });
+
+test("the shared World scene stays observable after its first visitor leaves",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-scene-handoff-"));
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
+    stateScopeId:"world",
+  };
+  const threadIds=["thr_scene_handoff_a","thr_scene_handoff_b"];
+  const world=openWorldStore(storage);
+  try{
+    for(const threadId of threadIds){
+      const thread={...structuredClone(seed),threadId};
+      thread.provenance.lastEventId=`evt_${threadId}`;
+      world.seedThread(thread);
+    }
+  }finally{world.close();}
+  const at="2026-10-08T10:01:00.000Z";
+  const original={
+    threadId:threadIds[0],situationId:"sit_scene_original",
+    establishedAt:"2026-10-08T10:00:00.000Z",wakefulness:"awake",
+    location:{kind:"place",placeRef:"wpl_shared_cafe"},
+    activity:"Reading.",
+  };
+  const departed={
+    ...original,situationId:"sit_scene_departed",
+    establishedAt:"2026-10-08T10:00:30.000Z",
+    location:{kind:"place",placeRef:"wpl_elsewhere"},
+  };
+  const present={
+    threadId:threadIds[1],situationId:"sit_scene_still_here",
+    establishedAt:"2026-10-08T10:00:40.000Z",wakefulness:"awake",
+    location:{kind:"place",placeRef:"wpl_shared_cafe"},activity:"Drinking coffee.",
+  };
+  const store=openLivedExperienceStore(storage);
+  try{
+    const scene=worldAmbientScene({
+      situation:original,nextBoundaryAt:"2026-10-08T11:00:00.000Z",
+      place:{physicalVenue:{ref:"venue_shared_cafe"}},
+    });
+    store.enqueueSceneAmbientOpportunity({
+      ...scene,threadId:original.threadId,situationId:original.situationId,
+    });
+    let calls=0;
+    const process=createWorldEnvironmentOpportunity({
+      experienceStore:store,
+      livedNowStore:{
+        getSituation:id=>id===original.situationId?structuredClone(original):null,
+        getCurrentSituation:id=>structuredClone(id===threadIds[0]?departed:present),
+        getWorldPlace:(_threadId,placeRef)=>({
+          displayName:placeRef,
+          physicalVenue:{ref:placeRef==="wpl_shared_cafe"
+            ?"venue_shared_cafe":"venue_elsewhere",displayName:placeRef},
+        }),
+        listCurrentVenueSituations:()=>[structuredClone(present)],
+        listRecentCurrentSituations:()=>[],
+      },
+      worldReader:{getThread:()=>null},
+      semanticStateStore:{listCurrentState:()=>[]},
+      memoryStore:{listCurrentMemories:()=>[]},
+      modelAdapter:{async invoke({input}){
+        calls++;
+        assert.equal(input.initiatingSituation.situationId,present.situationId,
+          "World made the departed visitor the scene witness");
+        assert.equal(input.potentialObservers.find(x=>x.threadId===departed.threadId)
+          ?.physicalVenueRef,"venue_elsewhere",
+          "World moved the departed visitor back into the café");
+        return {output:{
+          outcome:"no_change",occurrenceText:null,potentialObserverThreadIds:[],
+        }};
+      }},
+      now:()=>at,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.results[0]?.outcome,"no_change",
+      "World lost an active scene when its first visitor departed");
+    assert.equal(calls,1,"World did not consider the still-observed scene");
+    assert.equal(store.nextEnvironmentalOpportunityAt(),null,
+      "a quiet scene remained on a polling clock");
+  }finally{store.close();rmSync(directory,{recursive:true,force:true});}
+});
