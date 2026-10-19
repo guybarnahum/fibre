@@ -80,7 +80,7 @@ historical compiler phases. A published Thread's admitted childhood,
 selective Memories and atomic World publication remain different
 sources and clocks.
 
-## Slice 4 — Decision witness and consequence (not started)
+## Slice 4 — Decision witness and consequence (source pass implemented; local/staging validation pending)
 
 At existing Flight Plan and social cognition boundaries, preserve only
 missing compact event-time evidence: supplied Body drives, offered
