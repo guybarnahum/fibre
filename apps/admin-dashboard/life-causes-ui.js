@@ -18,6 +18,7 @@ const day=value=>new Date(/^\d{4}-\d{2}-\d{2}$/u.test(value)
 const validThread=value=>/^thr_[a-zA-Z0-9]+$/u.test(value??"");
 const labelFor=item=>item.kind==="formative_event"?"Admitted childhood event"
   :item.kind==="origin"?"Origin fact"
+  :item.kind==="social_interaction"?"Social response"
   :item.kind==="social_choice"?"Social choice"
   :item.kind==="memory"?"Memory"
   :item.kind==="encounter"?"Encounter"
@@ -219,6 +220,24 @@ export function renderLifeCausesPage(){
       evidenceRow("Consequences",[
         "Retention does not establish that this Memory changed a later decision.",
       ]);
+    }else if(selected.kind==="social_interaction"){
+      evidenceRow("Before · actual social request",[
+        "Initiator: "+selected.initiatorThreadId,
+        "Recipient: "+selected.recipientThreadId,
+        "Request heard: "+selected.requestText,
+      ]);
+      evidenceRow("Independently chosen response",[
+        "This Thread's role: "+selected.role,
+        "Recipient decided: "+selected.responseDecision,
+        selected.responseExpression
+          ?"Outward response: "+selected.responseExpression:null,
+        selected.suggestedAt?"Suggested later time: "+at(selected.suggestedAt):null,
+        "The recipient's private reason is not contained in this interaction record.",
+      ]);
+      evidenceRow("World · evidence boundary",[
+        "A recorded social request and reply is not by itself proof that a conversation followed.",
+        "Inspect an admitted Encounter Story separately for actual speech and each person's Experience.",
+      ]);
     }else if(selected.kind==="social_choice"){
       const decision=selected.decision;
       evidenceRow("Before · grounded social opportunity",[
@@ -365,7 +384,7 @@ export function renderLifeCausesPage(){
         if(payload.encounterError)throw new Error(payload.encounterError);
         loadedHistory={
           threadId:targetThread,payload,
-          moments:recordedLifeMoments(payload),
+          moments:recordedLifeMoments({...payload,threadId:targetThread}),
         };
         // Genesis history has a separate, cheaper, origins-only World read.
       }
