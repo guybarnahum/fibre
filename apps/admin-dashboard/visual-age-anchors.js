@@ -18,7 +18,7 @@ async function api(url,{method="GET",body}={}){
 }
 function portrait(url,title){
   const card=make("article","thread-fid-photo");
-  const img=make("img","thread-fid-photo-preview");
+  const img=make("img","thread-age-anchor-portrait");
   img.src=url;img.alt=title;img.loading="lazy";
   card.append(img,make("strong",null,title));
   return card;
@@ -31,9 +31,9 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
   root.append(make("h3",null,"Age portraits"));
   root.append(make("p","thread-empty-note",
     "The age-25 portrait is the canonical identity. Approved portraits at other ages guide future depictions, without changing the person."));
-  const gallery=make("div","thread-fid-visuals");
-  const actions=make("div","thread-observatory-actions");
-  const ageLabel=make("label",null,"Portrait age");
+  const gallery=make("div","thread-age-anchor-gallery");
+  const actions=make("div","thread-age-anchor-actions");
+  const ageLabel=make("label","thread-age-anchor-field","Portrait age");
   const ageInput=make("input","thread-age-anchor-input");
   ageInput.type="number";ageInput.min="3";ageInput.max="95";ageInput.step="1";ageInput.value="15";
   ageLabel.append(ageInput);
@@ -42,7 +42,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
   actions.append(ageLabel,generate);
   const status=make("p","thread-empty-note","");
   status.setAttribute("role","status");
-  const review=make("div","thread-fid-visuals");
+  const review=make("div","thread-age-anchor-review");
   root.append(actions,status,gallery,review);
 
   async function reload(){
@@ -96,7 +96,9 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
         },
       });
     });
-    review.append(approve,discard);
+    const reviewActions=make("div","thread-age-anchor-review-actions");
+    reviewActions.append(approve,discard);
+    review.append(reviewActions);
     status.textContent=`Review the proposed age-${targetAgeYears} portrait against the canonical identity.`;
   }
   async function waitForCandidate(candidateId,targetAgeYears){
