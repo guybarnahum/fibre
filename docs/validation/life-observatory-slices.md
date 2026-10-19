@@ -107,14 +107,15 @@ frontier tables on schema installation; no parallel logging authority
 is introduced.
 
 Life & Causes uses the bounded World Observatory to show those
-decisions alongside enacted World situations, individual Experience
-and retained Memory. World Events links admitted Encounter Stories to
-each participant's own Life & Causes view. Only the initiating
-Thread's one-shot opportunity currently owns the combined
-initiation/response witness; the other participant's independently
-retained Experience/Memory remain in their own World records.
-The recipient's full separate decision witness is **not** independently
-indexed by Encounter Story in its own lifetime view. That narrow
+decisions alongside enacted World situations, each person's recorded
+social request/recipient accept-decline-defer response, individual
+Experience and retained Memory. World Events links admitted Encounter
+Stories to each participant's own Life & Causes view. Only the
+initiating Thread's one-shot opportunity currently owns the combined
+initiation/response **reason** witness; the other person's history
+independently exposes their recorded response and Experience/Memory.
+The recipient's private reason is **not** independently indexed by
+Encounter Story in their own timeline. That narrow
 read-side linkage is deferred until a grounded user story requires it;
 do not imply the witness is available in every perspective.
 
