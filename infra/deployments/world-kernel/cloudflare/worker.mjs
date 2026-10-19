@@ -224,13 +224,15 @@ function originsThreadObservatory(runtime,threadId){
   const thread=runtime.worldStore.getThread(threadId,{required:false});
   if(thread===null)return null;
   const episodes=runtime.worldStore.listGenesisLifeEpisodes(threadId,{limit:64});
+  const publication=runtime.worldStore.getGenesisPublicationSeed(threadId);
   const memory=openAutobiographicalMemoryInspectionStore(runtime.worldStorage);
   let memories;
   try{memories=memory.listCurrentMemories(threadId,{newestFirst:true,limit:24});}
   finally{memory.close();}
   return Object.freeze({
     threadId,memories:structuredClone(memories),origin:{
-      admitted:true,scannedSequenceThrough:129,
+      admitted:true,publication,
+      scannedSequenceThrough:129,
       limit:64,truncated:episodes.length===64,
       genesisEpisodes:episodes.map(event=>Object.freeze({
         eventId:event.eventId,sequence:event.sequence,
