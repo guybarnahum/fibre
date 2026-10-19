@@ -128,6 +128,12 @@ export async function formSocialEncounterRequest({
     decision:cognition.result.decision,
     requestText:cognition.result.requestText,
     reason:cognition.result.reason,
+    decisionContext:Object.freeze({
+      interoception:interoception===null?null:structuredClone(interoception),
+      observedThreadId:situatedPercept.observed[0]?.threadId??null,
+      recentPersonalExperienceRefs:Object.freeze(recentPersonalExperiences
+        .map(experience=>experience.experienceId).filter(Boolean)),
+    }),
     cognition:Object.freeze({
       provider:cognition.provenance.provider,
       modelId:cognition.provenance.modelId,
