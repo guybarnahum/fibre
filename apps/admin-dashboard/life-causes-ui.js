@@ -177,10 +177,11 @@ export function renderLifeCausesPage(){
         "This is an identity fact, not a World encounter or a compiler event.",
       ]);
       evidenceRow("Publication boundary",[
-        loadedOrigins?.published
-          ?"The Thread is admitted in World. This view does not establish the timestamp of atomic publication."
-          :"World publication was not established in this returned identity.",
-        "Historical formation and Genesis execution use different clocks.",
+        loadedOrigins?.publicationAt
+          ?"World publication: "+at(loadedOrigins.publicationAt)
+          :loadedOrigins?.published?"This Thread is admitted; the exact Genesis publication timestamp is not in this view."
+            :"World publication not established.",
+        "Publication is an execution-clock event, not another childhood episode.",
       ]);
     }else if(selected.kind==="memory"){
       evidenceRow("Remembered",[
@@ -189,7 +190,7 @@ export function renderLifeCausesPage(){
           "No separate remembered meaning is available in this record.",
       ]);
       evidenceRow("History and evidence",[
-        "The timeline uses the remembered episode's subject date, not when it was consolidated. This is not automatically evidence that Genesis authored the Memory.",
+        "This Memory concerns an episode before the World publication boundary. Its subject time is distinct from when the Memory was consolidated.",
         selected.recordedAt?"Memory recorded: "+at(selected.recordedAt):null,
         selected.eventRefs?.length
           ?"Explicit source references: "+selected.eventRefs.join(", ")
@@ -341,7 +342,9 @@ export function renderLifeCausesPage(){
             identity:loadedRecent.payload.identity,
             memories:origin.memories??[],
             genesisEpisodes:origin.origin.genesisEpisodes??[],
+            publicationAt:origin.origin.publication?.occurredAt??null,
           }),
+          publicationAt:origin.origin.publication?.occurredAt??null,
           coverage:origin.origin,
         };
       }
