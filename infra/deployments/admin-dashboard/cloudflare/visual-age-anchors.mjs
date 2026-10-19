@@ -20,6 +20,7 @@ const PROFILE="openai-gpt-image-2-medium-v1";
 const ADMISSIONS=VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX;
 const CANDIDATES="visual-age-anchor:candidate:";
 const DISCARDED_RETENTION_MS=7*24*60*60*1000;
+const CLEANUP_BATCH_LIMIT=10;
 const CANDIDATE="visualagecandidate_";
 const ID=/^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/u;
 
@@ -325,9 +326,14 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
       ]));
       const results=[];
       let after=null;
+      let limited=false;
       do{
         const page=await infra.catalog.list({prefix:CANDIDATES+threadId+":",after,limit:100});
         for(const {value:entry} of page.entries){
+          if(results.filter(item=>item.state==="eligible"||item.state==="cleaned").length>=CLEANUP_BATCH_LIMIT){
+            limited=true;
+            break;
+          }
           if(entry.state!=="discarded" || Date.parse(entry.discardedAt)>olderThan
             || !Number.isFinite(Date.parse(entry.discardedAt)))continue;
           const candidateId=entry.candidateId;
@@ -382,8 +388,9 @@ export function createAdminVisualAgeAnchors({env,infra=infraFor(env),source=null
             bytes:objects.reduce((sum,item)=>sum+item.bytes,0)});
         }
         after=page.nextCursor;
+        if(limited)break;
       }while(after!==null);
-      return {threadId,dryRun,retentionDays:7,results,
+      return {threadId,dryRun,retentionDays:7,batchLimit:CLEANUP_BATCH_LIMIT,limited,results,
         totalBytes:results.reduce((sum,item)=>sum+item.bytes,0)};
     },
     async admittedImage(threadId,admissionId){
