@@ -18,7 +18,7 @@ function cityKey(locality,countryCode){
   return countryCode.trim().toUpperCase()+":"+locality.trim().toLocaleLowerCase("en-US");
 }
 
-function currentCity(threadId,person){
+export function currentCity(threadId,person){
   const lived=person?.livedNow;
   const situation=lived?.currentSituation;
   if(situation?.location?.kind!=="place")return null;
