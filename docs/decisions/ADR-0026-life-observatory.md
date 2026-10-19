@@ -32,9 +32,12 @@ each person's thoughts after the fact.
 
 ## Decision
 
-1. **Person-first default.** Select a Thread → Life Overview →
-   age/time-based Life Timeline → select a meaningful moment →
-   inspect *conditions, choice, objective outcome, and consequences*.
+1. **Person-first entry, separate investigator.** Select a Thread →
+   compact Thread detail → open the dedicated **Life & Causes**
+   workspace → selected enacted moment → inspect *conditions, choice,
+   objective outcome, consequences*. Do not grow Thread Observatory
+   into a second giant timeline. The Life & Causes route stands alone
+   and remains deep-linkable.
    World Events enters by place/event, Birth Center by provisional or
    completed Genesis; all three open the same reusable Life Investigation.
 2. **Genesis has two clocks.** The Thread's historical formation
