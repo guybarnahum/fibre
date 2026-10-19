@@ -56,6 +56,20 @@ test("one enacted arrival permits distinct noticing and missed attention with re
   const ctx=setup();
   try{
     const {ids,store,work,livedNowStore,threads}=ctx;
+    // The bystander may have already spent the social chance earned by
+    // their own earlier arrival. This is a different witnessed event.
+    const reader=ctx.situations[1];
+    store.enqueueSocialOpportunity({
+      threadId:reader.threadId,situationId:reader.situationId,
+      dueAt:reader.establishedAt,
+    });
+    const earlier=store.claimDueSocialOpportunity({at:reader.establishedAt});
+    assert.equal(earlier.threadId,reader.threadId,
+      "the earlier independent social chance was lost");
+    store.completeSocialOpportunity({
+      situationId:earlier.situationId,at:reader.establishedAt,
+      outcome:"not_initiated",
+    });
     assert.equal(store.enqueueArrivalPerception(work).inserted,true);
     assert.equal(store.enqueueArrivalPerception(work).inserted,false,
       "arrival was scheduled twice");
@@ -133,8 +147,8 @@ test("one enacted arrival permits distinct noticing and missed attention with re
       "mere co-presence forced social attention");
 
     const bystander=store.inspectSocialOpportunities(ids[1]);
-    assert.equal(bystander.length,1,
-      "noticed arrival did not earn one personal social chance");
+    assert.equal(bystander.length,2,
+      "later noticing did not earn a distinct social chance");
     assert.equal(bystander[0].sourceEncounterRef,story.encounterId,
       "social consideration lost its actual perceived cause");
     assert.equal(store.inspectSocialOpportunities(ids[2]).length,0,
