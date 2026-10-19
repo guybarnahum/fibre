@@ -56,6 +56,26 @@ export function populationLabComparisonAlignmentInput(input){
   });
 }
 
+export function requirePopulationLabComparisonAlignment({experiment,shadow,ordinal}={}){
+  if(experiment?.experimentKind!=="refinement"&&experiment?.summary?.shadow!==true){
+    throw new TypeError("comparison alignment belongs to a shadow experiment");
+  }
+  if(experiment.visual?.status!=="completed"){
+    throw new TypeError("comparison alignment requires completed visuals");
+  }
+  const sampleSize=Number(experiment.visual?.sampleSize??experiment.visual?.summary?.sampleSize);
+  if(!Number.isInteger(sampleSize)||ordinal>sampleSize){
+    throw new TypeError("comparison alignment sample is outside the visual cohort");
+  }
+  if(!shadow)throw new TypeError("comparison alignment requires shadow calibration evidence");
+  if(Object.keys(shadow.variation??{}).length>0){
+    throw new TypeError("comparison alignment is disabled when variation changes");
+  }
+  if(Object.hasOwn(shadow.values??{},"eyeSpacing")){
+    throw new TypeError("comparison alignment is disabled when eyeSpacing changes");
+  }
+}
+
 export function populationLabComparisonAlignmentKey(role,ordinal){
   if(!["geometry","portrait"].includes(role))throw new TypeError("comparison alignment role is invalid");
   if(!Number.isInteger(ordinal)||ordinal<1||ordinal>8)throw new TypeError("comparison alignment ordinal is invalid");
