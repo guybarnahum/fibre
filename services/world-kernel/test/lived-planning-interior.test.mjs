@@ -857,6 +857,10 @@ test("X1 grounded exploration reaches the existing planning mind without becomin
       [previousSituation.situationId, currentSituation.situationId].sort(),
       "planning exploration lost its lived grounding",
     );
+    assert.deepEqual(exploratory.cognition.decisionContext.interoception,interoception,
+      "a meaningful Body difference changed the plan but lost its decision-time witness");
+    assert.equal(ordinary.cognition.decisionContext.interoception,null,
+      "an unwitnessed Body drive was retroactively attributed to a choice");
 
     situatedLifeStore.close();
     memoryStore.close();
