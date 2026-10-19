@@ -41,6 +41,28 @@ The mature Whole-Person / causal-individuality claim remains subject to [standin
 
 These statuses are specific to the cited evidence and **must not be promoted by the existence of newer source alone**. See the [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md), [Body](../architecture/regulation-drive-extensions.md) and [current priorities](current-priorities.md) records for exact gates.
 
+## Life Observatory design — accepted October 19, implementation pending
+
+[ADR-0026](../decisions/ADR-0026-life-observatory.md) and
+[Life Observatory UX](../architecture/life-observatory.md) accept a
+person-first **Life & Causes** replacement for the Admin Activity
+Causal Trail. Threads → Life Overview → age/time Life Timeline →
+selected meaningful moment is the normal route. Birth Center's
+candidate execution and a Thread's historical formation are different
+clocks; World Events remains the event/place-first entrance to the
+same read-only investigation. The existing Activity operation tree is
+**not** evidence of a person's motivations. Raw Activity remains an
+engineering diagnostic.
+
+**No new UI or runtime decision witness is claimed as implemented by
+this documentation decision.** Future scoped slices will join existing
+World, Genesis, Experience, Memory and social authority and capture
+only missing event-time conditions alongside consequential Flight Plan
+and social decisions. A historical plan's selected venue and stated
+purpose do not prove loneliness, boredom or City Guide causation.
+The view must explicitly distinguish input exposure, reported reason,
+deterministic mechanism and tested behavioral influence.
+
 ## Identity, Genesis and embodiment
 
 Genesis produces an individual born into the same durable Fibre World used by later life. Its prior-life evidence remains historically grounded and distinguishable from events after `THREAD_SEEDED`. **Raised languages** describe Genesis upbringing; later/current **Spoken languages** are separately developed and are not backfilled as childhood.
