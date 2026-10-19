@@ -1,7 +1,7 @@
 import { THREAD_PRESENTATION_STREAM_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
 import { planCurrentPresentDepiction } from "./current-present-depiction.mjs";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
-import {readVisualAgeAnchorAdmissions} from "../../world-kernel/src/visual-age-anchor-catalog.mjs";
+import {readVisualAgeAnchorAdmissions} from "fibre/world-kernel/thread-presentation-contracts";
 
 function assertId(name, value) {
   if (typeof value !== "string" || value.trim() === "") {
