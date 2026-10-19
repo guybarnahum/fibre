@@ -14,6 +14,7 @@ function fixture({provider="openai"}={}){
   const catalog=new Map();
   const dispatched=[];
   let current={...sourceRef};
+  let workflowError=null;
   const infra={
     objects:{
       get:async key=>objects.get(key)??null,
@@ -34,28 +35,34 @@ function fixture({provider="openai"}={}){
       list:async({prefix})=>({entries:[...catalog.entries()].filter(([key])=>key.startsWith(prefix))
         .map(([key,value])=>({key,value})),nextCursor:null}),
     },
-    services:{call:async(_service,_operation,{job})=>{dispatched.push(job);return {state:"pending"};}},
+    services:{call:async(_service,_operation,{job})=>{
+      dispatched.push(job);
+      if(workflowError)throw workflowError;
+      return {state:"pending"};
+    }},
   };
-  const verify=async({receipt})=>({
-    generationRecord:{
-      generation:{provider},
+  const verify=async({receipt})=>{
+    const job=dispatched.find(value=>value.jobId===receipt.jobId);
+    return {generationRecord:{
+      job,generation:{provider},
       providerRequestWitness:{body:{referenceInputs:[{
-        objectRef:receipt.job.referenceObjectRefs[0],
+        objectRef:job.referenceObjectRefs[0],
         digest:current.digest,
-      }]}}},
-  });
+      }]}}}};
+  };
   const service=createAdminVisualAgeAnchors({infra,source:async()=>current,verify});
   const complete=()=>{
     const job=dispatched.at(-1);
     const receipt={
       jobId:job.jobId,status:"ready",objectRef:job.outputObjectRef,role:job.role,
-      mediaType:"image/png",sha256:digest("b"),job,
+      mediaType:"image/png",sha256:digest("b"),
       context:job.context,
     };
     objects.set(job.receiptObjectRef,{bytes:encoded(receipt),digest:digest("c")});
     objects.set(job.outputObjectRef,{bytes:encoded({photo:true}),digest:digest("b")});
   };
-  return {service,infra,objects,catalog,dispatched,complete,setCanonical:(value)=>{current=value;}};
+  return {service,infra,objects,catalog,dispatched,complete,
+    setCanonical:(value)=>{current=value;},setWorkflowError:(error)=>{workflowError=error;}};
 }
 
 test("operator request freezes a single provenance-bound generation; admission requires completion",async()=>{
@@ -116,4 +123,14 @@ test("anchor selection consumes only admitted local-age portraits and no privile
   assert.deepEqual(job.referenceObjectRefs,["canonical_visual","portrait_35","portrait_40"],
     "Age interpolation ignored the nearest admitted anchors");
   assert.equal(job.referenceObjectRefs.length,3,"Generation exceeded the bounded reference set");
+});
+
+test("unfinished generation reports a terminal Workflow failure instead of appearing perpetually pending",async()=>{
+  const f=fixture();
+  await f.service.request("thr_visual","visual_candidate_failed",12);
+  f.setWorkflowError(new Error("OpenAI portrait generation terminated"));
+  await assert.rejects(f.service.status("thr_visual","visual_candidate_failed"),
+    /OpenAI portrait generation terminated/,"Failed generation was misreported as pending");
+  assert.equal((await f.service.list("thr_visual")).anchors.length,0,
+    "Failed generation became an admitted age anchor");
 });
