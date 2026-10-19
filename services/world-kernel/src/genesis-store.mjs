@@ -411,14 +411,14 @@ export class GenesisStore {
   getGenesisPublicationSeed(threadId) {
     assertId("threadId",threadId);
     const row=this.#database.prepare(`
-      SELECT * FROM thread_events WHERE thread_id=? AND sequence=1
+      SELECT event_id,event_type,occurred_at,provenance_json
+      FROM thread_events WHERE thread_id=? AND sequence=1
     `).get(threadId);
-    if(!row)return null;
-    const event=rowToEvent(row);
-    return event.eventType==="THREAD_SEEDED"
-      &&event.provenance?.source==="genesis_birth"
-      ?Object.freeze({eventId:event.eventId,occurredAt:event.occurredAt,
-          genesisId:event.provenance.genesisId})
+    if(!row||row.event_type!=="THREAD_SEEDED")return null;
+    const provenance=parseRecord("Genesis publication",row.provenance_json);
+    return provenance.source==="genesis_birth"
+      ?Object.freeze({eventId:row.event_id,occurredAt:row.occurred_at,
+          genesisId:provenance.genesisId})
       :null;
   }
 
