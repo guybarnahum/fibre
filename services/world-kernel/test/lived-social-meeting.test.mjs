@@ -1119,4 +1119,15 @@ test("a noticed newcomer is considered specifically, without compelling contact"
     "a no-longer-co-present person was contacted");
   assert.equal(absent.modelCallCount(),0,
     "unverified presence spent social cognition");
+
+  const willing=fixture({boundedVenueDiscovery:true,selaPresent:true});
+  const accepted=await willing.meeting.meet({
+    initiatorThreadId:mina.threadId,counterpartyThreadId:noor.threadId,at:AT,
+  });
+  assert.equal(accepted.attempts[0]?.outcome,"met",
+    "a voluntary targeted approach could not become a real encounter");
+  assert.equal(willing.socialInteractions.length,1,
+    "a chosen approach did not become shared reciprocal history");
+  assert.equal(willing.stories.length,1,
+    "mutual consent did not produce an objective Encounter Story");
 });
