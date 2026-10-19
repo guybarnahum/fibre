@@ -47,6 +47,34 @@ test("Life Timeline distinguishes enacted World situations from an authored plan
     "a prior scene borrowed today's current location name");
 });
 
+test("a social decision witnesses Body and consent without equating co-presence with conversation",()=>{
+  const history=recordedLifeMoments({
+    socialOpportunities:[{
+      kind:"arrival",situationId:"sit_reader",
+      completedAt:"2026-10-19T18:00:00Z",outcome:"not_initiated",
+      decision:{
+        counterpartyThreadId:"thr_guest",
+        salience:{outcome:"salient",anchors:["social_contact_pressure"],
+          sourceReferences:["sit_reader"]},
+        initiation:{decision:"not_initiate",reportedReason:"I prefer my book.",
+          decisionContext:{interoception:{
+            drives:[{family:"social_contact",pressure:0.6}],
+            evidenceRefs:["sit_reader"],
+          }},selectedEvidenceRefs:[]},
+        response:null,encounterRef:null,
+      },
+    }],
+  });
+  const choice=history.find(item=>item.kind==="social_choice");
+  assert.equal(choice.outcome,"not_initiated");
+  assert.equal(choice.decision.salience.anchors[0],"social_contact_pressure");
+  assert.equal(choice.decision.initiation.decisionContext.interoception.drives[0].pressure,0.6);
+  assert.equal(choice.decision.encounterRef,null,
+    "unacted social pressure was misrepresented as an admitted encounter");
+  assert.equal(history.some(item=>item.kind==="encounter"),false,
+    "World invented a conversation from the opportunity alone");
+});
+
 test("recorded life preserves separate World history, personal Encounter experience and remembered meaning",()=>{
   const history={
     livedNow:{
