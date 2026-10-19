@@ -463,7 +463,9 @@ async function formPlan({
     modelAdapter,
     resolveDestinationGeography,
     startingPlaceRef: startingPlace,
-    startingSituationId:livedNowStore.getCurrentSituation(threadId)?.situationId??null,
+    startingSituationId:materializedAt===null
+      ?livedNowStore.getCurrentSituation(threadId)?.situationId??null
+      :null,
     worldTimeZone,
     ...(interoception === null ? {} : { interoception }),
     ...(materializedAt === null ? {} : { materializedAt }),
