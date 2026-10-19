@@ -71,8 +71,14 @@ without auto-fetching full history on scroll. Life & Causes provides a
 vertical date spine, a selected evidence inspector, and a deliberate
 Recorded history read with original Journal/Encounter/Memory presentations.
 That World history is bounded (recent situations, Encounter Stories and
-Memories); do not call it complete lifetime coverage. Genesis formation
-and Causal Witnesses remain later slices; see
+Memories); do not call it complete lifetime coverage. **Slice 3 source
+implemented:** Origins explicitly reads a capped 64 admitted Genesis
+childhood episodes from the World publication prefix, 24 current
+Memories, and the actual World seed-publication time. Birth Center's
+pending/stillborn rows link to /life?birth=REQUEST_ID for bounded
+execution/disposition inspection, never a fictitious live Thread.
+This slice requires both World Kernel and Admin staging deployment.
+Causal Witnesses remain Slice 4; see
 [four-slice plan](../../docs/validation/life-observatory-slices.md).
 This source is not yet a browser-accepted result.
 
