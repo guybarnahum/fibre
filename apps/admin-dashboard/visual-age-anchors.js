@@ -57,6 +57,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
 
   let active=null;
   let failed=false;
+  let approvedByAge=new Map();
   let pollSequence=0;
 
   function message(text,kind=""){
@@ -77,7 +78,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     failed=false;
     ++pollSequence;
     generate.disabled=false;
-    generate.textContent="Generate age portrait";
+    updateLabel();
     galleryStatus.hidden=false;
   }
   async function previewReady(id){
@@ -93,8 +94,11 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     await previewReady(id);
     if(sequence!==pollSequence||!root.isConnected)return;
     const prefix=candidateUrl(threadId,id);
+    const old=approvedByAge.get(age);
     review.replaceChildren(
       portrait(base(threadId)+"/canonical","Canonical · 25"),
+      ...(old?[portrait(base(threadId)+"/portraits/"+encodeURIComponent(old.admissionId),
+        `Current · age ${age}`)]:[]),
       portrait(prefix+"/portrait",`Proposed · age ${age}`),
     );
     const approve=make("button","primary thread-repair-button","Approve age portrait");
@@ -174,10 +178,20 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     generate.textContent="Check age portrait";
     message(`Age-${targetAgeYears} is still generating. Choose Check age portrait to resume.`);
   }
+  function updateLabel(){
+    const selected=ageInput.valueAsNumber;
+    generate.textContent=approvedByAge.has(selected)
+      ?`Regenerate age ${selected} portrait`:"Generate age portrait";
+  }
+  ageInput.addEventListener("input",()=>{
+    if(active===null)updateLabel();
+  });
   async function reload(){
     const info=await api(base(threadId));
     if(!root.isConnected)return;
     const anchors=info.anchors??[];
+    approvedByAge=new Map(anchors.map(item=>[item.targetAgeYears,item]));
+    if(active===null)updateLabel();
     gallery.replaceChildren(portrait(base(threadId)+"/canonical","Canonical · 25"));
     for(const anchor of anchors){
       gallery.append(portrait(
@@ -215,7 +229,9 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
     openThreadActionDialog({
       threadId,threadName,label:`Generate age ${targetAgeYears} portrait`,
       eyebrow:"Fibre visual identity",
-      description:"Generate one OpenAI portrait using the canonical identity and nearby approved age anchors. Admission requires your separate review and approval.",
+      description:approvedByAge.has(targetAgeYears)
+        ?"Generate a replacement candidate without changing the current approved image. Compare current and proposed portraits before deciding. Only approving the new portrait makes it active."
+        :"Generate one OpenAI portrait using the canonical identity and nearby approved age anchors. Admission requires your separate review and approval.",
       run:async()=>{
         // A terminally failed candidate cannot become a new image by polling.
         // Starting another one is an explicit operator action.
