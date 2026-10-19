@@ -77,6 +77,7 @@ function normalizeCognition(value) {
     "selectedEvidenceRefs",
     "evidenceRefs",
     "contextDigest",
+    ...(value.decisionContext===undefined?[]:["decisionContext"]),
   ]);
   assertNonEmpty("personal plan.cognition.provider", value.provider);
   assertNonEmpty("personal plan.cognition.modelId", value.modelId);
@@ -119,6 +120,29 @@ function normalizeCognition(value) {
     throw new TypeError("personal plan.cognition.contextDigest must be a SHA-256 digest");
   }
 
+  let decisionContext;
+  if(value.decisionContext!==undefined){
+    const witness=value.decisionContext;
+    assertPlainObject("plan decisionContext",witness);
+    assertExactKeys("plan decisionContext",witness,[
+      "startingSituationId","offeredPlaceRefs","cityGuidePlaceRefs","interoception",
+    ]);
+    if(witness.startingSituationId!==null)assertId("plan startingSituationId",witness.startingSituationId);
+    const offered=normalizeIds("plan offeredPlaceRefs",witness.offeredPlaceRefs);
+    const guide=normalizeIds("plan cityGuidePlaceRefs",witness.cityGuidePlaceRefs);
+    if(guide.length>6||guide.some(ref=>!offered.includes(ref))) {
+      throw new TypeError("plan City Guide refs must be a bounded subset of offered places");
+    }
+    if(witness.interoception!==null){
+      assertPlainObject("plan decision interoception",witness.interoception);
+      if(!Array.isArray(witness.interoception.drives)
+        ||!Array.isArray(witness.interoception.evidenceRefs)){
+        throw new TypeError("plan decision requires actual Body drives and evidence");
+      }
+    }
+    decisionContext=structuredClone(witness);
+  }
+
   return {
     provider:value.provider,
     modelId:value.modelId,
@@ -131,6 +155,7 @@ function normalizeCognition(value) {
     selectedEvidenceRefs,
     evidenceRefs,
     contextDigest:value.contextDigest,
+    ...(decisionContext===undefined?{}:{decisionContext}),
   };
 }
 
