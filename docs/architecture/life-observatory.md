@@ -332,9 +332,16 @@ from authority; no on-demand LLM-generated explanation of causality.
    dedicated Life & Causes route, bounded current-only enacted timeline
    and selected-moment inspector. Remove Causal Trail as an indented
    Activity mode; retain Raw Activity. Do not grow Thread details.
-2. **Compact Thread detail & Deep History:** keep identity/Body/
-   maintenance on Thread detail; present admitted lifetime events,
-   Memories and Encounters only in deliberate Life & Causes history.
+2. **Compact Thread detail & Deep History (source implemented; validation pending):**
+   Thread detail uses Overview / Identity & Body / Maintenance tabs,
+   with a three-moment current-life preview; no scroll-triggered full
+   history read. Life & Causes uses a dated vertical timeline of
+   enacted World situations, admitted Encounter Stories and retained
+   Memories. Original Journal, Encounter and Memory views are reused
+   on an explicit historical disclosure, never in the initial read.
+   The historical view is bounded by currently exposed World records;
+   age-spanning Genesis formation and a true lifetime cursor remain
+   subject to later source work.
 3. **Genesis:** split compiler Birth execution from the published
    person's historically realized Formation, with truthful
    failed/unadmitted candidate handling.
