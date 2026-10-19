@@ -314,7 +314,7 @@ export class LivedExperienceStore {
   }
 
   completeSocialOpportunity({
-    situationId,at,outcome,sourceEncounterRef=null,threadId=null,
+    situationId,at,outcome,sourceEncounterRef=null,threadId=null,decision=null,
   }){
     assertId("social opportunity situation",situationId);
     const observed=sourceEncounterRef!==null;
@@ -330,18 +330,24 @@ export class LivedExperienceStore {
       ?"world_observed_social_opportunities":"world_social_opportunities";
     const where=observed?"encounter_ref=? AND thread_id=?":"situation_id=?";
     const args=observed?[sourceEncounterRef,threadId]:[situationId];
+    if(decision!==null&&(typeof decision!=="object"||Array.isArray(decision))){
+      throw new TypeError("social decision witness must be structured evidence");
+    }
+    const decisionJson=decision===null?null:canonicalJson(decision);
     const row=this.#database.prepare(`
-      SELECT started_at,completed_at,outcome FROM ${table} WHERE ${where}
+      SELECT started_at,completed_at,outcome,decision_json FROM ${table} WHERE ${where}
     `).get(...args);
     if(!row?.started_at)throw new TypeError("social opportunity was not started");
     if(row.completed_at!==null){
-      if(row.outcome!==outcome)throw new TypeError("social opportunity outcome conflicts");
+      if(row.outcome!==outcome||row.decision_json!==decisionJson){
+        throw new TypeError("social opportunity outcome or evidence conflicts");
+      }
       return;
     }
     this.#database.prepare(`
-      UPDATE ${table} SET completed_at=?,outcome=?
+      UPDATE ${table} SET completed_at=?,outcome=?,decision_json=?
       WHERE ${where} AND completed_at IS NULL
-    `).run(at,outcome,...args);
+    `).run(at,outcome,decisionJson,...args);
   }
 
   inspectSocialOpportunities(threadId,{limit=12}={}){
@@ -352,17 +358,18 @@ export class LivedExperienceStore {
     return this.#database.prepare(`
       SELECT * FROM (
         SELECT 'arrival' AS kind,NULL AS encounter_ref,
-          situation_id,due_at,started_at,completed_at,outcome
+          situation_id,due_at,started_at,completed_at,outcome,decision_json
         FROM world_social_opportunities WHERE thread_id=?
         UNION ALL
         SELECT 'observed' AS kind,encounter_ref,
-          situation_id,due_at,started_at,completed_at,outcome
+          situation_id,due_at,started_at,completed_at,outcome,decision_json
         FROM world_observed_social_opportunities WHERE thread_id=?
       ) ORDER BY due_at DESC LIMIT ?
     `).all(threadId,threadId,limit).map(row=>Object.freeze({
       kind:row.kind,sourceEncounterRef:row.encounter_ref,
       situationId:row.situation_id,dueAt:row.due_at,
       outcome:row.outcome??(row.started_at===null?"pending":"interrupted"),
+      decision:row.decision_json===null?null:JSON.parse(row.decision_json),
       completedAt:row.completed_at,
     }));
   }
