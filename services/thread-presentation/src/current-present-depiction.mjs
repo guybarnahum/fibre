@@ -5,7 +5,7 @@ import {
   threadVisualIdentityProjectionDigest,
 } from "fibre/world-kernel/thread-presentation-contracts";
 import { presentationAssetSourceDigest } from "fibre/world-kernel/presentation-asset-contracts";
-import {resolveVisualAgeReferences} from "../../world-kernel/src/visual-age-anchors.mjs";
+import {resolveVisualAgeReferences} from "fibre/world-kernel/thread-presentation-contracts";
 
 function sceneLocation(location) {
   if (location.kind === "place") {
