@@ -83,6 +83,37 @@ opportunity when separately living Threads happen to coexist there. Each
 Thread can notice, ignore, initiate, decline, withdraw or remember differently.
 No listing creates a counterpart or forces social contact.
 
+## Read-only social-city scouting
+
+The operator can search for plausible *existing* staging encounters without
+instigating one:
+
+```bash
+npm run world-social:candidates -- --env staging --limit 64
+```
+
+This joins a bounded public World venue overview (up to 240 verified
+places) with at most 64 lightweight `view=current` Thread Observatory
+reads by default, and saves the evidence under
+`.fibre/world-social/<environment>/candidates/`. Larger samples
+(up to 200 public-directory Threads) are explicit via `--limit`; the
+public directory itself returns at most 200 per request, so this is not
+a population-wide census.
+
+City matches derive from each Thread's *current enacted location*,
+not a birthplace, formative learning context, biography, or inferred
+residence. The result distinguishes: an independently verified World
+venue; an editorially listed destination; a future **planned** visit;
+two people **in the same city**; and two non-sleeping Threads actually
+present at the **same attested public venue**. Only the last is
+physical co-presence evidence. Neither co-presence nor a planned
+visit proves a chosen conversation, consent, or friendship.
+
+This scout calls no LivedNow ensure or model, changes no World state,
+and makes no inference from unsampled Threads. Inspect an identified
+Thread's full Observatory or `world-social:probe -- --thread thr_...`
+only after this lightweight lookup finds a promising real candidate.
+
 ## Acceptance sequence
 
 - **S0:** independently attested public places and locality-grounded private
