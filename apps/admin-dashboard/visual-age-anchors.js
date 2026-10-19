@@ -41,10 +41,12 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
   const generate=make("button","secondary thread-repair-button","Generate age portrait");
   generate.type="button";
   actions.append(ageLabel,generate);
+  const galleryStatus=make("p","thread-empty-note","");
   const status=make("p","thread-empty-note","");
   status.setAttribute("role","status");
+  status.setAttribute("aria-live","polite");
   const review=make("div","thread-age-anchor-review");
-  root.append(actions,status,gallery,review);
+  root.append(actions,galleryStatus,status,gallery,review);
 
   async function reload(){
     const info=await api(base(threadId));
@@ -56,15 +58,15 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
         `Age ${anchor.targetAgeYears}`,
       ));
     }
-    if(pending===null)status.textContent=anchors.length
+    galleryStatus.textContent=anchors.length
       ?`${anchors.length} approved age ${anchors.length===1?"portrait":"portraits"} available.`
-      :"No additional age portraits have been approved.";
+      :"No approved age portraits yet.";
   }
+  let pending=null;
   void reload().catch(error=>{
-    if(pending===null)status.textContent="Age portraits unavailable: "+error.message;
+    galleryStatus.textContent="Approved portraits unavailable: "+error.message;
   });
 
-  let pending=null;
   async function showCandidate(candidateId,targetAgeYears){
     const prefix=base(threadId)+"/candidates/"+encodeURIComponent(candidateId);
     review.replaceChildren(
@@ -91,6 +93,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
             await api(prefix+"/admit",{method:"POST"});
             pending=null;review.replaceChildren();generate.disabled=false;
             await reload();
+            status.textContent=`Age-${targetAgeYears} portrait approved and available.`;
           }catch(error){
             approve.disabled=false;
             status.textContent="Age portrait admission failed: "+error.message;
@@ -116,7 +119,7 @@ export function renderVisualAgeAnchors({threadId,threadName}={}){
       await new Promise(resolve=>setTimeout(resolve,3000));
     }
     generate.disabled=false;
-    status.textContent="Still generating; this candidate can be resumed without requesting a new image.";
+    setWaitingContent(status,`Age-${targetAgeYears} portrait is still generating; retry to resume its progress.`);
   }
   generate.addEventListener("click",()=>{
     const targetAgeYears=ageInput.valueAsNumber;
