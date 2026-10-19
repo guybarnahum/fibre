@@ -9,7 +9,8 @@ canonical: true
 
 ## Decision and scope
 
-**Accepted UX direction, not a claim of deployed implementation.** Replace
+**Accepted UX direction; a first read-only source slice is in progress,
+with local validation and staging acceptance pending.** Replace
 Admin's low-value **Causal Trail** of indented runtime operations with a
 **Life & Causes** investigation experience. It is a readable way to examine
 a particular person's lived and formative history, a shared World occurrence,
@@ -19,8 +20,9 @@ that every influence is understood. See
 [ADR-0026](../decisions/ADR-0026-life-observatory.md).
 
 **The default human workflow is Thread-first:** choose a person in **Threads**,
-see a Life Overview, inspect the Life Timeline, then select a meaningful
-moment to open its evidence. A World-event investigation begins from
+see their compact Thread Overview, then open the **dedicated Life & Causes
+workspace** (not an expanding Thread Observatory) to inspect a time-ordered
+Life Timeline and select meaningful moments. A World-event investigation begins from
 **World Events** instead; an incomplete or failed birth begins from
 **Birth Center**. All three open the **same Life Investigation detail
 pattern** with context-preserving back-navigation. The operator should
@@ -70,7 +72,7 @@ wording or manufacture an encounter simply to make a card appear.
 ## Information architecture — one investigation, three entrances
 
 ```text
-THREADS  → select person → Life Overview → Life Timeline → select moment ┐
+THREADS  → select person → compact Thread detail → Life & Causes → moment ┐
                                                                        │
 WORLD EVENTS → city/place → objective occurrence → select person ──────┼→ Life Investigation
                                                                        │    Conditions
@@ -80,13 +82,12 @@ BIRTH CENTER → pending/failed/completed birth → Origins/Formation ───�
                                                                             Evidence & diagnosis
 ```
 
-- **Threads** owns person selection. Opening a Thread should land on
-  **Life Overview**, within the existing Thread detail (identity and
-  repair controls remain available; the current Observatory is reused).
-  Default to **Now / Recent Life** and load only bounded current-life
-  data. A named Thread header, portrait/FIN when admitted, present
-  enacted situation, current needs/activities only where authoritative,
-  and a few actual recent moments make the page meaningful immediately.
+- **Threads** owns person selection. The existing /thread/:id detail
+  remains a **compact person dashboard** for present identity/Body,
+  FIN/FID, appearance, health and maintenance. Do **not** add a complete
+  life timeline to this page. A contextual Life & Causes link opens
+  the dedicated /life?thread=... investigation with a bounded current
+  World view; deeper history is fetched only on explicit request.
 - **Life Timeline** is *one person's* chronology. A compact **Origins**
   chapter precedes **Live Life**, divided by the **World publication
   boundary**. It is not an endless operation tree. A visible
@@ -110,7 +111,7 @@ BIRTH CENTER → pending/failed/completed birth → Origins/Formation ───�
   `Causal Trail` nesting is retired from primary navigation; it is not
   renamed into a more impressive-looking tree.
 
-### Life Overview — proposed desktop layout
+### Dedicated Life & Causes — proposed desktop layout
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -324,25 +325,26 @@ from authority; no on-demand LLM-generated explanation of causality.
   runtime reason-model calls, no brute-force memory search, no
   cross-Service copy of private narratives into Activity Log.
 
-**Implementation order** (slice labels describe work, not durable names):
+**Four implementation slices** are owned by
+[Life Observatory slices](../validation/life-observatory-slices.md):
 
-1. **Life UX:** replace Causal Trail's meaning-less operation tree
-   with the Thread-first Life Overview and selected-moment inspector
-   using evidence that already exists. Keep Raw Activity. No
-   fabricated missing inputs or causal summaries.
-2. **Origins & Birth:** birth execution/formation split, pre-publication
-   candidate distinction, published person linkage, age-anchored
-   selective memory/meaning view. Reuse Birth Center and Thread
-   Observatory, not a second Genesis data model.
-3. **Decision witnesses:** introduce only the missing source-level
-   plan and social decision provenance; make decision-time Body, offers,
-   selection and outcome resolvable after plan renewal.
-4. **World consequence:** reuse the World Event pane and selected
-   World Story to open per-participant histories, admitted personal
-   experiences and later effects. Follow existing references
-   rather than inferring across bounded windows.
-5. **Optional controlled influence experiments:** only after exact
-   witness reconstruction is independently demonstrated.
+1. **Navigation & Recent Life (source implementation, validation pending):**
+   dedicated Life & Causes route, bounded current-only enacted timeline
+   and selected-moment inspector. Remove Causal Trail as an indented
+   Activity mode; retain Raw Activity. Do not grow Thread details.
+2. **Compact Thread detail & Deep History:** keep identity/Body/
+   maintenance on Thread detail; present admitted lifetime events,
+   Memories and Encounters only in deliberate Life & Causes history.
+3. **Genesis:** split compiler Birth execution from the published
+   person's historically realized Formation, with truthful
+   failed/unadmitted candidate handling.
+4. **Witness & Consequence:** capture missing event-time Body/World
+   context at existing decision seams; join admitted shared World
+   encounters to each person's independent consequences.
+
+**Optional counterfactual experiments are deferred**, not a fifth
+near-term slice; any future experiment is an explicit operator choice
+and must be separated from a live person's decisions.
 
 ### Standing UX acceptance examples
 
