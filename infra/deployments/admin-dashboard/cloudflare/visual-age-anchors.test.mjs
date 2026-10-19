@@ -53,7 +53,7 @@ function fixture({provider="openai"}={}){
       }]}}}};
   };
   const service=createAdminVisualAgeAnchors({infra,source:async()=>current,verify});
-  const complete=()=>{
+  const complete=({bundled=false}={})=>{
     const job=dispatched.at(-1);
     const receipt={
       jobId:job.jobId,status:"ready",objectRef:job.outputObjectRef,role:job.role,
@@ -61,14 +61,24 @@ function fixture({provider="openai"}={}){
       context:job.context,
     };
     objects.set(job.receiptObjectRef,{bytes:encoded(receipt),digest:digest("c")});
-    const stagedRef="staged_"+job.jobId;
-    objects.set(stagedRef,{
-      bytes:encoded({photo:true}),digest:digest("b"),
-      metadata:{kind:"staged_provider_output",jobId:job.jobId},
-    });
+    const stagedRef=bundled?"provideroutput_"+job.jobId:"staged_"+job.jobId;
+    const attemptRef="generationattempt_"+job.jobId;
+    if(bundled){
+      objects.set(attemptRef,{
+        bytes:encoded({attempt:true,photo:true}),digest:digest("c"),
+        metadata:{kind:"generation_attempt_bundle",jobId:job.jobId,
+          attemptRef,outputRef:stagedRef,outputDigest:digest("b")},
+      });
+    }else{
+      objects.set(stagedRef,{
+        bytes:encoded({photo:true}),digest:digest("b"),
+        metadata:{kind:"staged_provider_output",jobId:job.jobId},
+      });
+    }
     objects.set(job.outputObjectRef,{
       bytes:encoded({photo:true}),digest:digest("b"),
       metadata:{kind:"provenanced_generated_media",jobId:job.jobId,
+        generationAttemptObjectRef:bundled?attemptRef:null,
         providerOutputObjectRef:stagedRef,providerOutputDigest:digest("b")},
     });
   };
@@ -237,4 +247,23 @@ test("pending candidates and approved references are never deleted during cleanu
   await f.service.cleanup("thr_visual",{dryRun:false,now:later});
   assert.ok(f.objects.has(admission.portraitObjectRef),
     "Cleanup removed the approved portrait");
+});
+
+test("discarded generation-attempt bundles release their staged image bytes",async()=>{
+  const f=fixture();
+  await f.service.request("thr_visual","visual_candidate_bundled",85);
+  f.complete({bundled:true});
+  await f.service.discard("thr_visual","visual_candidate_bundled");
+  const record=f.catalog.get("visual-age-anchor:candidate:thr_visual:visual_candidate_bundled");
+  const afterWeek=new Date(Date.parse(record.discardedAt)+8*86400000).toISOString();
+  const job=f.dispatched.at(-1);
+  const attemptRef="generationattempt_"+job.jobId;
+  const preview=await f.service.cleanup("thr_visual",{now:afterWeek});
+  assert.deepEqual(preview.results[0].objects.map(o=>o.objectRef),
+    [job.outputObjectRef,attemptRef],"R2's co-located provider image was omitted from cleanup");
+  await f.service.cleanup("thr_visual",{now:afterWeek,dryRun:false});
+  assert.equal(f.objects.has(attemptRef),false,"Discarded staged media bundle survived cleanup");
+  assert.equal(f.objects.has(job.outputObjectRef),false,"Discarded final image survived cleanup");
+  assert.equal(f.objects.has(job.receiptObjectRef),true,
+    "Cleaning a discarded image unexpectedly deleted its receipt");
 });
