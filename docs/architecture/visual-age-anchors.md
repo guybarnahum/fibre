@@ -12,7 +12,7 @@ A Thread has one canonical visual root (normalized age 25) and may additionally 
 
 `services/world-kernel/src/visual-age-anchors.mjs` defines a portable admitted-age-anchor record: Thread and target age; portrait object reference and digest; canonical root reference and digest; references to source anchors (if any); generation receipt; operator approval reference; admission identity and time.
 
-Normalization alone checks record *shape*, not actual approval or image provenance. The Admin age-anchor producer now freezes each candidate's current World-owned canonical root, target age, selected admitted references and exact Asset Generator job into an immutable object. Only a completed OpenAI job whose receipt, reference-input witness and image digest match that manifest may be admitted. An authenticated operator explicitly reviews the image beside the canonical portrait and approves it before an immutable approval artifact and admission record are written. The existing presentation R2 object store and D1 catalog retain the evidence; an indexed Thread-local catalog lookup supplies the resolver with admitted records, never arbitrary candidates.
+Normalization alone checks record *shape*, not actual approval or image provenance. Thread Presentation's `createVisualAgeAnchorLifecycle()` freezes each candidate's current World-owned canonical root, target age, selected admitted references and exact Asset Generator job into an immutable object. Only a completed OpenAI job whose receipt, reference-input witness and image digest match that manifest may be admitted. An authenticated operator explicitly reviews the image beside the canonical portrait and approves it before an immutable approval artifact and admission record are written. The existing presentation R2 object store and D1 catalog retain the evidence; an indexed Thread-local catalog lookup supplies the resolver with admitted records, never arbitrary candidates.
 
 ## Reference selection
 
@@ -24,6 +24,12 @@ For a given Thread, canonical root and chronological target age:
 4. Return at most three object refs, compatible with the existing multi-reference Asset Generator interface. With no anchors, return precisely the canonical reference used today.
 
 There is no fixed list of anchor ages. The Observatory's 3–95-year control is a UI affordance, not a genetic or domain constraint. All candidate generations remain derived depiction, never physical authority. Actual weight, injuries, grooming and other lived physical state remain owned by World/Embodiment; references alone cannot establish lived history.
+
+## Lifecycle ownership
+
+The lifecycle implementation is `services/thread-presentation/src/visual-age-anchor-lifecycle.mjs`, exposed by `fibre/thread-presentation/visual-age-anchor-lifecycle`. It owns provider-neutral candidate identities, exact-age reference selection, immutable manifest and admission writes, generation provenance checks, replacement continuity and operator-triggered media cleanup eligibility. It accepts Fibre's object/catalog/service ports plus current-root, generation-job and verification functions; it has no Cloudflare binding or Admin authorization dependency.
+
+The deployment adapter `infra/deployments/admin-dashboard/cloudflare/visual-age-anchors.mjs` now only constructs those ports, resolves the current canonical root through World, and selects the deployed Asset Generator profile and expected provider. Its factory is deliberately called `createCloudflareAgeAnchorAdapter()`, not a domain authority. The Admin router retains its existing routes and operator entitlement checks, and the lifecycle's ten semantic tests live with Thread Presentation. There is no new deployed service, storage namespace, or compatibility façade.
 
 ## Operator workflow — staging generation and admission demonstrated
 
