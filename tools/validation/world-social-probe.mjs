@@ -315,6 +315,16 @@ export function formatWorldSocialReport(evidence,evidencePath){
     lines.push("  · "+(opportunity.outcome??"pending").replaceAll("_"," ")+
       " · "+opportunity.threadId+
       (opportunity.dueAt?" · "+time(opportunity.dueAt):""));
+    if(opportunity.outcome==="background"){
+      const witness=opportunity.decision?.salience?.bodyAtGate;
+      const contact=witness?.drives?.find(drive=>drive.family==="social_contact");
+      const detail=witness===undefined?"not recorded (older World)"
+        :witness===null?"Body frame unavailable"
+        :contact===undefined?"no evidenced social-contact drive"
+        :contact.orientation+" social-contact pressure "+contact.pressure;
+      lines.push("    Body at salience gate: "+detail+
+        (witness?.asOf?" · as of "+time(witness.asOf):""));
+    }
   }
   const histories=evidence.causalContinuity;
   lines.push("",
