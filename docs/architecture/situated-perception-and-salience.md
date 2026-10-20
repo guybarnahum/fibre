@@ -365,6 +365,32 @@ Do not persist every Situated Percept, background opportunity, salience score or
 
 For debugging and validation, a bounded replayable witness may record source refs and mechanical salience inputs/outcome without becoming semantic evidence.
 
+**One-shot social decision evidence (October 20 source):** the ordinary
+completed World social-opportunity row now retains `salience.bodyAtGate`
+with the regulation frame's `asOf` and the actual `social_contact` and
+`exploration` drive orientations, pressures and evidence refs presented
+to the gate. `null` means no regulation frame was available; a present
+frame with no relevant drive means no such supported reading, not zero
+pressure. This is deliberately limited to already-admitted, one-shot
+social opportunities, including `background`: there is no new polling,
+event, store, private decision, model call, or retroactive reconstruction.
+The operator probe shows the Body reading for a background outcome, and
+older rows lacking the witness remain explicitly `not recorded`.
+This is **Notarial/mechanical diagnostic evidence**, not proof that the
+organism felt lonely, a social opportunity should become a conversation,
+or that a reported motive caused the decision. The existing materiality
+threshold and individual initiation/consent remain unchanged.
+
+**Live diagnostic motivating this witness:** on October 20 in staging,
+Giorgi's 11:35 UTC co-presence yielded `background` with no anchors and
+no stored Body reading; Ioseb's separate 07:45 UTC consideration was
+`salient` through noticed history and reached his independently
+authored `not_initiate` decision despite a modest measured
+`social_contact` pressure of `0.375197`. A missing Giorgi reading must
+not be interpreted as `0`, and Ioseb's autonomous restraint is not a
+salience failure. The new witness will only illuminate **future**
+one-shot opportunities after deployment.
+
 ## Implementation shape
 
 Do not build a new perception service hierarchy, event bus, social simulator or agent framework.
