@@ -40,6 +40,21 @@ operator's browser only after a deliberate click. The iframe centers the
 selected verified public venue, displays OpenStreetMap's own attribution,
 and uses ordinary browser caching—no Fibre map proxy, stored tile data,
 map framework, or claim that the map provides World attendance evidence.
+Each event also shows a compact **per-Thread evidence matrix** using
+the shared portrait/name viewer: **Caused/acted** (only recorded objective
+actors), **Noticed** (explicit yes/no or unknown), **Memory** (links only
+to current retained records), and **Later change** (unproven until a
+specific downstream effect is linked). An independently noticed event
+does not imply acting; a missing attention or Memory record never means
+the Thread ignored or forgot it. The World read view now preserves
+*all* recorded speech/action actors in a multi-actor Encounter Story,
+rather than its first actor alone. Actor-only arrival rows appear even
+without a witness; environmental events with no linked Thread remain
+visible. Source implementation still requires local validation and
+both World Kernel and Admin staging acceptance. A causal, indexed
+later-choice link remains deliberately deferred—not simulated by
+whether a Memory exists.
+
 A per-event **Copy JSON** button copies that single returned event with
 the overview's as-of timestamp, selected hours and coverage limits.
 Counts are **events shown in the selected rolling 1–168-hour window**,
