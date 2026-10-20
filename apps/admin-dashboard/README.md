@@ -32,6 +32,22 @@ or venue pulse. Geographic origins may be unknown or simply outside
 the current bounded venue sample; absence from the map is not evidence
 that nothing happened.
 
+**Operator map and event debugging (October 20 source):** The global
+map distinguishes the selected city from subdued, unselected city markers.
+The city-level map keeps its independent World-attested coordinate diagram;
+an optional **Street map** switch loads an OpenStreetMap iframe in the
+operator's browser only after a deliberate click. The iframe centers the
+selected verified public venue, displays OpenStreetMap's own attribution,
+and uses ordinary browser caching—no Fibre map proxy, stored tile data,
+map framework, or claim that the map provides World attendance evidence.
+A per-event **Copy JSON** button copies that single returned event with
+the overview's as-of timestamp, selected hours and coverage limits.
+Counts are **events shown in the selected rolling 1–168-hour window**,
+not lifetime totals, a paginated historical count or a full census; the
+source's 240-item situation/story limits can truncate the result.
+The place list, selected city and event timeline label their shown count
+and window, including a capped-sample warning when the overview reports one.
+
 **Place appearance (source-only extension, October 18):** selecting an attested
 public venue now shows its independently stored World description and optional
 visual seed: prompt, camera viewpoint, panorama/perspective projection and
