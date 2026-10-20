@@ -522,7 +522,12 @@ export function renderLifeCausesPage(){
   subject.addEventListener("submit",event=>{
     event.preventDefault();
     const next=input.value.trim();
-    if(!validThread(next)){text(summary,"Enter a valid Thread ID or choose from Threads.");return;}
+    if(!validThread(next)){
+      input.setCustomValidity("Enter a valid Thread ID.");
+      input.reportValidity();
+      input.setCustomValidity("");
+      return;
+    }
     const url=new URL(location.href);
     url.searchParams.set("thread",next);
     url.searchParams.delete("memory");
