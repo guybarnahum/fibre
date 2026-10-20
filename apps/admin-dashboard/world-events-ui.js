@@ -1,4 +1,6 @@
 import {mountWorldMap,worldMapPoint,SVG_NS} from "./world-map-ui.js";
+import {createThreadIdentityViewer} from "./thread-person-ui.js";
+import "./thread-popup-links.js";
 
 const $=selector=>document.querySelector(selector);
 const el=(tag,className=null,value=null)=>{
@@ -235,23 +237,24 @@ export function renderWorldEventsPage(){
       const ref=el("div","world-events-event-ref",event.eventRef);
       card.append(head,summary,ref);
       if(event.actorThreadId){
-        const actor=el("p","world-events-actor");
-        actor.append(el("span",null,"Actor · "));
-        const link=el("a",null,event.actorThreadId);
-        link.href=`/thread/${encodeURIComponent(event.actorThreadId)}`;
-        actor.append(link);card.append(actor);
+        const actor=el("div","world-events-actor");
+        actor.append(el("span",null,"Actor"),createThreadIdentityViewer({
+          threadId:event.actorThreadId,compact:true,className:"world-events-person",
+        }));
+        card.append(actor);
       }
       if(event.witnesses?.length){
         const witnessHeading=el("h3",null,"Perception and consequences");
         const rows=el("div","world-events-witnesses");
         for(const witness of event.witnesses){
           const row=el("div","world-events-witness");
-          const link=el("a",null,witness.threadId);
-          link.href=`/thread/${encodeURIComponent(witness.threadId)}`;
+          const person=createThreadIdentityViewer({
+            threadId:witness.threadId,compact:true,className:"world-events-person",
+          });
           const attention=el("span","world-events-attention",
             witness.attention==="not_appraised"?"No attention record":
               witness.attention==="noticed"?"Noticed":"Did not notice");
-          row.append(link,attention);
+          row.append(person,attention);
           if(event.source==="encounter_story"){
             const inspect=el("a",null,"Life & Causes ↗");
             inspect.href="/life?thread="+encodeURIComponent(witness.threadId)
