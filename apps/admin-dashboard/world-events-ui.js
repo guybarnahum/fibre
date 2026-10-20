@@ -39,6 +39,23 @@ export function worldEventStreetMapUrl(place){
   return `https://www.openstreetmap.org/export/embed.html?${params}`;
 }
 
+export function worldEventThreadEvidence(event){
+  const actors=new Set(event.actorThreadIds??(event.actorThreadId?[event.actorThreadId]:[]));
+  const witnesses=new Map((event.witnesses??[]).map(item=>[item.threadId,item]));
+  return [...new Set([...actors,...witnesses.keys()])].sort().map(threadId=>{
+    const witness=witnesses.get(threadId)??null;
+    return {
+      threadId,acted:actors.has(threadId),
+      attention:["noticed","not_noticed"].includes(witness?.attention)
+        ?witness.attention:"not_appraised",
+      experienceId:witness?.experienceId??null,
+      memoryLinks:[...new Set(witness?.memoryLinks??
+        (witness?.memoryLink?[witness.memoryLink]:[]))],
+      impactLink:witness?.impactLink??null,
+    };
+  });
+}
+
 export function worldEventPlaceTimeline(snapshot,placeRef){
   return (snapshot?.events??[])
     .filter(event=>event.placeRef===placeRef)
@@ -295,51 +312,78 @@ export function renderWorldEventsPage(){
       });
       head.append(copy);
       card.append(head,summary,ref);
-      if(event.actorThreadId){
-        const actor=el("div","world-events-actor");
-        actor.append(el("span",null,"Actor"),createThreadIdentityViewer({
-          threadId:event.actorThreadId,compact:true,className:"world-events-person",
-        }));
-        card.append(actor);
-      }
-      if(event.witnesses?.length){
-        const witnessHeading=el("h3",null,"Perception and consequences");
-        const rows=el("div","world-events-witnesses");
-        for(const witness of event.witnesses){
-          const row=el("div","world-events-witness");
-          const person=createThreadIdentityViewer({
-            threadId:witness.threadId,compact:true,className:"world-events-person",
-          });
-          const attention=el("span","world-events-attention",
-            witness.attention==="not_appraised"?"No attention record":
-              witness.attention==="noticed"?"Noticed":"Did not notice");
-          row.append(person,attention);
-          if(event.source==="encounter_story"){
-            const inspect=el("a",null,"Life & Causes ↗");
-            inspect.href="/life?thread="+encodeURIComponent(witness.threadId)
-              +"&view=history&moment="+encodeURIComponent(
-                (event.kind==="encounter"?"encounter:":"world:")+event.eventRef);
-            inspect.title="Inspect this person's evidence and perspective; a shared Story does not imply shared motives.";
-            row.append(inspect);
-          }
-          if(witness.experienceId){
-            const experience=el("span",null,`Experience · ${witness.experienceId}`);
-            experience.title="Admitted personal Experience; not proof of later behavior.";
-            row.append(experience);
-          }
-          for(const memoryId of witness.memoryLinks??(witness.memoryLink?[witness.memoryLink]:[])){
-            const memory=el("a",null,"View retained Memory ↗");
-            memory.href=`/life?thread=${encodeURIComponent(witness.threadId)}&memory=${encodeURIComponent(memoryId)}`;
-            memory.title="A current autobiographical Memory explicitly linked through experience consolidation.";
-            row.append(memory);
-          }
-          rows.append(row);
+      const people=worldEventThreadEvidence(event);
+      if(people.length){
+        card.append(el("h3",null,"Involved Threads"));
+        const scroller=el("div","world-events-involvement-scroll");
+        const table=el("table","world-events-involvement");
+        const heading=el("tr");
+        for(const label of ["Thread","Caused / acted","Noticed","Memory","Later change"]){
+          const cell=el("th",null,label);cell.scope="col";heading.append(cell);
         }
-        card.append(witnessHeading,rows);
+        const thead=el("thead");thead.append(heading);
+        const body=el("tbody");
+        for(const person of people){
+          const row=el("tr");
+          const identity=el("td","world-events-person-cell");
+          identity.append(createThreadIdentityViewer({
+            threadId:person.threadId,compact:true,className:"world-events-person",
+          }));
+          const inspect=el("a","world-events-inspect","Life & Causes ↗");
+          inspect.href="/life?thread="+encodeURIComponent(person.threadId)+"&view=history";
+          if(event.source==="encounter_story"){
+            inspect.href+="&moment="+encodeURIComponent(
+              (event.kind==="encounter"?"encounter:":"world:")+event.eventRef);
+          }else if(person.acted){
+            inspect.href+="&moment="+encodeURIComponent("scene:"+event.eventRef);
+          }
+          identity.append(inspect);
+          if(person.experienceId){
+            const experience=el("small","world-events-experience","Experience recorded");
+            experience.title="Admitted personal Experience "+person.experienceId;
+            identity.append(experience);
+          }
+          row.append(identity);
+          const actor=el("td",null,person.acted?"Acted":"—");
+          actor.title=person.acted
+            ?"Recorded as acting in this occurrence; not proof of every later effect."
+            :"No recorded actor attribution; not a claim of no influence.";
+          row.append(actor);
+          const noticed=el("td",null,person.attention==="noticed"?"Yes":
+            person.attention==="not_noticed"?"No":"—");
+          noticed.title=person.attention==="noticed"?"Independently recorded attention.":
+            person.attention==="not_noticed"?"Explicitly recorded not noticing.":
+              "No appraisal recorded; not proof of missing perception.";
+          row.append(noticed);
+          const memory=el("td");
+          if(person.memoryLinks.length){
+            for(const [index,memoryId] of person.memoryLinks.entries()){
+              const link=el("a","world-events-memory-link",
+                person.memoryLinks.length===1?"Retained":String(index+1));
+              link.href="/life?thread="+encodeURIComponent(person.threadId)
+                +"&memory="+encodeURIComponent(memoryId);
+              link.title="Open current autobiographical Memory "+memoryId;
+              memory.append(link);
+            }
+          }else{
+            memory.textContent="—";
+            memory.title="No current linked Memory in this bounded view; not proof of forgetting.";
+          }
+          row.append(memory);
+          const change=el("td",null,person.impactLink?"Linked":"Unproven");
+          change.title=person.impactLink
+            ?"Downstream evidence reference recorded; inspect event JSON and personal history."
+            :"No attributable later behavioral change is linked by this projection.";
+          row.append(change);
+          body.append(row);
+        }
+        table.append(thead,body);scroller.append(table);card.append(scroller);
+      }else{
+        card.append(el("p","world-events-evidence-note",
+          "No Thread actor or independently recorded observer in this bounded event. The World occurrence remains real."));
       }
-      const caveat=el("p","world-events-evidence-note",
-        "Memory links appear only when consolidation created a current Memory. Later behavioral impact is not yet causally linked in this view.");
-      card.append(caveat);
+      card.append(el("p","world-events-evidence-note",
+        "— means no recorded evidence, not no participation or forgetting. Memory is current retention; only an independently linked later effect establishes behavioral change."));
       return card;
   }
   function drawUnlocated(){
