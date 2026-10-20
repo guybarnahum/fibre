@@ -13,12 +13,13 @@ export function worldVenueTileScene(sites,width,height){
     &&Math.abs(site.lat)<=85&&Math.abs(site.long)<=180);
   if(!located.length||width<=0||height<=0)return {tiles:[],markers:[]};
   let zoom=15,projected,bounds;
-  for(;zoom>2;zoom--){
+  for(let level=15;level>=2;level--){
+    zoom=level;
     projected=located.map(site=>({...locationPixels(site.lat,site.long,zoom),site}));
     const xs=projected.map(p=>p.x),ys=projected.map(p=>p.y);
     bounds={left:Math.min(...xs),right:Math.max(...xs),
       top:Math.min(...ys),bottom:Math.max(...ys)};
-    if(bounds.right-bounds.left<width-70&&bounds.bottom-bounds.top<height-70)break;
+    if(level===2||(bounds.right-bounds.left<width-70&&bounds.bottom-bounds.top<height-70))break;
   }
   const xCenter=(bounds.left+bounds.right)/2;
   const yCenter=(bounds.top+bounds.bottom)/2;
