@@ -160,3 +160,36 @@ test("God-view links arrival perspectives to the enacted action, not a second ci
   assert.equal(snapshot.cities.find(c=>c.name==="Lisbon")?.eventCount,1,
     "the same action pulsed the city twice");
 });
+
+test("one shared conversation retains both actors without assigning every witness authorship",()=>{
+  const beats=[
+    {kind:"utterance",actorThreadId:"thr_victor",text:"Good morning."},
+    {kind:"utterance",actorThreadId:"thr_reader",text:"Hello."},
+  ];
+  const story={
+    encounter_id:"story_two_actors",occurred_at:when,
+    story_json:JSON.stringify({beats}),
+    visualization_source_refs_json:JSON.stringify([place.physicalVenue.ref]),
+  };
+  const snapshot=projectWorldEventOverview({
+    now:"2026-10-18T18:30:00.000Z",hours:24,placeRows:rows,
+    situationRows:[],storyRows:[
+      {...story,thread_id:"thr_victor",situation_id:"sit_victor",
+        attention_outcome:"noticed",experience_id:"exp_victor",memory_id:null},
+      {...story,thread_id:"thr_reader",situation_id:"sit_reader",
+        attention_outcome:"noticed",experience_id:"exp_reader",memory_id:"mem_reader"},
+      {...story,thread_id:"thr_onlooker",situation_id:"sit_onlooker",
+        attention_outcome:"not_noticed",experience_id:null,memory_id:null},
+    ],
+  });
+  const event=snapshot.events.find(item=>item.eventRef===story.encounter_id);
+  assert.ok(event,"recorded conversation disappeared from World history");
+  assert.deepEqual(event.actorThreadIds,["thr_victor","thr_reader"],
+    "a speaker was mistaken for a mere observer");
+  assert.equal(event.witnesses.find(item=>item.threadId==="thr_onlooker")?.attention,
+    "not_noticed","co-presence was turned into noticing");
+  assert.deepEqual(event.witnesses.find(item=>item.threadId==="thr_reader")?.memoryLinks,
+    ["mem_reader"],"one person's retention was lost from the shared event");
+  assert.ok(event.witnesses.every(item=>item.impactLink===null),
+    "a retained Memory became an invented later behavioral change");
+});
