@@ -72,8 +72,11 @@ adjacent scrollable place list. Show independently attested public venues
 at their known physical coordinates and private/unverified places only at
 the actual precision World can attest. Reuse the global map geometry and
 marker conventions; a small city-extent projection is sufficient for the
-initial slice. A street/tile provider is optional later if it adds genuine
-navigational value; do not require it for the event architecture.
+initial slice. The current Admin map uses exactly that bounded projection
+to overlay verified venue markers on visible OpenStreetMap tiles, loaded
+and browser-cached directly by the operator. The street layer is grayscale,
+passive context: it never claims a Thread was present or noticed anything.
+This is presentation only, not an external runtime dependence of Fibre World.
 
 A place marker can pulse on recent admitted occurrences. A quiet but
 occupied place is steady. Selecting a marker focuses the detail pane and
