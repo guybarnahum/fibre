@@ -30,6 +30,7 @@
 .world-events-drill{display:grid;grid-template-columns:minmax(280px,.95fr) minmax(340px,1.25fr);gap:16px;align-items:start}
 .world-events-muted{font-size:13px;color:var(--muted,#82909b);line-height:1.5;margin:0 0 12px}
 .world-events-map-controls{display:flex;gap:6px;margin:0 0 8px}
+.world-events-map-controls[hidden]{display:none}
 .world-events-map-controls button{min-height:28px;padding:5px 10px;font-size:11px}
 .world-events-map-controls button.is-selected{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
 .world-events-local-map{position:relative;height:310px;background:linear-gradient(155deg,rgba(62,123,134,.08),rgba(114,146,121,.04));border:1px solid var(--border,#30414d);border-radius:12px;overflow:hidden}
