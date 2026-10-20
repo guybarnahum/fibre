@@ -144,6 +144,22 @@ Clicking an event opens an evidence-rich detail view:
    where authoritative, and cost/model provenance if already recorded
    by the owning operation. Expandable exact-record view is optional.
 
+**Compact event-by-person matrix (October 20 source):** each occurrence
+displays a deduplicated union of *recorded objective actors* and
+*independently appraised people*: compact Thread identity,
+**Caused / acted**, **Noticed**, **Memory**, and **Later change**.
+Acting means an admitted action or utterance, not proof of every
+consequence; a speaker can be an actor without a witness appraisal.
+Only explicit `not_noticed` permits "No" for attention. Unknown
+appraisal, absence of a current linked Memory, and absent downstream
+change links remain *unproven*, never negative claims. A current
+autobiographical Memory proves retention, not that it influenced a
+later choice. Multiple speech/action authors from one Encounter Story
+remain separate actors of one shared occurrence, not fabricated events.
+An admitted environmental occurrence need not have a Thread actor
+or any known observer. The matrix is a read-side projection,
+not a new event log, model call, or causal verdict.
+
 A person link opens the existing Admin Thread Observatory at the matching
 World Event / Encounter / Memory anchor. A counterpart opens their own
 Thread detail. A human encounter links to the actual admission/receipt
