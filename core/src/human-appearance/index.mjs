@@ -126,3 +126,8 @@ export {
   REFERENCE_PHYSICAL_STATE_VERSION,
   referencePhysicalState,
 } from "./reference-physical-state.mjs";
+
+export {
+  PHYSICAL_DEVELOPMENT_VERSION,
+  physicalDevelopmentAtAge,
+} from "./physical-development.mjs";
