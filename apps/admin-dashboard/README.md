@@ -15,7 +15,7 @@ arrival/departure and place-grounded Encounter Stories are read from
 authoritative tables. Presence witnesses separately show recorded
 `noticed | not_noticed | not_appraised`, admitted Experience, and a direct
 Memory link **only when a completed consolidation names a current memory
-record**. No later behavioral impact is inferred.
+record**. Event actors and witnesses reuse the compact Thread identity viewer from the Threads map popover: name and a lazily resolved portrait when available, with the stable Thread ID retained for disambiguation. Portrait and name share the existing per-Thread identity lookup, not an event-specific identity source. No later behavioral impact is inferred.
 
 The Admin Worker proxies one authenticated `GET /api/world-events?hours=24`
 to World's private `/internal/world-events/overview` read API; the browser
