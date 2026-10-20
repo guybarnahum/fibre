@@ -46,6 +46,10 @@ export function physicalDevelopmentAtAge({threadId,physicalGenome,sex,ageYears}=
   const gain=(signed(seed,"adult-composition")*.98+inherited.adiposityTendency*.30);
   const lateChange=signed(seed,"later-composition")*.82;
   const muscleChange=signed(seed,"muscle-development")*.50;
+  const muscleDelta=muscleChange*progress(ageYears,25,65);
+  const muscleDescription=muscleDelta>.20?"more developed musculature"
+    :muscleDelta<-.20?"less developed musculature"
+    :"similar muscular development";
   const isChild=ageYears<18;
   const bodyDelta=isChild?null
     :gain*progress(ageYears,25,52)+lateChange*progress(ageYears,56,85)
@@ -59,7 +63,7 @@ export function physicalDevelopmentAtAge({threadId,physicalGenome,sex,ageYears}=
   const male=sex.toLowerCase()==="male";
   const onset=(male?19:31)+(1-propensity)*(male?37:38)
     +signed(seed,"hair-onset")*8;
-  const intensity=clamp((male?.25:.08)+propensity*(male?.65:.44)
+  const intensity=clamp((male ? .25 : .08)+propensity*(male ? .65 : .44)
     +signed(seed,"hair-intensity")*.24);
   const hairLossAt=age=>intensity*progress(age,onset,onset+32);
   // Preserve the canonical hairline at 25, even if its natural maturity
@@ -82,6 +86,7 @@ export function physicalDevelopmentAtAge({threadId,physicalGenome,sex,ageYears}=
         :relativeBody==="substantially leaner"||relativeBody==="noticeably leaner"
           ?"Allow naturally reduced facial and neck fullness; do not keep the canonical face's body mass fixed."
           :"Preserve the person's distinctive facial proportions while allowing ordinary age-related tissue changes.",
+      `Musculature relative to age 25: ${muscleDescription}; do not assume every older individual has the same physique.`,
       `Scalp hair: ${scalpHair}. Preserve this individual's coverage rather than automatically keeping full hair or forcing baldness.`,
     ].join(" ");
   return Object.freeze({
@@ -91,7 +96,7 @@ export function physicalDevelopmentAtAge({threadId,physicalGenome,sex,ageYears}=
     bodyComposition,relativeBody,
     // The scalp descriptor describes current appearance, not genomic propensity.
     scalpHair,
-    muscularDevelopment:ageYears<18?null:muscleChange*progress(ageYears,25,65),
+    muscularDevelopment:ageYears<18?null:muscleDelta,
     description,
   });
 }
