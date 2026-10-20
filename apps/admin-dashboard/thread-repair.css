@@ -990,3 +990,10 @@
 .thread-state.life-blocked { color:var(--danger); border-color:var(--danger); }
 .thread-life-evidence { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:11px; }
 @media(max-width:600px){.thread-life-evidence{grid-template-columns:minmax(0,1fr)}}
+
+/* Reusable compact copy affordance; the button footprint remains stable on hover. */
+.copy-hover-action{display:inline-grid;place-items:center;min-width:29px;min-height:29px;padding:5px;border:0;background:transparent;color:var(--muted);border-radius:7px;cursor:pointer}
+.copy-hover-action:hover,.copy-hover-action:focus-visible{background:var(--surface-subtle);color:var(--text)}
+.copy-hover-action .fa-action-icon{transition:transform 140ms ease}
+.copy-hover-action:hover .fa-action-icon,.copy-hover-action:focus-visible .fa-action-icon{transform:scale(1.25)}
+@media (prefers-reduced-motion:reduce){.copy-hover-action .fa-action-icon{transition:none}}
