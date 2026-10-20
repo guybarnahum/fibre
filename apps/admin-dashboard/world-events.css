@@ -51,15 +51,19 @@
 .world-events-event-summary{font-size:14px;line-height:1.48;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .world-events-event-ref{font-size:10px;opacity:.55;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
 .world-events-event-card h3{font-size:12px;letter-spacing:.01em;margin:12px 0 7px}
-.world-events-actor{display:flex;align-items:center;gap:10px;font-size:12px;margin:10px 0 0}
-.world-events-actor>span{font-size:11px;color:var(--muted,#8b9ca7)}
-.world-events-witnesses{display:grid;gap:5px}
-.world-events-witness{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;border-top:1px solid var(--border,#30414d);padding-top:7px}
-.world-events-witness span{color:var(--muted,#8b9ca7);font-size:11px}
-.world-events-person{flex:1 1 140px;max-width:100%;min-width:0}
+.world-events-involvement-scroll{max-width:100%;overflow-x:auto}
+.world-events-involvement{width:100%;border-collapse:collapse;font-size:11px;min-width:470px}
+.world-events-involvement th{font-size:9px;font-weight:650;color:var(--muted,#82909b);text-align:left}
+.world-events-involvement th,.world-events-involvement td{padding:8px 6px;vertical-align:middle;border-bottom:1px solid var(--border,#30414d)}
+.world-events-involvement th:first-child,.world-events-involvement td:first-child{padding-left:0}
+.world-events-involvement th:last-child,.world-events-involvement td:last-child{padding-right:0}
+.world-events-involvement .world-events-person{min-width:125px}
 .world-events-person .thread-person-face{width:28px;height:28px;min-width:28px;flex-basis:28px}
 .world-events-person .thread-person-name{font-size:11px}
-.world-events-attention{font-weight:620}
+.world-events-inspect,.world-events-experience{display:block;margin:4px 0 0 35px;font-size:10px;line-height:1.4}
+.world-events-experience{color:var(--muted,#82909b)}
+.world-events-memory-link{display:inline-block;margin-right:6px;font-size:11px}
+.world-events-involvement td:last-child{color:var(--muted,#82909b)}
 .world-events-evidence-note{font-size:11px;opacity:.65;line-height:1.4;margin:11px 0 0}
 .world-events-unlocated-panel{padding:20px;min-width:0}
 .world-events-unlocated-timeline{max-height:380px}
