@@ -129,11 +129,13 @@ async function resolveThreadPortrait(threadId){
         headers:{Accept:"application/json"},
         cache:"no-store",
       });
-      if(!response.ok)return {url:null,fallbackUrl:null,isThumbnail:false};
+      if(!response.ok)return {url:null,fallbackUrl:null,isThumbnail:false,name:null};
       const payload=await response.json();
-      return preferredThreadPortrait(payload?.identity);
+      const identity=payload?.identity;
+      return {...preferredThreadPortrait(identity),
+        name:clean(identity?.displayName)??clean(identity?.world?.thread?.identity?.name)};
     }catch{
-      return {url:null,fallbackUrl:null,isThumbnail:false};
+      return {url:null,fallbackUrl:null,isThumbnail:false,name:null};
     }
   })();
   portraitCache.set(threadId,pending);
@@ -178,7 +180,18 @@ async function hydrateThreadPortrait(face){
   if(!threadId||!face.isConnected)return;
   const portrait=await resolveThreadPortrait(threadId);
   if(!face.isConnected||face.dataset.threadId!==threadId)return;
-  applyPortrait(face,portrait.url,face.dataset.threadName||null,portrait);
+  const name=face.dataset.threadName||portrait.name||null;
+  if(name&&!face.dataset.threadName){
+    face.dataset.threadName=name;
+    face.title="Open "+name+" in Thread Observatory";
+    const label=face.parentElement?.querySelector(".thread-person-name[data-resolve-name]");
+    if(label?.dataset.threadId===threadId){
+      label.textContent=name;
+      label.title="Open "+name+" in Thread Observatory";
+      delete label.dataset.resolveName;
+    }
+  }
+  applyPortrait(face,portrait.url,name,portrait);
 }
 
 const portraitObserver=typeof IntersectionObserver==="function"
@@ -234,7 +247,8 @@ export function createThreadIdentityViewer({threadId,name=null,url=null,compact=
   nameButton.type="button";
   nameButton.className="thread-person-name thread-link";
   nameButton.dataset.threadId=threadId;
-  nameButton.textContent=name??threadId??"Thread";
+  nameButton.textContent=name??"Thread";
+  if(!name&&threadId)nameButton.dataset.resolveName="";
   nameButton.title="Open "+(name??threadId??"Thread")+" in Thread Observatory";
   const id=document.createElement("small");
   id.className="mono";
