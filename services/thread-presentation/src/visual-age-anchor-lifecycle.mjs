@@ -8,6 +8,7 @@ import {
   readVisualAgeAnchorAdmissions,
 } from "fibre/world-kernel/thread-presentation-contracts";
 import {agePortraitBrief} from "./age-portrait-guidance.mjs";
+import {physicalDevelopmentAtAge} from "#core/src/human-appearance/index.mjs";
 
 const ADMISSIONS=VISUAL_AGE_ANCHOR_ADMISSION_CATALOG_PREFIX;
 const CANDIDATES="visual-age-anchor:candidate:";
@@ -83,21 +84,22 @@ async function verifiedImage(infra,manifest,verify,expectedProvider){
   if(image===null||image.digest!==receipt.sha256)throw new Error("Age-anchor image bytes do not match generation receipt");
   return {receipt,image};
 }
-function makeJob({source,candidateId,targetAgeYears,references,createJob,providerProfile}){
+function makeJob({source,candidateId,targetAgeYears,references,createJob,providerProfile,physicalDevelopment}){
   const canonical={canonicalReferenceObjectRef:source.objectRef,canonicalReferenceDigest:source.digest};
   const sourceAnchorRefs=references.references.filter(x=>x.admissionId!==null).map(x=>x.objectRef);
   const identity=sha(JSON.stringify({threadId:source.threadId,candidateId,targetAgeYears,
-    canonical,refs:references.referenceObjectRefs}));
+    canonical,refs:references.referenceObjectRefs,development:physicalDevelopment?.description??null}));
   return {
     sourceAnchorRefs,
     job:createJob({
       identityDigest:identity,assetKind:"image",role:"visual_age_anchor",variant:"lifelong-portrait",
-      brief:agePortraitBrief(targetAgeYears),
+      brief:agePortraitBrief(targetAgeYears,{physicalDevelopment}),
       inputReferences:[source.objectRef,source.digest,...sourceAnchorRefs],
       referenceObjectRefs:references.referenceObjectRefs,
       requestedAt:new Date().toISOString(),providerProfile,
       context:{kind:"visual_age_anchor",threadId:source.threadId,candidateId,
-        targetAgeYears,canonicalReferenceDigest:source.digest,sourceAnchorRefs},
+        targetAgeYears,canonicalReferenceDigest:source.digest,sourceAnchorRefs,
+        physicalDevelopmentVersion:physicalDevelopment?.version??null},
     }),
   };
 }
@@ -140,7 +142,16 @@ export function createVisualAgeAnchorLifecycle({
           // A same-age replacement must not condition on the portrait being corrected.
           admissions:previous.filter(anchor=>anchor.targetAgeYears!==targetAgeYears),
         });
-        const {sourceAnchorRefs,job}=makeJob({source:current,candidateId,targetAgeYears,references,createJob,providerProfile});
+        const physicalDevelopment=current.physicalGenome&&current.sex
+          ?physicalDevelopmentAtAge({
+            threadId,physicalGenome:current.physicalGenome,sex:current.sex,
+            ageYears:targetAgeYears,
+          })
+          :null;
+        const {sourceAnchorRefs,job}=makeJob({
+          source:current,candidateId,targetAgeYears,references,createJob,providerProfile,
+          physicalDevelopment,
+        });
         manifest={threadId,candidateId,targetAgeYears,
           canonicalReferenceObjectRef:current.objectRef,canonicalReferenceDigest:current.digest,
           sourceAnchorRefs,job};
