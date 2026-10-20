@@ -29,15 +29,17 @@
 .world-events-city-bar p{font-size:13px;margin:0;color:var(--muted,#7f8c98)}
 .world-events-drill{display:grid;grid-template-columns:minmax(280px,.95fr) minmax(340px,1.25fr);gap:16px;align-items:start}
 .world-events-muted{font-size:13px;color:var(--muted,#82909b);line-height:1.5;margin:0 0 12px}
-.world-events-map-controls{display:flex;gap:6px;margin:0 0 8px}
-.world-events-map-controls[hidden]{display:none}
-.world-events-map-controls button{min-height:28px;padding:5px 10px;font-size:11px}
-.world-events-map-controls button.is-selected{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
-.world-events-local-map{position:relative;height:310px;background:linear-gradient(155deg,rgba(62,123,134,.08),rgba(114,146,121,.04));border:1px solid var(--border,#30414d);border-radius:12px;overflow:hidden}
-.world-events-street-map{display:block;width:100%;height:100%;border:0}
-.world-events-open-map{position:absolute;top:9px;right:9px;padding:5px 8px;border-radius:7px;background:var(--surface);border:1px solid var(--border);font-size:11px}
-.world-events-city-svg{width:100%;height:100%}
-.world-events-grid-line{stroke:rgba(131,151,156,.18);stroke-width:1;stroke-dasharray:2 6}
+.world-events-local-map{position:relative;height:310px;background:var(--surface-subtle,#e5e8e8);border:1px solid var(--border,#30414d);border-radius:12px;overflow:hidden}
+.world-events-tiles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.world-events-tile{position:absolute;width:256px;height:256px;max-width:none;filter:grayscale(1) contrast(.78) brightness(1.03);opacity:.75;user-select:none}
+.world-events-map-place{position:absolute;z-index:1;display:grid;place-items:center;min-width:26px;min-height:26px;width:26px;height:26px;padding:0;background:transparent;border:0;transform:translate(-50%,-50%);cursor:pointer}
+.world-events-map-place:hover{background:transparent}
+.world-events-map-dot{width:11px;height:11px;border-radius:50%;background:#61777a;border:1px solid #edf2ef;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.world-events-map-place.has-events .world-events-map-dot{background:#bb9576}
+.world-events-map-place.is-selected .world-events-map-dot{width:15px;height:15px;background:#20ad99;border:3px solid white;box-shadow:0 0 0 4px rgba(32,173,153,.22)}
+.world-events-map-place:focus-visible{outline:2px solid var(--accent);border-radius:50%}
+.world-events-map-name{position:absolute;top:27px;left:50%;transform:translateX(-50%);padding:3px 6px;border-radius:5px;background:var(--surface);border:1px solid var(--border);font-size:11px;font-weight:700;white-space:nowrap;pointer-events:none}
+.world-events-map-attribution{position:absolute;z-index:2;bottom:4px;right:6px;padding:2px 4px;background:color-mix(in srgb,var(--surface) 82%,transparent);border-radius:3px;font-size:9px;color:var(--muted)}
 .world-events-place-list{display:grid;gap:7px;margin-top:14px;max-height:260px;overflow-y:auto}
 .world-events-place-choice{width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 12px;border:1px solid var(--border,#30414d);border-radius:9px;background:transparent;color:inherit;text-align:left;cursor:pointer}
 .world-events-place-choice.is-selected{border-color:#4bbba6;background:rgba(55,159,139,.1)}
@@ -46,7 +48,6 @@
 .world-events-timeline{max-height:690px;overflow-y:auto;display:grid;gap:10px;padding-right:3px}
 .world-events-event-card{border:1px solid var(--border,#30414d);border-radius:12px;padding:13px 15px;background:var(--surface-subtle,rgba(130,144,152,.045))}
 .world-events-event-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;color:var(--muted,#8b9ca7);font-size:12px}
-.world-events-copy{min-height:25px;padding:4px 7px;font-size:10px;margin-left:auto}
 .world-events-event-kind{font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#a8d9cc;font-size:10px}
 .world-events-event-summary{font-size:14px;line-height:1.48;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .world-events-event-ref{font-size:10px;opacity:.55;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
