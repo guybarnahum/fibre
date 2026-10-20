@@ -46,6 +46,7 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       placeRef:site.placeRef,source:"world_enacted",summary:
         event.kind==="arrival"?"Thread arrived":"Thread departed",
       actorThreadId:event.actorThreadId,
+      actorThreadIds:event.actorThreadId?[event.actorThreadId]:[],
       witnesses:[],sourcePlaceEvidence:"enacted_movement",
     });
   }
@@ -59,6 +60,10 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       const story=parse(row.story_json);
       const refs=parse(row.visualization_source_refs_json)??[];
       const beats=story?.beats??[];
+      const actors=[...new Set(beats.filter(beat=>
+        ["action","utterance"].includes(beat.kind)
+        &&typeof beat.actorThreadId==="string")
+        .map(beat=>beat.actorThreadId))];
       const explicit=refs.map(ref=>eventPlace(byRef,ref)).find(Boolean)??null;
       const arrival=refs.map(ref=>enactedArrivals.get(ref))
         .find(candidate=>candidate!==undefined
@@ -71,7 +76,7 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
         occurredAt:row.occurred_at,placeRef:explicit?.placeRef??null,
         source:"encounter_story",
         summary:beats.filter(b=>typeof b.text==="string").map(b=>b.text).join(" · ").slice(0,440),
-        actorThreadId:beats.find(b=>b.actorThreadId)?.actorThreadId??null,
+        actorThreadId:actors[0]??null,actorThreadIds:actors,
         sourcePlaceEvidence:explicit?"source_reference":null,
         witnesses:[],
       };
