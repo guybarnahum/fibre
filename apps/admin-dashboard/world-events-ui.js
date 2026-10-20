@@ -1,7 +1,8 @@
 import {mountWorldMap,worldMapPoint,SVG_NS} from "./world-map-ui.js";
 import {createThreadIdentityViewer} from "./thread-person-ui.js";
 import "./thread-popup-links.js";
-import {bindCopyAction} from "./copy-action.js";
+import {createCopyButton} from "./copy-action.js";
+import {worldVenueTileScene} from "./world-events-map.js";
 
 const $=selector=>document.querySelector(selector);
 const el=(tag,className=null,value=null)=>{
@@ -30,15 +31,6 @@ export function worldEventDebugRecord(overview,event){
   return {contract:overview.contract,asOf:overview.asOf,hours:overview.hours,
     coverage:overview.coverage,event};
 }
-export function worldEventStreetMapUrl(place){
-  const lat=place?.lat,lon=place?.long;
-  if(!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>85||Math.abs(lon)>180)return null;
-  const halfLat=0.007,halfLon=0.013/Math.max(0.3,Math.cos(lat*Math.PI/180));
-  const bounds=[Math.max(-180,lon-halfLon),lat-halfLat,Math.min(180,lon+halfLon),lat+halfLat];
-  const params=new URLSearchParams({bbox:bounds.join(","),layer:"mapnik",marker:`${lat},${lon}`});
-  return `https://www.openstreetmap.org/export/embed.html?${params}`;
-}
-
 export function worldEventThreadEvidence(event){
   const actors=new Set(event.actorThreadIds??(event.actorThreadId?[event.actorThreadId]:[]));
   const witnesses=new Map((event.witnesses??[]).map(item=>[item.threadId,item]));
@@ -89,7 +81,22 @@ export function renderWorldEventsPage(){
   }
   hoursLabel.append(hours);
   const refresh=el("button","primary","Refresh");refresh.type="button";
-  actions.append(hoursLabel,refresh);
+  const copyDay=createCopyButton({
+    label:"Copy 24-hour World events",tooltip:"Copy all returned World events for the last 24 hours as JSON (bounded sample)",
+    value:async()=>{
+      let day=snapshot?.hours===24?snapshot:null;
+      if(!day){
+        const response=await fetch("/api/world-events?hours=24",{
+          headers:{Accept:"application/json"},cache:"no-store",
+        });
+        if(!response.ok)throw Error("World 24-hour snapshot unavailable");
+        day=await response.json();
+        if(day?.contract!=="fibre-world-event-observatory-v0.1")throw Error("World event contract mismatch");
+      }
+      return {...day,scope:"rolling_24_hours",note:"Bounded World response; counts may omit older or truncated records."};
+    },
+  });
+  actions.append(hoursLabel,copyDay,refresh);
   heading.append(headingText,actions);
 
   const surface=el("section","world-events-surface");
@@ -110,13 +117,9 @@ export function renderWorldEventsPage(){
   const cityPanel=el("section","panel world-events-place-panel");
   const cityDescription=el("p","world-events-muted","Select a city to see real place coordinates.");
   const cityMap=el("div","world-events-local-map");
-  const mapControls=el("div","world-events-map-controls");
-  const diagramButton=el("button","secondary is-selected","Places");diagramButton.type="button";
-  const streetButton=el("button","secondary","Street map");streetButton.type="button";
-  mapControls.append(diagramButton,streetButton);
   const places=el("div","world-events-place-list");
   const appearance=el("section","world-events-appearance");
-  cityPanel.append(cityDescription,mapControls,cityMap,places,appearance);
+  cityPanel.append(cityDescription,cityMap,places,appearance);
   const timelinePanel=el("section","panel world-events-timeline-panel");
   const timelineHead=el("div","world-events-panel-title");
   const timelineTitle=el("h2",null,"World timeline");
@@ -138,17 +141,7 @@ export function renderWorldEventsPage(){
   surface.append(summary,mapPanel,cityBar,drill,unlocatedPanel,caveat);
   heading.after(surface);
 
-  let snapshot=null,selectedCity=null,selectedPlace=null,loading=false,streetMap=false;
-  function selectMapMode(useStreetMap){
-    streetMap=useStreetMap;
-    diagramButton.classList.toggle("is-selected",!streetMap);
-    streetButton.classList.toggle("is-selected",streetMap);
-    diagramButton.setAttribute("aria-pressed",String(!streetMap));
-    streetButton.setAttribute("aria-pressed",String(streetMap));
-    drawPlaces();
-  }
-  diagramButton.addEventListener("click",()=>selectMapMode(false));
-  streetButton.addEventListener("click",()=>selectMapMode(true));
+  let snapshot=null,selectedCity=null,selectedPlace=null,loading=false;
   function choosePlace(placeRef){
     selectedPlace=placeRef;
     drawPlaces();
@@ -201,17 +194,13 @@ export function renderWorldEventsPage(){
   }
   function drawPlaces(){
     cityMap.replaceChildren();places.replaceChildren();appearance.replaceChildren();
-    mapControls.hidden=true;
     if(!snapshot||!selectedCity){
       cityDescription.textContent="Select a city to view its World-verified places.";
       return;
     }
     const sites=snapshot.places.filter(p=>[p.countryCode,p.city].join(":")===selectedCity);
-    cityDescription.textContent=streetMap
-      ?"Street-level OpenStreetMap view of the selected verified venue; loaded only in your browser."
-      :"Relative venue positions from World-attested coordinates. Choose Street map for road context.";
+    cityDescription.textContent="Verified World venues over a quiet, browser-loaded OpenStreetMap background.";
     if(!sites.length)return;
-    mapControls.hidden=false;
     const selected=sites.find(p=>p.placeRef===selectedPlace);
     if(selected){
       appearance.append(el("h3",null,"Place · "+selected.name));
@@ -231,61 +220,40 @@ export function renderWorldEventsPage(){
           "No visual seed or generated depiction recorded for this place."));
       }
     }
-    if(streetMap&&selected){
-      const url=worldEventStreetMapUrl(selected);
-      if(url){
-        const frame=el("iframe","world-events-street-map");
-        frame.title=`OpenStreetMap near ${selected.name}`;
-        frame.src=url;frame.loading="lazy";frame.referrerPolicy="origin";
-        cityMap.append(frame);
-        const full=el("a","world-events-open-map","Open in OpenStreetMap ↗");
-        full.href=`https://www.openstreetmap.org/?mlat=${selected.lat}&mlon=${selected.long}#map=16/${selected.lat}/${selected.long}`;
-        full.target="_blank";full.rel="noopener noreferrer";
-        cityMap.append(full);
-      }
+    const width=cityMap.clientWidth||480,height=cityMap.clientHeight||310;
+    const scene=worldVenueTileScene(sites,width,height);
+    const raster=el("div","world-events-tiles");
+    for(const tile of scene.tiles){
+      const image=el("img","world-events-tile");
+      image.alt="";
+      image.loading="lazy";
+      image.decoding="async";
+      image.referrerPolicy="origin";
+      image.style.left=tile.left+"px";
+      image.style.top=tile.top+"px";
+      image.src=tile.url;
+      raster.append(image);
     }
-    if(!streetMap||!cityMap.firstChild){
-      const width=720,height=320;
-    const latitudes=sites.map(p=>p.lat),longitudes=sites.map(p=>p.long);
-    const loLat=Math.min(...latitudes),hiLat=Math.max(...latitudes);
-    const loLon=Math.min(...longitudes),hiLon=Math.max(...longitudes);
-    const spanLat=Math.max(0.008,(hiLat-loLat)*1.5);
-    const spanLon=Math.max(0.008,(hiLon-loLon)*1.5);
-    const centerLat=(loLat+hiLat)/2,centerLon=(loLon+hiLon)/2;
-    const svg=svgNode("svg",{viewBox:`0 0 ${width} ${height}`,
-      preserveAspectRatio:"xMidYMid meet",
-      "aria-label":`Verified places in ${sites[0].city}`,role:"img"});
-    svg.classList.add("world-events-city-svg");
-    for(let i=1;i<5;i++){
-      svg.append(svgNode("line",{x1:width*i/5,y1:0,x2:width*i/5,y2:height,
-        class:"world-events-grid-line"}));
-      svg.append(svgNode("line",{x1:0,y1:height*i/5,x2:width,y2:height*i/5,
-        class:"world-events-grid-line"}));
+    cityMap.append(raster);
+    for(const marker of scene.markers){
+      const site=marker.site;
+      const button=el("button","world-events-map-place");
+      button.type="button";
+      button.style.left=marker.left+"px";
+      button.style.top=marker.top+"px";
+      if(site.placeRef===selectedPlace)button.classList.add("is-selected");
+      if(site.eventCount>0)button.classList.add("has-events");
+      button.title=`${site.name} · ${site.eventCount} shown`;
+      button.setAttribute("aria-label",button.title);
+      button.append(el("span","world-events-map-dot"));
+      if(site.placeRef===selectedPlace)button.append(el("span","world-events-map-name",site.name));
+      button.addEventListener("click",()=>choosePlace(site.placeRef));
+      cityMap.append(button);
     }
-    for(const site of sites){
-      const x=width/2+(site.long-centerLon)/spanLon*(width-92);
-      const y=height/2-(site.lat-centerLat)/spanLat*(height-76);
-      const marker=svgNode("g",{transform:`translate(${x.toFixed(1)} ${y.toFixed(1)})`,
-        tabindex:0,role:"button","aria-label":site.name});
-      marker.classList.add("world-events-place-marker");
-      if(site.eventCount>0)marker.classList.add("is-pulsing");
-      if(site.placeRef===selectedPlace)marker.classList.add("is-selected");
-      if(site.eventCount>0)marker.append(svgNode("circle",{
-        r:17,class:"world-events-pulse",
-      }));
-      marker.append(svgNode("circle",{r:site.placeRef===selectedPlace?10:7,
-        class:"world-events-dot"}));
-      const title=svgNode("title");title.textContent=site.name;marker.append(title);
-      marker.addEventListener("click",()=>choosePlace(site.placeRef));
-      marker.addEventListener("keydown",event=>{
-        if(event.key==="Enter"||event.key===" "){
-          event.preventDefault();choosePlace(site.placeRef);
-        }
-      });
-      svg.append(marker);
-    }
-      cityMap.append(svg);
-    }
+    const attribution=el("a","world-events-map-attribution","© OpenStreetMap contributors");
+    attribution.href="https://www.openstreetmap.org/copyright";
+    attribution.target="_blank";attribution.rel="noopener noreferrer";
+    cityMap.append(attribution);
     for(const site of sites){
       const button=el("button","world-events-place-choice");
       button.type="button";
@@ -305,10 +273,9 @@ export function renderWorldEventsPage(){
         el("time",null,labelTime(event.occurredAt)));
       const summary=el("p","world-events-event-summary",event.summary||"Admitted World event");
       const ref=el("div","world-events-event-ref",event.eventRef);
-      const copy=el("button","secondary world-events-copy");copy.type="button";
-      bindCopyAction(copy,{
-        value:()=>worldEventDebugRecord(snapshot,event),label:"Copy JSON",
-        tooltip:"Copy this event's returned JSON and query coverage",iconOnly:false,
+      const copy=createCopyButton({
+        value:()=>worldEventDebugRecord(snapshot,event),label:"Copy event JSON",
+        tooltip:"Copy this event's returned JSON and query coverage",
       });
       head.append(copy);
       card.append(head,summary,ref);
