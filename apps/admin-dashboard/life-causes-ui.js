@@ -437,6 +437,7 @@ export function renderLifeCausesPage(){
           coverage:origin.origin,
         };
       }
+      historyFailure=null;
       const match=requested?loadedOrigins.moments.find(item=>
         item.kind+":"+item.id===requested||item.id===requested,
       )??null:null;
@@ -531,13 +532,25 @@ export function renderLifeCausesPage(){
     void openThread(next);
   });
 
-  const params=new URLSearchParams(location.search);
-  const initial=params.get("thread");
-  if(validThread(initial)){
-    input.value=initial;
-    void openThread(initial,{
-      moment:params.get("moment"),memory:params.get("memory"),
-      view:params.get("view")??"recent",
-    });
-  }else draw();
+  function followLocation(){
+    const params=new URLSearchParams(location.search);
+    const next=params.get("thread");
+    if(validThread(next)){
+      input.value=next;
+      void openThread(next,{
+        moment:params.get("moment"),memory:params.get("memory"),
+        view:params.get("view")??"recent",
+      });
+    }else{
+      ++sequence;
+      threadId=null;loadedRecent=null;loadedHistory=null;loadedOrigins=null;
+      selected=null;historyFailure=null;missingRequested=null;mode="recent";
+      input.value="";
+      subject.hidden=false;
+      summary.replaceChildren();
+      draw();
+    }
+  }
+  window.addEventListener("popstate",followLocation);
+  followLocation();
 }
