@@ -32,8 +32,13 @@ async function identitySource(env,infra,threadId){
   const objectRef=portrait.asset.referenceObjectRef;
   const stored=await infra.objects.head(objectRef);
   if(!stored || stored.digest!==portrait.asset.sha256)throw new Error("Canonical image is unavailable or changed");
+  // Internal World identity carries private physical inheritance; keep the
+  // genome in the request process, never in R2 manifests or Admin responses.
   return Object.freeze({threadId,objectRef,digest:stored.digest,
-    originRefs:[portrait.embodimentId,portrait.provenanceRef].filter(Boolean)});
+    originRefs:[portrait.embodimentId,portrait.provenanceRef].filter(Boolean),
+    physicalGenome:world.thread?.genome?.physical??null,
+    sex:world.sex??world.thread?.identity?.sex??null,
+  });
 }
 
 /** Admin supplies deployed ports and the operator's current World-owned visual root. */
