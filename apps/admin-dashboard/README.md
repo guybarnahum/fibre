@@ -34,12 +34,14 @@ that nothing happened.
 
 **Operator map and event debugging (October 20 source):** The global
 map distinguishes the selected city from subdued, unselected city markers.
-The city-level map keeps its independent World-attested coordinate diagram;
-an optional **Street map** switch loads an OpenStreetMap iframe in the
-operator's browser only after a deliberate click. The iframe centers the
-selected verified public venue, displays OpenStreetMap's own attribution,
-and uses ordinary browser caching—no Fibre map proxy, stored tile data,
-map framework, or claim that the map provides World attendance evidence.
+The city-level view is one quiet monochrome street map with clickable
+World-attested venue markers **above** it. A tiny browser-only Web Mercator
+projection requests only the visible OpenStreetMap raster tiles for the
+selected city, respects HTTP/browser caching and the tile policy's required
+Origin Referer and visible attribution. It has no map library, Fibre tile
+proxy, tile storage, or separately selectable map mode. Marker coordinates
+and admitted activity remain World facts; the street layer does not establish
+presence.
 Each event also shows a compact **per-Thread evidence matrix** using
 the shared portrait/name viewer: **Caused/acted** (only recorded objective
 actors), **Noticed** (explicit yes/no or unknown), **Memory** (links only
@@ -55,8 +57,13 @@ both World Kernel and Admin staging acceptance. A causal, indexed
 later-choice link remains deliberately deferred—not simulated by
 whether a Memory exists.
 
-A per-event **Copy JSON** button copies that single returned event with
-the overview's as-of timestamp, selected hours and coverage limits.
+The shared **icon-only copy action** (with existing tooltip, feedback,
+and a subtle hover enlargement) copies an individual event's returned JSON
+and query coverage. The top-level **Copy 24-hour World events** action
+copies the entire *returned* rolling 24-hour overview, including located
+and unmapped events, places and source-coverage limits. It reads the
+24-hour overview only if the current window differs; the result is not
+a complete calendar-date archive or evidence beyond source caps.
 Counts are **events shown in the selected rolling 1–168-hour window**,
 not lifetime totals, a paginated historical count or a full census; the
 source's 240-item situation/story limits can truncate the result.
