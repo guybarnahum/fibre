@@ -85,11 +85,24 @@ export function evaluateSalience({ opportunity, situatedPercept, regulationFrame
     ...(exploration?.evidenceRefs ?? []),
     ...(socialContact?.evidenceRefs ?? []),
   ];
+  // Preserve the actual mechanical inputs even when cognition was skipped.
+  // Null means unavailable; an empty drive list means no relevant drive was present.
+  const bodyAtGate=regulationFrame===null?null:Object.freeze({
+    asOf:regulationFrame.asOf??null,
+    drives:Object.freeze(regulationFrame.drives
+      .filter(drive=>["social_contact","exploration"].includes(drive.family))
+      .map(drive=>Object.freeze({
+        family:drive.family,orientation:drive.orientation,
+        pressure:drive.pressure,
+        evidenceRefs:Object.freeze([...(drive.evidenceRefs??[])]),
+      }))),
+  });
   return Object.freeze({
     outcome:anchors.length === 0 ? "background" : "salient",
     opportunityKind:opportunity.kind,
     subjectRefs:Object.freeze([...subjectRefs]),
     anchors:Object.freeze(anchors),
+    bodyAtGate,
     sourceReferences:Object.freeze([
       ...new Set([...(situatedPercept.sourceReferences ?? []), ...regulationRefs]),
     ]),
