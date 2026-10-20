@@ -118,3 +118,12 @@ export function bindCopyAction(button,{
   });
   return button;
 }
+
+ 
+// Shared compact action for read-only debugging surfaces.
+export function createCopyButton(options){
+  const button=document.createElement("button");
+  button.type="button";
+  button.className="copy-hover-action";
+  return bindCopyAction(button,{...options,iconOnly:true});
+}
