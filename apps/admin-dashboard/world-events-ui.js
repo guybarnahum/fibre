@@ -161,7 +161,7 @@ export function renderWorldEventsPage(){
       const marker=svgNode("g",{
         transform:`translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`,
         tabindex:"0",role:"button", "aria-label":
-          `${city.name}, ${city.country}: ${city.eventCount} observed events`,
+          `${city.name}, ${city.country}: ${city.eventCount} shown in last ${snapshot.hours}h`,
       });
       marker.classList.add("world-events-city-marker");
       if(city.eventCount>0)marker.classList.add("is-pulsing");
@@ -173,7 +173,7 @@ export function renderWorldEventsPage(){
       caption.textContent=city.name;
       marker.append(caption);
       const title=svgNode("title");
-      title.textContent=`${city.name}: ${city.eventCount} recent admitted events`;
+      title.textContent=`${city.name}: ${city.eventCount} shown in last ${snapshot.hours}h`;
       marker.append(title);
       marker.addEventListener("click",()=>chooseCity(city.key));
       marker.addEventListener("keydown",event=>{
