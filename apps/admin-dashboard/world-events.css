@@ -11,8 +11,14 @@
 .world-events-dot{fill:#477c91;stroke:#e0f7ff;stroke-width:1.6;transition:fill .2s,r .2s}
 .world-events-city-marker.is-pulsing .world-events-dot,
 .world-events-place-marker.is-pulsing .world-events-dot{fill:#d9a86e;stroke:#fff0d1}
-.world-events-city-marker.is-selected .world-events-dot,
 .world-events-place-marker.is-selected .world-events-dot{fill:#56d0bc;stroke:#eafffa;stroke-width:2.5}
+.world-events-city-marker .world-events-dot,
+.world-events-city-marker.is-pulsing .world-events-dot{fill:#71929d;stroke:none}
+.world-events-city-marker.is-selected .world-events-dot{fill:#44d6be;stroke:#fff;stroke-width:2.8}
+.world-events-city-marker .world-events-pulse{stroke:#71929d;opacity:.35}
+.world-events-city-marker .world-events-selection{fill:none;stroke:#44d6be;stroke-width:2;opacity:.7;pointer-events:none}
+.world-events-city-marker .world-events-city-label{opacity:.68}
+.world-events-city-marker.is-selected .world-events-city-label{opacity:1;fill:#e5fff8;font-size:14px;font-weight:750}
 .world-events-pulse{fill:none;stroke:#e4a468;stroke-width:1.6;opacity:.6;transform-box:fill-box;transform-origin:center;animation:world-event-pulse 3s ease-out infinite;pointer-events:none}
 @keyframes world-event-pulse{0%{transform:scale(.48);opacity:.68}75%{opacity:.12}100%{transform:scale(1.55);opacity:0}}
 @media (prefers-reduced-motion:reduce){.world-events-pulse{animation:none;opacity:.4}}
@@ -23,7 +29,12 @@
 .world-events-city-bar p{font-size:13px;margin:0;color:var(--muted,#7f8c98)}
 .world-events-drill{display:grid;grid-template-columns:minmax(280px,.95fr) minmax(340px,1.25fr);gap:16px;align-items:start}
 .world-events-muted{font-size:13px;color:var(--muted,#82909b);line-height:1.5;margin:0 0 12px}
-.world-events-local-map{height:310px;background:linear-gradient(155deg,rgba(62,123,134,.08),rgba(114,146,121,.04));border:1px solid var(--border,#30414d);border-radius:12px;overflow:hidden}
+.world-events-map-controls{display:flex;gap:6px;margin:0 0 8px}
+.world-events-map-controls button{min-height:28px;padding:5px 10px;font-size:11px}
+.world-events-map-controls button.is-selected{border-color:var(--accent);color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
+.world-events-local-map{position:relative;height:310px;background:linear-gradient(155deg,rgba(62,123,134,.08),rgba(114,146,121,.04));border:1px solid var(--border,#30414d);border-radius:12px;overflow:hidden}
+.world-events-street-map{display:block;width:100%;height:100%;border:0}
+.world-events-open-map{position:absolute;top:9px;right:9px;padding:5px 8px;border-radius:7px;background:var(--surface);border:1px solid var(--border);font-size:11px}
 .world-events-city-svg{width:100%;height:100%}
 .world-events-grid-line{stroke:rgba(131,151,156,.18);stroke-width:1;stroke-dasharray:2 6}
 .world-events-place-list{display:grid;gap:7px;margin-top:14px;max-height:260px;overflow-y:auto}
@@ -33,7 +44,8 @@
 .world-events-place-choice span{font-size:11px;color:var(--muted,#82909b)}
 .world-events-timeline{max-height:690px;overflow-y:auto;display:grid;gap:10px;padding-right:3px}
 .world-events-event-card{border:1px solid var(--border,#30414d);border-radius:12px;padding:13px 15px;background:var(--surface-subtle,rgba(130,144,152,.045))}
-.world-events-event-head{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--muted,#8b9ca7);font-size:12px}
+.world-events-event-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;color:var(--muted,#8b9ca7);font-size:12px}
+.world-events-copy{min-height:25px;padding:4px 7px;font-size:10px;margin-left:auto}
 .world-events-event-kind{font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#a8d9cc;font-size:10px}
 .world-events-event-summary{font-size:14px;line-height:1.48;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .world-events-event-ref{font-size:10px;opacity:.55;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
