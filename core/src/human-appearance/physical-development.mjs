@@ -76,7 +76,7 @@ export function physicalDevelopmentAtAge({threadId,physicalGenome,sex,ageYears}=
   const description=isChild
     ?`At age ${ageYears}, preserve child-appropriate body and facial proportions. Adult adiposity and hair-loss propensity must not be mistaken for childhood body weight or baldness.`
     :[
-      `At age ${ageYears}, provisional body composition: ${bodyComposition}, ${relativeBody} than the canonical age-25 portrait.`,
+      `At age ${ageYears}, provisional body composition: ${bodyComposition}; relative to the canonical age-25 portrait: ${relativeBody}.`,
       relativeBody==="substantially fuller"||relativeBody==="noticeably fuller"
         ?"Allow greater fullness of the cheeks, lower face, jawline and neck; do not automatically slim the subject."
         :relativeBody==="substantially leaner"||relativeBody==="noticeably leaner"
