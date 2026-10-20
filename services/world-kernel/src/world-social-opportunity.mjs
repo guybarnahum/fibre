@@ -91,6 +91,7 @@ export function createWorldSocialOpportunity({
                     outcome:salience.outcome,
                     anchors:[...salience.anchors],
                     sourceReferences:[...salience.sourceReferences],
+                    bodyAtGate:salience.bodyAtGate??null,
                   },
                   initiation:initiation==null?null:{
                     decision:initiation.decision,reportedReason:initiation.reason,
