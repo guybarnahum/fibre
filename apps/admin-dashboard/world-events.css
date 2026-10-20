@@ -38,10 +38,14 @@
 .world-events-event-summary{font-size:14px;line-height:1.48;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
 .world-events-event-ref{font-size:10px;opacity:.55;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
 .world-events-event-card h3{font-size:12px;letter-spacing:.01em;margin:12px 0 7px}
-.world-events-actor{font-size:12px;margin:10px 0 0}
+.world-events-actor{display:flex;align-items:center;gap:10px;font-size:12px;margin:10px 0 0}
+.world-events-actor>span{font-size:11px;color:var(--muted,#8b9ca7)}
 .world-events-witnesses{display:grid;gap:5px}
-.world-events-witness{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;border-top:1px solid var(--border,#30414d);padding-top:5px}
+.world-events-witness{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px;border-top:1px solid var(--border,#30414d);padding-top:7px}
 .world-events-witness span{color:var(--muted,#8b9ca7);font-size:11px}
+.world-events-person{flex:1 1 140px;max-width:100%;min-width:0}
+.world-events-person .thread-person-face{width:28px;height:28px;min-width:28px;flex-basis:28px}
+.world-events-person .thread-person-name{font-size:11px}
 .world-events-attention{font-weight:620}
 .world-events-evidence-note{font-size:11px;opacity:.65;line-height:1.4;margin:11px 0 0}
 .world-events-unlocated-panel{padding:20px;min-width:0}
