@@ -20,7 +20,7 @@ const stages=[
 ];
 
 /** Compose one identity anchor, one biological stage and the exact requested age. */
-export function agePortraitBrief(targetAgeYears){
+export function agePortraitBrief(targetAgeYears,{physicalDevelopment=null}={}){
   if(!Number.isSafeInteger(targetAgeYears)||targetAgeYears<3||targetAgeYears>95
     ||targetAgeYears===25)throw new TypeError("portrait age must be 3–95, excluding canonical age 25");
   const i=stages.findIndex(stage=>targetAgeYears>=stage.min&&targetAgeYears<=stage.max);
@@ -38,6 +38,8 @@ export function agePortraitBrief(targetAgeYears){
       "The canonical first image shows the individual at age 25 and establishes identity, not immutable adult facial geometry. Other supplied reference images, if any, show this same person at different admitted ages.",
       `Developmental guidance (${stage.name}): ${stage.anatomy}`,
       transition,
+      ...(physicalDevelopment?[physicalDevelopment.description,
+        "This is a provisional age-local physical depiction, not a claim about experienced health, weight or actual historical hair loss. The target's individual build and hair coverage take precedence over generic aging assumptions."]:[]),
       "Keep recognizable individual facial characteristics while allowing realistic anatomical development or aging. The person need not retain the adult portrait's hairstyle, pose or expression.",
     ].filter(Boolean).join(" "),
     constraints:[
