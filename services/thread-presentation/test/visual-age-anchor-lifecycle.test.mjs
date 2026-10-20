@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {createVisualAgeAnchorLifecycle} from "../src/visual-age-anchor-lifecycle.mjs";
 import {createAssetGenerationJobFromIdentity} from "../../asset-generator/src/asset-generation-identity.mjs";
 import {VISUAL_AGE_ANCHOR_ADMISSION_VERSION} from "fibre/world-kernel/thread-presentation-contracts";
+import {createPhysicalGenome,physicalGenomeLoci} from "#core/src/human-appearance/index.mjs";
 
 const digest=(x)=>"sha256:"+x.repeat(64);
 const sourceRef={threadId:"thr_visual",objectRef:"canonical_visual",digest:digest("a")};
@@ -273,4 +274,30 @@ test("discarded generation-attempt bundles release their staged image bytes",asy
   assert.equal(f.objects.has(job.outputObjectRef),false,"Discarded final image survived cleanup");
   assert.equal(f.objects.has(job.receiptObjectRef),true,
     "Cleaning a discarded image unexpectedly deleted its receipt");
+});
+
+test("age portrait generation uses individual physical development without storing private inheritance",async()=>{
+  const f=fixture();
+  const loci=Object.fromEntries(physicalGenomeLoci.map(name=>[name,[{value:0},{value:0}]]));
+  for(const name of ["hairlineLossTendency","adiposityTendency"]){
+    loci[name]=[{value:1},{value:1}];
+  }
+  f.setCanonical({...sourceRef,physicalGenome:createPhysicalGenome(loci),sex:"male"});
+  await f.service.request("thr_visual","visual_candidate_development",80);
+  const job=f.dispatched.at(-1);
+  assert.match(job.brief.description,/provisional body composition/,
+    "Portrait lacks Thread-specific physical development");
+  assert.match(job.brief.description,/Scalp hair:/,
+    "Portrait cannot depict individual hair coverage");
+  assert.equal(job.context.physicalDevelopmentVersion,"physical-development-v0.1");
+  const manifest=[...f.objects.values()].map(item=>{
+    try{return decoded(item.bytes)}catch{return null}
+  }).find(x=>x?.candidateId==="visual_candidate_development");
+  assert.ok(manifest,"Individual age portrait did not persist an immutable generation request");
+  assert.doesNotMatch(JSON.stringify(manifest),/"loci"|"physicalGenome"/,
+    "Private physical inheritance leaked into a portrait manifest");
+  const other=fixture();
+  await other.service.request("thr_visual","visual_candidate_default",80);
+  assert.doesNotMatch(other.dispatched.at(-1).brief.description,/provisional body composition/,
+    "Missing inherited physical evidence was silently fabricated");
 });
