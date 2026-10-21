@@ -1029,7 +1029,9 @@ test("dormant Flight Plan cognition cannot request a destination outside its his
           return {output:{
             result:{stops:[{
               startAt:authoredAt,endAt:horizonEnd,
-              physicalPlaceRef:home,presenceMode:"physical",
+              // Simulate a fallible provider returning the exact offered
+              // label in place of its canonical ref despite the schema.
+              physicalPlaceRef:"Known home",presenceMode:"physical",
               mediatedContext:"",wakefulness:"awake",
               activity:"Read and think in a familiar place.",
               purpose:"Follow my existing interests without invented history.",
@@ -1046,7 +1048,7 @@ test("dormant Flight Plan cognition cannot request a destination outside its his
     assert.equal(observedContext.retrospective,true,
       "historical cognition was not told that fresh discovery is unavailable");
     assert.equal(plan.stops[0].physicalPlaceRef,home,
-      "historical place constraint changed the Thread's legitimate choice");
+      "a uniquely named offered place required an extra model call or was lost");
     assert.equal(plan.materialization.mode,"retrospective",
       "historical intent was recorded as forward planning");
   }finally{
