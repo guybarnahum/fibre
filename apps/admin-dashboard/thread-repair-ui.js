@@ -217,10 +217,14 @@ function renderHealth(host, threadId, health, message = null) {
     return;
   }
 
-  const edits=el("div","thread-repair-actions");
-  edits.append(createThreadEditButton({threadId,name:diagnosis.identity?.name??null,
-    onComplete:()=>void renderThreadHealth(host,threadId)}));
-  host.append(edits);
+  // Thread Observatory already has the same Edit control in its header.
+  // The compact Thread popup has no header, so retain its local entry point.
+  if(!host.closest(".thread-observatory-page")){
+    const edits=el("div","thread-repair-actions");
+    edits.append(createThreadEditButton({threadId,name:diagnosis.identity?.name??null,
+      onComplete:()=>void renderThreadHealth(host,threadId)}));
+    host.append(edits);
+  }
 
   if (reconciliation?.state === "dead_letter" && unresolved(diagnosis).length > 0) {
     host.append(el("p", "thread-repair-note", "Quarantined until the identity or authority findings above are resolved."));
