@@ -20,3 +20,29 @@ test("population waves require an explicit bounded existing cohort",()=>{
   assert.throws(()=>selectWorldLifeWave(evidence,{offset:0,limit:42}),
     /--limit 1-21/,"a bulk population wake bypassed the per-wave bound");
 });
+
+test("city-scoped waves select only enacted residents across successive small batches",()=>{
+  const cities={...evidence,pairedCities:[{
+    locality:"Tbilisi",countryCode:"GE",threads:[
+      {threadId:"thr_d"},{threadId:"thr_a"},{threadId:"thr_c"},
+    ],
+  },{
+    locality:"London",countryCode:"GB",threads:[{threadId:"thr_b"}],
+  }]};
+  const first=selectWorldLifeWave(cities,{
+    city:"Tbilisi",countryCode:"GE",offset:0,limit:2,
+  });
+  const next=selectWorldLifeWave(cities,{
+    city:"Tbilisi",countryCode:"GE",offset:2,limit:2,
+  });
+  assert.deepEqual([first.total,first.ids,next.ids],[3,["thr_a","thr_c"],["thr_d"]],
+    "the Tbilisi wave mixed Threads from another city or repeated one");
+  assert.deepEqual(selectWorldLifeWave(cities,{
+    city:"London",countryCode:"GB",limit:3,
+  }).ids,["thr_b"],"a named city wave used the global cohort");
+  assert.throws(()=>selectWorldLifeWave(cities,{city:"Tbilisi",limit:2}),
+    /--city and an ISO-2 --country-code/);
+  assert.throws(()=>selectWorldLifeWave(cities,{
+    city:"Tbilisi",countryCode:"US",limit:2,
+  }),/absent from the sampled/);
+});
