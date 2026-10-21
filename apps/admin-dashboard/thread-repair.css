@@ -644,6 +644,63 @@
 .thread-map-person.map-state-transition .thread-person-face,
 .thread-map-person.map-state-transition_unsituated .thread-person-face { border-style:dotted; }
 .thread-map-person.map-state-active_unsituated .thread-person-face { border-color:#b42318; }
+.thread-life-scoreboard{
+  padding:14px 16px 12px;
+  border-bottom:1px solid var(--border);
+}
+.thread-life-scoreboard-heading{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.thread-life-scoreboard-heading strong{font-size:12px}
+.thread-life-scoreboard-heading span,
+.thread-life-scoreboard>p{
+  color:var(--muted);
+  font-size:10px;
+  margin:0;
+}
+.thread-life-scoreboard-values{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:8px;
+}
+.thread-life-scoreboard-values>div{
+  display:grid;
+  gap:4px;
+  padding:12px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  min-width:0;
+  background:var(--surface-subtle);
+}
+.thread-life-scoreboard-values span{
+  color:var(--muted);
+  font-size:11px;
+}
+.thread-life-scoreboard-values strong{
+  font-size:clamp(22px,3vw,32px);
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.035em;
+  line-height:1.2;
+}
+.thread-population-error{
+  margin:10px 12px;
+  padding:9px 11px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  font-size:11px;
+  line-height:1.45;
+}
+@media(max-width:480px){
+  .thread-life-scoreboard{padding:10px}
+  .thread-life-scoreboard-values{gap:5px}
+  .thread-life-scoreboard-values>div{padding:8px}
+}
 .thread-population-metrics {
   display:grid;
   grid-template-columns:repeat(auto-fit,minmax(92px,1fr));
