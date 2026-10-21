@@ -27,8 +27,8 @@ export function inspectLifeContinuity(threadId,person,at){
   const boundary=lived.nextAutonomousBoundary??null;
   const age=Date.parse(at),horizon=Date.parse(plan?.horizonEnd??"");
   const covers=Number.isFinite(horizon)&&horizon>=age;
-  const status=current===null?"not_established"
-    :boundary?.blockedReason?"blocked"
+  const status=boundary?.blockedReason?"blocked"
+    :current===null?"not_established"
       :!covers?"plan_expired"
         :boundary?.dueAt?"scheduled":"unarmed";
   return {
