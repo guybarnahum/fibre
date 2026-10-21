@@ -1,6 +1,7 @@
 /* World Observatory — source-grounded geographic monitoring. */
 .world-events-surface{display:grid;gap:18px;max-width:1500px}
-.world-events-summary,.world-events-city-bar,.world-events-caveat{padding-inline:20px}
+.world-events-summary,.world-events-city-bar,.world-events-caveat{padding-inline:30px}
+@media(max-width:650px){.world-events-summary,.world-events-city-bar,.world-events-caveat{padding-inline:16px}}
 .world-events-summary{font-size:14px;color:var(--muted,#7f8c98);margin:0}
 .world-events-panel-title{display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
 .world-events-panel-title h2{margin:0;font-size:18px;letter-spacing:-.02em}
