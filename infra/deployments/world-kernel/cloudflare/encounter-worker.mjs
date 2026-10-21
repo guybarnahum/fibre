@@ -766,6 +766,27 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     // Actor action is already World history at the exact enacted time.
     // Plan renewals and activity refreshes are not fabricated arrivals.
     const occurrence=enactedActorOccurrence(previous,situation);
+    if(occurrence!==null){
+      // World has already committed this movement. The notification is only
+      // an optional browser invalidation, never another event or life action.
+      try{
+        const runtime=this.runtimeForRequest();
+        if(openLivedNowStore(runtime.worldStorage).getPublicPlace(occurrence.placeRef)!==null
+          &&runtime.infraDriver?.realtime?.publish){
+          this.ctx.waitUntil(runtime.infraDriver.realtime.publish("admin",{
+            entity:"world",id:"events",aspect:"occurrence",
+          }).catch(error=>console.warn(JSON.stringify({
+            event:"world-admin-invalidation-failed",
+            message:error instanceof Error?error.message:String(error),
+          }))));
+        }
+      }catch(error){
+        console.warn(JSON.stringify({
+          event:"world-admin-invalidation-failed",
+          message:error instanceof Error?error.message:String(error),
+        }));
+      }
+    }
     if(situation.location?.kind!=="place"||situation.wakefulness==="asleep")return;
     const store=openLivedExperienceStore(this.runtimeForRequest().worldStorage);
     const lived=openLivedNowStore(this.runtimeForRequest().worldStorage);
