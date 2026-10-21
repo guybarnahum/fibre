@@ -63,6 +63,11 @@ test("population census distinguishes blocked, expired and unestablished lives w
   assert.equal(inspectLifeContinuity("thr_omar",life,at).status,"plan_expired",
     "an expired plan with no frontier was reported as ongoing life");
   life.livedNow.currentSituation=null;
+  life.livedNow.nextAutonomousBoundary={dueAt:null,failedAttempts:3,
+    blockedReason:"first LivedNow planning failed"};
+  assert.equal(inspectLifeContinuity("thr_omar",life,at).status,"blocked",
+    "a repeatedly failed first-life obligation was hidden as merely unestablished");
+  life.livedNow.nextAutonomousBoundary=null;
   assert.equal(inspectLifeContinuity("thr_omar",life,at).status,"not_established",
     "a never-lived Thread was mistaken for a stalled renewal");
 });
