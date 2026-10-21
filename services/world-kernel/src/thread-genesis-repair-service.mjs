@@ -70,6 +70,14 @@ function recoveredBirthGeography(identity) {
 
 function birthGeographyFinding(identity) {
   const recovered = recoveredBirthGeography(identity);
+  const current=identity?.birthPlace;
+  const existing=text(current?.displayName)??text(identity?.birthCity);
+  const locationAction=identityAction(
+    existing===null?"set_birth_place":"change_birth_place",
+    existing===null?"Set birth city":"Change birth city",
+    [{name:"birthPlace",label:"Verified birth city",kind:"place_search",
+      required:true,...(existing===null?{}:{default:existing})}],
+  );
   if (recovered !== null) {
     const birthPlace=Object.freeze({
       displayName:recovered.displayName,
@@ -109,7 +117,13 @@ function birthGeographyFinding(identity) {
           long:stored.long,
         })
       : null;
-  if(storedPlace===null||text(stored.countryCode)!==null)return null;
+  if(storedPlace===null||text(stored.countryCode)!==null){
+    return finding(existing===null?"BIRTH_PLACE_MISSING":"BIRTH_PLACE",
+      existing===null?"operator_decision_required":"healthy",null,{
+        reason:existing===null?"Birth city is missing; choose a verified place.":null,
+        identityAction:locationAction,
+      });
+  }
 
   return finding("BIRTH_COUNTRY_CODE_MISSING","attention",null,{
     authoritative:storedPlace.displayName,
