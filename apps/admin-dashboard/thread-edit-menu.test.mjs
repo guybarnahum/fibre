@@ -17,6 +17,7 @@ test("one shared editor exposes the missing birth-city correction and maintenanc
   assert.equal(choices.find(a=>a.id==="set_birth_place").fields[0].kind,"place_search",
     "legacy birth city accepted unverified free text");
   assert.ok(choices.some(a=>a.kind==="fid"),"FIN maintenance vanished from the shared menu");
+  assert.ok(choices.some(a=>a.kind==="photo"),"Photo correction lost its Observatory review entry");
 
   const place={displayName:"Kisumu, Kenya",country:"Kenya",countryCode:"KE",
     city:"Kisumu",lat:-0.0917,long:34.768};
