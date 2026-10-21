@@ -15,6 +15,7 @@ test("a venue day export preserves only its actual World events and source limit
   };
   const result=worldEventPlaceDayRecord(overview,{
     placeRef:"wpl_park",name:"Dedaena Park",city:"Tbilisi",country:"Georgia",
+    timeZone:"Asia/Tbilisi",
   });
   assert.deepEqual(result.events.map(x=>x.eventRef),["story_park","sit_park"],
     "the park day mixed in another venue's events");
@@ -25,6 +26,8 @@ test("a venue day export preserves only its actual World events and source limit
     "the venue export used the wrong 24-hour boundary");
   assert.equal(result.place.placeRef,"wpl_park",
     "venue identity was lost from its event export");
+  assert.equal(result.place.timeZone,"Asia/Tbilisi",
+    "a World venue day export lost its grounded local clock");
 });
 
 test("two enacted visits yield their true hour of shared presence, not an invented meeting",()=>{
