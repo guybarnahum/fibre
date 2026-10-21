@@ -63,3 +63,13 @@ test("failed wave retains World reconciliation stage and provider diagnostic rat
   assert.equal(error.diagnostics.providerErrorCode,"upstream_timeout");
   assert.equal(error.detail,"Planning integration failed");
 });
+
+test("one known Thread can be verified before the first population wave",()=>{
+  const selected=selectWorldLifeWave(evidence,{thread:"thr_b"});
+  assert.deepEqual(selected,{total:1,ids:["thr_b"]},
+    "a single-Thread canary unexpectedly included another person's life");
+  assert.throws(()=>selectWorldLifeWave(evidence,{thread:"thr_unknown"}),
+    /absent from the sampled/,"canary accepted a Thread outside the World census");
+  assert.throws(()=>selectWorldLifeWave(evidence,{thread:"thr_b",city:"London",countryCode:"GB"}),
+    /--thread alone/,"canary mixed two independent selection modes");
+});
