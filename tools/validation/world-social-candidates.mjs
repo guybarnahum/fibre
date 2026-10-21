@@ -69,8 +69,16 @@ export function rankSocialCityCandidates({places,people,limit=DISPLAY_LIMIT,at=n
     placeByRef.set(place.placeRef,{key,venue});
   }
   for(const person of people){
+    // A real current city must not vanish just because no public venue
+    // has been admitted there yet: it is precisely a place to develop.
+    if(!person.key)continue;
+    if(!cityMap.has(person.key)){
+      cityMap.set(person.key,{
+        key:person.key,locality:person.locality,countryCode:person.countryCode,
+        venues:[],threads:[],
+      });
+    }
     const city=cityMap.get(person.key);
-    if(!city)continue;
     const place=placeByRef.get(person.placeRef);
     const currentVenue=person.atPlace&&place?.key===city.key?place.venue:null;
     const plannedPublicVisits=(person.plan?.stops??[]).flatMap(stop=>{
@@ -129,6 +137,11 @@ export function rankSocialCityCandidates({places,people,limit=DISPLAY_LIMIT,at=n
     ||b.publicVenueCount-a.publicVenueCount
     ||a.locality.localeCompare(b.locality));
   return {
+    underpopulatedCities:all.filter(c=>c.currentThreadCount>0&&c.currentThreadCount<3)
+      .map(city=>({...city,neededToThree:3-city.currentThreadCount})).slice(0,limit),
+    underpopulatedCityCount:all.filter(c=>c.currentThreadCount>0&&c.currentThreadCount<3).length,
+    sampledBirthsToThree:all.reduce((n,c)=>n+(c.currentThreadCount>0&&c.currentThreadCount<3
+      ?3-c.currentThreadCount:0),0),
     pairedCities:all.filter(c=>c.currentThreadCount>=2).slice(0,limit),
     otherPopulatedCities:all.filter(c=>c.currentThreadCount===1).slice(0,limit),
     publicVenueCities:all.map(({locality,countryCode,publicVenueCount,listedVenueCount,currentThreadCount})=>({
@@ -193,11 +206,13 @@ export async function runSocialCandidateScan({
     listedPublicPlaceCount:overview.places.filter(p=>p.discoveryListed).length,
     publicPlaceCatalogTruncated:overview.coverage?.placesTruncated===true,
     directoryReturnedThreadCount:cards.length,
-    scannedThreadCount:sample.length,unavailable,
+    scannedThreadCount:sample.length,
+    sampledThreadIds:sample.map(card=>card.threadId),
+    unavailable,
     matchedCurrentCityThreadCount:ranked.matchedThreadCount,
     pairedCityCount:ranked.pairedCityCount,
     ...ranked,status,
-    evidenceLimitations:"Read-only bounded snapshot of the first sampled public-directory Threads and at most 240 verified places. Current city is grounded in enacted World situation, not birthplace. Same city is not physical co-presence. No visit, consent or meeting is inferred. Missing Threads/venues may be outside the sample.",
+    evidenceLimitations:"Read-only bounded snapshot of the first sampled public-directory Threads and at most 240 verified places. Current city is grounded in enacted World situation, not birthplace. A birth in a city is not evidence the new Thread currently lives there. Same city is not physical co-presence. No visit, consent or meeting is inferred. Missing Threads/venues may be outside the sample.",
   };
   const dir=resolve(ROOT,".fibre","world-social",target,"candidates");
   const file=resolve(dir,"cities-"+Date.now().toString(36)+".json");
@@ -209,6 +224,9 @@ export async function runSocialCandidateScan({
     unavailableThreadCount:unavailable.length,
     matchedCurrentCityThreadCount:ranked.matchedThreadCount,
     pairedCityCount:ranked.pairedCityCount,
+    underpopulatedCityCount:ranked.underpopulatedCityCount,
+    sampledBirthsToThree:ranked.sampledBirthsToThree,
+    underpopulatedCities:ranked.underpopulatedCities,
     candidates:ranked.pairedCities,
     otherPopulatedCities:ranked.otherPopulatedCities.slice(0,4),
     publicVenueCities:ranked.publicVenueCities,
