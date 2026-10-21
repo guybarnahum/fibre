@@ -86,3 +86,30 @@ export function worldVenueCoPresence(overview,placeRef){
       key.endsWith("Truncated")&&value===true),
   };
 }
+
+
+// An overlap belongs to the exact two arrival/departure pairs that established
+// it, even if a Thread has several completed visits in the same read window.
+export function worldPresencePair(overlap,stays){
+  const pair=overlap.threadIds.map((threadId,index)=>(stays??[])
+    .find(stay=>stay.threadId===threadId
+      &&stay.arrivalRef===overlap.arrivalRefs[index]));
+  if(pair.some(stay=>!stay))return null;
+  const from=Math.min(...pair.map(stay=>Date.parse(stay.enteredAt)));
+  const until=Math.max(...pair.map(stay=>Date.parse(stay.leftAt)));
+  if(!Number.isFinite(from)||!Number.isFinite(until)||until<=from)return null;
+  return {stays:pair,from,until,duration:until-from,
+    overlapFrom:Date.parse(overlap.from),overlapUntil:Date.parse(overlap.until)};
+}
+
+export function formatSharedPresenceDuration(ms){
+  if(!Number.isFinite(ms)||ms<=0)return "0s";
+  if(ms<60_000)return `${(ms/1000).toFixed(1)}s`;
+  const seconds=Math.floor(ms/1000);
+  const hours=Math.floor(seconds/3600),minutes=Math.floor(seconds%3600/60);
+  const parts=[];
+  if(hours)parts.push(`${hours}h`);
+  if(hours||minutes)parts.push(`${minutes}m`);
+  parts.push(`${seconds%60}s`);
+  return parts.join(" ");
+}
