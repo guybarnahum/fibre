@@ -998,3 +998,59 @@ test("X2 planning place meaning comes from World/situated authority, not caller 
     identityStore.close();
     worldStore.close();
   }));
+
+test("dormant Flight Plan cognition cannot request a destination outside its historical World",async()=>withDatabase(async path=>{
+  const storage=localWorldStateStorage(path);
+  const worldStore=openWorldStore(storage);
+  const threadId="thr_retrospective_world_context";
+  const event=seedThread(worldStore,threadId,"Nino Vale","2026-09-20T08:00:00.000Z");
+  const identityStore=openIdentityStore(storage);
+  const semanticStateStore=openSemanticStateStore(storage);
+  const memoryStore=openAutobiographicalMemoryStore(storage);
+  const situatedLifeStore=openSituatedLifeStore(storage);
+  const home="place_retrospective_home";
+  const sourceStores={worldStore,identityStore,semanticStateStore,memoryStore,
+    situatedLifeStore,livedNowStore:planningPlaceAuthority([
+      {ref:home,displayName:"Known home",placeKind:"residence"},
+    ])};
+  const authoredAt="2026-10-19T08:00:00.000Z";
+  const horizonEnd="2026-10-19T20:00:00.000Z";
+  let observedSchema=null,observedContext=null;
+  try{
+    const plan=await formPersonalLivedPlan({
+      threadId,authoredAt,horizonEnd,availablePlaceRefs:[home],
+      startingPlaceRef:home,sourceReferences:[event.eventId],
+      materializedAt:"2026-10-21T22:00:00.000Z",sourceStores,
+      modelAdapter:{
+        provider:"fixture",modelId:"fixture-historical-planning",
+        async invoke(call){
+          observedSchema=call.responseSchema;
+          observedContext=call.input.concern.externalContext;
+          return {output:{
+            result:{stops:[{
+              startAt:authoredAt,endAt:horizonEnd,
+              physicalPlaceRef:home,presenceMode:"physical",
+              mediatedContext:"",wakefulness:"awake",
+              activity:"Read and think in a familiar place.",
+              purpose:"Follow my existing interests without invented history.",
+              travelFromPrevious:"",
+            }]},
+            evidenceRefs:[],conflictingMotives:[],uncertainty:null,
+          },provenance:{provider:"fixture",modelId:"fixture-historical-planning"}};
+        },
+      },
+    });
+    assert.deepEqual(
+      observedSchema.properties.result.properties.stops.items.properties.physicalPlaceRef.enum,
+      [home],"historical planning permitted hallucinated World destinations");
+    assert.equal(observedContext.retrospective,true,
+      "historical cognition was not told that fresh discovery is unavailable");
+    assert.equal(plan.stops[0].physicalPlaceRef,home,
+      "historical place constraint changed the Thread's legitimate choice");
+    assert.equal(plan.materialization.mode,"retrospective",
+      "historical intent was recorded as forward planning");
+  }finally{
+    situatedLifeStore.close();memoryStore.close();semanticStateStore.close();
+    identityStore.close();worldStore.close();
+  }
+}));
