@@ -123,7 +123,7 @@ export function renderWorldEventsPage(){
   const timelineCount=el("span");
   const placeDayCopy=createCopyButton({
     label:"Copy venue day JSON",
-    tooltip:"Copy this venue's returned World events for the last 24 hours",
+    tooltip:"Copy selected venue's last 24 hours of returned events as JSON (bounded sample)",
     value:async()=>{
       const place=snapshot?.places.find(item=>item.placeRef===selectedPlace);
       if(!place)throw Error("Select a World venue first");
@@ -132,8 +132,9 @@ export function renderWorldEventsPage(){
   });
   placeDayCopy.classList.add("world-events-timeline-copy");
   placeDayCopy.disabled=true;
+  const placeDayHint=el("span","world-events-day-copy-hint","24h JSON");
   const timelineControls=el("div","world-events-timeline-controls");
-  timelineControls.append(timelineCount,placeDayCopy);
+  timelineControls.append(timelineCount,placeDayHint,placeDayCopy);
   timelineHead.append(timelineTitle,timelineControls);
   const timeline=el("div","world-events-timeline");
   timelinePanel.append(timelineHead,timeline);
@@ -381,6 +382,7 @@ export function renderWorldEventsPage(){
     timelineTitle.textContent=selected?.name??"World timeline";
     placeDayCopy.disabled=!selected;
     placeDayCopy.hidden=!selected;
+    placeDayHint.hidden=!selected;
     const events=worldEventPlaceTimeline(snapshot,selectedPlace);
     timelineCount.textContent=snapshot
       ?`${events.length} shown · ${windowText(snapshot)}`:"No data";
