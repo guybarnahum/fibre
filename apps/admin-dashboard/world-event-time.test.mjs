@@ -15,6 +15,9 @@ test("World events and shared presence use their attested venue clock, never the
     "venue-local clock lost its offset");
   assert.match(normalized(formatWorldEventTime(instant,"Asia/Tbilisi",{clockOnly:true})),
     /3:35 PM/u,"shared-presence bars disagreed with World event time");
+  assert.match(normalized(formatWorldEventTime("2026-10-21T11:15:04.841Z",
+    "Asia/Tbilisi",{clockOnly:true,withSeconds:true})),/3:15:04 PM/u,
+  "short shared presence lost its local seconds");
   assert.match(normalized(formatWorldEventTime(instant)),/11:35 AM UTC/u,
     "unlocated events invented a local time zone");
   assert.match(normalized(formatWorldTimeRange({
