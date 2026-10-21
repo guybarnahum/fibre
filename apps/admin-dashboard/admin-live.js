@@ -4,6 +4,7 @@ import {
   threadObservatoryViewKey,
   threadPopulationViewKey,
   threadViewKey,
+  worldEventsViewKey,
   watchViewInvalidation,
 } from "./view-invalidation.js";
 
@@ -53,6 +54,12 @@ export function routeAdminLiveMessage(message) {
       reason:"changed",
       experimentId:message.id,
       aspect:message.aspect,
+    });
+    return true;
+  }
+  if (message.entity === "world" && message.id === "events" && message.aspect === "occurrence") {
+    invalidateView(worldEventsViewKey(),{
+      source:"admin-live",reason:"changed",
     });
     return true;
   }
