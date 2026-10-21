@@ -120,6 +120,25 @@ locations, listing and visits still require this live probe. This
 source-only operator enhancement does not require World deployment and
 does not itself establish any real social contact.
 
+**October 20 real Tbilisi co-presence — social salience diagnosis:** a
+World-attested public arrival of Giorgi Bolkvadze at 11:35 UTC had an
+independently situated observer, Ioseb Mchedlishvili. The arrival's
+perception Story records Ioseb as `not_noticed`, and Giorgi's ordinary
+arrival social consideration found Ioseb but completed as `background`
+with no materiality anchors. Ioseb's distinct 07:45 UTC observed social
+opportunity had `recent_observable_history` salience, an existing
+`social_contact` drive reading of `0.375197`, and an actual
+`not_initiate` decision grounded in an independently browsing stranger,
+no formed ask, and modest desire for contact. **Physical overlap is now
+observed; a reciprocal meeting is not.** Neither event proves Giorgi's
+own social pressure at 11:35, subjective loneliness, or later change.
+The October 20 narrow source addition retains `bodyAtGate` for future
+one-shot social decisions and makes the operator probe distinguish
+missing Body frames from weak evidenced drives. No social threshold or
+Thread behavior was altered; local validation and staging confirmation
+of the new witness remain open. Existing bounded historical rows cannot
+be backfilled with an invented value.
+
 ## Public World-place discovery and natural social co-presence (October 18)
 
 **October 19 live staging checkpoint — real public-venue visits now observed.**
