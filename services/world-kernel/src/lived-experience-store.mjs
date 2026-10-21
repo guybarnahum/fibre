@@ -323,7 +323,7 @@ export class LivedExperienceStore {
       assertId("observed social Thread",threadId);
     }
     assertIsoTimestamp("social opportunity completion",at);
-    if(!["no_co_presence","background","not_initiated","not_met","met","scene_changed"].includes(outcome)){
+    if(!["no_co_presence","missed_window","expired","background","not_initiated","not_met","met","scene_changed"].includes(outcome)){
       throw new TypeError("social opportunity outcome is invalid");
     }
     const table=observed
@@ -368,6 +368,7 @@ export class LivedExperienceStore {
     `).all(threadId,threadId,limit).map(row=>Object.freeze({
       kind:row.kind,sourceEncounterRef:row.encounter_ref,
       situationId:row.situation_id,dueAt:row.due_at,
+      startedAt:row.started_at,
       outcome:row.outcome??(row.started_at===null?"pending":"interrupted"),
       decision:row.decision_json===null?null:JSON.parse(row.decision_json),
       completedAt:row.completed_at,
