@@ -313,3 +313,139 @@ test("independently admitted public places reveal only actual same-venue visitor
     rmSync(directory,{recursive:true,force:true});
   }
 });
+
+test("a witnessed short overlap expires without inventing a social refusal or conversation",async()=>{
+  const dir=mkdtempSync(join(tmpdir(),"fibre-missed-social-window-"));
+  const storage={infraDriver:createSqliteStateInfraDriver({
+    scopes:{world:join(dir,"world.sqlite")}}),stateScopeId:"world"};
+  const world=openWorldStore(storage);
+  const ids=["thr_social_visitor","thr_social_witness"];
+  for(const threadId of ids){
+    const thread=structuredClone(seed);
+    thread.threadId=threadId;thread.provenance.lastEventId="evt_"+threadId;
+    world.seedThread(thread);
+  }
+  world.close();
+  const store=openLivedExperienceStore(storage);
+  const due="2026-10-21T11:15:00.063Z";
+  const left="2026-10-21T11:15:04.841Z";
+  const considered="2026-10-21T11:15:13.646Z";
+  const venueRef="venue_dedaena";
+  const visit=(threadId,situationId,at)=>({
+    threadId,situationId,establishedAt:at,wakefulness:"awake",
+    location:{kind:"place",placeRef:"wpl_dedaena"},
+  });
+  const visitor=visit(ids[0],"sit_social_visitor_arrived",due);
+  const witness=visit(ids[1],"sit_social_witness_present","2026-10-21T09:15:00.005Z");
+  const departure={
+    ...witness,situationId:"sit_social_witness_left",establishedAt:left,
+    location:{kind:"transit",fromPlaceRef:"wpl_dedaena",toPlaceRef:"per:home"},
+  };
+  let meetingCalls=0;
+  const livedNowStore={
+    getCurrentSituation:threadId=>threadId===ids[0]?visitor:departure,
+    getSituation:id=>[visitor,witness].find(s=>s.situationId===id)??null,
+    getWorldPlace:(_id,ref)=>ref==="wpl_dedaena"
+      ?{physicalVenue:{ref:venueRef}}:null,
+    listCurrentVenueSituations:({venueRef:venue,at,excludeThreadId})=>{
+      assert.equal(venue,venueRef,"social window examined an unrelated venue");
+      const present=Date.parse(at)<Date.parse(left)?[visitor,witness]:[visitor];
+      return present.filter(s=>s.threadId!==excludeThreadId);
+    },
+  };
+  try{
+    store.enqueueSocialOpportunity({
+      threadId:ids[0],situationId:visitor.situationId,dueAt:due,
+    });
+    store.enqueueObservedSocialOpportunity({
+      encounterRef:"story_dedaena_arrival",threadId:ids[1],
+      situationId:witness.situationId,counterpartyThreadId:ids[0],
+      venueRef,dueAt:due,
+    });
+    const process=createWorldSocialOpportunity({
+      experienceStore:store,livedNowStore,
+      meetingService:{async meet(){meetingCalls++;throw Error("retroactive speech");}},
+      now:()=>considered,
+    });
+    assert.equal((await process.runOnce()).results[0].outcome,"missed_window",
+      "arrival's historical company was erased by a later departure");
+    assert.equal((await process.runOnce()).results[0].outcome,"missed_window",
+      "the witness's noticed arrival became a false lack of company");
+    assert.equal(meetingCalls,0,"social cognition occurred after the person left");
+    const recorded=ids.map(id=>store.inspectSocialOpportunities(id)[0]);
+    assert.ok(recorded.every(row=>row.outcome==="missed_window"
+      &&row.decision===null&&row.startedAt===considered),
+    "a missed encounter was attributed to private social refusal");
+    assert.equal((await process.runOnce()).attempted,0,
+      "missed encounters were rescheduled after closure");
+  }finally{store.close();rmSync(dir,{recursive:true,force:true});}
+});
+
+test("sustained shared presence reaches voluntary social consideration without forcing contact",async()=>{
+  const dir=mkdtempSync(join(tmpdir(),"fibre-sustained-social-"));
+  const storage={infraDriver:createSqliteStateInfraDriver({
+    scopes:{world:join(dir,"world.sqlite")}}),stateScopeId:"world"};
+  const world=openWorldStore(storage);
+  const ids=["thr_social_arrival","thr_social_reader"];
+  for(const threadId of ids){
+    const thread=structuredClone(seed);
+    thread.threadId=threadId;thread.provenance.lastEventId="evt_"+threadId;
+    world.seedThread(thread);
+  }
+  world.close();
+  const store=openLivedExperienceStore(storage);
+  const due="2026-10-21T11:15:00.063Z";
+  const considered="2026-10-21T11:30:00.063Z"; // both remain for 15 minutes
+  const venueRef="venue_cafe";
+  const arrival={
+    threadId:ids[0],situationId:"sit_long_arrival",establishedAt:due,
+    wakefulness:"awake",location:{kind:"place",placeRef:"wpl_cafe"},
+  };
+  const reader={
+    threadId:ids[1],situationId:"sit_long_reader",
+    establishedAt:"2026-10-21T10:15:00.063Z",
+    wakefulness:"awake",location:{kind:"place",placeRef:"wpl_cafe"},
+  };
+  let attempts=0;
+  const livedNowStore={
+    getCurrentSituation:id=>id===ids[0]?arrival:reader,
+    getWorldPlace:()=>({physicalVenue:{ref:venueRef}}),
+    listCurrentVenueSituations:({at,excludeThreadId})=>{
+      assert.equal(at,considered,"shared presence was decided at historical time");
+      return [arrival,reader].filter(s=>s.threadId!==excludeThreadId);
+    },
+  };
+  try{
+    store.enqueueSocialOpportunity({
+      threadId:arrival.threadId,situationId:arrival.situationId,dueAt:due,
+    });
+    const process=createWorldSocialOpportunity({
+      experienceStore:store,livedNowStore,now:()=>considered,
+      meetingService:{async meet(input){
+        attempts++;
+        assert.equal(input.initiatorThreadId,arrival.threadId,
+          "an arrival gave the other person's agency to the initiator");
+        return {attempts:[{
+          counterpartyThreadId:reader.threadId,outcome:"not_initiated",
+          salience:{outcome:"salient",anchors:["co_present_person"],
+            sourceReferences:[reader.situationId],bodyAtGate:null},
+          initiation:{decision:"not_initiate",reason:"I prefer to keep reading.",
+            decisionContext:null,cognition:{selectedEvidenceRefs:[],evidenceRefs:[]}},
+          stance:null,encounterStory:null,
+        }]};
+      }},
+    });
+    assert.equal((await process.runOnce()).results[0].outcome,"not_initiated",
+      "a sustained shared visit never reached the voluntary decision path");
+    assert.equal(attempts,1,"shared company triggered repeated social cognition");
+    const record=store.inspectSocialOpportunities(arrival.threadId)[0];
+    assert.equal(record.decision.initiation.decision,"not_initiate",
+      "the Thread's right not to initiate was erased");
+    assert.equal(record.decision.encounterRef,null,
+      "a non-initiation created fictitious conversation history");
+    assert.equal(record.startedAt,considered,
+      "the actual time of consideration was lost");
+    assert.equal((await process.runOnce()).attempted,0,
+      "a completed voluntary judgment was invoked twice");
+  }finally{store.close();rmSync(dir,{recursive:true,force:true});}
+});
