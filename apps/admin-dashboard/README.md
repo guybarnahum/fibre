@@ -72,8 +72,15 @@ Dedaena Park evidence on October 20 yields Ioseb 11:30–13:00 UTC,
 Giorgi 11:35–12:35 UTC, and approximately 60 minutes together, without
 asserting either noticed the other or conversed. Unpaired movements
 are explicitly excluded, the overlap list is bounded, and source
-truncation remains visible. No new World query, background scan, model
-call, or social action is introduced.
+truncation remains visible. The selected venue now presents each
+confirmed overlap as a focused card with exact elapsed duration (including
+seconds), two aligned real-stay bars, a shared local-time axis and an
+explicit verified-venue interval. Subminute overlaps are not rounded
+to "0 min"; each card joins the two exact arrival/departure pairs, even
+across repeat visits by the same Thread. With no confirmed overlap the
+view shows the individual complete stays instead. A bounded first five
+overlaps appear; the source-limit caveat remains. No new World query,
+background scan, model call, or social action is introduced.
 
 A second **Copy venue day JSON** icon sits beside the *selected venue's*
 timeline count. It exports only that place's returned events in the
