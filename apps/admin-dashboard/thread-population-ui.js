@@ -8,7 +8,6 @@ import {
   populationFilterCount,
   threadMatchesPopulationFilter,
 } from "./thread-population-filter.js";
-import { actionFields, openThreadActionDialog } from "./thread-action-dialog.js";
 import { watchAdminLive } from "./admin-live.js";
 import {
   appearanceExperimentsViewKey,
@@ -17,7 +16,8 @@ import {
 } from "./view-invalidation.js";
 import { bindCopyAction } from "./copy-action.js";
 import { threadLifeStatus, threadLifeDescription } from "./thread-life-status.mjs";
-import { decorateActionButton, iconForIdentityAction, setBlockingButtonState, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
+import { setBlockingButtonState, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
+import { createThreadEditButton } from "./thread-edit-menu.js";
 import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
 import {
   createThreadIdentityViewer,
@@ -28,8 +28,6 @@ import {
   hideThreadPortraitPreview,
   refreshThreadPortraitUrl,
 } from "./thread-person-ui.js";
-import { identityActionPayload } from "./thread-identity-action.js";
-import { reissueFidCard } from "./thread-observatory.js";
 import { WORLD_MAP_BOUNDS } from "./world-map-data.js";
 import {
   SVG_NS,
@@ -184,210 +182,20 @@ function migrationFor(thread) {
   return (thread.findings ?? []).find((finding) => finding?.migration?.domain === "identity")?.migration ?? null;
 }
 
-function identityActions(thread) {
-  const seen = new Set();
-  return (thread.findings ?? []).flatMap((finding) => {
-    const action = finding?.identityAction;
-    if (!action?.id || seen.has(action.id)) return [];
-    seen.add(action.id);
-    return [action];
-  });
-}
-
-function hasRepair(thread) {
-  return (thread.findings ?? []).some((finding) => finding?.state === "repairable" && typeof finding?.action === "string");
-}
-
-async function command(threadId, body) {
-  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
-    method:"POST",
-    headers:{ "content-type":"application/json", Accept:"application/json" },
-    body:JSON.stringify(body),
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? payload?.error ?? `HTTP ${response.status}`);
-  return payload;
-}
-
-function setPopulationControlsDisabled(disabled) {
-  for (const control of document.querySelectorAll(".thread-population-actions button")) control.disabled = disabled;
-  $("#refresh-button").disabled = disabled || loading;
-}
-
-function button(label, spec, thread) {
-  const control = document.createElement("button");
-  control.type = "button";
-  control.className = spec.kind === "recover" ? "secondary" : "primary";
-  decorateActionButton(control, {
-    icon:spec.icon ?? null,
-    label,
-    tooltip:spec.tooltip ?? `${label} — ${spec.description}`,
-    iconOnly:spec.iconOnly === true,
-  });
-  control.addEventListener("click", (event) => {
-    event.stopPropagation();
-    openThreadActionDialog({
-      threadId:thread.threadId,
-      threadName:thread.identity?.name ?? null,
-      label,
-      eyebrow:spec.eyebrow,
-      description:spec.description,
-      fields:spec.fields ?? [],
-      onBusyChange:setPopulationControlsDisabled,
-      run:async (input) => {
-        await command(thread.threadId, spec.body(input));
-        await refreshPopulationThread(thread.threadId);
-        $("#chain-summary").textContent = `${label} completed for ${thread.identity?.name ?? "Unnamed Thread"}.`;
-      },
-    });
-  });
-  return control;
-}
-
-function reissueFidButton(thread) {
-  const label = "Re-issue FIN Card";
-  const control = document.createElement("button");
-  control.type = "button";
-  control.className = "secondary";
-  decorateActionButton(control, {
-    icon:"id-card",
-    label,
-    tooltip:"Cut a new FIN Card from the current authoritative Thread identity",
-    iconOnly:true,
-  });
-  control.addEventListener("click", (event) => {
-    event.stopPropagation();
-    openThreadActionDialog({
-      threadId:thread.threadId,
-      threadName:thread.identity?.name ?? null,
-      label,
-      eyebrow:"Fibre Identity Card",
-      description:"Cut a new FIN Card from the current authoritative Thread identity. The FIN and Thread identity do not change; the previous card remains in history.",
-      onBusyChange:setPopulationControlsDisabled,
-      run:async () => {
-        const result = await reissueFidCard(thread.threadId);
-        const credential = result?.credential ?? null;
-        $("#chain-summary").textContent = credential
-          ? `Re-issued FIN Card for ${thread.identity?.name ?? "Unnamed Thread"} · revision ${credential.revision}.`
-          : result?.state === "derivation_requested"
-            ? `FIN Card reissue started for ${thread.identity?.name ?? "Unnamed Thread"} · official ID photo is being prepared.`
-            : `FIN Card reissue accepted for ${thread.identity?.name ?? "Unnamed Thread"}.`;
-        window.dispatchEvent(new CustomEvent("fibre:fid-card-reissued", {
-          detail:{ threadId:thread.threadId, result },
-        }));
-      },
-    });
-  });
-  return control;
-}
-
 function actionCell(thread) {
-  const cell = document.createElement("td");
-  cell.className = "thread-population-actions";
-  if (thread.admitted === false) {
-    cell.textContent = "Activity only";
+  const cell=document.createElement("td");
+  cell.className="thread-population-actions";
+  if(thread.admitted!==true){
+    cell.textContent=thread.admitted===false?"Activity only":"Unavailable";
     return cell;
   }
-  if (thread.admitted !== true) {
-    cell.textContent = "Unavailable";
-    return cell;
-  }
-
-  const controls = document.createElement("div");
-  controls.className = "thread-action-stack";
-  controls.append(reissueFidButton(thread));
-  for (const action of identityActions(thread)) {
-    const label = action.label ?? human(action.id);
-    const finding = (thread.findings ?? []).find((entry) => entry?.identityAction?.id === action.id) ?? null;
-    const isAdmission = action.id === "admit_name" || action.id === "admit_birth_date";
-    const isLanguages = ["set_languages","change_languages"].includes(action.id);
-    const description = isAdmission
-      ? "Admit preserved identity evidence into authoritative World identity. Presentation is evidence, not authority."
-      : isLanguages
-        ? `${finding?.state === "operator_decision_required" ? "Required operator decision. " : ""}${finding?.reason ?? "Set this Thread's personal language path from household, civic life, or sustained schooling."}`
-        : "Record an explicit operator identity decision in World history. Fibre will re-read authoritative state before returning to Threads.";
-    controls.append(button(label, {
-      kind:"identity",
-      icon:iconForIdentityAction(action.id),
-      iconOnly:true,
-      eyebrow:"Authoritative identity",
-      description,
-      fields:actionFields(action),
-      body:(input) => {
-        const commandAction = action.command ?? "identity";
-        return identityActionPayload(action,input,{
-          operationKey:`${commandAction === "raised_languages" ? "admin_raised_languages" : "admin_identity"}_${Date.now().toString(36)}`,
-        });
-      },
-    }, thread));
-  }
-
-  const migration = migrationFor(thread);
-  if (migration) {
-    const label = `Migrate · ${migration.label ?? human(migration.id)}`;
-    controls.append(button(label, {
-      kind:"migration",
-      icon:"arrow-up-from-bracket",
-      iconOnly:true,
-      eyebrow:"Identity migration",
-      description:"Apply the named migration using preserved evidence, then re-diagnose the Thread from authoritative World state.",
-      fields:actionFields(migration),
-      body:(input) => ({
-        action:"migrate",
-        migrationId:migration.id,
-        migrationKey:`admin_migration_${Date.now().toString(36)}`,
-        input,
-      }),
-    }, thread));
-  }
-
-  const deadLetter = thread.reconciliation?.state === "dead_letter";
-  const pending = thread.reconciliation?.state === "pending";
-  if (hasRepair(thread)) {
-    const label = deadLetter ? "Repair & recover" : "Repair";
-    controls.append(button(label, {
-      kind:"repair",
-      icon:deadLetter ? "heart-pulse" : "wrench",
-      iconOnly:true,
-      eyebrow:"Thread repair",
-      description:deadLetter
-        ? "Repair derived state from authoritative World facts and recover this Thread from reconciliation quarantine."
-        : "Repair derived state from authoritative World facts. No new identity fact will be invented.",
-      body:() => ({ repairKey:`admin_repair_${Date.now().toString(36)}` }),
-    }, thread));
-  } else if (pending && thread.health === "healthy") {
-    controls.append(button("Resolve reconciliation", {
-      kind:"repair",
-      icon:"rotate",
-      iconOnly:true,
-      eyebrow:"Reconciliation cleanup",
-      description:"Retire stale pending reconciliation now that authoritative Thread health is complete. This does not change identity or Genesis.",
-      body:() => ({ repairKey:`admin_reconcile_${Date.now().toString(36)}` }),
-    }, thread));
-  } else if (deadLetter && thread.health === "healthy") {
-    controls.append(button("Recover", {
-      kind:"recover",
-      icon:"heart-pulse",
-      iconOnly:true,
-      eyebrow:"Reconciliation recovery",
-      description:"Return this healthy Thread from dead-letter quarantine to reconciliation processing.",
-      body:() => ({ action:"recover" }),
-    }, thread));
-  }
-
-  if (controls.childElementCount > 0) {
-    cell.append(controls);
-    return cell;
-  }
-
-  const reason = thread.health === "migration_required" ? "Migration required"
-    : thread.health === "operator_decision_required" ? "Input required"
-      : thread.health === "integrity_error" ? "Authority conflict"
-        : thread.health === "unrecoverable" ? "Not admitted"
-          : thread.health === "unavailable" ? "Unavailable"
-            : thread.reconciliation?.state === "pending" ? "Pending"
-              : "—";
-  cell.textContent = reason;
+  cell.append(createThreadEditButton({
+    threadId:thread.threadId,name:thread.identity?.name??null,iconOnly:true,
+    onComplete:spec=>{
+      $("#chain-summary").textContent=spec.label+" completed for "+
+        (thread.identity?.name??"Unnamed Thread")+".";
+    },
+  }));
   return cell;
 }
 
