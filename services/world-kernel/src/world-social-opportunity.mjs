@@ -133,8 +133,10 @@ export function createWorldSocialOpportunity({
               }
             }
           }
+          // started_at is the claimed decision instant; completed_at is the
+          // actual end, not a repeated copy of the claim timestamp.
           experienceStore.completeSocialOpportunity({
-            situationId:opportunity.situationId,at,outcome,
+            situationId:opportunity.situationId,at:now(),outcome,
             sourceEncounterRef:opportunity.sourceEncounterRef,
             threadId:opportunity.threadId,decision,
           });
