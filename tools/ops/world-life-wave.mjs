@@ -33,6 +33,16 @@ export function selectWorldLifeWave(evidence,{offset=0,limit=3,city=null,country
   return {total:ids.length,ids:ids.slice(offset,offset+limit)};
 }
 
+export function waveResponseFailure(status,payload){
+  const diagnostics=payload?.diagnostics??null;
+  return {
+    httpStatus:status,
+    code:payload?.code??payload?.error??"unknown",
+    detail:payload?.detail??null,
+    ...(diagnostics===null?{}:{diagnostics}),
+  };
+}
+
 function options(argv){
   const config={env:null,file:null,offset:0,limit:3,city:null,countryCode:null,apply:false};
   for(let i=0;i<argv.length;i++){
@@ -96,8 +106,12 @@ async function main(argv){
         signal:AbortSignal.timeout(120000),
       });
       const payload=await response.json();
-      if(!response.ok||payload.ok!==true){
-        throw new Error(`HTTP ${response.status}: ${payload.error??"unknown"}`);
+      if(!response.ok||payload?.ok!==true){
+        const failure=waveResponseFailure(response.status,payload);
+        const error=new Error(`HTTP ${response.status}: ${failure.code}`
+          +(failure.detail?` — ${failure.detail}`:""));
+        error.failure=failure;
+        throw error;
       }
       report.results.push({threadId,status:"ensured",
         situationId:payload.result?.situationId??null,
@@ -107,9 +121,10 @@ async function main(argv){
     }catch(error){
       report.results.push({threadId,status:"failed",
         elapsedMs:Date.now()-started,
-        error:String(error?.message??error).slice(0,200)});
+        error:String(error?.message??error).slice(0,400),
+        ...(error?.failure??{})});
       save();
-      throw new Error(`wave stopped on ${threadId}; evidence: ${out}`);
+      throw new Error(`wave stopped on ${threadId}: ${error?.message??error}; evidence: ${out}`);
     }
     save();
   }
