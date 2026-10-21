@@ -18,7 +18,15 @@ intervention, **not** evidence of spontaneous life or a prescribed meeting.
 npm run world-social:candidates -- --env staging --limit 64
 ```
 
-Use the emitted `evidencePath`. Its `underpopulatedCities` is based on
+Use the emitted `evidencePath`. Its `lifeStatusCounts` and `lifeContinuity`
+classify **all inspected Threads**, including those without a current city:
+`scheduled`, `blocked`, `plan_expired`, `unarmed`, and
+`not_established`. Blocked entries preserve the actual failure reason,
+attempt count, and last plan horizon. This is read-only and does not
+invoke planning. Do not include blocked/expired lives in a cohort
+experiment before inspecting their cause.
+
+Its `underpopulatedCities` is based on
 **currently enacted World localities**, not birthplaces. It includes real
 cities with zero attested public venues and reports `neededToThree`, but
 does not infer a Thread's future residence from a new birth. Check that
@@ -56,19 +64,28 @@ Do not use staging during the initial 90-second baseline. When the tool
 announces the World-life window, in terminal B:
 
 ```sh
+# First, a single known Thread after deploying the planning fix:
 npm run world-life:wave -- --env staging \
   --file .fibre/world-social/staging/candidates/cities-EXAMPLE.json \
-  --offset 0 --limit 3
+  --thread thr_443b1151f4c24ac8b7cbd1e9fb4df4c724cb3d4a
 
-# After confirming selection and measurement readiness:
+# Only after dry-run confirmation and cost review:
 npm run world-life:wave -- --env staging \
   --file .fibre/world-social/staging/candidates/cities-EXAMPLE.json \
-  --offset 0 --limit 3 --apply
+  --thread thr_443b1151f4c24ac8b7cbd1e9fb4df4c724cb3d4a --apply
+
+# After this canary succeeds, a small geographic wave:
+npm run world-life:wave -- --env staging \
+  --file .fibre/world-social/staging/candidates/cities-EXAMPLE.json \
+  --city London --country-code GB --offset 0 --limit 3
 ```
 
 Replace `cities-EXAMPLE.json` with the exact saved `evidencePath`.
 The CLI selects unique, stable Thread IDs from that actual candidate
-snapshot. It defaults to a dry run; `--apply` issues **one serial**
+snapshot. `--thread` is an explicit single-person recovery canary and
+cannot be combined with `--city` or cohort offsets. City selection uses
+enacted current location, not birthplace. A successful manual ensure
+does not force physical wakefulness, social contact, or a move. It defaults to a dry run; `--apply` issues **one serial**
 authoritative `/internal/lived-now/ensure` per Thread, with a
 1.25-second interval and a hard 21-Thread cap. It stops and saves
 partial evidence on the first failure. This may cause LLM-backed
@@ -82,6 +99,15 @@ the remaining 21, adjusting offsets within the same frozen selection.
 Refreshing the candidate snapshot between waves changes the selected
 set; if it is refreshed, recompute offsets and avoid repeat selection
 based on already-saved wave evidence.
+
+A prior blocked wake is not repaired by merely resetting its three-attempt
+counter. The underlying planner output must first be admissible. Successful
+`LivedNow.ensure` should admit a new Thread-owned plan and naturally
+re-arm its per-Thread life frontier; verify the resulting plan horizon
+and non-null next wake with `thread-journey:probe`. If a wake fails,
+inspect the saved World response `code`, `detail` and
+`diagnostics.stage` before retrying. An HTTP error may follow already
+committed historical World boundaries: never assume it rolled back.
 
 **Stop expansion** when any provider quota/row-read limit is approached,
 a wave fails, World reconciliation backlog grows, admitted life is
