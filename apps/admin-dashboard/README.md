@@ -247,6 +247,17 @@ If location is omitted, each request independently uses the shared birthplace sa
 
 The Admin map is a static world projection over Birth Center's own birthplace catalog. It shows restrained timezone meridians and the active birth pipeline as `genesis -> developing -> emerging -> in-world`; these are operator-facing stage names over the existing durable birth states, not a second lifecycle authority. Pending births remain durable Birth Center state, while World remains authoritative for whether a Thread is actually in-world.
 
+The Threads pane displays **Population life continuity** (Scheduled, Blocked,
+Expired) from the same World Registry `lifeContinuity` records already used
+to annotate portrait life indicators. It makes no per-Thread request or
+model call for these counters. A blocked frontier is not counted as healthy
+because a Plan was previously authored; a lapsed Plan is Expired.
+Unarmed, overdue, unestablished and unknown lives are counted separately
+in the note, never hidden inside Scheduled. A population load error is
+displayed explicitly and preserves the last successful records; an optional
+current-World map rendering failure cannot erase the person table. The
+scoreboard is an actual snapshot, not a 42/0/0 acceptance target.
+
 The Threads pane is a **God-view of World reality**, not a public-disclosure view or a birthplace map. **Birth place** is immutable origin; **Current place** is the last World-enacted physical setting. The authenticated operator table shows its verified city even when the public location is hidden. Thread Observatory additionally shows the Thread's actual private-place description whenever World has attested it. The same bounded Registry read supplies operator geography, including same-Thread modern Genesis sibling locations derived from previously attested city evidence; public and God-view resolutions use distinct disclosure perspectives. One indexed place-attestation batch serves those unresolved current contexts, with no per-Thread population requests, model calls, or historic scans. The Admin map uses known World current coordinates, or a **city centroid** when only the city is attested; a city marker is never an exact private-home coordinate or evidence that different Threads share a venue. The separate `currentLocation` public projection continues to obey operator disclosure settings. The already-existing social-meeting service checks actual enacted shared venues or compatible mediated presence, never city-centroid coincidence. Frozen Threads retain their last enacted situation timestamp; no claim of continuously observed presence is made.
 
 Modern Genesis may author several private local places (home, transit, study, commerce) without storing city geography on each historical place episode. When the current place lacks its own geography, World can reuse an independently attested **city-level location from the same Thread's exact modern Genesis context**. It refuses unrelated contexts, conflicting cities, later unauthored places and explicitly hidden locations. The directory resolves only the unlocated modern subset through one indexed batch; Observatory makes a bounded single-Thread lookup only if necessary. Neither view substitutes birthplace for an ungrounded current place.
