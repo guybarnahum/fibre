@@ -457,9 +457,15 @@ export function renderWorldEventsPage(){
         "No overlapping completed stays confirmed in the returned World events."));
       for(const stay of result.stays.slice(0,12)){
         const line=el("div","world-events-presence-solo");
-        line.append(createThreadIdentityViewer({
+        const person=el("div","world-events-presence-person");
+        person.append(createThreadIdentityViewer({
           threadId:stay.threadId,compact:true,className:"world-events-person",
-        }),el("span",null,
+        }));
+        const life=el("a",null,"Life & Causes ↗");
+        life.href="/life?thread="+encodeURIComponent(stay.threadId)+"&view=history"
+          +"&moment="+encodeURIComponent("scene:"+stay.arrivalRef);
+        person.append(life);
+        line.append(person,el("span",null,
           `${formatWorldEventTime(stay.enteredAt,zone,{clockOnly:true})} – ${formatWorldEventTime(stay.leftAt,zone,{clockOnly:true})}`));
         solo.append(line);
       }
