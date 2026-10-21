@@ -48,6 +48,25 @@
 .world-events-place-choice.is-selected{border-color:#4bbba6;background:rgba(55,159,139,.1)}
 .world-events-place-choice strong{font-size:13px;font-weight:630}
 .world-events-place-choice span{font-size:11px;color:var(--muted,#82909b)}
+.world-events-presence{margin-bottom:14px}
+.world-events-presence:empty{display:none}
+.world-events-presence-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.world-events-presence-head h3{font-size:13px;margin:0}
+.world-events-presence-head span{font-size:10px;color:var(--muted)}
+.world-events-presence-lanes{display:grid;gap:9px;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface-subtle,transparent)}
+.world-events-presence-lane{display:grid;grid-template-columns:minmax(100px,140px) minmax(60px,1fr) auto;gap:10px;align-items:center}
+.world-events-presence-person{min-width:0}
+.world-events-presence-person>a{display:block;font-size:9px;margin-left:35px}
+.world-events-presence-track{position:relative;height:9px;border-radius:9px;background:color-mix(in srgb,var(--muted) 15%,transparent);overflow:hidden}
+.world-events-presence-bar{position:absolute;top:0;bottom:0;border-radius:9px;background:#63a9a2}
+.world-events-presence-time{font-size:10px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.world-events-presence-overlaps{display:grid;gap:6px;margin-top:8px}
+.world-events-presence-overlap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-left:2px solid #63a9a2;background:var(--surface-subtle,transparent);border-radius:4px;font-size:11px}
+.world-events-presence-overlap strong{font-size:11px}
+.world-events-presence-overlap>span{font-size:10px;color:var(--muted)}
+.world-events-presence-overlap-people{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.world-events-presence-overlap-people .world-events-person{min-width:105px}
+@media(max-width:530px){.world-events-presence-lane{grid-template-columns:minmax(90px,1fr) 1fr}.world-events-presence-time{grid-column:2}}
 .world-events-timeline{max-height:690px;overflow-y:auto;display:grid;gap:10px;padding-right:3px}
 .world-events-event-card{border:1px solid var(--border,#30414d);border-radius:12px;padding:13px 15px;background:var(--surface-subtle,rgba(130,144,152,.045))}
 .world-events-event-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;color:var(--muted,#8b9ca7);font-size:12px}
