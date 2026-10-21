@@ -3,9 +3,9 @@
 export function threadLifeStatus({
   currentAt=null,planHorizonEnd=null,nextAutonomousBoundary=null,
 }={},at=Date.now()){
-  if(currentAt===null)return "unstarted";
   const boundary=nextAutonomousBoundary;
   if(boundary?.blockedReason)return "blocked";
+  if(currentAt===null)return "unstarted";
   const horizon=Date.parse(planHorizonEnd??"");
   if(!Number.isFinite(horizon))return "unknown";
   if(horizon<=at)return "dormant";
@@ -31,4 +31,18 @@ export function threadLifeDescription(status,{
   if(nextAutonomousBoundary?.dueAt)facts.push("Next wake: "+nextAutonomousBoundary.dueAt);
   if(nextAutonomousBoundary?.blockedReason)facts.push("Blocked: "+nextAutonomousBoundary.blockedReason);
   return facts.join(" · ");
+}
+
+export function populationLifeContinuity(threads,at=Date.now()){
+  const counts={scheduled:0,blocked:0,expired:0,other:0};
+  for(const thread of threads){
+    if(thread.admitted!==true)continue;
+    const status=thread.lifeContinuity===null?"unknown"
+      :threadLifeStatus(thread.lifeContinuity,at);
+    if(status==="continuing")counts.scheduled++;
+    else if(status==="blocked")counts.blocked++;
+    else if(status==="dormant")counts.expired++;
+    else counts.other++;
+  }
+  return counts;
 }
