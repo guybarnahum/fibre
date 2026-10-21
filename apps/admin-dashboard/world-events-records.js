@@ -18,7 +18,8 @@ export function worldEventPlaceDayRecord(overview,place){
     since:new Date(Date.parse(overview.asOf)-24*3_600_000).toISOString(),
     coverage:overview.coverage,
     place:{placeRef:place.placeRef,name:place.name,city:place.city,
-      country:place.country,sourcePlaceEvidence:"verified_public"},
+      country:place.country,timeZone:place.timeZone??null,
+      sourcePlaceEvidence:"verified_public"},
     eventCount:events.length,events,
     note:"Events returned for this venue in the bounded World 24-hour overview; a source cap may omit events.",
   };
