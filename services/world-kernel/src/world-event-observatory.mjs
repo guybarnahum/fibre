@@ -25,6 +25,7 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
       placeRef:place.ref,venueRef:place.physicalVenue?.ref??null,
       name:place.displayName,city:place.locality,country:place.country,
       countryCode:place.countryCode,lat:place.lat,long:place.long,
+      timeZone:place.timeZone??null,
       discoveryListed:parse(row.discovery_json)?.listed===true,
       description:parse(row.discovery_json)?.description??null,
       appearance:parse(row.appearance_json)??null,
