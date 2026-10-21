@@ -116,7 +116,10 @@ export function createThreadEditButton({threadId,name=null,iconOnly=false,onComp
         choice.addEventListener("click",()=>{
           dialog.close();
           if(spec.kind==="photo"){
-            const correction=document.querySelector("#correct-official-id-photo");
+            const onThreadPage=location.pathname==="/thread/"+encodeURIComponent(threadId);
+            const correction=onThreadPage
+              ?document.querySelector(".thread-observatory-page #correct-official-id-photo")
+              :null;
             if(correction){
               document.querySelector('.thread-detail-tab[data-tab="identity"]')?.click();
               correction.scrollIntoView({block:"center"});
