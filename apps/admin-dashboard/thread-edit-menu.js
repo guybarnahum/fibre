@@ -44,6 +44,8 @@ export function threadEditActions(diagnosis,reconciliation){
   }
   actions.push({kind:"fid",id:"fid",label:"Re-issue FIN Card",
     description:"Cut a new identity card without changing the Thread's FIN."});
+  actions.push({kind:"photo",id:"official-photo",label:"Correct Official ID Photo",
+    description:"Review a proposed photograph against the canonical identity before changing the card."});
   return actions;
 }
 
@@ -113,6 +115,17 @@ export function createThreadEditButton({threadId,name=null,iconOnly=false,onComp
         choice.append(label,hint);
         choice.addEventListener("click",()=>{
           dialog.close();
+          if(spec.kind==="photo"){
+            const correction=document.querySelector("#correct-official-id-photo");
+            if(correction){
+              document.querySelector('.thread-detail-tab[data-tab="identity"]')?.click();
+              correction.scrollIntoView({block:"center"});
+              correction.click(); // Reuse the existing photographic review workflow.
+            }else{
+              location.href="/thread/"+encodeURIComponent(threadId)+"#correct-official-id-photo";
+            }
+            return;
+          }
           openThreadActionDialog({
             threadId,threadName:name,label:spec.label,
             eyebrow:spec.kind==="fid"?"Fibre Identity Card"
