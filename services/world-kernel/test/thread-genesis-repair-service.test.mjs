@@ -64,6 +64,9 @@ function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null,
       originOrientation:"original",
       selfDescription:"I persist.",
       birthDate:"2004-08-20",
+      birthCity:"London, United Kingdom",
+      birthPlace:{displayName:"London, United Kingdom",country:"United Kingdom",
+        countryCode:"GB",city:"London",lat:51.5074,long:-0.1278},
       languages:["English"],
       canonicalVisualIdentity:{ specification:{ subject:{ description:"stable face" } } },
     },
@@ -142,6 +145,18 @@ function fixture({ symbolicGenomeMigrator = null, physicalGenomeMigrator = null,
   });
   return { service, state, threadId, thread, embodiment };
 }
+
+test("missing authoritative birth city offers a verified operator correction, not a guessed birthplace",async()=>{
+  const {service,thread,threadId}=fixture();
+  delete thread.identity.birthCity;
+  delete thread.identity.birthPlace;
+  const diagnosis=await service.diagnose(threadId);
+  const birth=diagnosis.findings.find(finding=>finding.code==="BIRTH_PLACE_MISSING");
+  assert.equal(birth?.identityAction?.id,"set_birth_place",
+    "a Thread without birth-city evidence cannot be corrected");
+  assert.equal(birth.identityAction.input.fields[0].kind,"place_search",
+    "birthplace accepted an unverified typed string");
+});
 
 test("R1 diagnoses missing Presentation and unpublished canonical visual without inventing identity", async () => {
   const { service, threadId } = fixture();
