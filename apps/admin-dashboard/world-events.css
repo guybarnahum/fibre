@@ -4,6 +4,8 @@
 .world-events-panel-title{display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px}
 .world-events-panel-title h2{margin:0;font-size:18px;letter-spacing:-.02em}
 .world-events-panel-title span{font-size:12px;color:var(--muted,#81909e)}
+.world-events-timeline-controls{display:flex;align-items:center;gap:8px}
+.world-events-timeline-copy[hidden]{display:none}
 .world-events-main-map-panel,.world-events-place-panel,.world-events-timeline-panel{padding:20px;min-width:0}
 .world-events-world-map{height:clamp(280px,42vw,470px);overflow:hidden}
 .world-events-world-map .thread-world-map-svg{width:100%;height:100%}
