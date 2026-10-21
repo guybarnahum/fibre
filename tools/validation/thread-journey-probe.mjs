@@ -56,6 +56,21 @@ function inPeriod(value,start,end){
 
 // An intention is not a visit. Only World-enacted CurrentSituations count as
 // departure, transit or arrival, and each must cite that personal Flight Plan.
+export function inspectCurrentPersonalPlan(livedNow,at){
+  const plan=livedNow?.currentPersonalPlan??null;
+  if(!plan)return null;
+  const instant=Date.parse(at),start=Date.parse(plan.authoredAt??""),
+    end=Date.parse(plan.horizonEnd??"");
+  return {
+    planId:plan.planId??null,
+    authoredAt:plan.authoredAt??null,
+    horizonEnd:plan.horizonEnd??null,
+    stopCount:Array.isArray(plan.stops)?plan.stops.length:0,
+    coversObservationAt:Number.isFinite(instant)&&Number.isFinite(start)
+      &&Number.isFinite(end)&&instant>=start&&instant<end,
+  };
+}
+
 export function inspectThreadJourneys(observatory){
   const life=observatory?.livedNow??{};
   const plans=[life.currentPersonalPlan,...(life.recentPersonalPlans??[])]
@@ -146,10 +161,12 @@ export async function runThreadJourneyProbe({
   if(!response.observatory)throw new Error("Thread is not observable");
   const life=response.observatory.livedNow;
   const journeys=inspectThreadJourneys(response.observatory);
+  const checkedAt=new Date().toISOString();
+  const currentPersonalPlan=inspectCurrentPersonalPlan(life,checkedAt);
   const evidence={
     contract:"fibre-thread-journey-probe-v0.1",
     environment:target,threadId,
-    checkedAt:new Date().toISOString(),
+    checkedAt,
     validatorGitSha:head,deployedGitSha:deployedSha,
     deployedMatchesCheckout:deployedSha===head,
     runtimeSourceMatches:runtimeMatches,
@@ -160,6 +177,7 @@ export async function runThreadJourneyProbe({
       location:life.currentSituation.location,
     },
     nextAutonomousBoundary:life.nextAutonomousBoundary??null,
+    currentPersonalPlan,
     recentJourneyCount:journeys.length,
     journeys,
     // The Observatory cannot prove no one called ensure. Do not upgrade an
@@ -179,6 +197,7 @@ export async function runThreadJourneyProbe({
   emit({event:"thread-journey-probe",status:evidence.status,
     threadId,observed:journeys.length,deployedGitSha:deployedSha,
     nextWake:evidence.nextAutonomousBoundary?.dueAt??null,
+    currentPersonalPlan,
     evidencePath:file,journeys});
   return {evidence,evidencePath:file};
 }
