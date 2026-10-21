@@ -1,11 +1,6 @@
-import {
-  actionFields,
-  announceThreadActionBusy,
-  openThreadActionDialog,
-} from "./thread-action-dialog.js";
 import { threadAppearanceSection } from "./thread-appearance-ui.js";
-import { identityActionPayload } from "./thread-identity-action.js";
-import { decorateActionButton, iconForIdentityAction, setBlockingButtonState, setWaitingContent } from "./fa-icons.js";
+import { decorateActionButton, setBlockingButtonState, setWaitingContent } from "./fa-icons.js";
+import {createThreadEditButton} from "./thread-edit-menu.js";
 
 const dialogBody = document.querySelector("#dialog-body");
 
@@ -18,12 +13,6 @@ function el(tag, className = null, text = null) {
 
 function human(value) {
   return String(value ?? "").replace(/([a-z0-9])([A-Z])/gu, "$1 $2").replace(/[_-]+/gu, " ");
-}
-
-function announceThreadUpdated(threadId, change) {
-  window.dispatchEvent(new CustomEvent("fibre:thread-updated", {
-    detail:{ threadId, change },
-  }));
 }
 
 function labelFor(code) {
@@ -54,6 +43,8 @@ function labelFor(code) {
     BIRTH_DATE_PRESENTATION_MISSING:"Birth date",
     BIRTH_DATE_CONFLICT:"Birth date",
     BIRTH_GEOGRAPHY_RECOVERABLE:"Birth place",
+    BIRTH_PLACE_MISSING:"Birth city",
+    BIRTH_PLACE:"Birth city",
     BIRTH_COUNTRY_CODE_MISSING:"Birth country code",
     SPOKEN_LANGUAGES:"Spoken languages",
     SPOKEN_LANGUAGES_PRESENTATION_STALE:"Spoken languages",
@@ -120,34 +111,8 @@ function reconciliationTag(reconciliation) {
   return tag;
 }
 
-function actionable(diagnosis) {
-  return (diagnosis?.findings ?? []).filter((finding) => finding?.state === "repairable" && typeof finding?.action === "string" && finding.action !== "");
-}
-
-function migrations(diagnosis) {
-  return (diagnosis?.findings ?? []).filter((finding) => (
-    finding?.migration?.domain === "identity"
-    && typeof finding?.migration?.id === "string"
-  ));
-}
-
-function identityActions(diagnosis) {
-  const seen = new Set();
-  return (diagnosis?.findings ?? []).flatMap((finding) => {
-    const action = finding?.identityAction;
-    if (!action?.id || seen.has(action.id)) return [];
-    seen.add(action.id);
-    return [action];
-  });
-}
 function operatorDecisionFindings(diagnosis) {
   return (diagnosis?.findings ?? []).filter((finding) => finding?.state === "operator_decision_required");
-}
-
-function operatorDecisionActionIds(diagnosis) {
-  return new Set(operatorDecisionFindings(diagnosis)
-    .map((finding) => finding?.identityAction?.id)
-    .filter((value) => typeof value === "string" && value !== ""));
 }
 
 function readableFindingValue(value) {
@@ -194,23 +159,6 @@ async function requestHealth(threadId) {
   return Object.freeze({ diagnosis:payload.diagnosis, reconciliation:payload.reconciliation ?? null });
 }
 
-async function withThreadBusy(threadId,run) {
-  announceThreadActionBusy(threadId,true);
-  try { return await run(); }
-  finally { announceThreadActionBusy(threadId,false); }
-}
-
-async function post(threadId, body) {
-  const response = await fetch(`/api/threads/${encodeURIComponent(threadId)}/repair`, {
-    method:"POST",
-    headers:{ "content-type":"application/json", Accept:"application/json" },
-    body:JSON.stringify(body),
-  });
-  const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(payload?.error?.detail ?? payload?.error?.code ?? payload?.error ?? `HTTP ${response.status}`);
-  return payload;
-}
-
 function actionButton(label, run, { icon = null, tooltip = label, blocking = false } = {}) {
   const button = el("button", "secondary thread-repair-button");
   button.type = "button";
@@ -242,168 +190,6 @@ function actionButton(label, run, { icon = null, tooltip = label, blocking = fal
   return button;
 }
 
-function dialogActionButton(label, open, { icon = null, tooltip = label } = {}) {
-  const button = el("button", "secondary thread-repair-button");
-  button.type = "button";
-  decorateActionButton(button, { icon, label, tooltip });
-  button.addEventListener("click", open);
-  return button;
-}
-
-function renderIdentityActions(host, threadId, diagnosis, reconciliation) {
-  const actions = identityActions(diagnosis);
-  if (actions.length === 0) return;
-  const required = operatorDecisionActionIds(diagnosis);
-  const bar = el("div", "thread-repair-actions");
-  for (const action of actions) {
-    const label = action.label ?? human(action.id);
-    const description = action.id === "admit_name"
-      ? "Admit the preserved public name into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
-      : action.id === "admit_birth_date"
-        ? "Admit the preserved birth date into authoritative World identity. This is an explicit operator decision; Presentation is evidence, not authority."
-        : ["set_raised_languages","change_raised_languages"].includes(action.id)
-          ? "Correct the languages this person was raised with in Genesis. This does not edit Spoken languages, which belong to the Thread's lived history."
-          : ["repair_birth_geography","set_birth_country_code"].includes(action.id)
-            ? "Confirm the two-letter ISO country code and record the birth-place update in authoritative World identity."
-            : "Record an explicit operator identity decision in World history.";
-    const control = dialogActionButton(label, () => {
-      openThreadActionDialog({
-        threadId,
-        threadName:diagnosis.identity?.name ?? null,
-        label,
-        eyebrow:"Authoritative identity",
-        description,
-        fields:actionFields(action),
-        run:async (input) => {
-          await post(threadId, identityActionPayload(action,input,{
-            operationKey:`${action.command === "raised_languages" ? "admin_raised_languages" : "admin_identity"}_${Date.now().toString(36)}`,
-          }));
-          window.dispatchEvent(new CustomEvent("fibre:thread-identity-updated", {
-            detail:{ threadId, actionId:action.id },
-          }));
-          renderHealth(
-            host,
-            threadId,
-            await requestHealth(threadId),
-            action.id === "admit_name"
-              ? "Name admitted into World; Presentation is reconciled from that authority."
-              : action.id === "admit_birth_date"
-                ? "Birth date admitted into World; Presentation is reconciled from that authority."
-                : action.command === "raised_languages"
-                  ? "Raised languages corrected in Genesis; Spoken languages were left untouched."
-                  : `${label} updated in World.`,
-          );
-        },
-      });
-    }, {
-      icon:iconForIdentityAction(action.id),
-      tooltip:`${label} — ${description}`,
-    });
-    if (required.has(action.id)) control.className = "primary thread-repair-button thread-required-action";
-    bar.append(control);
-  }
-  host.append(bar);
-}
-
-function renderMigrationActions(host, threadId, diagnosis, reconciliation) {
-  const available = migrations(diagnosis);
-  if (available.length === 0) return;
-  const bar = el("div", "thread-repair-actions");
-  for (const finding of available) {
-    const migration = finding.migration;
-    const label = `Migrate · ${migration.label ?? human(migration.id)}`;
-    bar.append(dialogActionButton(label, () => {
-      openThreadActionDialog({
-        threadId,
-        threadName:diagnosis.identity?.name ?? null,
-        label,
-        eyebrow:"Identity migration",
-        description:"Apply the named migration using preserved evidence, then re-diagnose authoritative World state.",
-        fields:actionFields(migration),
-        run:async (input) => {
-          const payload = await post(threadId, {
-            action:"migrate",
-            migrationId:migration.id,
-            migrationKey:`admin_migration_${Date.now().toString(36)}`,
-            input,
-          });
-          renderHealth(host, threadId, {
-            diagnosis:payload.migration.after,
-            reconciliation:payload.reconciliation ?? reconciliation,
-          }, `Migration complete · ${migration.label ?? human(migration.id)}.`);
-          announceThreadUpdated(threadId, "migration");
-        },
-      });
-    }, {
-      icon:"arrow-up-from-bracket",
-      tooltip:`${label} — Apply preserved Genesis evidence to authoritative World identity.`,
-    }));
-  }
-  host.append(bar);
-}
-
-function renderRepairAction(host, threadId, diagnosis, reconciliation) {
-  const actions = actionable(diagnosis);
-  if (actions.length === 0 || diagnosis.health !== "repairable") return;
-  const label = reconciliation?.state === "dead_letter" ? "Fix & Recover" : "Fix";
-  const bar = el("div", "thread-repair-actions");
-  const button = actionButton(label, () => withThreadBusy(threadId, async () => {
-    const payload = await post(threadId, { repairKey:`admin_repair_${Date.now().toString(36)}` });
-    const names = (payload.result.actions ?? []).map((entry) => human(entry.action)).join(" · ");
-    renderHealth(host, threadId, {
-      diagnosis:payload.result.after,
-      reconciliation:payload.reconciliation ?? null,
-    }, names ? `Applied: ${names}` : "No repair action was required.");
-    announceThreadUpdated(threadId, "repair");
-  }), {
-    icon:reconciliation?.state === "dead_letter" ? "heart-pulse" : "wrench",
-    tooltip:reconciliation?.state === "dead_letter"
-      ? "Fix & Recover — repair derived state from World authority and return this Thread from quarantine."
-      : "Fix — repair derived state from authoritative World facts.",
-  });
-  button.className = "primary thread-repair-button";
-  bar.append(button);
-  host.append(bar);
-}
-
-function renderPendingReconciliationAction(host, threadId, diagnosis, reconciliation) {
-  if (reconciliation?.state !== "pending" || diagnosis.health !== "healthy") return;
-  const bar = el("div", "thread-repair-actions");
-  const button = actionButton("Resolve reconciliation", () => withThreadBusy(threadId, async () => {
-    const payload = await post(threadId, { repairKey:`admin_reconcile_${Date.now().toString(36)}` });
-    renderHealth(host, threadId, {
-      diagnosis:payload.result.after,
-      reconciliation:payload.reconciliation ?? null,
-    }, "Reconciliation state resolved from current authoritative health.");
-    announceThreadUpdated(threadId, "reconciliation");
-  }), {
-    icon:"rotate",
-    tooltip:"Resolve reconciliation — retire stale pending reconciliation after authoritative health is verified.",
-  });
-  button.className = "primary thread-repair-button";
-  bar.append(button);
-  host.append(bar);
-}
-
-function renderRecoveryAction(host, threadId, diagnosis, reconciliation) {
-  if (reconciliation?.state !== "dead_letter" || unresolved(diagnosis).length !== 0) return;
-  const bar = el("div", "thread-repair-actions");
-  const button = actionButton("Recover", () => withThreadBusy(threadId, async () => {
-    const payload = await post(threadId, { action:"recover" });
-    renderHealth(host, threadId, {
-      diagnosis,
-      reconciliation:payload.recovery.after,
-    }, "Recovered · reconciliation is pending.");
-    announceThreadUpdated(threadId, "recovery");
-  }), {
-    icon:"heart-pulse",
-    tooltip:"Recover — return this healthy Thread from dead-letter quarantine to reconciliation processing.",
-  });
-  button.className = "primary thread-repair-button";
-  bar.append(button);
-  host.append(bar);
-}
-
 function renderHealthRefresh(host, threadId) {
   const bar = el("div", "thread-repair-actions");
   bar.append(actionButton("Refresh health", () => renderThreadHealth(host, threadId), { blocking:true }));
@@ -431,11 +217,10 @@ function renderHealth(host, threadId, health, message = null) {
     return;
   }
 
-  renderIdentityActions(host, threadId, diagnosis, reconciliation);
-  renderMigrationActions(host, threadId, diagnosis, reconciliation);
-  renderRepairAction(host, threadId, diagnosis, reconciliation);
-  renderPendingReconciliationAction(host, threadId, diagnosis, reconciliation);
-  renderRecoveryAction(host, threadId, diagnosis, reconciliation);
+  const edits=el("div","thread-repair-actions");
+  edits.append(createThreadEditButton({threadId,name:diagnosis.identity?.name??null,
+    onComplete:()=>void renderThreadHealth(host,threadId)}));
+  host.append(edits);
 
   if (reconciliation?.state === "dead_letter" && unresolved(diagnosis).length > 0) {
     host.append(el("p", "thread-repair-note", "Quarantined until the identity or authority findings above are resolved."));
