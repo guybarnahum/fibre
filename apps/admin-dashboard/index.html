@@ -177,6 +177,19 @@
               <button id="thread-population-repair-geography" class="secondary" type="button" hidden></button>
             </div>
           </div>
+          <section class="thread-life-scoreboard" aria-label="Population life continuity" aria-live="polite">
+            <div class="thread-life-scoreboard-heading">
+              <strong>Population life continuity</strong>
+              <span id="thread-life-scoreboard-context">Current World status · not a wakefulness count</span>
+            </div>
+            <div class="thread-life-scoreboard-values">
+              <div><span>Scheduled</span><strong id="thread-life-scheduled">—</strong></div>
+              <div><span>Blocked</span><strong id="thread-life-blocked">—</strong></div>
+              <div><span>Expired</span><strong id="thread-life-expired">—</strong></div>
+            </div>
+            <p id="thread-life-scoreboard-note">Loading admitted Thread life…</p>
+          </section>
+          <p id="thread-population-error" class="thread-population-error" role="alert" hidden></p>
           <div class="thread-population-map-shell">
             <div class="thread-world-map thread-population-map" aria-label="Current World locations of admitted Threads, with solar night shading">
               
