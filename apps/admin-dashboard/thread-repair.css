@@ -773,8 +773,7 @@
 .thread-population-table .thread-id-copy:focus-visible { background:var(--surface-subtle); }
 .thread-id-copy.copied { color:#067647; }
 .thread-id-copy.copy-failed { color:#b42318; }
-.thread-population-actions { min-width:148px; }
-.thread-action-stack { display:flex; flex-wrap:wrap; gap:4px; }
+.thread-population-actions { min-width:54px; text-align:center; }
 .thread-population-actions button {
   display:inline-flex;
   align-items:center;
