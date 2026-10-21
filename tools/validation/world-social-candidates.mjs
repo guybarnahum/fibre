@@ -18,6 +18,31 @@ function cityKey(locality,countryCode){
   return countryCode.trim().toUpperCase()+":"+locality.trim().toLocaleLowerCase("en-US");
 }
 
+// Read only: a stopped scheduler is not a sleeping person. Inspect even
+// Threads without a current city, using this scan's existing Observatory read.
+export function inspectLifeContinuity(threadId,person,at){
+  const lived=person?.livedNow??{};
+  const current=lived.currentSituation??null;
+  const plan=lived.currentPersonalPlan??null;
+  const boundary=lived.nextAutonomousBoundary??null;
+  const age=Date.parse(at),horizon=Date.parse(plan?.horizonEnd??"");
+  const covers=Number.isFinite(horizon)&&horizon>=age;
+  const status=current===null?"not_established"
+    :boundary?.blockedReason?"blocked"
+      :!covers?"plan_expired"
+        :boundary?.dueAt?"scheduled":"unarmed";
+  return {
+    threadId,name:person?.thread?.identity?.name??null,
+    status,currentSituationAt:current?.establishedAt??null,
+    currentSituationId:current?.situationId??null,
+    currentPlanId:plan?.planId??null,
+    planHorizonEnd:plan?.horizonEnd??null,
+    nextWakeAt:boundary?.dueAt??null,
+    blockedReason:boundary?.blockedReason??null,
+    failedAttempts:boundary?.failedAttempts??0,
+  };
+}
+
 export function currentCity(threadId,person){
   const lived=person?.livedNow;
   const situation=lived?.currentSituation;
@@ -172,7 +197,7 @@ export async function runSocialCandidateScan({
   const cards=(await publicThreads(config.presentationBaseUrl,config.viewerOrigin))
     .filter(item=>item?.threadId&&!["genesis_candidate","retired"].includes(item.lifecycleStatus));
   const sample=cards.slice(0,sampleLimit);
-  const people=[],unavailable=[];
+  const people=[],unavailable=[],lifeContinuity=[];
   let deployedSha=null;
   for(const card of sample){
     try{
@@ -185,6 +210,8 @@ export async function runSocialCandidateScan({
         deployedSha=response.deploymentGitSha??null;
         requireRuntimeAncestor(deployedSha,head);
       }
+      lifeContinuity.push(inspectLifeContinuity(card.threadId,
+        response.observatory,new Date().toISOString()));
       const current=currentCity(card.threadId,response.observatory);
       if(current!==null)people.push(current);
     }catch(error){
@@ -209,6 +236,11 @@ export async function runSocialCandidateScan({
     scannedThreadCount:sample.length,
     sampledThreadIds:sample.map(card=>card.threadId),
     unavailable,
+    lifeContinuity:lifeContinuity.sort((a,b)=>a.threadId.localeCompare(b.threadId)),
+    lifeStatusCounts:Object.fromEntries(["scheduled","blocked","plan_expired",
+      "unarmed","not_established"].map(status=>[
+        status,lifeContinuity.filter(item=>item.status===status).length,
+      ])),
     matchedCurrentCityThreadCount:ranked.matchedThreadCount,
     pairedCityCount:ranked.pairedCityCount,
     ...ranked,status,
@@ -222,6 +254,8 @@ export async function runSocialCandidateScan({
     event:"world-social-candidates-complete",status,
     deployedWorldGitSha:deployedSha,scannedThreadCount:sample.length,
     unavailableThreadCount:unavailable.length,
+    lifeStatusCounts:evidence.lifeStatusCounts,
+    inactiveLifeExamples:lifeContinuity.filter(item=>item.status!=="scheduled").slice(0,8),
     matchedCurrentCityThreadCount:ranked.matchedThreadCount,
     pairedCityCount:ranked.pairedCityCount,
     underpopulatedCityCount:ranked.underpopulatedCityCount,
