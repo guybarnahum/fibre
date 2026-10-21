@@ -134,6 +134,23 @@ function registryFindings(entry) {
     }));
   }
 
+  if(entry.birthLocation?.source!=="identity_geography_recovered"){
+    const known=clean(entry.birthLocation?.displayName)??clean(entry.birthPlace);
+    findings.push(Object.freeze({
+      code:known===null?"BIRTH_PLACE_MISSING":"BIRTH_PLACE",
+      state:known===null?"operator_decision_required":"healthy",
+      ...(known===null?{reason:"Birth city is missing; choose a verified city."}:{}),
+      identityAction:Object.freeze({
+        id:known===null?"set_birth_place":"change_birth_place",
+        label:known===null?"Set birth city":"Change birth city",
+        input:Object.freeze({fields:Object.freeze([
+          Object.freeze({name:"birthPlace",label:"Verified birth city",
+            kind:"place_search",required:true,...(known?{default:known}:{})}),
+        ])}),
+      }),
+    }));
+  }
+
   const spokenLanguages = Array.isArray(entry.languages)
     ? entry.languages.filter((item) => typeof item === "string" && item.trim() !== "").map((item) => item.trim())
     : [];
