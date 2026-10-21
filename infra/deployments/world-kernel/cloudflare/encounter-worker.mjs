@@ -766,12 +766,15 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     // Actor action is already World history at the exact enacted time.
     // Plan renewals and activity refreshes are not fabricated arrivals.
     const occurrence=enactedActorOccurrence(previous,situation);
+    const atPlace=situation.location?.kind==="place"&&situation.wakefulness!=="asleep";
+    if(occurrence===null&&!atPlace)return;
+    const runtime=this.runtimeForRequest();
+    const lived=openLivedNowStore(runtime.worldStorage);
     if(occurrence!==null){
       // World has already committed this movement. The notification is only
       // an optional browser invalidation, never another event or life action.
       try{
-        const runtime=this.runtimeForRequest();
-        if(openLivedNowStore(runtime.worldStorage).getPublicPlace(occurrence.placeRef)!==null
+        if(lived.getPublicPlace(occurrence.placeRef)!==null
           &&runtime.infraDriver?.realtime?.publish){
           this.ctx.waitUntil(runtime.infraDriver.realtime.publish("admin",{
             entity:"world",id:"events",aspect:"occurrence",
@@ -787,9 +790,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         }));
       }
     }
-    if(situation.location?.kind!=="place"||situation.wakefulness==="asleep")return;
-    const store=openLivedExperienceStore(this.runtimeForRequest().worldStorage);
-    const lived=openLivedNowStore(this.runtimeForRequest().worldStorage);
+    if(!atPlace)return;
+    const store=openLivedExperienceStore(runtime.worldStorage);
     const place=lived.getWorldPlace(
       situation.threadId,situation.location.placeRef,{required:false},
     );
