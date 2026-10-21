@@ -678,6 +678,9 @@ test("valid legacy birthplace missing only countryCode becomes an operator decis
 
 test("birth geography recovery tolerates punctuation noise without guessing the country code", async () => {
   const { service, threadId, thread } = fixture();
+  // Legacy city text has no competing canonical place; a different
+  // authoritative birthplace must never be silently overwritten.
+  delete thread.identity.birthPlace;
   thread.identity.birthCity = "San Francisco Califronia,, USA";
 
   const diagnosis = await service.diagnose(threadId);
