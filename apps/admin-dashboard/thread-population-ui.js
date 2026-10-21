@@ -15,7 +15,7 @@ import {
   threadPopulationViewKey,
 } from "./view-invalidation.js";
 import { bindCopyAction } from "./copy-action.js";
-import { threadLifeStatus, threadLifeDescription } from "./thread-life-status.mjs";
+import { threadLifeStatus, threadLifeDescription, populationLifeContinuity } from "./thread-life-status.mjs";
 import { setBlockingButtonState, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 import { createThreadEditButton } from "./thread-edit-menu.js";
 import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
@@ -368,6 +368,7 @@ function currentPopulationSummary() {
     deadLetter:population.filter((thread) => thread.reconciliation?.state === "dead_letter").length,
     migrationsAvailable:population.filter((thread)=>thread.health==="migration_required").length,
     stillborn:stillborn.length,
+    life:populationLifeContinuity(population),
   };
 }
 
@@ -637,7 +638,24 @@ function renderStillbornTopSummary(summary = null) {
   $("#metric-view-context").textContent = "unrecoverable / Activity evidence";
 }
 
+function renderLifeScoreboard(summary=null){
+  const life=summary?.life??null;
+  $("#thread-life-scheduled").textContent=life?.scheduled??"—";
+  $("#thread-life-blocked").textContent=life?.blocked??"—";
+  $("#thread-life-expired").textContent=life?.expired??"—";
+  const count=summary?.total??null;
+  $("#thread-life-scoreboard-context").textContent=count===null
+    ?"Current World status · not a wakefulness count"
+    :`${count} admitted Threads · current World status`;
+  $("#thread-life-scoreboard-note").textContent=count===null
+    ?"Population not available; no health status inferred."
+    :life.other>0
+      ?`${life.other} additional Thread${life.other===1?"":"s"} have unarmed, overdue, unestablished or unknown continuity.`
+      :"Scheduled means a current Flight Plan and a non-overdue wake. Blocked and expired lives remain visible.";
+}
+
 function renderSummary(summary) {
+  renderLifeScoreboard(summary);
   const values = {
     "thread-stat-total":summary.total,
     "thread-stat-activity-only":summary.stillborn,
@@ -1355,18 +1373,26 @@ async function loadPopulation() {
   });
   setWaitingContent($("#chain-summary"), "Reading Activity-discovered identities and authoritative World health");
   setWaitingContent(threadPopulationMapSummary, "Loading current World locations");
+  const errorPanel=$("#thread-population-error");
+  errorPanel.hidden=true;
   try {
     const response = await fetch("/api/threads/population", { headers:{ Accept:"application/json" }, cache:"no-store" });
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
-    population = payload.threads ?? [];
+    if (!response.ok) throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
+    if(!Array.isArray(payload?.threads))throw new Error("World population response lacks Thread records");
+    population = payload.threads;
     for (const thread of population) rememberPopulationThread(thread);
     stillborn = payload.stillborn ?? [];
     const currentSummary=currentPopulationSummary();
     renderSummary(currentSummary);
     renderPopulation();
     renderStillborn();
-    renderThreadPopulationMap();
+    try{
+      renderThreadPopulationMap();
+    }catch(error){
+      console.warn("Current World map unavailable; Threads remain visible",error);
+      threadPopulationMapSummary.textContent="Map unavailable · Thread records remain visible";
+    }
     $("#environment-pill").textContent = payload.environment ?? "—";
     if (populationMode === "stillborn") {
       renderStillbornTopSummary(payload.summary ?? {});
@@ -1376,14 +1402,17 @@ async function loadPopulation() {
       $("#chain-summary").textContent = `${population.length} admitted/recoverable Threads · ${stillborn.length} Stillborn${payload.truncated ? ` · first ${payload.limit} observed IDs` : ""}.`;
     }
   } catch (error) {
-    population = [];
-    stillborn = [];
-    if (populationMode === "stillborn") renderStillbornTopSummary();
-    else renderThreadsTopSummary();
-    renderPopulation();
-    renderStillborn();
-    renderThreadPopulationMap();
-    $("#chain-summary").textContent = `Thread population unavailable: ${error instanceof Error ? error.message : String(error)}`;
+    const message=error instanceof Error?error.message:String(error);
+    errorPanel.textContent=`Thread population unavailable: ${message}. The last loaded data, if any, is retained. Use Refresh to retry.`;
+    errorPanel.hidden=false;
+    if(population.length===0){
+      renderLifeScoreboard();
+      empty.hidden=true;
+      rows.replaceChildren();
+      threadPopulationMapSummary.textContent="Current World locations unavailable";
+      renderThreadsTopSummary();
+    }
+    $("#chain-summary").textContent = `Thread population unavailable: ${message}`;
   } finally {
     loading = false;
     holdOperatorMode();
