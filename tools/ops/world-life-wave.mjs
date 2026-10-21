@@ -79,6 +79,8 @@ async function main(argv){
     throw new Error("candidate snapshot is over 48 hours old; rerun world-social:candidates");
   }
   const wave=selectWorldLifeWave(evidence,args);
+  const names=new Map((evidence.lifeContinuity??[])
+    .map(person=>[person.threadId,person.name]).filter(([,name])=>name));
   const issuedAt=new Date().toISOString();
   const report={contract:"fibre-world-life-wave-v0.1",
     environment:args.env,sourceCheckedAt:evidence.checkedAt,
@@ -104,8 +106,16 @@ async function main(argv){
   const save=()=>{mkdirSync(dirname(out),{recursive:true});
     writeFileSync(out,JSON.stringify(report,null,2)+"\n");};
   for(let i=0;i<wave.ids.length;i++){
-    const threadId=wave.ids[i],started=Date.now();
     if(i>0)await new Promise(done=>setTimeout(done,1250));
+    const threadId=wave.ids[i],started=Date.now();
+    const person=names.get(threadId);
+    const label=person?`${person} (${threadId})`:threadId;
+    // The server returns only when the entire LivedNow operation completes.
+    // Indicate elapsed waiting, never manufacture internal planning stages.
+    process.stdout.write(JSON.stringify({
+      event:"world-life-wave-progress",
+      progress:`[${i+1}/${wave.ids.length}] ${label} · waiting for World reconciliation`,
+    })+"\n");
     try{
       const response=await fetch(endpoint,{
         method:"POST",
@@ -126,7 +136,7 @@ async function main(argv){
         situationId:payload.result?.situationId??null,
         establishedAt:payload.result?.establishedAt??null,
         elapsedMs:Date.now()-started});
-      process.stdout.write(`[${i+1}/${wave.ids.length}] ${threadId} · ensured\n`);
+      process.stdout.write(`[${i+1}/${wave.ids.length}] ${label} · ensured (${((Date.now()-started)/1000).toFixed(1)}s)\n`);
     }catch(error){
       report.results.push({threadId,status:"failed",
         elapsedMs:Date.now()-started,
