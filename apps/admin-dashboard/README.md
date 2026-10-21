@@ -64,6 +64,14 @@ copies the entire *returned* rolling 24-hour overview, including located
 and unmapped events, places and source-coverage limits. It reads the
 24-hour overview only if the current window differs; the result is not
 a complete calendar-date archive or evidence beyond source caps.
+A second **Copy venue day JSON** icon sits beside the *selected venue's*
+timeline count. It exports only that place's returned events in the
+last rolling 24 hours, with the exact `placeRef`, place name, as-of
+timestamp, start boundary, event count and original World coverage.
+If the operator is viewing a different window, it fetches one bounded
+24-hour overview on demand. This is **not** a full venue archive;
+the global World source cap may still omit some of the venue's
+events. No new World service, query, data storage or model work is needed.
 Counts are **events shown in the selected rolling 1–168-hour window**,
 not lifetime totals, a paginated historical count or a full census; the
 source's 240-item situation/story limits can truncate the result.
