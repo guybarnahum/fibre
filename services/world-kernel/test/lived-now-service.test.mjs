@@ -709,6 +709,46 @@ test("E7.5 repeatedly unavailable cognition becomes a quiet, inspectable blocked
   }));
 
 
+test("an admitted later situation re-arms an exhausted life frontier without rewriting past",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    lived.recordPlan(personalPlan(life));
+    const service=createLivedNowService({
+      livedNowStore:lived,
+      onSituationResolved:situation=>lived.scheduleNextLivedBoundary({
+        threadId:situation.threadId,situationId:situation.situationId,
+        dueAt:nextLivedBoundary(lived,situation),
+      }),
+    });
+    try{
+      const original=await service.ensure({
+        threadId:life.thread.threadId,at:"2026-09-10T05:05:00Z",
+      });
+      const dueAt=nextLivedBoundary(lived,original);
+      for(let i=0;i<3;i++)lived.failLivedBoundary({
+        threadId:life.thread.threadId,situationId:original.situationId,
+        dueAt,message:"prior cognition unavailable",
+      });
+      assert.equal(lived.inspectLivedBoundary(life.thread.threadId).failedAttempts,3);
+      assert.equal(lived.nextLivedBoundaryAt(),null,
+        "a blocked Thread silently kept an automatic polling alarm");
+      const progressed=await service.ensure({
+        threadId:life.thread.threadId,at:"2026-09-10T05:30:00Z",
+      });
+      assert.notEqual(progressed.situationId,original.situationId,
+        "a real later situation did not advance World continuity");
+      const recovery=lived.inspectLivedBoundary(life.thread.threadId);
+      assert.equal(recovery.situationId,progressed.situationId);
+      assert.equal(recovery.failedAttempts,0,
+        "successful life progression inherited exhausted retries");
+      assert.equal(recovery.blockedReason,null,
+        "a recovered life remained labeled blocked");
+      assert.ok(recovery.dueAt!==null,
+        "successful recovery left the next autonomous boundary unarmed");
+    }finally{lived.close();}
+  }));
+
 test("an admitted personal public-visit plan enacts transit, empty stay and return home",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
