@@ -2,6 +2,8 @@ import {mountWorldMap,worldMapPoint,SVG_NS} from "./world-map-ui.js";
 import {createThreadIdentityViewer} from "./thread-person-ui.js";
 import "./thread-popup-links.js";
 import {createCopyButton} from "./copy-action.js";
+import {watchAdminLive} from "./admin-live.js";
+import {worldEventsViewKey} from "./view-invalidation.js";
 import {worldVenueTileScene} from "./world-events-map.js";
 import {
   worldEventPlaceTimeline,worldEventPlaceDayRecord,worldVenueCoPresence,
@@ -151,7 +153,7 @@ export function renderWorldEventsPage(){
   surface.append(summary,mapPanel,cityBar,drill,unlocatedPanel,caveat);
   heading.after(surface);
 
-  let snapshot=null,selectedCity=null,selectedPlace=null,loading=false;
+  let snapshot=null,selectedCity=null,selectedPlace=null,loading=false,pendingLoad=false;
   function choosePlace(placeRef){
     selectedPlace=placeRef;
     drawPlaces();
@@ -466,7 +468,7 @@ export function renderWorldEventsPage(){
     for(const event of events)timeline.append(worldEventCard(event));
   }
   async function load(){
-    if(loading)return;
+    if(loading){pendingLoad=true;return;}
     loading=true;refresh.disabled=true;refresh.textContent="Reading World…";
     summary.textContent="Inspecting authoritative World history…";
     try{
@@ -489,8 +491,16 @@ export function renderWorldEventsPage(){
       drawWorldMap();drawPlaces();drawTimeline();drawUnlocated();
     }finally{
       loading=false;refresh.disabled=false;refresh.textContent="Refresh";
+      if(pendingLoad){pendingLoad=false;void load();}
     }
   }
+  // Initial authoritative read, then the existing shared Admin Live socket.
+  // Reconnect reconciles changes missed while hidden; hints carry no World state.
+  watchAdminLive(worldEventsViewKey(),detail=>{
+    if(detail?.reason==="connected"||detail?.reason==="watch-started"
+      ||document.hidden)return;
+    return load();
+  },{reconcileOnSubscribe:false});
   refresh.addEventListener("click",()=>void load());
   hours.addEventListener("change",()=>void load());
   void load();
