@@ -64,3 +64,7 @@ export function threadObservatoryViewKey(threadId) {
 export function appearanceExperimentsViewKey() {
   return "appearance:experiments";
 }
+
+export function worldEventsViewKey() {
+  return "world:events";
+}
