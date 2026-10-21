@@ -137,7 +137,11 @@ excluded and reported as incomplete; source-limit truncation remains
 visible. The resulting overlapping time **does not assert attention,
 social opportunity, conversation, relationship, or memory**. Thread
 identities pivot to Life & Causes from the enacted arrival without
-authoring any new fact. This is a browser-side projection with no new
+authoring any new fact. The dashboard emphasizes an exact-duration
+shared interval above two aligned person-specific visit bars on one
+venue-local time axis. It identifies the grounded start/end of shared
+presence in prose, preserves subminute durations rather than showing
+zero minutes, and remains readable when the World source is capped. This is a browser-side projection with no new
 World query, event index, polling, model execution, or hidden
 population inspection. Wider/cursor-paged historical occupancy
 remains deferred until indexed World reads support it.
