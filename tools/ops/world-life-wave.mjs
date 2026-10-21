@@ -4,7 +4,7 @@ import {resolve,dirname} from "node:path";
 import {pathToFileURL} from "node:url";
 import {topology} from "../validation/encounter-autonomy-probe.mjs";
 
-export function selectWorldLifeWave(evidence,{offset=0,limit=3,city=null,countryCode=null}={}){
+export function selectWorldLifeWave(evidence,{offset=0,limit=3,city=null,countryCode=null,thread=null}={}){
   if(evidence?.contract!=="fibre-social-city-candidates-v0.1"
     ||!Array.isArray(evidence.sampledThreadIds)){
     throw new TypeError("wave requires a current world-social:candidates evidence file");
@@ -18,8 +18,15 @@ export function selectWorldLifeWave(evidence,{offset=0,limit=3,city=null,country
       ||! /^[A-Z]{2}$/.test(countryCode)))){
     throw new TypeError("city waves require --city and an ISO-2 --country-code together");
   }
+  if(thread!==null&&(city!==null||countryCode!==null||offset!==0||limit!==3)){
+    throw new TypeError("single-Thread wave must use --thread alone");
+  }
   const sampled=new Set(evidence.sampledThreadIds);
   let ids=[...sampled];
+  if(thread!==null){
+    if(!sampled.has(thread))throw new Error("requested Thread is absent from the sampled population");
+    ids=[thread];
+  }
   if(city!==null){
     const place=[...(evidence.pairedCities??[]),...(evidence.otherPopulatedCities??[])]
       .find(item=>item.locality?.toLocaleLowerCase("en-US")===city.trim().toLocaleLowerCase("en-US")
@@ -44,7 +51,7 @@ export function waveResponseFailure(status,payload){
 }
 
 function options(argv){
-  const config={env:null,file:null,offset:0,limit:3,city:null,countryCode:null,apply:false};
+  const config={env:null,file:null,offset:0,limit:3,city:null,countryCode:null,thread:null,apply:false};
   for(let i=0;i<argv.length;i++){
     const arg=argv[i],value=argv[i+1];
     if(arg==="--env"){config.env=value;i++;}
@@ -53,8 +60,9 @@ function options(argv){
     else if(arg==="--limit"){config.limit=Number(value);i++;}
     else if(arg==="--city"){config.city=value;i++;}
     else if(arg==="--country-code"){config.countryCode=value?.toUpperCase();i++;}
+    else if(arg==="--thread"){config.thread=value;i++;}
     else if(arg==="--apply")config.apply=true;
-    else throw new TypeError("usage: world-life:wave -- --env staging --file cities.json [--city Tbilisi --country-code GE] [--offset 0 --limit 3 --apply]");
+    else throw new TypeError("usage: world-life:wave -- --env staging --file cities.json [--city Tbilisi --country-code GE | --thread thr_ID] [--offset 0 --limit 3 --apply]");
   }
   if(config.env!=="staging"||!config.file){
     throw new TypeError("population wave requires --env staging and --file");
@@ -77,6 +85,7 @@ async function main(argv){
     sourceDeployedSha:evidence.deployedWorldGitSha,
     issuedAt,offset:args.offset,limit:args.limit,
     ...(args.city===null?{}:{city:args.city,countryCode:args.countryCode}),
+    ...(args.thread===null?{}:{thread:args.thread}),
     total:wave.total,
     dryRun:!args.apply,selectedThreadIds:wave.ids,results:[]};
   const out=resolve(".fibre","world-life",args.env,
