@@ -17,6 +17,7 @@ const SERVICES = Object.freeze([
   "admin-dashboard",
 ]);
 const COST_EVENTS = new Set(["world-state-cost", "d1-cost"]);
+const LIVED_NOW_FAILURE = "lived-now-reconciliation-failed";
 
 function parseArgs(argv) {
   const options = {
@@ -89,8 +90,16 @@ function operationName(event) {
 
 export function summarizeCosts(events) {
   const grouped = new Map();
-  const encounters = [];
+  const encounters = [],reconciliationFailures=[];
   for (const event of events) {
+    if (event.event === LIVED_NOW_FAILURE) {
+      reconciliationFailures.push({
+        phase:event.phase,source:event.source,threadId:event.threadId,
+        code:event.code,detail:event.detail??null,
+        diagnostics:event.diagnostics??null,
+      });
+      continue;
+    }
     const key = `${event.phase}|${event.source}|${operationName(event)}`;
     const current = grouped.get(key) ?? {
       phase:event.phase,
@@ -119,6 +128,7 @@ export function summarizeCosts(events) {
     operations:Object.freeze([...grouped.values()]),
     encounterRowsRead:Object.freeze(encounters),
     encounterSlopeRowsReadPerTurn:slope,
+    reconciliationFailures:Object.freeze(reconciliationFailures),
   });
 }
 
@@ -136,6 +146,21 @@ function findCostEvents(value, sink) {
   }
   if (typeof value !== "object") return;
   if (COST_EVENTS.has(value.event)) sink(value);
+  if (value.event === LIVED_NOW_FAILURE) sink({
+    event:LIVED_NOW_FAILURE,
+    threadId:value.threadId??null,
+    code:value.code??null,
+    detail:value.detail??null,
+    diagnostics:{
+      stage:value.diagnostics?.stage??null,
+      errorName:value.diagnostics?.errorName??null,
+      retryable:value.diagnostics?.retryable??null,
+      httpStatus:value.diagnostics?.httpStatus??null,
+      providerErrorCode:value.diagnostics?.providerErrorCode??null,
+      providerErrorType:value.diagnostics?.providerErrorType??null,
+      actionHint:value.diagnostics?.actionHint??null,
+    },
+  });
   for (const nested of Object.values(value)) findCostEvents(nested, sink);
 }
 
@@ -254,6 +279,12 @@ function render(summary) {
     lines.push(`Encounter DO rows read: ${summary.encounterRowsRead.join(" → ")}`);
     if (summary.encounterSlopeRowsReadPerTurn !== null) {
       lines.push(`Encounter slope: ${summary.encounterSlopeRowsReadPerTurn.toFixed(2)} rows/turn`);
+    }
+  }
+  if (summary.reconciliationFailures?.length) {
+    lines.push("", "LivedNow reconciliation failures:");
+    for (const failure of summary.reconciliationFailures) {
+      lines.push(`${failure.phase}: ${failure.threadId} · ${failure.code} · ${failure.diagnostics?.stage??"unknown stage"} · ${failure.detail??"no detail"}`);
     }
   }
   return `${lines.join("\n")}\n`;
