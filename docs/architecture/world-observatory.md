@@ -182,6 +182,16 @@ World Event / Encounter / Memory anchor. A counterpart opens their own
 Thread detail. A human encounter links to the actual admission/receipt
 without implying physical co-presence for a remote browser visitor.
 
+**Local event time:** Every mapped World event is presented using
+the verified venue's World-owned IANA time zone (including historic
+daylight-saving rules). This is a presentation of its immutable UTC
+`occurredAt`, not a reinterpretation or mutation of World history.
+Co-presence start/end times and selected venue/city window labels use
+the same zone. Where no event location or zone is attested, show
+explicit UTC rather than guessing from the observer's current location
+or the Admin operator's browser. City-wide ranges are localized only
+when the sampled venues agree on a zone.
+
 ## Data and authority
 
 The UI must read **World**, not reconstruct World truth from Activity logs.
