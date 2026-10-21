@@ -83,6 +83,21 @@ If the operator is viewing a different window, it fetches one bounded
 24-hour overview on demand. This is **not** a full venue archive;
 the global World source cap may still omit some of the venue's
 events. No new World service, query, data storage or model work is needed.
+**World Events live refresh (October 21 source):** the page performs
+one initial authoritative World overview read, then uses the same
+`admin-live.js` WebSocket shared by Threads and Appearance. A durable
+World-enacted arrival or departure at a verified public venue publishes
+one lightweight invalidation hint through `InfraDriver.realtime`; the
+active browser rereads the bounded overview. No periodic World Events
+polling, additional socket, or cognition call is introduced. Messages
+received during a read are coalesced into one follow-up read. Tab
+visibility disconnects the existing socket; reconnect reconciles once
+to cover changes that occurred while disconnected. Independent
+Encounter Stories, retrospective Memory changes and venue registration
+do **not yet** publish World Events hints, so Refresh remains useful.
+Live delivery is source implemented and needs staging acceptance; the
+24-hour projection remains capped.
+
 **World-local clock (October 21 source):** Event cards, enacted
 co-presence intervals, venue history range tooltips and the selected
 city's history range now use the World-verified public venue's existing
