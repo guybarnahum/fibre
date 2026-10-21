@@ -43,6 +43,13 @@ export function groundedLifeSummary(threadId,person,checkedAt){
   const bound=(lived.worldPlaces??[]).filter((place)=>place.physicalVenue?.ref);
   const currentRef=situation?.location?.kind==="place"
     ?situation.location.placeRef:null;
+  // Agree with the city-candidate probe: only a locality tied to the
+  // enacted current place is evidence of where a Thread is now.
+  const currentLocation=currentRef===null?null:[
+    lived.privatelyKnownCurrentPlace,lived.operatorCurrentPlace,lived.currentLocation,
+  ].find(item=>item?.placeRef===currentRef
+    &&typeof item.locality==="string"&&item.locality.trim()
+    &&typeof item.countryCode==="string"&&item.countryCode.trim())??null;
   const place=currentRef===null?null:
     bound.find((candidate)=>candidate.ref===currentRef)??null;
   const currentPublicLocality=situation?.phase==="at_place"
@@ -93,6 +100,8 @@ export function groundedLifeSummary(threadId,person,checkedAt){
     currentPlaceDescription:description?.displayName??description?.place?.displayName??null,
     currentPlaceKind:currentEpisode?.episodeKind??description?.placeKind??null,
     currentPublicLocality,
+    currentWorldLocality:currentLocation===null?null:
+      currentLocation.locality+", "+currentLocation.countryCode,
     privatelyLocated:privatePlace!==null,
     preciseResidentialAddressKnown:privatePlace?.streetAddress!==null
       &&privatePlace?.streetAddress!==undefined,
@@ -265,8 +274,9 @@ export function formatWorldSocialReport(evidence,evidencePath){
     const person=[...(life.withVenues??[]),...(life.withoutVenues??[])]
       .find(item=>item.threadId===evidence.targetedThreadId);
     if(person){
-      const locality=person.currentPublicLocality??person.privateWorldLocality
-        ??person.coarseKnownLocalities?.[0]??"locality not established";
+      const locality=person.currentPublicLocality??person.currentWorldLocality
+        ??person.privateWorldLocality??person.coarseKnownLocalities?.[0]
+        ??"locality not established";
       const context=person.currentAtAttestedVenue
         ?short(person.availableWorldContexts?.find(p=>
           p.attestedVenueRef===person.currentAttestedVenueRef)?.description
