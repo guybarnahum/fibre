@@ -113,6 +113,20 @@ attention/experience counts. Group a continued encounter under its actual
 shared Story lineage; never group unrelated occurrences merely because
 they are nearby in time.
 
+**Known co-presence, not inferred encounters (October 21 source):**
+The venue timeline now derives compact per-Thread stay bars from actual
+paired `world_enacted` arrival/departure situations returned by the
+bounded World overview. A two-Thread overlap is shown only when both
+complete intervals intersect. Unpaired or out-of-window movements are
+excluded and reported as incomplete; source-limit truncation remains
+visible. The resulting overlapping time **does not assert attention,
+social opportunity, conversation, relationship, or memory**. Thread
+identities pivot to Life & Causes from the enacted arrival without
+authoring any new fact. This is a browser-side projection with no new
+World query, event index, polling, model execution, or hidden
+population inspection. Wider/cursor-paged historical occupancy
+remains deferred until indexed World reads support it.
+
 The timeline draws a sharp distinction among:
 
 - **Objective event** — something actually happened in World.
