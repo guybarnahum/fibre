@@ -19,3 +19,23 @@ test("an old plan is not a future visit; unknown is not confirmed awake",()=>{
   assert.equal(result.unknownWakefulnessThreadCount,1);
   assert.equal(result.threads[0].plannedPublicVisits.length,0);
 });
+
+test("a venue-free current city remains visible as a grounded cohort gap",()=>{
+  const people=[
+    {threadId:"thr_kisumu_1",name:"One",key:"KE:kisumu",
+      locality:"Kisumu",countryCode:"KE",placeRef:"per:home",atPlace:true,
+      wakefulness:"awake",plan:null},
+    {threadId:"thr_tbilisi_1",name:"Two",key:"GE:tbilisi",
+      locality:"Tbilisi",countryCode:"GE",placeRef:"per:home",atPlace:true,
+      wakefulness:"awake",plan:null},
+    {threadId:"thr_tbilisi_2",name:"Three",key:"GE:tbilisi",
+      locality:"Tbilisi",countryCode:"GE",placeRef:"per:home",atPlace:true,
+      wakefulness:"awake",plan:null},
+  ];
+  const ranked=rankSocialCityCandidates({places:[],people,at:"2026-10-21T12:00:00Z"});
+  assert.equal(ranked.underpopulatedCityCount,2);
+  assert.equal(ranked.sampledBirthsToThree,3);
+  const kisumu=ranked.underpopulatedCities.find(c=>c.locality==="Kisumu");
+  assert.deepEqual([kisumu.currentThreadCount,kisumu.neededToThree,kisumu.publicVenueCount],[1,2,0],
+    "a real city without curated venues disappeared from population planning");
+});
