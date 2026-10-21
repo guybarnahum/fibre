@@ -312,9 +312,16 @@ export function formatWorldSocialReport(evidence,evidencePath){
       " co-present Threads ("+shared.threads.map(p=>p.threadId).join(", ")+")");
   }
   for(const opportunity of evidence.socialOpportunities.slice(0,3)){
+    const delay=Date.parse(opportunity.startedAt)-Date.parse(opportunity.dueAt);
+    const timing=Number.isFinite(delay)
+      ?" · considered "+(delay/1000).toFixed(3)+"s after opportunity"
+      :"";
     lines.push("  · "+(opportunity.outcome??"pending").replaceAll("_"," ")+
-      " · "+opportunity.threadId+
-      (opportunity.dueAt?" · "+time(opportunity.dueAt):""));
+      " · "+opportunity.threadId+" · "+(opportunity.kind??"unknown")+
+      (opportunity.dueAt?" · due "+time(opportunity.dueAt):"")+
+      (opportunity.startedAt?" · started "+time(opportunity.startedAt):"")+
+      timing+
+      (opportunity.completedAt?" · completed "+time(opportunity.completedAt):""));
     if(opportunity.outcome==="background"){
       const witness=opportunity.decision?.salience?.bodyAtGate;
       const contact=witness?.drives?.find(drive=>drive.family==="social_contact");
@@ -362,9 +369,13 @@ export function formatWorldSocialReport(evidence,evidencePath){
     :evidence.socialOpportunities.some(o=>o.outcome==="met")
       ?"A meeting outcome is recorded, but its Story was not fully corroborated."
       :evidence.socialOpportunities.length
-        ?evidence.socialOpportunities.some(o=>o.outcome==="no_co_presence")
-          ?"An earlier social consideration found no eligible peer then; it does not assess later visits."
-          :"Social opportunities exist; their outcomes are listed above."
+        ?evidence.socialOpportunities.some(o=>o.outcome==="missed_window")
+          ?"A recorded co-presence window closed before social consideration; no conversation was attempted."
+          :evidence.socialOpportunities.some(o=>o.outcome==="expired")
+            ?"A social opportunity timed out before a voluntary decision."
+            :evidence.socialOpportunities.some(o=>o.outcome==="no_co_presence")
+              ?"An earlier social consideration found no eligible peer then; it does not assess later visits."
+              :"Social opportunities exist; their outcomes are listed above."
         :conclusions[evidence.worldBlocker]??"No additional social conclusion established."),
     "  Missing evidence in this bounded view does not establish lifetime absence.",
     "",
