@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { inspectThreadJourneys } from "./thread-journey-probe.mjs";
+import { inspectThreadJourneys,inspectCurrentPersonalPlan } from "./thread-journey-probe.mjs";
 import { privateGet } from "./encounter-autonomy-probe.mjs";
 
 test("a Thread's earlier Flight Plan and enacted travel remain distinguishable after renewal",()=>{
@@ -102,4 +102,21 @@ test("read-only journey inspection reaches full World Observatory rather than a 
   }finally{
     globalThis.fetch=original;
   }
+});
+
+test("read-only Flight Plan horizon distinguishes missing planning from a missing scheduled wake",()=>{
+  const at="2026-10-21T22:59:42.000Z";
+  assert.equal(inspectCurrentPersonalPlan({},at),null,
+    "no personal Flight Plan was reported as a valid plan");
+  const planned=inspectCurrentPersonalPlan({currentPersonalPlan:{
+    planId:"plan_omar",authoredAt:"2026-10-21T22:51:00.000Z",
+    horizonEnd:"2026-10-22T22:51:00.000Z",stops:[{activity:"Reading"}],
+  }},at);
+  assert.deepEqual([planned.planId,planned.stopCount,planned.coversObservationAt],
+    ["plan_omar",1,true],"a valid one-stop plan disappeared from life continuity diagnosis");
+  assert.equal(inspectCurrentPersonalPlan({currentPersonalPlan:{
+    planId:"plan_expired",authoredAt:"2026-10-20T08:00:00.000Z",
+    horizonEnd:"2026-10-21T08:00:00.000Z",stops:[],
+  }},at).coversObservationAt,false,
+    "an expired plan was misrepresented as governing the current World");
 });
