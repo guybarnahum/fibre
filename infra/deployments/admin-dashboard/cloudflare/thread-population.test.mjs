@@ -123,6 +123,8 @@ test("World Registry defines admitted population while Activity remains observat
   assert.equal(population.threads[0].findings.find((finding) => finding.code === "NAME").identityAction.id, "change_name");
   assert.equal(population.threads[0].health, "healthy", "healthy identity actions must not degrade health");
   assert.equal(population.threads[1].findings.find((finding) => finding.code === "BIRTH_DATE_MISSING").identityAction.id, "set_birth_date");
+  assert.equal(population.threads[1].findings.find((finding) => finding.code === "BIRTH_PLACE_MISSING").identityAction.id, "set_birth_place",
+    "a legacy Thread without a birth city has no authoritative correction action");
   assert.equal(population.threads[1].health, "operator_decision_required", "missing canonical birth date must require explicit input");
   assert.equal(population.stillborn[0].admitted, false, "Stillborn Activity identifiers must remain explicitly unadmitted");
   assert.equal(population.stillborn[0].health, "unrecoverable");
