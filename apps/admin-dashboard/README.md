@@ -83,6 +83,19 @@ If the operator is viewing a different window, it fetches one bounded
 24-hour overview on demand. This is **not** a full venue archive;
 the global World source cap may still omit some of the venue's
 events. No new World service, query, data storage or model work is needed.
+**World-local clock (October 21 source):** Event cards, enacted
+co-presence intervals, venue history range tooltips and the selected
+city's history range now use the World-verified public venue's existing
+IANA `timeZone`, not the Admin browser's time zone. The World read
+projection exposes that authoritative field; no inferred longitude
+offset is substituted. A city gets one shared clock only when all
+returned venues agree. An event with no attested location, or missing
+venue zone evidence, displays explicitly in **UTC**. All stored World
+timestamps and copied event records remain UTC ISO instants; the venue
+day export also includes the `place.timeZone` for interpretation.
+This is display-only, with daylight saving resolved by the browser's
+IANA time-zone database.
+
 Counts are **events shown in the selected rolling 1–168-hour window**,
 not lifetime totals, a paginated historical count or a full census; the
 source's 240-item situation/story limits can truncate the result.
