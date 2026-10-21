@@ -1,5 +1,25 @@
 import { assertIsoTimestamp } from "./persistence-common.mjs";
 
+// Historical company can explain a missed chance, never authorize retroactive speech.
+// Only the already-indexed venue is consulted, and only after present eligibility fails.
+function hadCompanyAtOpportunity(livedNowStore,opportunity){
+  if(opportunity.kind==="observed")return true; // noticed shared arrival Story
+  const arrival=livedNowStore.getSituation?.(opportunity.situationId,{required:false});
+  if(arrival?.location?.kind!=="place")return false;
+  const venue=livedNowStore.getWorldPlace(
+    opportunity.threadId,arrival.location.placeRef,{required:false},
+  )?.physicalVenue?.ref;
+  if(!venue)return false;
+  return livedNowStore.listCurrentVenueSituations({
+    venueRef:venue,at:opportunity.dueAt,limit:8,
+    excludeThreadId:opportunity.threadId,
+  }).some(person=>person.threadId!==opportunity.threadId
+    &&person.location?.kind==="place"&&person.wakefulness!=="asleep"
+    &&livedNowStore.getWorldPlace(
+      person.threadId,person.location.placeRef,{required:false},
+    )?.physicalVenue?.ref===venue);
+}
+
 // Enacted physical co-presence, not a caller-selected conversation.
 // One recently arrived Thread, one bounded candidate and one attempt at most.
 // The durable claim intentionally prevents repeating uncertain outward speech.
@@ -52,11 +72,14 @@ export function createWorldSocialOpportunity({
             ?livedNowStore.getWorldPlace(
               target.threadId,target.location.placeRef,{required:false},
             ):null;
-          if(!matching||current?.wakefulness==="asleep"||venue===null
-            ||overdue<0||overdue>60*60_000
-            ||(observed&&(target?.wakefulness==="asleep"
-              ||targetPlace?.physicalVenue?.ref!==venue))){
-            outcome="no_co_presence";
+          const present=matching&&current?.wakefulness!=="asleep"&&venue!==null
+            &&(!observed||(target?.wakefulness!=="asleep"
+              &&targetPlace?.physicalVenue?.ref===venue));
+          if(!present){
+            outcome=overdue>0&&hadCompanyAtOpportunity(livedNowStore,opportunity)
+              ?"missed_window":"no_co_presence";
+          }else if(overdue<0||overdue>60*60_000){
+            outcome="expired";
           }else{
             const other=observed?true
               :livedNowStore.listCurrentVenueSituations({
@@ -71,7 +94,8 @@ export function createWorldSocialOpportunity({
                 return place?.physicalVenue?.ref===venue;
               });
             if(!other){
-              outcome="no_co_presence";
+              outcome=overdue>0&&hadCompanyAtOpportunity(livedNowStore,opportunity)
+                ?"missed_window":"no_co_presence";
             }else{
               // The same salience, Thread-owned initiation, recipient consent,
               // and lived conversation apply to both causal opportunities.
