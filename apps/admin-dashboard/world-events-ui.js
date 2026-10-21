@@ -3,7 +3,9 @@ import {createThreadIdentityViewer} from "./thread-person-ui.js";
 import "./thread-popup-links.js";
 import {createCopyButton} from "./copy-action.js";
 import {worldVenueTileScene} from "./world-events-map.js";
-import {worldEventPlaceTimeline,worldEventPlaceDayRecord} from "./world-events-records.js";
+import {
+  worldEventPlaceTimeline,worldEventPlaceDayRecord,worldVenueCoPresence,
+} from "./world-events-records.js";
 
 const $=selector=>document.querySelector(selector);
 const el=(tag,className=null,value=null)=>{
@@ -136,8 +138,9 @@ export function renderWorldEventsPage(){
   const timelineControls=el("div","world-events-timeline-controls");
   timelineControls.append(timelineCount,placeDayHint,placeDayCopy);
   timelineHead.append(timelineTitle,timelineControls);
+  const presence=el("section","world-events-presence");
   const timeline=el("div","world-events-timeline");
-  timelinePanel.append(timelineHead,timeline);
+  timelinePanel.append(timelineHead,presence,timeline);
   drill.append(cityPanel,timelinePanel);
   const unlocatedPanel=el("section","panel world-events-unlocated-panel");
   const unlocatedHeading=el("div","world-events-panel-title");
@@ -376,8 +379,71 @@ export function renderWorldEventsPage(){
     }
     for(const event of events)unlocatedTimeline.append(worldEventCard(event));
   }
+  function drawCoPresence(){
+    const result=worldVenueCoPresence(snapshot,selectedPlace);
+    if(!result.stays.length)return;
+    const sectionHead=el("div","world-events-presence-head");
+    sectionHead.append(el("h3",null,"Shared presence"),
+      el("span",null,`${result.stays.length} complete stays · ${result.overlaps.length} confirmed overlaps`));
+    presence.append(sectionHead);
+    const from=Math.min(...result.stays.map(stay=>Date.parse(stay.enteredAt)));
+    const until=Math.max(...result.stays.map(stay=>Date.parse(stay.leftAt)));
+    const duration=Math.max(1,until-from);
+    const lanes=el("div","world-events-presence-lanes");
+    for(const stay of result.stays.slice(0,12)){
+      const line=el("div","world-events-presence-lane");
+      const person=el("div","world-events-presence-person");
+      person.append(createThreadIdentityViewer({
+        threadId:stay.threadId,compact:true,className:"world-events-person",
+      }));
+      const life=el("a",null,"Life & Causes ↗");
+      life.href="/life?thread="+encodeURIComponent(stay.threadId)+"&view=history"
+        +"&moment="+encodeURIComponent("scene:"+stay.arrivalRef);
+      person.append(life);
+      const track=el("div","world-events-presence-track");
+      const bar=el("span","world-events-presence-bar");
+      bar.style.left=((Date.parse(stay.enteredAt)-from)/duration*100).toFixed(2)+"%";
+      bar.style.width=((Date.parse(stay.leftAt)-Date.parse(stay.enteredAt))/duration*100).toFixed(2)+"%";
+      bar.title=`Enacted stay · ${labelTime(stay.enteredAt)} – ${labelTime(stay.leftAt)}`;
+      track.append(bar);
+      const interval=el("span","world-events-presence-time",
+        `${new Date(stay.enteredAt).toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"})}–${new Date(stay.leftAt).toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"})}`);
+      line.append(person,track,interval);
+      lanes.append(line);
+    }
+    presence.append(lanes);
+    if(result.stays.length>12)presence.append(el("p","world-events-evidence-note",
+      "Showing first 12 complete stays in this bounded view."));
+    if(result.overlaps.length){
+      const overlaps=el("div","world-events-presence-overlaps");
+      for(const overlap of result.overlaps.slice(0,5)){
+        const entry=el("div","world-events-presence-overlap");
+        const people=el("div","world-events-presence-overlap-people");
+        for(const threadId of overlap.threadIds){
+          people.append(createThreadIdentityViewer({
+            threadId,compact:true,className:"world-events-person",
+          }));
+        }
+        const minutes=Math.round(overlap.durationMinutes);
+        entry.append(el("strong",null,`Together · ${minutes} min`),
+          people,el("span",null,
+            `${labelTime(overlap.from)} – ${labelTime(overlap.until)}`));
+        overlaps.append(entry);
+      }
+      presence.append(overlaps);
+    }
+    const limits=["Complete arrival/departure pairs only; presence is not attention or conversation."];
+    if(result.unmatchedMovements)limits.push(
+      `${result.unmatchedMovements} unpaired movement(s) excluded.`);
+    if(result.sourceCapped)limits.push("World source capped; additional stays may be missing.");
+    if(result.additionalOverlaps||result.overlaps.length>5){
+      limits.push("Only the first overlapping intervals are displayed.");
+    }
+    presence.append(el("p","world-events-evidence-note",limits.join(" ")));
+  }
   function drawTimeline(){
     timeline.replaceChildren();
+    presence.replaceChildren();
     const selected=snapshot?.places.find(p=>p.placeRef===selectedPlace);
     timelineTitle.textContent=selected?.name??"World timeline";
     placeDayCopy.disabled=!selected;
@@ -391,6 +457,7 @@ export function renderWorldEventsPage(){
       timeline.append(el("p","world-events-muted","Choose a place to inspect its World history."));
       return;
     }
+    drawCoPresence();
     if(!events.length){
       timeline.append(el("p","world-events-muted",
         "No admitted event in the bounded window. This does not mean nothing happened here."));
