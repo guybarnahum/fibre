@@ -227,6 +227,40 @@ Experience govern any subsequent conversation. A salient arrival can
 still yield `not_initiated`; the recipient can decline. An interrupted
 outward attempt is not automatically replayed.
 
+### Social opportunity timing and lost windows — October 21 source
+
+World now distinguishes three non-decisions when a social chance is
+reconciled: `no_co_presence` means no eligible peer was established;
+`missed_window` means an actual arrival or noticed shared event had
+company **at the event time**, but present eligibility was gone before
+consideration; `expired` means a still-present opportunity exceeded the
+existing one-hour freshness bound. Historical company is checked only
+on the failure path using the bounded venue index. A noticed shared
+arrival already carries the admitted historical witness; an
+arrival-triggered opportunity instead verifies company at its original
+`dueAt` through World situations. Historical evidence is explanatory,
+not permission to retroactively approach anyone.
+
+The existing durable `started_at` and `due_at` now project as
+`startedAt` and `dueAt` in Thread social inspection, with the recorded
+`completedAt` set when the decision actually returns, rather than
+copied from its claim time. The read-only `world-social:probe` reports
+the elapsed occurrence-to-claim delay. The observed-arrival attention
+`occurredAt` is the historical **World event time**, not the instant
+perception cognition finished; that additional processing-latency
+measurement is not claimed. Departure times are separately admitted
+World situations. No new time signal, persistence schema, model call,
+or scheduler frequency is introduced.
+
+A small behavioral proof distinguishes a four-second missed co-presence
+from a fifteen-minute shared visit that reaches existing voluntary
+social initiation and can choose not to speak. This exercises eligibility
+and decision routing, **not** a staging-observed spontaneous conversation
+or a claim of causal personality differentiation. The reconciler still
+advances due life boundaries before perception and social opportunities:
+it must never keep a Thread at a venue, retrospectively make it speak, or
+force social compliance to satisfy a demonstration.
+
 The Situated Percept's recent Encounter Stories now require the observer's
 admitted `noticed` attention before that Story can influence that
 observer's private social judgment. This prevents missed World events
