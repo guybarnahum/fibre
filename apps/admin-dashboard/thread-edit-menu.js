@@ -1,5 +1,5 @@
 import {actionFields,openThreadActionDialog} from "./thread-action-dialog.js";
-import {decorateActionButton,faIcon} from "./fa-icons.js";
+import {decorateActionButton} from "./fa-icons.js";
 import {identityActionPayload} from "./thread-identity-action.js";
 import {reissueFidCard} from "./thread-observatory.js";
 
