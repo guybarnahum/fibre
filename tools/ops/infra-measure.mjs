@@ -22,6 +22,7 @@ function parseArgs(argv) {
   const options = {
     environment:"staging",
     idleSeconds:60,
+    observeSeconds:0,
     skipMeeting:false,
     skipAdmin:false,
   };
@@ -29,6 +30,7 @@ function parseArgs(argv) {
     const arg = argv[index];
     if (arg === "--env") options.environment = argv[++index] ?? null;
     else if (arg === "--idle-seconds") options.idleSeconds = Number(argv[++index]);
+    else if (arg === "--observe-seconds") options.observeSeconds = Number(argv[++index]);
     else if (arg === "--skip-meeting") options.skipMeeting = true;
     else if (arg === "--skip-admin") options.skipAdmin = true;
     else throw new TypeError(`unsupported argument ${arg}`);
@@ -38,6 +40,9 @@ function parseArgs(argv) {
   }
   if (!Number.isFinite(options.idleSeconds) || options.idleSeconds < 0 || options.idleSeconds > 3600) {
     throw new TypeError("--idle-seconds must be between 0 and 3600");
+  }
+  if (!Number.isFinite(options.observeSeconds)||options.observeSeconds<0||options.observeSeconds>3600) {
+    throw new TypeError("--observe-seconds must be between 0 and 3600");
   }
   return Object.freeze(options);
 }
@@ -298,6 +303,12 @@ async function main(argv) {
 
     phase = "idle";
     await idleCountdown(options.idleSeconds);
+
+    if (options.observeSeconds>0) {
+      phase="world-life-wave";
+      process.stdout.write("\nWorld life wave window: run world-life:wave --apply in another terminal.\n");
+      await idleCountdown(options.observeSeconds);
+    }
 
     if (!options.skipMeeting) {
       phase = "meeting";
