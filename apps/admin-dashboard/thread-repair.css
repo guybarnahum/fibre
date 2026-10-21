@@ -997,3 +997,17 @@
 .copy-hover-action .fa-action-icon{transition:transform 140ms ease}
 .copy-hover-action:hover .fa-action-icon,.copy-hover-action:focus-visible .fa-action-icon{transform:scale(1.25)}
 @media (prefers-reduced-motion:reduce){.copy-hover-action .fa-action-icon{transition:none}}
+
+/* One growing action catalog, shared by population and Thread Observatory. */
+.thread-edit-menu{width:min(480px,calc(100vw - 32px));max-height:min(680px,calc(100dvh - 48px));border:1px solid var(--border);border-radius:14px;padding:20px;background:var(--surface);color:var(--text);box-shadow:0 16px 48px rgba(0,0,0,.3)}
+.thread-edit-menu::backdrop{background:rgba(0,0,0,.46)}
+.thread-edit-menu h2{font-size:19px;margin:0 0 14px}
+.thread-edit-list{display:grid;gap:6px;max-height:52dvh;overflow-y:auto;margin-bottom:15px}
+.thread-edit-choice{display:flex;flex-direction:column;align-items:flex-start;width:100%;gap:5px;padding:10px 12px;border:1px solid var(--border);border-radius:9px;background:var(--surface-subtle,transparent);color:inherit;text-align:left;cursor:pointer}
+.thread-edit-choice:hover,.thread-edit-choice:focus-visible{border-color:var(--accent)}
+.thread-edit-choice strong{font-size:13px}
+.thread-edit-choice small{font-size:11px;color:var(--muted);line-height:1.4}
+.thread-action-place-results{display:grid;gap:3px;max-height:190px;overflow-y:auto;margin-top:5px}
+.thread-action-place-choice{width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;text-align:left;background:var(--surface-subtle,transparent);color:inherit;cursor:pointer}
+.thread-action-place-choice:hover,.thread-action-place-choice:focus-visible{border-color:var(--accent)}
+.thread-action-place-note{font-size:11px;color:var(--muted)}
