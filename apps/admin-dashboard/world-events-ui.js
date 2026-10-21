@@ -6,6 +6,9 @@ import {worldVenueTileScene} from "./world-events-map.js";
 import {
   worldEventPlaceTimeline,worldEventPlaceDayRecord,worldVenueCoPresence,
 } from "./world-events-records.js";
+import {
+  formatWorldEventTime,formatWorldTimeRange,worldCityTimeZone,
+} from "./world-event-time.js";
 
 const $=selector=>document.querySelector(selector);
 const el=(tag,className=null,value=null)=>{
@@ -19,17 +22,10 @@ const svgNode=(tag,attributes={})=>{
   for(const [name,value] of Object.entries(attributes))node.setAttribute(name,String(value));
   return node;
 };
-const labelTime=value=>value?new Date(value).toLocaleString(undefined,{
-  month:"short",day:"numeric",hour:"2-digit",minute:"2-digit",
-}):"Unknown time";
 const pretty=value=>String(value??"").replaceAll("_"," ").replace(/\b\w/gu,c=>c.toUpperCase());
 const bounded=overview=>Object.entries(overview?.coverage??{}).some(([key,value])=>
   key.endsWith("Truncated")&&value===true);
 const windowText=overview=>`last ${overview.hours}h${bounded(overview)?" · capped sample":""}`;
-const windowRange=overview=>{
-  const end=Date.parse(overview.asOf);
-  return `${new Date(end-overview.hours*3600_000).toLocaleString()} – ${new Date(end).toLocaleString()}`;
-};
 export function worldEventDebugRecord(overview,event){
   return {contract:overview.contract,asOf:overview.asOf,hours:overview.hours,
     coverage:overview.coverage,event};
@@ -172,7 +168,8 @@ export function renderWorldEventsPage(){
     cityStatus.textContent=city
       ?`${city.eventCount} shown · ${windowText(snapshot)} · ${city.placeCount} verified places`
       :"Select a city to explore places.";
-    cityStatus.title=city?windowRange(snapshot):"";
+    cityStatus.title=city?formatWorldTimeRange(
+      snapshot,worldCityTimeZone(snapshot,key)):"";
     drawWorldMap();
     drawPlaces();
     drawTimeline();
@@ -274,17 +271,19 @@ export function renderWorldEventsPage(){
       if(site.placeRef===selectedPlace)button.classList.add("is-selected");
       const name=el("strong",null,site.name);
       const detail=el("span",null,`${site.eventCount} shown · ${windowText(snapshot)}`);
-      detail.title=windowRange(snapshot);
+      detail.title=formatWorldTimeRange(snapshot,site.timeZone);
       button.append(name,detail);
       button.addEventListener("click",()=>choosePlace(site.placeRef));
       places.append(button);
     }
   }
   function worldEventCard(event){
+      const place=snapshot?.places.find(site=>site.placeRef===event.placeRef);
+      const zone=place?.timeZone??null;
       const card=el("article","world-events-event-card");
       const head=el("div","world-events-event-head");
       head.append(el("span","world-events-event-kind",pretty(event.kind)),
-        el("time",null,labelTime(event.occurredAt)));
+        el("time",null,formatWorldEventTime(event.occurredAt,zone)));
       const summary=el("p","world-events-event-summary",event.summary||"Admitted World event");
       const ref=el("div","world-events-event-ref",event.eventRef);
       const copy=createCopyButton({
@@ -381,10 +380,11 @@ export function renderWorldEventsPage(){
   }
   function drawCoPresence(){
     const result=worldVenueCoPresence(snapshot,selectedPlace);
+    const zone=snapshot?.places.find(site=>site.placeRef===selectedPlace)?.timeZone??null;
     if(!result.stays.length)return;
     const sectionHead=el("div","world-events-presence-head");
     sectionHead.append(el("h3",null,"Shared presence"),
-      el("span",null,`${result.stays.length} complete stays · ${result.overlaps.length} confirmed overlaps`));
+      el("span",null,`${result.stays.length} complete stays · ${result.overlaps.length} confirmed overlaps · ${zone??"UTC (venue zone unavailable)"}`));
     presence.append(sectionHead);
     const from=Math.min(...result.stays.map(stay=>Date.parse(stay.enteredAt)));
     const until=Math.max(...result.stays.map(stay=>Date.parse(stay.leftAt)));
@@ -404,10 +404,10 @@ export function renderWorldEventsPage(){
       const bar=el("span","world-events-presence-bar");
       bar.style.left=((Date.parse(stay.enteredAt)-from)/duration*100).toFixed(2)+"%";
       bar.style.width=((Date.parse(stay.leftAt)-Date.parse(stay.enteredAt))/duration*100).toFixed(2)+"%";
-      bar.title=`Enacted stay · ${labelTime(stay.enteredAt)} – ${labelTime(stay.leftAt)}`;
+      bar.title=`Enacted stay · ${formatWorldEventTime(stay.enteredAt,zone)} – ${formatWorldEventTime(stay.leftAt,zone)}`;
       track.append(bar);
       const interval=el("span","world-events-presence-time",
-        `${new Date(stay.enteredAt).toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"})}–${new Date(stay.leftAt).toLocaleTimeString(undefined,{hour:"2-digit",minute:"2-digit"})}`);
+        `${formatWorldEventTime(stay.enteredAt,zone,{clockOnly:true})}–${formatWorldEventTime(stay.leftAt,zone,{clockOnly:true})}`);
       line.append(person,track,interval);
       lanes.append(line);
     }
@@ -427,7 +427,7 @@ export function renderWorldEventsPage(){
         const minutes=Math.round(overlap.durationMinutes);
         entry.append(el("strong",null,`Together · ${minutes} min`),
           people,el("span",null,
-            `${labelTime(overlap.from)} – ${labelTime(overlap.until)}`));
+            `${formatWorldEventTime(overlap.from,zone)} – ${formatWorldEventTime(overlap.until,zone)}`));
         overlaps.append(entry);
       }
       presence.append(overlaps);
@@ -452,7 +452,7 @@ export function renderWorldEventsPage(){
     const events=worldEventPlaceTimeline(snapshot,selectedPlace);
     timelineCount.textContent=snapshot
       ?`${events.length} shown · ${windowText(snapshot)}`:"No data";
-    timelineCount.title=snapshot?windowRange(snapshot):"";
+    timelineCount.title=snapshot?formatWorldTimeRange(snapshot,selected?.timeZone??null):"";
     if(!selected){
       timeline.append(el("p","world-events-muted","Choose a place to inspect its World history."));
       return;
