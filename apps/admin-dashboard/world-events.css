@@ -5,6 +5,7 @@
 .world-events-panel-title h2{margin:0;font-size:18px;letter-spacing:-.02em}
 .world-events-panel-title span{font-size:12px;color:var(--muted,#81909e)}
 .world-events-timeline-controls{display:flex;align-items:center;gap:8px}
+.world-events-panel-title .world-events-day-copy-hint{font-size:10px;opacity:.7;margin-left:4px}
 .world-events-timeline-copy[hidden]{display:none}
 .world-events-main-map-panel,.world-events-place-panel,.world-events-timeline-panel{padding:20px;min-width:0}
 .world-events-world-map{height:clamp(280px,42vw,470px);overflow:hidden}
