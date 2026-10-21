@@ -19,7 +19,7 @@ function runtimeSourceMatches(deployedSha,checkoutSha){
   // Admin UI and offline appearance tooling do not change the running World.
   // A changed World runtime or an unrecognized path still fails closed.
   const nonWorldPaths=[
-    "tools/validation/","docs/","apps/admin-dashboard/",
+    "tools/validation/","tools/ops/","docs/","apps/admin-dashboard/",
     "infra/deployments/admin-dashboard/","tools/appearance/",
   ];
   if(changed.some(path=>!nonWorldPaths.some(prefix=>path.startsWith(prefix))
