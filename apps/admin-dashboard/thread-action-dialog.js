@@ -110,13 +110,15 @@ function renderFields(host, fields) {
       input.placeholder="Search for a city…";
       input.value=field.default??"";
       const matches=element("div","thread-action-place-results");
-      let sequence=0;
-      input.addEventListener("input",async()=>{
+      let sequence=0,timer=null;
+      input.addEventListener("input",()=>{
+        clearTimeout(timer);
         input._selectedPlace=null;
         input.setCustomValidity("Select a verified city from the results.");
         const q=input.value.trim(),current=++sequence;
         matches.replaceChildren();
         if(q.length<2)return;
+        timer=setTimeout(async()=>{
         try{
           const response=await fetch("/api/threads/births/place-search?q="+encodeURIComponent(q),
             {headers:{Accept:"application/json"},cache:"no-store"});
@@ -141,6 +143,7 @@ function renderFields(host, fields) {
           if(current===sequence)matches.replaceChildren(
             element("span","thread-action-place-note",String(error.message??error)));
         }
+        },250);
       });
       label.append(input,matches);host.append(label);
       continue;
