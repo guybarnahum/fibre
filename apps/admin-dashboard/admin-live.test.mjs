@@ -7,6 +7,7 @@ import {
   threadObservatoryViewKey,
   threadPopulationViewKey,
   threadViewKey,
+  worldEventsViewKey,
   watchViewInvalidation,
 } from "./view-invalidation.js";
 
@@ -58,4 +59,23 @@ test("one Population Lab hint refreshes only the experiment queue view",async()=
   await new Promise((resolve)=>setTimeout(resolve,0));
   assert.deepEqual(seen,[["plexp_live","portrait","changed"]],"Population Lab live hint did not invalidate experiment queue");
   stop();
+});
+
+test("World movement hint invalidates only World Events, not a Thread or appearance view",async()=>{
+  const seen=[];
+  const stops=[
+    watchViewInvalidation(worldEventsViewKey(),async detail=>seen.push(["world",detail.reason])),
+    watchViewInvalidation(threadPopulationViewKey(),async()=>seen.push(["population"])),
+    watchViewInvalidation(appearanceExperimentsViewKey(),async()=>seen.push(["appearance"])),
+  ];
+  assert.equal(routeAdminLiveMessage({
+    type:"admin-live.invalidate",entity:"world",id:"events",aspect:"occurrence",
+  }),true);
+  assert.equal(routeAdminLiveMessage({
+    type:"admin-live.invalidate",entity:"world",id:"unknown",aspect:"occurrence",
+  }),false);
+  await new Promise(resolve=>setTimeout(resolve,0));
+  assert.deepEqual(seen,[["world","changed"]],
+    "World occurrence did not target only the shared World Events view");
+  stops.forEach(stop=>stop());
 });
