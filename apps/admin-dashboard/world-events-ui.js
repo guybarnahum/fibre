@@ -7,6 +7,7 @@ import {worldEventsViewKey} from "./view-invalidation.js";
 import {worldVenueTileScene} from "./world-events-map.js";
 import {
   worldEventPlaceTimeline,worldEventPlaceDayRecord,worldVenueCoPresence,
+  worldPresencePair,formatSharedPresenceDuration,
 } from "./world-events-records.js";
 import {
   formatWorldEventTime,formatWorldTimeRange,worldCityTimeZone,
@@ -386,60 +387,93 @@ export function renderWorldEventsPage(){
     if(!result.stays.length)return;
     const sectionHead=el("div","world-events-presence-head");
     sectionHead.append(el("h3",null,"Shared presence"),
-      el("span",null,`${result.stays.length} complete stays · ${result.overlaps.length} confirmed overlaps · ${zone??"UTC (venue zone unavailable)"}`));
+      el("span",null,`${result.stays.length} complete stays · ${result.overlaps.length} verified overlaps · ${zone??"UTC"}`));
     presence.append(sectionHead);
-    const from=Math.min(...result.stays.map(stay=>Date.parse(stay.enteredAt)));
-    const until=Math.max(...result.stays.map(stay=>Date.parse(stay.leftAt)));
-    const duration=Math.max(1,until-from);
-    const lanes=el("div","world-events-presence-lanes");
-    for(const stay of result.stays.slice(0,12)){
-      const line=el("div","world-events-presence-lane");
-      const person=el("div","world-events-presence-person");
-      person.append(createThreadIdentityViewer({
-        threadId:stay.threadId,compact:true,className:"world-events-person",
-      }));
-      const life=el("a",null,"Life & Causes ↗");
-      life.href="/life?thread="+encodeURIComponent(stay.threadId)+"&view=history"
-        +"&moment="+encodeURIComponent("scene:"+stay.arrivalRef);
-      person.append(life);
-      const track=el("div","world-events-presence-track");
-      const bar=el("span","world-events-presence-bar");
-      bar.style.left=((Date.parse(stay.enteredAt)-from)/duration*100).toFixed(2)+"%";
-      bar.style.width=((Date.parse(stay.leftAt)-Date.parse(stay.enteredAt))/duration*100).toFixed(2)+"%";
-      bar.title=`Enacted stay · ${formatWorldEventTime(stay.enteredAt,zone)} – ${formatWorldEventTime(stay.leftAt,zone)}`;
-      track.append(bar);
-      const interval=el("span","world-events-presence-time",
-        `${formatWorldEventTime(stay.enteredAt,zone,{clockOnly:true})}–${formatWorldEventTime(stay.leftAt,zone,{clockOnly:true})}`);
-      line.append(person,track,interval);
-      lanes.append(line);
-    }
-    presence.append(lanes);
-    if(result.stays.length>12)presence.append(el("p","world-events-evidence-note",
-      "Showing first 12 complete stays in this bounded view."));
-    if(result.overlaps.length){
-      const overlaps=el("div","world-events-presence-overlaps");
-      for(const overlap of result.overlaps.slice(0,5)){
-        const entry=el("div","world-events-presence-overlap");
-        const people=el("div","world-events-presence-overlap-people");
-        for(const threadId of overlap.threadIds){
-          people.append(createThreadIdentityViewer({
-            threadId,compact:true,className:"world-events-person",
-          }));
-        }
-        const minutes=Math.round(overlap.durationMinutes);
-        entry.append(el("strong",null,`Together · ${minutes} min`),
-          people,el("span",null,
-            `${formatWorldEventTime(overlap.from,zone)} – ${formatWorldEventTime(overlap.until,zone)}`));
-        overlaps.append(entry);
+
+    for(const overlap of result.overlaps.slice(0,5)){
+      const pair=worldPresencePair(overlap,result.stays);
+      if(!pair)continue;
+      const card=el("section","world-events-presence-card");
+      card.append(el("div","world-events-presence-kicker","Confirmed shared presence"),
+        el("strong","world-events-presence-duration",
+          formatSharedPresenceDuration(pair.overlapUntil-pair.overlapFrom)));
+
+      const chart=el("div","world-events-presence-chart");
+      const fraction=instant=>((instant-pair.from)/pair.duration*100).toFixed(3)+"%";
+      for(const [index,stay] of pair.stays.entries()){
+        const person=el("div","world-events-presence-person");
+        person.append(createThreadIdentityViewer({
+          threadId:stay.threadId,compact:true,className:"world-events-person",
+        }));
+        const life=el("a",null,"Life & Causes ↗");
+        life.href="/life?thread="+encodeURIComponent(stay.threadId)+"&view=history"
+          +"&moment="+encodeURIComponent("scene:"+stay.arrivalRef);
+        person.append(life);
+        const track=el("div","world-events-presence-track");
+        const bar=el("span","world-events-presence-bar world-events-presence-bar-"+index);
+        bar.style.left=fraction(Date.parse(stay.enteredAt));
+        bar.style.width=((Date.parse(stay.leftAt)-Date.parse(stay.enteredAt))/pair.duration*100).toFixed(3)+"%";
+        bar.title=`Enacted stay · ${formatWorldEventTime(stay.enteredAt,zone)} – ${formatWorldEventTime(stay.leftAt,zone)}`;
+        const shared=el("span","world-events-presence-shared");
+        shared.style.left=fraction(pair.overlapFrom);
+        shared.style.width=((pair.overlapUntil-pair.overlapFrom)/pair.duration*100).toFixed(3)+"%";
+        shared.title=`Shared venue · ${formatSharedPresenceDuration(pair.overlapUntil-pair.overlapFrom)}`;
+        track.append(bar,shared);
+        chart.append(person,track);
       }
-      presence.append(overlaps);
+      const axis=el("div","world-events-presence-axis");
+      // Small/mobile charts cannot fit coincident labels; the exact range is
+      // always spelled out below, even when a middle marker is hidden.
+      const markers=[pair.from,pair.overlapFrom,pair.overlapUntil,pair.until]
+        .filter((value,i,all)=>all.indexOf(value)===i);
+      const visible=markers.filter((value,index)=>index===0||index===markers.length-1
+        ||(value-pair.from)/pair.duration>=.21
+          &&(pair.until-value)/pair.duration>=.21);
+      const display=visible.filter((value,index,all)=>index===0||index===all.length-1
+        ||(value-all[index-1])/pair.duration>=.21
+          &&(all[index+1]-value)/pair.duration>=.21);
+      for(const marker of display){
+        const pos=(marker-pair.from)/pair.duration;
+        const tick=el("span","world-events-presence-tick",
+          formatWorldEventTime(new Date(marker).toISOString(),zone,{clockOnly:true}));
+        tick.style.left=(pos*100).toFixed(3)+"%";
+        if(marker===pair.from)tick.classList.add("is-first");
+        if(marker===pair.until)tick.classList.add("is-last");
+        tick.title=formatWorldEventTime(new Date(marker).toISOString(),zone,{withSeconds:true});
+        axis.append(tick);
+      }
+      chart.append(el("span","world-events-presence-axis-spacer"),axis);
+      card.append(chart);
+      const seconds=(pair.overlapUntil-pair.overlapFrom)<60_000;
+      const startLocal=formatWorldEventTime(overlap.from,zone,{clockOnly:true,withSeconds:seconds});
+      const endLocal=formatWorldEventTime(overlap.until,zone,{clockOnly:true,withSeconds:seconds});
+      card.append(el("p","world-events-presence-confirmation",
+        `Both Threads were at the same verified venue between ${startLocal} and ${endLocal}.`));
+      presence.append(card);
     }
-    const limits=["Complete arrival/departure pairs only; presence is not attention or conversation."];
+    if(result.overlaps.length===0){
+      const solo=el("div","world-events-presence-lanes");
+      solo.append(el("p","world-events-muted",
+        "No overlapping completed stays confirmed in the returned World events."));
+      for(const stay of result.stays.slice(0,12)){
+        const line=el("div","world-events-presence-solo");
+        line.append(createThreadIdentityViewer({
+          threadId:stay.threadId,compact:true,className:"world-events-person",
+        }),el("span",null,
+          `${formatWorldEventTime(stay.enteredAt,zone,{clockOnly:true})} – ${formatWorldEventTime(stay.leftAt,zone,{clockOnly:true})}`));
+        solo.append(line);
+      }
+      presence.append(solo);
+    }
+    const limits=["Complete enacted arrivals/departures only; shared presence does not establish attention or conversation."];
     if(result.unmatchedMovements)limits.push(
       `${result.unmatchedMovements} unpaired movement(s) excluded.`);
-    if(result.sourceCapped)limits.push("World source capped; additional stays may be missing.");
-    if(result.additionalOverlaps||result.overlaps.length>5){
-      limits.push("Only the first overlapping intervals are displayed.");
+    if(result.sourceCapped)limits.push("World source capped; other stays may be missing.");
+    if(result.overlaps.length>5||result.additionalOverlaps){
+      limits.push("Only the first five verified overlaps are shown.");
+    }
+    if(result.stays.length>12&&result.overlaps.length===0){
+      limits.push("Only the first 12 complete stays are shown.");
     }
     presence.append(el("p","world-events-evidence-note",limits.join(" ")));
   }
