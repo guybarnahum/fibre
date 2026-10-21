@@ -81,6 +81,14 @@ npm run world-life:wave -- --env staging \
 ```
 
 Replace `cities-EXAMPLE.json` with the exact saved `evidencePath`.
+The CLI reuses Fibre's existing terminal progress runner. During each
+`--apply` request it displays the selected Thread's complete ID and
+an elapsed-time heartbeat (five seconds by default, configurable with
+`FIBRE_PROGRESS_INTERVAL_MS`). The server-side planning sequence is
+opaque until its HTTP response: "waiting for World reconciliation" does
+not claim any unreported internal progress. Each success also records
+its measured per-Thread duration in the existing wave evidence file.
+
 The CLI selects unique, stable Thread IDs from that actual candidate
 snapshot. `--thread` is an explicit single-person recovery canary and
 cannot be combined with `--city` or cohort offsets. City selection uses
