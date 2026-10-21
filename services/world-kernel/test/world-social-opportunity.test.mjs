@@ -11,6 +11,7 @@ import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { normalizeCurrentSituation } from "../src/lived-now.mjs";
 import { canonicalJson,sha256 } from "../src/persistence-common.mjs";
 import { createWorldSocialOpportunity } from "../src/world-social-opportunity.mjs";
+import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -357,8 +358,31 @@ test("a witnessed short overlap expires without inventing a social refusal or co
     store.enqueueSocialOpportunity({
       threadId:ids[0],situationId:visitor.situationId,dueAt:due,
     });
+    const story={
+      storyVersion:"encounter-story-v0.1",
+      beats:[{actorThreadId:visitor.threadId,kind:"action",
+        text:"A Thread arrives at the park."}],
+    };
+    const admitted=store.recordEncounterStory({
+      occurredAt:due,
+      threadPresence:[
+        {threadId:visitor.threadId,situationId:visitor.situationId},
+        {threadId:witness.threadId,situationId:witness.situationId},
+      ],
+      story,
+      visualization:createEncounterVisualization({
+        occurredAt:due,story,scene:"At the shared park.",
+        sourceReferences:[visitor.situationId,venueRef],
+        depictedThreadRefs:[],
+      }),
+    });
+    store.recordThreadEncounterAttention({
+      threadId:witness.threadId,encounterRef:admitted.encounterId,
+      situationId:witness.situationId,occurredAt:due,
+      outcome:"noticed",experienceText:"I noticed someone arrive.",
+    });
     store.enqueueObservedSocialOpportunity({
-      encounterRef:"story_dedaena_arrival",threadId:ids[1],
+      encounterRef:admitted.encounterId,threadId:ids[1],
       situationId:witness.situationId,counterpartyThreadId:ids[0],
       venueRef,dueAt:due,
     });
