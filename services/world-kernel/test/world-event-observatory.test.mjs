@@ -5,12 +5,15 @@ import {projectWorldEventOverview} from "../src/world-event-observatory.mjs";
 const when="2026-10-18T18:20:00.000Z";
 const place={ref:"wpl_library",displayName:"City Library",locality:"Lisbon",
   country:"Portugal",countryCode:"PT",lat:38.74,long:-9.14,
+  timeZone:"Europe/Lisbon",
   physicalVenue:{ref:"venue_library"}};
 const quietPlace={ref:"wpl_park",displayName:"Quiet Garden",locality:"Lisbon",
   country:"Portugal",countryCode:"PT",lat:38.73,long:-9.15,
+  timeZone:"Europe/Lisbon",
   physicalVenue:{ref:"venue_park"}};
 const otherPlace={ref:"wpl_remote",displayName:"Remote Meadow",locality:"Tbilisi",
   country:"Georgia",countryCode:"GE",lat:41.72,long:44.81,
+  timeZone:"Asia/Tbilisi",
   physicalVenue:{ref:"venue_remote"}};
 const rows=[place,quietPlace,otherPlace].map((item,i)=>({
   record_json:JSON.stringify(item),discovery_json:"null",
@@ -101,6 +104,10 @@ test("God-view pulses only from admitted World activity and keeps subjective con
     "the map silently claimed complete geographic attribution");
   assert.equal(snapshot.places.find(item=>item.placeRef===place.ref).appearance?.prompt,
     "Tall library shelves","the God-view omitted the persisted venue depiction seed");
+  assert.equal(snapshot.places.find(item=>item.placeRef===place.ref).timeZone,
+    "Europe/Lisbon","the World lost its attested place-local clock authority");
+  assert.equal(snapshot.places.find(item=>item.placeRef===otherPlace.ref).timeZone,
+    "Asia/Tbilisi","the World replaced another locality's time zone");
   assert.equal(snapshot.places.find(item=>item.placeRef===quietPlace.ref).appearance,null,
     "the God-view fabricated imagery for an unillustrated place");
   assert.equal(snapshot.places.find(item=>item.placeRef===quietPlace.ref).eventCount,0,
