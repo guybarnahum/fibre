@@ -178,10 +178,6 @@ function reconciliationLabel(value) {
   return value.lastError?.code ? `dead letter · ${human(value.lastError.code)}` : "dead letter";
 }
 
-function migrationFor(thread) {
-  return (thread.findings ?? []).find((finding) => finding?.migration?.domain === "identity")?.migration ?? null;
-}
-
 function actionCell(thread) {
   const cell=document.createElement("td");
   cell.className="thread-population-actions";
