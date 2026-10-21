@@ -5,6 +5,7 @@ import { threadObservatoryViewKey } from "./view-invalidation.js";
 import { setWaitingContent } from "./fa-icons.js";
 import { threadAppearanceSection } from "./thread-appearance-ui.js";
 import { renderThreadHealth } from "./thread-repair-ui.js";
+import { createThreadEditButton } from "./thread-edit-menu.js";
 import {
   fetchThreadObservatory,
   portraitAsset,
@@ -196,6 +197,9 @@ export async function renderThreadPage(threadId) {
     document.title = `Fibre Admin · ${name}`;
     copy.querySelector("h1").textContent = name;
     viewer.href = `${viewerOrigin(payload.environment)}/meet?thread=${encodeURIComponent(threadId)}`;
+    pageActions.append(createThreadEditButton({
+      threadId,name,onComplete:()=>void renderThreadPage(threadId),
+    }));
     const status = document.querySelector("#status-link");
     if (status) status.href = statusOrigin(payload.environment);
 
