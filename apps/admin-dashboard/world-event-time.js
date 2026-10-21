@@ -1,11 +1,12 @@
 // Interpret authoritative World instants in the venue's attested IANA zone.
 // An unlocated occurrence has no grounded local zone: label UTC explicitly.
-export function formatWorldEventTime(value,timeZone=null,{clockOnly=false}={}){
+export function formatWorldEventTime(value,timeZone=null,{clockOnly=false,withSeconds=false}={}){
   if(typeof value!=="string"||!Number.isFinite(Date.parse(value)))return "Unknown time";
   const options={
     timeZone:timeZone??"UTC",
     ...(clockOnly?{}:{month:"short",day:"numeric"}),
     hour:"numeric",minute:"2-digit",
+    ...(withSeconds?{second:"2-digit"}:{}),
     ...(clockOnly?{}:{timeZoneName:timeZone?"short":"short"}),
   };
   return new Intl.DateTimeFormat("en-US",options).format(new Date(value))
