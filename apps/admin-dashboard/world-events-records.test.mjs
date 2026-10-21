@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {worldEventPlaceDayRecord,worldVenueCoPresence} from "./world-events-records.js";
+import {
+  worldEventPlaceDayRecord,worldVenueCoPresence,
+  worldPresencePair,formatSharedPresenceDuration,
+} from "./world-events-records.js";
 
 test("a venue day export preserves only its actual World events and source limits",()=>{
   const asOf="2026-10-21T00:00:00.000Z";
@@ -77,4 +80,50 @@ test("unpaired movement never becomes an imaginary visit or social overlap",()=>
   assert.equal(result.overlaps.length,0,"unpaired movement invented co-presence");
   assert.equal(result.unmatchedMovements,2,
     "unknown pre/post-window life was silently erased");
+});
+
+test("verified library stay shows the exact shared interval with a common time axis",()=>{
+  const placeRef="wpl_library";
+  const movement=(kind,threadId,occurredAt,eventRef)=>({
+    kind,threadId,actorThreadId:threadId,occurredAt,eventRef,placeRef,
+    source:"world_enacted",
+  });
+  const overview={events:[
+    movement("departure","thr_ioseb","2026-10-21T11:00:00.091Z","sit_ioseb_out"),
+    movement("departure","thr_giorgi","2026-10-21T09:00:00.125Z","sit_giorgi_out"),
+    movement("arrival","thr_ioseb","2026-10-21T07:30:02.664Z","sit_ioseb_in"),
+    movement("arrival","thr_giorgi","2026-10-21T05:40:00.002Z","sit_giorgi_in"),
+  ],coverage:{situationsTruncated:true}};
+  const presence=worldVenueCoPresence(overview,placeRef);
+  const pair=worldPresencePair(presence.overlaps[0],presence.stays);
+  assert.deepEqual(pair.stays.map(stay=>stay.threadId),["thr_giorgi","thr_ioseb"],
+    "aligned presence bars joined the wrong attendees");
+  assert.equal(new Date(pair.from).toISOString(),"2026-10-21T05:40:00.002Z");
+  assert.equal(new Date(pair.overlapFrom).toISOString(),"2026-10-21T07:30:02.664Z");
+  assert.equal(new Date(pair.overlapUntil).toISOString(),"2026-10-21T09:00:00.125Z");
+  assert.equal(new Date(pair.until).toISOString(),"2026-10-21T11:00:00.091Z");
+  assert.equal(formatSharedPresenceDuration(pair.overlapUntil-pair.overlapFrom),
+    "1h 29m 57s","a genuine long overlap lost its seconds");
+});
+
+test("subminute shared presence keeps its real duration and its own visit identity",()=>{
+  const overlap={
+    threadIds:["thr_giorgi","thr_ioseb"],
+    arrivalRefs:["sit_giorgi_in_today","sit_ioseb_in_today"],
+    from:"2026-10-21T11:15:00.063Z",
+    until:"2026-10-21T11:15:04.841Z",
+  };
+  const stays=[
+    {threadId:"thr_giorgi",arrivalRef:"sit_giorgi_in_yesterday",
+      enteredAt:"2026-10-20T09:00:00Z",leftAt:"2026-10-20T09:30:00Z"},
+    {threadId:"thr_giorgi",arrivalRef:"sit_giorgi_in_today",
+      enteredAt:"2026-10-21T09:15:00.005Z",leftAt:overlap.until},
+    {threadId:"thr_ioseb",arrivalRef:"sit_ioseb_in_today",
+      enteredAt:overlap.from,leftAt:"2026-10-21T12:30:00.071Z"},
+  ];
+  const pair=worldPresencePair(overlap,stays);
+  assert.equal(pair.stays[0].arrivalRef,"sit_giorgi_in_today",
+    "a previous visit was silently stitched to today's visitor");
+  assert.equal(formatSharedPresenceDuration(pair.overlapUntil-pair.overlapFrom),
+    "4.8s","short genuine co-presence was shown as zero minutes");
 });
