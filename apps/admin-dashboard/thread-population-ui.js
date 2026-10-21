@@ -187,9 +187,12 @@ function actionCell(thread) {
   }
   cell.append(createThreadEditButton({
     threadId:thread.threadId,name:thread.identity?.name??null,iconOnly:true,
-    onComplete:spec=>{
-      $("#chain-summary").textContent=spec.label+" completed for "+
-        (thread.identity?.name??"Unnamed Thread")+".";
+    onComplete:(spec,result)=>{
+      const label=thread.identity?.name??"Unnamed Thread";
+      $("#chain-summary").textContent=spec.kind==="fid"
+        &&result?.state==="derivation_requested"
+          ?`FIN Card reissue started for ${label} · official photo is being prepared.`
+          :`${spec.label} completed for ${label}.`;
     },
   }));
   return cell;
