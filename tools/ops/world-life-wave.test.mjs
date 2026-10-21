@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {selectWorldLifeWave} from "./world-life-wave.mjs";
+import {selectWorldLifeWave,waveResponseFailure} from "./world-life-wave.mjs";
 
 const evidence={
   contract:"fibre-social-city-candidates-v0.1",
@@ -45,4 +45,21 @@ test("city-scoped waves select only enacted residents across successive small ba
   assert.throws(()=>selectWorldLifeWave(cities,{
     city:"Tbilisi",countryCode:"US",limit:2,
   }),/absent from the sampled/);
+});
+
+test("failed wave retains World reconciliation stage and provider diagnostic rather than generic 503",()=>{
+  const error=waveResponseFailure(503,{
+    error:"lived_now_reconciliation_failed",
+    code:"LIVED_NOW_RECONCILIATION_FAILED",
+    detail:"Planning integration failed",
+    diagnostics:{
+      stage:"lived_now.ensure",errorName:"Error",retryable:true,
+      providerErrorCode:"upstream_timeout",
+    },
+  });
+  assert.equal(error.httpStatus,503);
+  assert.equal(error.code,"LIVED_NOW_RECONCILIATION_FAILED");
+  assert.equal(error.diagnostics.stage,"lived_now.ensure");
+  assert.equal(error.diagnostics.providerErrorCode,"upstream_timeout");
+  assert.equal(error.detail,"Planning integration failed");
 });
