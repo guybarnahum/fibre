@@ -217,3 +217,28 @@ test("social timing report distinguishes missed company from voluntary refusal",
   assert.match(report,/no conversation was attempted/i,
     "a missed opportunity was misrepresented as a voluntary refusal");
 });
+
+test("the social probe retains an operator-grounded current city without mistaking birthplace for residence",()=>{
+  const threadId="thr_london";
+  const person={
+    thread:{identity:{name:"Omar",birthCity:"Lahore"}},
+    livedNow:{
+      currentSituation:{
+        situationId:"sit_home",phase:"at_place",wakefulness:"awake",
+        location:{kind:"place",placeRef:"place_london"},
+        establishedAt:"2026-10-21T22:59:00.000Z",
+      },
+      operatorCurrentPlace:{placeRef:"place_london",locality:"London",countryCode:"GB"},
+      currentLocation:{placeRef:"place_lahore",locality:"Lahore",countryCode:"PK"},
+      worldPlaces:[],placeEpisodes:[],
+    },
+  };
+  const life=groundedLifeSummary(threadId,person,"2026-10-21T23:00:00.000Z");
+  assert.equal(life.currentWorldLocality,"London, GB",
+    "the social probe lost the same enacted city recognized by the population census");
+  const changed=structuredClone(person);
+  changed.livedNow.operatorCurrentPlace.placeRef="place_elsewhere";
+  assert.equal(groundedLifeSummary(threadId,changed,"2026-10-21T23:00:00.000Z")
+    .currentWorldLocality,null,
+    "an unrelated location was incorrectly called the Thread's current city");
+});
