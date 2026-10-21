@@ -222,7 +222,10 @@ function renderHealth(host, threadId, health, message = null) {
   if(!host.closest(".thread-observatory-page")){
     const edits=el("div","thread-repair-actions");
     edits.append(createThreadEditButton({threadId,name:diagnosis.identity?.name??null,
-      onComplete:()=>void renderThreadHealth(host,threadId)}));
+      onComplete:(spec,result)=>{
+        if(spec.kind==="fid"&&result?.state==="derivation_requested")return;
+        void renderThreadHealth(host,threadId);
+      }}));
     host.append(edits);
   }
 
