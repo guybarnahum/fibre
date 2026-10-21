@@ -3,6 +3,7 @@ import {createThreadIdentityViewer} from "./thread-person-ui.js";
 import "./thread-popup-links.js";
 import {createCopyButton} from "./copy-action.js";
 import {worldVenueTileScene} from "./world-events-map.js";
+import {worldEventPlaceTimeline,worldEventPlaceDayRecord} from "./world-events-records.js";
 
 const $=selector=>document.querySelector(selector);
 const el=(tag,className=null,value=null)=>{
@@ -48,12 +49,6 @@ export function worldEventThreadEvidence(event){
   });
 }
 
-export function worldEventPlaceTimeline(snapshot,placeRef){
-  return (snapshot?.events??[])
-    .filter(event=>event.placeRef===placeRef)
-    .sort((a,b)=>String(b.occurredAt).localeCompare(String(a.occurredAt))
-      ||String(a.eventRef).localeCompare(String(b.eventRef)));
-}
 export function activeWorldEventCities(snapshot){
   return (snapshot?.cities??[]).filter(city=>city.eventCount>0);
 }
@@ -81,20 +76,22 @@ export function renderWorldEventsPage(){
   }
   hoursLabel.append(hours);
   const refresh=el("button","primary","Refresh");refresh.type="button";
+  async function readWorldDay(){
+    if(snapshot?.hours===24)return snapshot;
+    const response=await fetch("/api/world-events?hours=24",{
+      headers:{Accept:"application/json"},cache:"no-store",
+    });
+    if(!response.ok)throw Error("World 24-hour snapshot unavailable");
+    const day=await response.json();
+    if(day?.contract!=="fibre-world-event-observatory-v0.1"){
+      throw Error("World event contract mismatch");
+    }
+    return day;
+  }
   const copyDay=createCopyButton({
     label:"Copy 24-hour World events",tooltip:"Copy all returned World events for the last 24 hours as JSON (bounded sample)",
-    value:async()=>{
-      let day=snapshot?.hours===24?snapshot:null;
-      if(!day){
-        const response=await fetch("/api/world-events?hours=24",{
-          headers:{Accept:"application/json"},cache:"no-store",
-        });
-        if(!response.ok)throw Error("World 24-hour snapshot unavailable");
-        day=await response.json();
-        if(day?.contract!=="fibre-world-event-observatory-v0.1")throw Error("World event contract mismatch");
-      }
-      return {...day,scope:"rolling_24_hours",note:"Bounded World response; counts may omit older or truncated records."};
-    },
+    value:async()=>({...await readWorldDay(),scope:"rolling_24_hours",
+      note:"Bounded World response; counts may omit older or truncated records."}),
   });
   actions.append(hoursLabel,copyDay,refresh);
   heading.append(headingText,actions);
@@ -124,7 +121,20 @@ export function renderWorldEventsPage(){
   const timelineHead=el("div","world-events-panel-title");
   const timelineTitle=el("h2",null,"World timeline");
   const timelineCount=el("span");
-  timelineHead.append(timelineTitle,timelineCount);
+  const placeDayCopy=createCopyButton({
+    label:"Copy venue day JSON",
+    tooltip:"Copy this venue's returned World events for the last 24 hours",
+    value:async()=>{
+      const place=snapshot?.places.find(item=>item.placeRef===selectedPlace);
+      if(!place)throw Error("Select a World venue first");
+      return worldEventPlaceDayRecord(await readWorldDay(),place);
+    },
+  });
+  placeDayCopy.classList.add("world-events-timeline-copy");
+  placeDayCopy.disabled=true;
+  const timelineControls=el("div","world-events-timeline-controls");
+  timelineControls.append(timelineCount,placeDayCopy);
+  timelineHead.append(timelineTitle,timelineControls);
   const timeline=el("div","world-events-timeline");
   timelinePanel.append(timelineHead,timeline);
   drill.append(cityPanel,timelinePanel);
@@ -369,6 +379,8 @@ export function renderWorldEventsPage(){
     timeline.replaceChildren();
     const selected=snapshot?.places.find(p=>p.placeRef===selectedPlace);
     timelineTitle.textContent=selected?.name??"World timeline";
+    placeDayCopy.disabled=!selected;
+    placeDayCopy.hidden=!selected;
     const events=worldEventPlaceTimeline(snapshot,selectedPlace);
     timelineCount.textContent=snapshot
       ?`${events.length} shown · ${windowText(snapshot)}`:"No data";
