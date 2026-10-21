@@ -335,10 +335,21 @@ async function resolveNewPlaces({
   resolveDestinationGeography,availablePlaces,
 }){
   const offered=new Set(availablePlaces.map(place=>place.ref));
-  const requests=[...new Set(stops.map(s=>s.physicalPlaceRef).filter(ref=>!offered.has(ref)))];
-  if(requests.length===0)return {stops,places:[]};
+  // An exact, unique label from the supplied World context is the same
+  // destination, not a new discovery. Ambiguous labels never choose a ref.
+  const normalized=stops.map(stop=>{
+    if(offered.has(stop.physicalPlaceRef)
+      ||typeof stop.physicalPlaceRef!=="string")return stop;
+    const label=stop.physicalPlaceRef.trim().toLocaleLowerCase("en-US");
+    const matching=availablePlaces.filter(place=>
+      place.displayName?.trim().toLocaleLowerCase("en-US")===label);
+    return matching.length===1
+      ?{...stop,physicalPlaceRef:matching[0].ref}:stop;
+  });
+  const requests=[...new Set(normalized.map(s=>s.physicalPlaceRef).filter(ref=>!offered.has(ref)))];
+  if(requests.length===0)return {stops:normalized,places:[]};
   if(materializedAt!==null)throw new TypeError("retrospective life cannot discover present-day places");
-  if(startingPlaceRef===null||stops[0].physicalPlaceRef!==startingPlaceRef){
+  if(startingPlaceRef===null||normalized[0].physicalPlaceRef!==startingPlaceRef){
     throw new TypeError("new place cannot replace the starting location");
   }
   if(requests.length>2)throw new TypeError("Flight Plan may discover at most two new places");
@@ -348,10 +359,10 @@ async function resolveNewPlaces({
   const choices=[],resolved=new Map();
   for(const request of requests){
     const place=proposedPlace(request);
-    for(let index=1;index<stops.length;index++){
-      const stop=stops[index];
+    for(let index=1;index<normalized.length;index++){
+      const stop=normalized[index];
       if(stop.physicalPlaceRef!==request)continue;
-      const previous=stops[index-1];
+      const previous=normalized[index-1];
       if(previous.physicalPlaceRef!==request
         &&(Date.parse(stop.startAt)<=Date.parse(previous.endAt)
           ||!stop.travelFromPrevious?.trim())){
@@ -375,7 +386,7 @@ async function resolveNewPlaces({
       placeKind:result.place.placeKind,
     });
   }
-  return {places:choices,stops:stops.map(stop=>({
+  return {places:choices,stops:normalized.map(stop=>({
     ...stop,physicalPlaceRef:resolved.get(stop.physicalPlaceRef)??stop.physicalPlaceRef,
   }))};
 }
