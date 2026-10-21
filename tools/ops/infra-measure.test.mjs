@@ -54,3 +54,22 @@ test("infrastructure measurement preserves Fibre operation cost and encounter sl
   assert.equal(operations.get("activity.record").rowsWritten, 1);
   assert.equal(operations.get("admin.activity.count").rowsRead, 18000);
 });
+
+test("LivedNow failures are diagnosed without inflating Cloudflare read/write totals",()=>{
+  const result=summarizeCosts([
+    {event:"world-state-cost",phase:"world-life-wave",source:"world-kernel",
+      kind:"request",method:"POST",path:"/internal/lived-now/ensure",
+      rowsRead:70,rowsWritten:2,queries:11},
+    {event:"lived-now-reconciliation-failed",phase:"world-life-wave",
+      source:"world-kernel",threadId:"thr_london",
+      code:"LIVED_NOW_RECONCILIATION_FAILED",
+      detail:"Planning integration failed",
+      diagnostics:{stage:"lived_now.ensure",providerErrorCode:"upstream_timeout"}},
+  ]);
+  assert.equal(result.operations.length,1,
+    "a server error counted as a fictitious database request");
+  assert.equal(result.operations[0].rowsRead,70);
+  assert.equal(result.reconciliationFailures.length,1,
+    "the reason for the failed wave vanished from measurement evidence");
+  assert.equal(result.reconciliationFailures[0].diagnostics.stage,"lived_now.ensure");
+});
