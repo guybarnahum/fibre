@@ -1,7 +1,7 @@
 import {actionFields,openThreadActionDialog} from "./thread-action-dialog.js";
 import {decorateActionButton} from "./fa-icons.js";
 import {identityActionPayload} from "./thread-identity-action.js";
-import {reissueFidCard} from "./thread-observatory.js";
+import {reissueFidCard,resumeFidReissue} from "./thread-observatory.js";
 
 const human=value=>String(value??"").replaceAll("_"," ");
 const operation=prefix=>prefix+"_"+Date.now().toString(36);
@@ -119,15 +119,33 @@ export function createThreadEditButton({threadId,name=null,iconOnly=false,onComp
               :spec.kind==="identity"?"Authoritative identity":"Thread maintenance",
             description:spec.description,fields:spec.fields??[],
             run:async input=>{
-              const result=spec.kind==="fid"
-                ?await reissueFidCard(threadId)
-                :await repairRequest(threadId,actionBody(spec,input));
-              window.dispatchEvent(new CustomEvent(
-                spec.kind==="fid"?"fibre:fid-card-reissued"
-                  :spec.kind==="identity"?"fibre:thread-identity-updated":"fibre:thread-updated",
-                {detail:{threadId,actionId:spec.id,result}},
-              ));
-              onComplete?.(spec);
+              const notify=result=>{
+                window.dispatchEvent(new CustomEvent(
+                  spec.kind==="fid"?"fibre:fid-card-reissued"
+                    :spec.kind==="identity"?"fibre:thread-identity-updated":"fibre:thread-updated",
+                  {detail:{threadId,actionId:spec.id,result}},
+                ));
+                onComplete?.(spec,result);
+              };
+              if(spec.kind!=="fid"){
+                notify(await repairRequest(threadId,actionBody(spec,input)));
+                return;
+              }
+              const idempotencyKey=operation("admin_fid_reissue")
+                +"_"+Math.random().toString(36).slice(2,8);
+              const result=await reissueFidCard(threadId,{idempotencyKey});
+              if(result?.state!=="derivation_requested"){
+                notify(result);
+                return;
+              }
+              // The request is accepted, not completed. Continue the same
+              // issuance without authoring duplicate cards or blocking Admin.
+              onComplete?.(spec,result);
+              void resumeFidReissue(threadId,{idempotencyKey,initialResult:result})
+                .then(completed=>{
+                  if(completed?.state==="active")notify(completed);
+                  else console.warn("FIN Card reissue remains incomplete",completed?.state);
+                }).catch(error=>console.warn("FIN Card reissue follow-up failed",error));
             },
           });
         });
