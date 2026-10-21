@@ -183,3 +183,37 @@ test("one observed venue visit never masquerades as a co-presence check",()=>{
   assert.match(report,/earlier social consideration found no eligible peer then/i,
     "historical absence of peers was confused with today's visit");
 });
+
+test("social timing report distinguishes missed company from voluntary refusal",()=>{
+  const due="2026-10-21T11:15:00.063Z";
+  const started="2026-10-21T11:15:13.646Z";
+  const evidence={
+    environment:"staging",checkedAt:"2026-10-21T18:25:00.000Z",
+    targetedThreadId:"thr_witness",scannedThreadCount:1,
+    availableThreadCount:1,unavailableThreadIds:[],
+    deployedGitSha:"71ac4c16126622acda4b5a6b994ca7cb36285a43",
+    runtimeSourceMatches:true,worldBlocker:"co_presence_not_scanned",
+    groundedLife:{withVenues:[],withoutVenues:[]},
+    sharedCurrentVenues:[],
+    socialOpportunities:[{
+      threadId:"thr_witness",kind:"observed",dueAt:due,
+      startedAt:started,completedAt:started,outcome:"missed_window",
+      sourceEncounterRef:"story_shared_arrival",decision:null,
+    }],
+    distinctExperienceWitness:null,
+    causalContinuity:{
+      inspectedSharedStoryCount:0,distinctExperiencePairCount:0,
+      retainedMemoryChainCount:0,laterContactAfterRetentionCount:0,
+      episodes:[],
+    },
+  };
+  const report=formatWorldSocialReport(evidence,"/tmp/world-social.json");
+  assert.match(report,/missed window/,
+    "the witnessed opportunity was mislabeled as absent company");
+  assert.match(report,/13\.583s after opportunity/,
+    "the decision delay was not measured from the enacted occurrence");
+  assert.match(report,/started 2026-10-21 11:15:13 UTC/,
+    "actual claim timing was lost from social investigation");
+  assert.match(report,/no conversation was attempted/i,
+    "a missed opportunity was misrepresented as a voluntary refusal");
+});
