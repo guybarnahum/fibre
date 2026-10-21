@@ -3,7 +3,7 @@ import { DurableObject } from "cloudflare:workers";
 const TAG = "admin-live";
 
 function normalizedInvalidation(value) {
-  if (!value || !["thread","population_lab_experiment"].includes(value.entity)) {
+  if (!value || !["thread","population_lab_experiment","world"].includes(value.entity)) {
     throw new TypeError("Admin live entity is invalid");
   }
   if (typeof value.id !== "string" || value.id === "") throw new TypeError("Admin live id is required");
