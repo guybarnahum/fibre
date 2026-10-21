@@ -65,6 +65,21 @@ optional daylight context. Do not introduce a second global map stack.
   explicitly separate lists. Never put an online human or a Genesis context
   at a fabricated street location.
 
+**Source-only live view (October 21):** after one initial bounded
+read, the existing Admin WebSocket receives best-effort World
+invalidation hints for **World-enacted arrivals and departures at
+verified public venues**. Hints carry no event content and do not
+author World truth; the active browser rereads the authoritative
+overview. A disconnected or backgrounded browser reconciles on
+socket rejoin, and concurrent notifications coalesce into a single
+pending reread. There is no polling timer, extra socket, new event
+index, or autonomous-life trigger. Publication uses the already
+provisioned World `InfraDriver.realtime` channel and is
+fire-and-forget after durable admission. Other Story-only admissions,
+late attention/Memory changes and venue registry changes are not yet
+notified. The operator can always refresh manually. This mechanism
+does not fix global source-limit truncation or prove a complete view.
+
 ### City view
 
 Selecting a city zooms into an **interactive city place map** with an
