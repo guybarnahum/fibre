@@ -197,9 +197,7 @@ export async function renderThreadPage(threadId) {
     document.title = `Fibre Admin · ${name}`;
     copy.querySelector("h1").textContent = name;
     viewer.href = `${viewerOrigin(payload.environment)}/meet?thread=${encodeURIComponent(threadId)}`;
-    pageActions.append(createThreadEditButton({
-      threadId,name,onComplete:()=>void renderThreadPage(threadId),
-    }));
+    pageActions.append(createThreadEditButton({threadId,name}));
     const status = document.querySelector("#status-link");
     if (status) status.href = statusOrigin(payload.environment);
 
