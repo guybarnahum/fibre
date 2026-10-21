@@ -164,6 +164,46 @@ When Fibre later needs the Thread's present—because the Thread is thawed, insp
 
 This is an **on-demand continuity model**, not a high-frequency simulation loop.
 
+## Reliable operator wake and place-bound cognition (October 21, 2026)
+
+A World wake is a request to reconcile **one actual Thread's life** to a
+requested present; it is not a command to flip the physiological
+`wakefulness` flag or force an activity or conversation. An expired Plan
+may require bounded retrospectively materialized intention **and** a new
+forward-looking Flight Plan. Both remain authored by Thread cognition;
+only admitted authority permits World enactment.
+
+The planner now distinguishes those two contexts at the model boundary:
+historical planning exposes only the offered historically grounded physical
+place references (the model result schema enumerates them); forward-looking
+planning still permits bounded natural-language destination proposals
+which World resolves before admission. A uniquely matched human-readable
+label of an offered place can be normalized mechanically to its exact
+World ref, but an unknown or ambiguous reference is never guessed.
+No extra model call, synthetic preference, venue co-presence or invented
+historical journey is introduced by this recovery.
+
+The bounded operator census `world-social:candidates` includes
+`lifeContinuity` and `lifeStatusCounts` for every inspected Thread,
+including people without a grounded current city. It reports
+`scheduled`, `blocked`, `plan_expired`, `unarmed` or `not_established`,
+along with existing plan, frontier and error witnesses. A deliberate
+single-Thread `world-life:wave --thread` can exercise an actual
+`LivedNow.ensure` only after a dry run. A successful enacted life update
+re-arms the existing per-Thread frontier and resets exhausted failure
+attempts; a rejected planning result is not silently classified as
+successful recovery. The operator must verify both future Plan coverage
+and the next scheduled boundary.
+
+This removes two witnessed candidate-format failure modes; it does
+**not** establish that provider outages, malformed semantic outputs,
+unresolved World grounding or long-dormant retrospective work can never
+fail. Full 42-Thread recovery remains contingent on read-only census,
+bounded staging canaries, provider diagnostics and measured reconciliation
+cost. A future design for durable pending deliberation could decouple
+provider availability from admitting a plan, but must never represent
+unresolved cognition as an invented lived decision.
+
 ## Retrospective life realization
 
 ### Why it exists
