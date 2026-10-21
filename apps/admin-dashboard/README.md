@@ -64,6 +64,17 @@ copies the entire *returned* rolling 24-hour overview, including located
 and unmapped events, places and source-coverage limits. It reads the
 24-hour overview only if the current window differs; the result is not
 a complete calendar-date archive or evidence beyond source caps.
+The selected venue's timeline now also shows a compact **Shared
+presence** view derived from paired, World-enacted arrivals and departures
+in the existing bounded overview. Per-person stay bars and actually
+overlapping intervals are linked to each Thread's Life & Causes. The
+Dedaena Park evidence on October 20 yields Ioseb 11:30–13:00 UTC,
+Giorgi 11:35–12:35 UTC, and approximately 60 minutes together, without
+asserting either noticed the other or conversed. Unpaired movements
+are explicitly excluded, the overlap list is bounded, and source
+truncation remains visible. No new World query, background scan, model
+call, or social action is introduced.
+
 A second **Copy venue day JSON** icon sits beside the *selected venue's*
 timeline count. It exports only that place's returned events in the
 last rolling 24 hours, with the exact `placeRef`, place name, as-of
