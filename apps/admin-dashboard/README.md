@@ -4,6 +4,25 @@
 
 The dashboard is deliberately not a semantic authority. Activity remains non-authoritative and fail-open; World and service records decide Fibre truth. The browser never receives a Fibre private/admin token. Authenticated operator mutations are narrow service actions—such as initiating a Birth, bounded Thread repair, FID reissue, or meeting initiation—and the owning Fibre service remains authoritative.
 
+## Thread identity and maintenance editor (October 21)
+
+The Threads table uses one **Edit** pencil instead of a growing action
+stack. Individual Thread Observatory headers and health panes open the same
+editor. The menu is loaded **on click** from authoritative World diagnosis
+and offers identity corrections, approved migrations, repair/recovery,
+reconciliation and FIN Card reissue. Each item reuses the existing confirmed
+Thread action dialog and World command, with current availability verified
+before the menu is shown. No new Admin mutation endpoint was introduced.
+
+For an identity missing a birth city, **Set birth city** searches GeoNames
+through the already-established Admin place-search route. Only a selected,
+verified country/city/coordinates record may be submitted through the
+existing history-preserving `identity` command; typed free text alone
+cannot become an authoritative birth fact. A recorded birthplace can also
+be explicitly changed. This is an operator-authorized correction, never
+an inferred replacement from the Thread's current city or a rewriting of
+Genesis history.
+
 ## World Events — authenticated God-view (source implementation, staging unverified)
 
 `/world-events` presents a World map whose city pulses are driven by recent
