@@ -34,6 +34,32 @@ Population inspection is operator-driven and bounded. It should not become a bac
 
 While Threads is open, the same single Admin live connection used by other operator views carries best-effort Thread invalidation hints. Thread Presentation publishes those hints only through the provider-neutral `InfraDriver.realtime` capability; no Fibre semantic code depends on Durable Objects, WebSocket sessions or another cloud primitive. The deployment adapter owns the browser transport. Cloudflare currently maps that transport and the `admin` realtime channel to one environment-wide Admin-live Durable Object; another provider may realize the same capability differently. A normal Thread hint causes one exact authoritative reread for that Thread and replaces only that row; an open Thread Observatory also rereads that same Thread rather than remaining stale until reopened. The browser recomputes table statistics and map presentation from its already-authoritative local population state. It must not call the full population endpoint for a single-Thread mutation. A live reconnect is different: because hints may have been missed while disconnected, Admin performs one bounded full population reconciliation. Visual reconciliation has two authoritative edges: when World requeues work it emits a reconciliation hint so Admin can show `pending` immediately, and after World commits completion or terminal dead-letter it emits the final reconciliation hint. The browser therefore cannot depend on reload timing for either transition. Presentation-only media changes may emit Presentation invalidation hints, but raw asset or intermediate FID/Presentation completion is never treated as World readiness.
 
+### World Events live invalidation — October 21 source
+
+World Events now makes one authoritative bounded overview read at page entry,
+then subscribes through the **existing** `watchAdminLive` socket and
+`view-invalidation` coalescing mechanism. A World-enacted arrival or
+departure at an attested public World place emits a small best-effort hint
+`{entity:"world",id:"events",aspect:"occurrence"}` after the situation is
+committed. The Admin page makes another authoritative overview read only
+when notified, when the operator manually refreshes or changes the window,
+or when a disconnected/hidden socket reconnects. Multiple hints arriving
+during a read collapse to at most one queued read. Hints never contain
+new World facts and their publication failure cannot prevent a Thread
+from living or moving.
+
+The shared `admin` WebSocket and Durable Object are reused; World does not
+open a new subscriber connection or introduce an event-polling interval.
+Every World hint still has a nonzero provider fanout cost, so only actual
+enacted public movement is emitted in this slice, never plan refreshes,
+world-reconciliation iterations, private presence, or model execution.
+**Coverage remains explicitly partial:** independent Encounter Story
+admissions, changes to historical Memory links, and public-place registry
+updates do not yet publish World Events hints; manual refresh or socket
+reconciliation can reveal them. The overview remains source-capped, not a
+complete World index. The operator must validate locally and in staging
+before claiming live delivery works.
+
 ### Shared Admin World Map — source implemented 2026-10-11, operator acceptance pending
 
 Threads, Birth Center and Appearance use the **same browser World Map component** (`apps/admin-dashboard/world-map-ui.js`) for SVG geography, bounded projection, timezone meridians and a solar night overlay. Each view contributes only its relevant markers and interactions: authoritative situated Thread/current population, selected birthplace/birth pipeline, or represented appearance calibration demand. A shared client-side solar approximation (`world-daylight.js`) shades geographical night and updates all three maps on one shared 15-minute scheduler only while the tab is focused and at least one map intersects the viewport; a browser-native SVG translation moves the solar boundary continuously between calculations, without redrawing the map or moving markers; the daylight ground is muted 25%-opacity blue and the nighttime polygon uses half-degree scanlines with an approximately 20px feathered terminator below sharp geography/markers; the timer/animation stop when out of focus or offscreen and resume at current solar time; it does **not** query World, schedule life, invoke a model or persist any clock/state.
