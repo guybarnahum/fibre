@@ -101,6 +101,50 @@ function renderFields(host, fields) {
   host.replaceChildren();
   for (const field of fields) {
     if (typeof field?.name !== "string" || field.name === "") continue;
+    if(field.kind==="place_search"){
+      const label=element("label","thread-action-field");
+      label.append(element("span",null,field.label??"Birth city"));
+      const input=document.createElement("input");
+      input.type="search";input.autocomplete="off";
+      input.name=field.name;input.required=true;
+      input.placeholder="Search for a city…";
+      input.value=field.default??"";
+      const matches=element("div","thread-action-place-results");
+      let sequence=0;
+      input.addEventListener("input",async()=>{
+        input._selectedPlace=null;
+        input.setCustomValidity("Select a verified city from the results.");
+        const q=input.value.trim(),current=++sequence;
+        matches.replaceChildren();
+        if(q.length<2)return;
+        try{
+          const response=await fetch("/api/threads/births/place-search?q="+encodeURIComponent(q),
+            {headers:{Accept:"application/json"},cache:"no-store"});
+          const payload=await response.json();
+          if(current!==sequence)return;
+          if(!response.ok||payload?.ok!==true)throw Error(payload?.detail??"Place search unavailable");
+          for(const place of payload.places??[]){
+            const choice=element("button","thread-action-place-choice",place.displayName);
+            choice.type="button";
+            choice.addEventListener("click",()=>{
+              input._selectedPlace=place;
+              input.value=place.displayName;
+              input.setCustomValidity("");
+              matches.replaceChildren();
+            });
+            matches.append(choice);
+          }
+          if(!matches.childElementCount){
+            matches.append(element("span","thread-action-place-note","No verified cities found."));
+          }
+        }catch(error){
+          if(current===sequence)matches.replaceChildren(
+            element("span","thread-action-place-note",String(error.message??error)));
+        }
+      });
+      label.append(input,matches);host.append(label);
+      continue;
+    }
     const choices = Array.isArray(field.options) ? field.options : [];
     if (choices.length > 0 && field.kind === "select") {
       const label = element("label", "thread-action-field");
@@ -181,6 +225,19 @@ function readInput(form, fields) {
     const raw = data.get(field.name);
     const value = typeof raw === "string" ? raw.trim() : "";
     if (field.required === true && value === "") return null;
+    if(field.kind==="place_search"){
+      const selected=form.elements.namedItem(field.name)?._selectedPlace??null;
+      if(!selected||selected.displayName!==value){
+        form.elements.namedItem(field.name)?.setCustomValidity("Select a verified city.");
+        form.reportValidity();return null;
+      }
+      values[field.name]={
+        displayName:selected.displayName,country:selected.country,
+        countryCode:selected.countryCode,
+        city:selected.city,lat:selected.lat,long:selected.long,
+      };
+      continue;
+    }
     values[field.name] = field.kind === "string_list"
       ? value.split(",").map((item) => item.trim()).filter(Boolean)
       : field.kind === "country_code"
