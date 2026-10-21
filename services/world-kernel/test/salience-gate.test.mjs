@@ -42,6 +42,11 @@ test("background co-presence retains Body evidence without inventing social inte
   const opportunity={kind:"actor_presence",subjectRefs:["thr_salience_other"]};
   const base={opportunity,situatedPercept:percept};
   const absent=evaluateSalience(base);
+  const unrelated=evaluateSalience({...base,regulationFrame:{
+    asOf:"2026-10-20T11:35:00.001Z",
+    drives:[{family:"rest",orientation:"maintain",
+      pressure:0.7,evidenceRefs:["sit_rest"]}],
+  }});
   const weak=evaluateSalience({...base,regulationFrame:{
     asOf:"2026-10-20T11:35:00.001Z",
     drives:[{family:"social_contact",orientation:"approach",
@@ -54,6 +59,8 @@ test("background co-presence retains Body evidence without inventing social inte
   }});
   assert.equal(absent.bodyAtGate,null,
     "missing Body evidence became an invented zero-pressure reading");
+  assert.deepEqual(unrelated.bodyAtGate.drives,[],
+    "a known but irrelevant Body frame was mistaken for a social drive");
   assert.equal(weak.outcome,"background",
     "ordinary weak social pull incorrectly forced cognition");
   assert.equal(weak.bodyAtGate.drives[0].pressure,0.375197,
