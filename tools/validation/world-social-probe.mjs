@@ -383,6 +383,8 @@ export function formatWorldSocialReport(evidence,evidencePath){
           ?"A recorded co-presence window closed before social consideration; no conversation was attempted."
           :evidence.socialOpportunities.some(o=>o.outcome==="expired")
             ?"A social opportunity timed out before a voluntary decision."
+            :evidence.socialOpportunities.some(o=>o.outcome==="life_unresolved")
+              ?"A participant's unresolved life prevented an attempted meeting; this is not evidence of absence."
             :evidence.socialOpportunities.some(o=>o.outcome==="no_co_presence")
               ?"An earlier social consideration found no eligible peer then; it does not assess later visits."
               :"Social opportunities exist; their outcomes are listed above."
