@@ -83,6 +83,7 @@ export function createSocialMeetingService({
   semanticStateStore,
   memoryStore,
   experienceStore,
+  embodimentStore=null,
   modelAdapter,
   liveEncounterRegistry = null,
   onExperienceQueued = null,
@@ -391,6 +392,7 @@ export function createSocialMeetingService({
         observedThreads:discovered.map(observedThread),
         situatedLifeStore,
         livedNowStore,
+        embodimentStore,
         experienceStore,
       });
       const opportunities = perceived.opportunities.filter((opportunity) =>
@@ -419,6 +421,7 @@ export function createSocialMeetingService({
           observedThreads:[observedThread(counterparty)],
           situatedLifeStore,
           livedNowStore,
+          embodimentStore,
           experienceStore,
         });
         const actorOpportunity = situatedPercept.opportunities[0];
@@ -486,6 +489,7 @@ export function createSocialMeetingService({
           observedThreads:[observedThread(initiator)],
           situatedLifeStore,
           livedNowStore,
+          embodimentStore,
           experienceStore,
         });
         const stance = await formMeetingStance({
