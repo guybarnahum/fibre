@@ -50,14 +50,9 @@ export function createWorldArrivalPerception({
           }):[];
           let encounterRef=null;
           if(witnesses.length>0){
-            const describe=situation=>{
-              const person=worldReader.getThread(situation.threadId,{required:false});
-              return observablePerson({
-                threadId:situation.threadId,situation,
-                name:person?.identity?.name??null,
-                embodimentStore,
-              }).observableDescription;
-            };
+            const describe=situation=>observablePerson({
+              threadId:situation.threadId,situation,embodimentStore,
+            }).observableDescription;
             const story={storyVersion:"encounter-story-v0.1",
               beats:[
                 {actorThreadId:arrival.threadId,kind:"action",
