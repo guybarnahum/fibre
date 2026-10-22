@@ -173,6 +173,15 @@ export class LivedExperienceStore {
 
   close() { this.#database.close(); }
 
+  // Independent stores may be opened before their LivedNow frontier exists
+  // (Genesis and isolated replay fixtures). No phantom life debt is inferred.
+  #hasLivedBoundaryFrontier(){
+    return this.#database.prepare(`
+      SELECT 1 FROM sqlite_master
+      WHERE type='table' AND name='lived_now_next_boundaries'
+    `).get()!==undefined;
+  }
+
   enqueueArrivalPerception({situationId,venueRef,dueAt,witnesses}){
     assertId("arrival situation",situationId);
     assertId("arrival venue",venueRef);
@@ -196,6 +205,8 @@ export class LivedExperienceStore {
   }
 
   nextArrivalPerceptionAt(){
+    const debtFilter=this.#hasLivedBoundaryFrontier()?`
+        ${debtFilter}`:"";
     return this.#database.prepare(`
       SELECT w.due_at FROM world_arrival_perception_work w
       WHERE w.completed_at IS NULL
@@ -215,6 +226,8 @@ export class LivedExperienceStore {
 
   listDueArrivalPerceptions({at}){
     assertIsoTimestamp("arrival perception now",at);
+    const debtFilter=this.#hasLivedBoundaryFrontier()?`
+        ${debtFilter}`:"";
     // Skip only this arrival's unresolved actor/witness obligations before
     // the bounded LIMIT. Deferred work stays untouched and cannot starve a
     // later independent arrival. A life wake makes it eligible again.
@@ -292,6 +305,9 @@ export class LivedExperienceStore {
 
   nextSocialOpportunityAt({after=null}={}){
     if(after!==null)assertIsoTimestamp("social opportunity after",after);
+    const hasDebt=this.#hasLivedBoundaryFrontier();
+    const debtFilter=hasDebt?`
+        ${debtFilter}`:"";
     return this.#database.prepare(`
       SELECT o.due_at FROM (
         SELECT thread_id,NULL AS counterparty_thread_id,due_at
@@ -308,11 +324,18 @@ export class LivedExperienceStore {
               OR (? IS NOT NULL AND b.due_at<=?))
         )
       ORDER BY o.due_at LIMIT 1
-    `).get(after,after,after,after)?.due_at??null;
+    `).get(...(hasDebt?[after,after,after,after]:[after,after]))?.due_at??null;
   }
 
   listDueSocialOpportunities({at,limit=8}){
     assertIsoTimestamp("social opportunity now",at);
+    const hasDebt=this.#hasLivedBoundaryFrontier();
+    const debtFilter=hasDebt?`
+      AND NOT EXISTS (
+        SELECT 1 FROM lived_now_next_boundaries b
+        WHERE (b.thread_id=o.thread_id OR b.thread_id=o.counterparty_thread_id)
+          AND (b.failed_attempts>0 OR b.due_at<=?)
+      )`:"";
     if(!Number.isSafeInteger(limit)||limit<1||limit>16){
       throw new TypeError("bounded social opportunity read requires 1-16 entries");
     }
@@ -329,13 +352,9 @@ export class LivedExperienceStore {
         FROM world_observed_social_opportunities
         WHERE started_at IS NULL AND due_at<=?
       ) o
-      WHERE NOT EXISTS (
-        SELECT 1 FROM lived_now_next_boundaries b
-        WHERE (b.thread_id=o.thread_id OR b.thread_id=o.counterparty_thread_id)
-          AND (b.failed_attempts>0 OR b.due_at<=?)
-      )
+      WHERE 1=1 ${debtFilter}
       ORDER BY o.due_at,o.kind,o.situation_id LIMIT ?
-    `).all(at,at,at,limit).map(row=>Object.freeze({
+    `).all(...(hasDebt?[at,at,at,limit]:[at,at,limit])).map(row=>Object.freeze({
       kind:row.kind,sourceEncounterRef:row.encounter_ref,
       threadId:row.thread_id,situationId:row.situation_id,
       counterpartyThreadId:row.counterparty_thread_id,
