@@ -73,7 +73,7 @@ export function createLivedBoundaryProcess({
           // Never move behind a more recent authoritative present.
           const present=livedNowStore.getCurrentSituation?.(item.threadId);
           // A retry_due_at is backoff, not the original plan instant.
-          const plannedAt=(item.failedAttempts??0)>0&&present!==null
+          const plannedAt=(item.failedAttempts??0)>0&&present!=null
             ?nextLivedBoundary(livedNowStore,present):null;
           const boundaryAt=plannedAt??item.dueAt;
           const enactAt=present?.establishedAt
@@ -85,7 +85,7 @@ export function createLivedBoundaryProcess({
           });
           const settled=livedNowStore.settleLivedBoundary(item);
           if(settled&&present?.establishedAt
-            &&Date.parse(present.establishedAt)>Date.parse(boundaryAt)){
+            &&Date.parse(present.establishedAt)>=Date.parse(boundaryAt)){
             // The old wake was overtaken by newer authoritative life.
             // Do not leave the current scene unarmed after settling it.
             livedNowStore.scheduleNextLivedBoundary?.({
