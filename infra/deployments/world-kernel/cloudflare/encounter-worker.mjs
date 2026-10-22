@@ -21,6 +21,7 @@ import { createThreadJournalBook } from "#services/world-kernel/src/thread-journ
 import { createThreadJournalReadApi } from "#services/world-kernel/src/thread-journal-read-api.mjs";
 import { createLivedNowPublicationService } from "#services/world-kernel/src/lived-now-publication-service.mjs";
 import { createLivedNowService } from "#services/world-kernel/src/lived-now-service.mjs";
+import { worldAlarmNeedsRevival } from "#services/world-kernel/src/world-reconciliation-process.mjs";
 import { resolveGeoNamesLocality } from "#integrations/geography/geonames.mjs";
 import {
   nextLivedBoundary,
@@ -913,12 +914,17 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
 export default Object.freeze({
   ...baseWorker,
   async scheduled(_controller,env){
-    const response=await env.WORLD_STATE.getByName("world").fetch(
-      new Request("https://world.internal/internal/reconciliation/wake",{
-        method:"POST",
-        headers:{"x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN},
-      }),
-    );
-    if(!response.ok)throw new Error("World continuity watchdog could not re-arm reconciliation");
+    const world=env.WORLD_STATE.getByName("world");
+    const headers={"x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN};
+    const base="https://world.internal/internal/reconciliation/";
+    const status=await world.fetch(new Request(base+"status",{headers}));
+    if(!status.ok)throw new Error("World continuity watchdog could not inspect reconciliation");
+    const state=await status.json();
+    if(!worldAlarmNeedsRevival({
+      scheduledTimeMs:state.reconciliation?.scheduledTimeMs??null,
+      earliestLivedBoundaryAt:state.earliestLivedBoundaryAt??null,
+    }))return;
+    const wake=await world.fetch(new Request(base+"wake",{method:"POST",headers}));
+    if(!wake.ok)throw new Error("World continuity watchdog could not re-arm reconciliation");
   },
 });
