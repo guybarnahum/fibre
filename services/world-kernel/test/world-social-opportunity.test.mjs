@@ -668,6 +668,20 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       "deferred perception repeatedly woke unrelated World cognition");
     assert.equal(experience.inspectSocialOpportunities(ids[2])[0].outcome,
       "not_initiated","World failed to record independent social choice");
+    // The reader's only current company is the person whose life failed.
+    // This is uncertainty, not absence of company or permission to spend
+    // a one-shot meeting opportunity.
+    experience.enqueueSocialOpportunity({
+      threadId:ids[1],situationId:scenes.get(ids[1]).situationId,
+      dueAt:"2026-10-21T10:00:00.000Z",
+    });
+    const deferred=await process.runOnce();
+    assert.equal(deferred.socialOpportunity.result.attempted,0,
+      "a blocked counterparty triggered irreversible social judgment");
+    assert.equal(experience.inspectSocialOpportunities(ids[1])[0].outcome,
+      "pending","unresolved company was recorded as no co-presence");
+    assert.equal(experience.inspectSocialOpportunities(ids[1])[0].startedAt,
+      null,"a pending social chance was claimed before life recovery");
   }finally{
     experience.close();lived.close();
     rmSync(directory,{recursive:true,force:true});
