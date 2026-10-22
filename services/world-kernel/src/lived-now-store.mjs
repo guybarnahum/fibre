@@ -13,6 +13,7 @@ import {
   normalizeLivedPlan,
   normalizeCurrentSituation,
   resolveCurrentSituation,
+  invalidFlightPlanTravel,
 } from "./lived-now.mjs";
 import {
   resolveSituatedReference,
@@ -441,14 +442,16 @@ export class LivedNowStore {
       // the previous stay ends, even if both map to the same city centroid.
       // Historical Flight Plans remain immutable and readable.
       if(plan.kind==="personal"&&plan.materialization===undefined&&available<=0){
-        throw new LivedNowConflictError(
+        throw invalidFlightPlanTravel(
           "Flight Plan place change requires elapsed transit time",
+          LivedNowConflictError,
         );
       }
       const minimum=minimumTravelMilliseconds(point(from.physicalPlaceRef),point(to.physicalPlaceRef));
       if(available<minimum){
-        throw new LivedNowConflictError(
+        throw invalidFlightPlanTravel(
           "Flight Plan arrival is too soon for the geographical distance",
+          LivedNowConflictError,
         );
       }
     }
