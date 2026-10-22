@@ -227,6 +227,30 @@ Experience govern any subsequent conversation. A salient arrival can
 still yield `not_initiated`; the recipient can decline. An interrupted
 outward attempt is not automatically replayed.
 
+### Observer-relative arrival decisions — October 22 source correction
+
+The admitted arrival Story stays objective. Inside each individual's
+attention request only, every beat carries `self:true` exactly when its
+actor is that observer. Neither World history nor another observer receives
+those private perspective markers.
+
+An arriving Thread whose own attention actually **noticed** an arrival
+Story considers still-present, eligible people captured in that Story before
+unrelated occupants discovered later. This affects only the bounded ordering
+of one potential counterpart; the existing salience gate, initiator choice
+and recipient consent remain authoritative. No one is forced to initiate.
+
+A public appearance brief can inadvertently contain the represented
+person's name. The World Story supplies the actual identity name **only to
+the redaction projection**, which removes full and constituent names
+before admitting objective prose. No name is disclosed merely because
+World can look it up. Grounded non-name appearance details remain usable.
+
+**Status:** source-only pending Guy's local tests and staging. These changes
+repair observer perspective, noticed-witness targeting and objective name
+redaction. They do not prove increased meeting rates, recognition, learned
+introductions or observer-owned interpretation beyond existing cognition.
+
 ### Mutual noticing and objective arrival presence — October 22 source
 
 A verified arrival with captured awake company records **one** objective
