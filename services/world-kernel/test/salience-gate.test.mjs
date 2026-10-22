@@ -72,3 +72,33 @@ test("background co-presence retains Body evidence without inventing social inte
   assert.deepEqual(material.anchors,["social_contact_pressure"],
     "Body pressure was reinterpreted as a social decision");
 });
+
+test("restless people notice unfamiliar arrivals, not every nearby person",()=>{
+  const counterpart="thr_salience_other",observer="thr_salience_observer";
+  const regulationFrame={asOf:"2026-10-22T13:00:00.000Z",
+    drives:[{family:"exploration",orientation:"approach",
+      pressure:0.5,evidenceRefs:["sit_restless"]}]};
+  const make=(known,noticed)=>evaluateSalience({
+    opportunity:{kind:"actor_presence",subjectRefs:[counterpart]},
+    regulationFrame,
+    situatedPercept:{
+      observerThreadId:observer,setting:{mode:"physical",participantRefs:[]},
+      observed:[{threadId:counterpart,name:known?"Known friend":null}],
+      recentEvents:noticed?[{kind:"encounter",noticedArrivalThreadIds:[counterpart]}]:[],
+      sourceReferences:["sit_restless"],
+    },
+  });
+  const ordinary=make(false,false);
+  const familiar=make(true,true);
+  const stranger=make(false,true);
+  assert.equal(ordinary.outcome,"background",
+    "stillness alone manufactured interest in a stranger");
+  assert.equal(familiar.outcome,"salient",
+    "an admitted noticed encounter lost its normal observable-history anchor");
+  assert.equal(familiar.anchors.includes("novel_person_under_exploration_pressure"),
+    false,"an already-known person became novelty");
+  assert.equal(stranger.anchors.includes("novel_person_under_exploration_pressure"),
+    true,"noticing a new stranger failed to channel curiosity");
+  assert.equal(ordinary.bodyAtGate.drives[0].pressure,0.5,
+    "Body restlessness was erased when interest stayed background");
+});
