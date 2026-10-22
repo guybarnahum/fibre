@@ -178,6 +178,26 @@ export function createSocialMeetingService({
     const candidates = situations
       .filter((situation) => situation.threadId !== initiator.thread.threadId
         &&situation.wakefulness!=="asleep");
+    if(boundedVenueDiscovery&&counterpartyThreadId===null&&candidates.length>1){
+      // The arriver already noticed this objective scene. Consider captured
+      // witnesses before other nearby people, not arbitrary Thread ID order.
+      // Noticing the scene does not mean the observer chose to engage anyone.
+      const noticed=new Set(experienceStore.listEncounterStories(
+        initiator.thread.threadId,{limit:8},
+      ).filter(story=>Date.parse(story.occurredAt)<=Date.parse(at)
+        &&Date.parse(at)-Date.parse(story.occurredAt)<=60*60_000
+        &&story.threadPresence.some(person=>person.threadId===initiator.thread.threadId
+          &&person.situationId===initiator.situation.situationId)
+        &&story.story.beats.some(beat=>beat.kind==="action"
+          &&beat.actorThreadId===initiator.thread.threadId)
+        &&experienceStore.getThreadEncounterAttention(
+          initiator.thread.threadId,story.encounterId,
+        )?.outcome==="noticed")
+        .flatMap(story=>story.story.beats.filter(beat=>beat.kind==="occurrence")
+          .map(beat=>beat.actorThreadId)));
+      candidates.sort((a,b)=>Number(noticed.has(b.threadId))
+        -Number(noticed.has(a.threadId)));
+    }
     const discovered = [];
 
     for (const candidateSituation of candidates) {
