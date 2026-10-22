@@ -1,23 +1,60 @@
 import { assertIsoTimestamp } from "./persistence-common.mjs";
 
-// Historical company can explain a missed chance, never authorize retroactive speech.
-// Only the already-indexed venue is consulted, and only after present eligibility fails.
-function hadCompanyAtOpportunity(livedNowStore,opportunity){
-  if(opportunity.kind==="observed")return true; // noticed shared arrival Story
-  const arrival=livedNowStore.getSituation?.(opportunity.situationId,{required:false});
-  if(arrival?.location?.kind!=="place")return false;
-  const venue=livedNowStore.getWorldPlace(
-    opportunity.threadId,arrival.location.placeRef,{required:false},
-  )?.physicalVenue?.ref;
-  if(!venue)return false;
-  return livedNowStore.listCurrentVenueSituations({
-    venueRef:venue,at:opportunity.dueAt,limit:8,
+// Situation identity may change while a person remains at the same venue.
+// Inspect a bounded lived history, never advance anyone's life to make a choice.
+function atVenue(lived,situation,venue){
+  if(situation?.location?.kind!=="place"||situation.wakefulness==="asleep"
+    ||venue===null)return false;
+  return lived.getWorldPlace(situation.threadId,situation.location.placeRef,{
+    required:false,
+  })?.physicalVenue?.ref===venue;
+}
+
+function continuouslyPresent(lived,threadId,venue,since,at){
+  const current=lived.getCurrentSituation(threadId);
+  if(!atVenue(lived,current,venue)
+    ||Date.parse(current.establishedAt)>Date.parse(at))return false;
+  let cursor=current;
+  for(let count=0;count<16;count++){
+    if(!atVenue(lived,cursor,venue))return false;
+    if(Date.parse(cursor.establishedAt)<=Date.parse(since))return true;
+    cursor=lived.getPreviousSituation(threadId,cursor.establishedAt);
+    if(cursor===null)return false;
+  }
+  return false; // Unbounded history is not proof of uninterrupted company.
+}
+
+function historicalCompany(lived,opportunity){
+  const own=lived.getSituationAt(opportunity.threadId,opportunity.dueAt);
+  const ownVenue=own?.location?.kind==="place"
+    ?lived.getWorldPlace(own.threadId,own.location.placeRef,{
+      required:false,
+    })?.physicalVenue?.ref??null:null;
+  if(ownVenue===null||!atVenue(lived,own,ownVenue))return [];
+  if(opportunity.kind==="observed"){
+    const other=lived.getSituationAt(
+      opportunity.counterpartyThreadId,opportunity.dueAt,
+    );
+    return atVenue(lived,other,ownVenue)?[other]:[];
+  }
+  return lived.listCurrentVenueSituations({
+    venueRef:ownVenue,at:opportunity.dueAt,limit:8,
     excludeThreadId:opportunity.threadId,
-  }).some(person=>person.threadId!==opportunity.threadId
-    &&person.location?.kind==="place"&&person.wakefulness!=="asleep"
-    &&livedNowStore.getWorldPlace(
-      person.threadId,person.location.placeRef,{required:false},
-    )?.physicalVenue?.ref===venue);
+  }).filter(other=>atVenue(lived,other,ownVenue));
+}
+
+function missedWindow(lived,opportunity,at){
+  if(Date.parse(at)<=Date.parse(opportunity.dueAt))return false;
+  const company=historicalCompany(lived,opportunity);
+  if(company.length===0)return false;
+  const own=lived.getSituationAt(opportunity.threadId,opportunity.dueAt);
+  const venue=lived.getWorldPlace(
+    own.threadId,own.location.placeRef,{required:false},
+  )?.physicalVenue?.ref??null;
+  return !continuouslyPresent(lived,own.threadId,venue,opportunity.dueAt,at)
+    ||company.some(other=>!continuouslyPresent(
+      lived,other.threadId,venue,opportunity.dueAt,at,
+    ));
 }
 
 // Enacted physical co-presence, not a caller-selected conversation.
@@ -35,7 +72,8 @@ export function createWorldSocialOpportunity({
     }
   }
   for(const method of [
-    "getCurrentSituation","getWorldPlace","listCurrentVenueSituations",
+    "getCurrentSituation","getSituationAt","getPreviousSituation",
+    "getWorldPlace","listCurrentVenueSituations",
   ]){
     if(typeof livedNowStore?.[method]!=="function"){
       throw new TypeError(`social opportunity requires ${method}()`);
@@ -57,26 +95,34 @@ export function createWorldSocialOpportunity({
         try{
           const current=livedNowStore.getCurrentSituation(opportunity.threadId);
           const overdue=Date.parse(at)-Date.parse(opportunity.dueAt);
-          const place=current?.location?.kind==="place"
+          const initial=livedNowStore.getSituationAt(
+            opportunity.threadId,opportunity.dueAt,
+          );
+          const venue=initial?.location?.kind==="place"
             ?livedNowStore.getWorldPlace(
-              opportunity.threadId,current.location.placeRef,{required:false},
-            ):null;
-          const venue=place?.physicalVenue?.ref??null;
+              opportunity.threadId,initial.location.placeRef,{required:false},
+            )?.physicalVenue?.ref??null:null;
           const observed=opportunity.kind==="observed";
-          const matching=observed?venue===opportunity.venueRef
-            :current?.situationId===opportunity.situationId;
           const target=observed
             ?livedNowStore.getCurrentSituation(opportunity.counterpartyThreadId)
             :null;
-          const targetPlace=target?.location?.kind==="place"
-            ?livedNowStore.getWorldPlace(
-              target.threadId,target.location.placeRef,{required:false},
-            ):null;
-          const present=matching&&current?.wakefulness!=="asleep"&&venue!==null
-            &&(!observed||(target?.wakefulness!=="asleep"
-              &&targetPlace?.physicalVenue?.ref===venue));
+          const dueFor=threadId=>livedNowStore.inspectLivedBoundary?.(threadId)
+            ?.dueAt??null;
+          const hasDue=threadId=>{
+            const due=dueFor(threadId);
+            return due!==null&&Date.parse(due)<=Date.parse(at);
+          };
+          const present=venue!==null
+            &&(!observed||venue===opportunity.venueRef)
+            &&continuouslyPresent(livedNowStore,opportunity.threadId,
+              venue,opportunity.dueAt,at)
+            &&!hasDue(opportunity.threadId)
+            &&(!observed||(continuouslyPresent(livedNowStore,
+              target?.threadId??opportunity.counterpartyThreadId,
+              venue,opportunity.dueAt,at)
+              &&!hasDue(opportunity.counterpartyThreadId)));
           if(!present){
-            outcome=overdue>0&&hadCompanyAtOpportunity(livedNowStore,opportunity)
+            outcome=missedWindow(livedNowStore,opportunity,at)
               ?"missed_window":"no_co_presence";
           }else if(overdue<0||overdue>60*60_000){
             outcome="expired";
@@ -94,7 +140,7 @@ export function createWorldSocialOpportunity({
                 return place?.physicalVenue?.ref===venue;
               });
             if(!other){
-              outcome=overdue>0&&hadCompanyAtOpportunity(livedNowStore,opportunity)
+              outcome=missedWindow(livedNowStore,opportunity,at)
                 ?"missed_window":"no_co_presence";
             }else{
               // The same salience, Thread-owned initiation, recipient consent,
@@ -104,7 +150,8 @@ export function createWorldSocialOpportunity({
                   counterpartyThreadId:opportunity.counterpartyThreadId}
                 :{initiatorThreadId:opportunity.threadId,at});
               const attempt=result.attempts?.[0]??null;
-              outcome=attempt?.outcome??"no_co_presence";
+              outcome=attempt?.outcome??(missedWindow(livedNowStore,opportunity,at)
+                ?"missed_window":"no_co_presence");
               // One witness for the actual opportunity, not a second
               // event or a retrospective explanation model.
               if(typeof attempt?.counterpartyThreadId==="string"){
