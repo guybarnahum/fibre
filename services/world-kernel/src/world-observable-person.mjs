@@ -32,6 +32,22 @@ export function personKnownToObserver({
   )??false);
 }
 
+function redactUnknownName(description,name){
+  if(typeof name!=="string"||name.trim()==="")return description;
+  // A portrait brief might say "Mina Cohen" once and "Mina" elsewhere.
+  // Match full words, including non-ASCII names, and avoid partial matches
+  // inside unrelated appearance words.
+  const parts=[name.trim(),...(name.match(/[\\p{L}\\p{N}]+/gu)??[])]
+    .filter(part=>part.length>1)
+    .sort((a,b)=>b.length-a.length);
+  return [...new Set(parts)].reduce((text,part)=>{
+    const escaped=part.replace(/[.*+?^${}()|[\\]\\]/g,"\\// One World-owned projection reused by objective arrival and private percept.");
+    return text.replace(new RegExp(
+      `(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`,"giu",
+    ),"a person");
+  },description);
+}
+
 // One World-owned projection reused by objective arrival and private percept.
 // The name field reflects *observer knowledge*, never the other person's
 // globally stored legal identity being magically visible to strangers.
@@ -46,16 +62,15 @@ export function observablePerson({
   const appearance=publicAppearance(threadId,embodimentStore);
   const activity=typeof situation.activity==="string"
     ?situation.activity.trim().slice(0,120):"";
-  // A public appearance can contain an identity label in an older portrait
-  // brief. Do not disclose the name unless the observer already knows it.
-  const physical=known||typeof name!=="string"?appearance
-    :appearance?.replaceAll(name,"a person")??null;
   const description=[
-    physical===null?"a person":physical,
+    appearance===null?"a person":appearance,
     ...(activity?[`Currently: ${activity}`]:[]),
   ].join("; ");
+  // Objective World Stories have no observer, hence no authority to reveal
+  // names. For unfamiliar witnesses, redact both portrait and activity prose.
   return Object.freeze({
     name:known&&typeof name==="string"?name:null,
-    observableDescription:description.slice(0,480),
+    observableDescription:(known?description
+      :redactUnknownName(description,name)).slice(0,480),
   });
 }
