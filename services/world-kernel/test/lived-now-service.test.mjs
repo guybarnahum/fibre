@@ -15,6 +15,8 @@ import { auditLivedContinuity,createLivedBoundaryProcess,nextLivedBoundary } fro
 import { createWorldReconciliationProcess,createWorldReconciliationRuntime } from "../src/world-reconciliation-process.mjs";
 import { livedPlanId, livedSituationId, plannedPositionAt } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
+import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
+import { coPresentAtActorArrival,enactedActorOccurrence } from "../src/world-occurrence.mjs";
 import {
   lifeRelationId,
   placeEpisodeId,
@@ -40,9 +42,9 @@ async function withDatabase(run) {
   }
 }
 
-function seedLife(databasePath) {
+function seedLife(databasePath,threadId="thr_ensure_maya") {
   const thread = structuredClone(mina);
-  thread.threadId = "thr_ensure_maya";
+  thread.threadId = threadId;
   thread.identity = {
     ...thread.identity,
     name: "Maya Vale",
@@ -1397,6 +1399,117 @@ test("an admitted personal public-visit plan enacts transit, empty stay and retu
       assert.equal(lived.nextLivedBoundaryAt(),"2026-10-14T19:00:00.001Z");
     }finally{lived.close();}
   }));
+
+test("simultaneous departure and arrival cannot create historical company in either ID order",async()=>{
+  for(const ids of [["thr_tie_a_leaves","thr_tie_z_arrives"],
+    ["thr_tie_z_leaves","thr_tie_a_arrives"]]){
+    await withDatabase(async databasePath=>{
+      const leaving=seedLife(databasePath,ids[0]);
+      const arriving=seedLife(databasePath,ids[1]);
+      const storage=localWorldStateStorage(databasePath);
+      const lived=openLivedNowStore(storage);
+      const experience=openLivedExperienceStore(storage);
+      try{
+        const place=lived.admitPublicPlace({
+          venueIdentity:"fixture:shared-library-tie",
+          displayName:"Shared public library",
+          streetAddress:"25 Example Street, Tucson",
+          locality:"Tucson",country:"United States",countryCode:"US",
+          lat:32.221,long:-110.976,timeZone:"America/Phoenix",
+          evidenceRef:"https://example.org/shared-library",
+          affordances:["Reading"],
+        });
+        const begin="2026-10-22T16:00:00.000Z";
+        const depart="2026-10-22T16:40:00.000Z";
+        const tie="2026-10-22T17:00:00.000Z";
+        const stop=(startAt,endAt,physicalPlaceRef,travelFromPrevious)=>({
+          startAt,endAt,physicalPlaceRef,travelFromPrevious,
+          wakefulness:"awake",mediatedContext:null,companionRefs:[],
+          activity:"Read quietly.",purpose:"Follow my own chosen day.",
+        });
+        for(const [life,stops] of [
+          [leaving,[stop(begin,tie,place.ref,null),
+            stop("2026-10-22T17:20:00.000Z","2026-10-22T18:00:00.000Z",
+              leaving.homeRef,"Walk home.")]],
+          [arriving,[stop(begin,depart,arriving.homeRef,null),
+            stop(tie,"2026-10-22T18:00:00.000Z",
+              place.ref,"Walk to the library.")]],
+        ]){
+          const threadId=life.thread.threadId;
+          lived.recordPlan({
+            planId:livedPlanId({threadId,kind:"personal",authoredAt:begin}),
+            kind:"personal",subjectThreadId:threadId,
+            owner:{partyId:threadId,kind:"thread"},
+            authoredAt:begin,horizonStart:begin,
+            horizonEnd:"2026-10-22T18:00:00.000Z",
+            stops,sourceReferences:[life.sourceEvent,life.homeRef,place.ref],
+            cognition:{provider:"fixture",modelId:"tie-plan",providerRequestId:"tie-"+threadId},
+          });
+        }
+        const enactments=[];
+        const service=createLivedNowService({
+          livedNowStore:lived,
+          onSituationEnacted:(current,previous)=>{
+            const occurrence=enactedActorOccurrence(previous,current);
+            enactments.push({threadId:current.threadId,at:current.establishedAt,
+              kind:occurrence?.kind??"other"});
+            if(occurrence?.kind!=="arrival")return;
+            const witnesses=coPresentAtActorArrival(
+              lived,occurrence,place.physicalVenue.ref,
+            );
+            if(witnesses.length===0)return;
+            experience.enqueueArrivalPerception({
+              situationId:current.situationId,venueRef:place.physicalVenue.ref,
+              dueAt:current.establishedAt,
+              witnesses:witnesses.map(person=>({
+                threadId:person.threadId,situationId:person.situationId,
+              })),
+            });
+            experience.enqueueSocialOpportunity({
+              threadId:current.threadId,situationId:current.situationId,
+              dueAt:current.establishedAt,
+            });
+          },
+          onSituationResolved:current=>lived.scheduleNextLivedBoundary({
+            threadId:current.threadId,situationId:current.situationId,
+            dueAt:nextLivedBoundary(lived,current),
+          }),
+        });
+        for(const life of [leaving,arriving]){
+          await service.ensure({threadId:life.thread.threadId,
+            at:"2026-10-22T16:20:00.000Z"});
+        }
+        let clock=depart;
+        const process=createWorldReconciliationProcess({
+          livedBoundaryProcess:createLivedBoundaryProcess({
+            livedNowStore:lived,livedNow:service,now:()=>clock,
+          }),
+        });
+        assert.equal((await process.runOnce()).livedBoundary.result.attempted,1,
+          "departure toward the venue did not occur");
+        clock=tie;
+        const result=await process.runOnce();
+        assert.equal(result.livedBoundary.result.attempted,2,
+          "equal-time lives were not enacted in one bounded batch");
+        const atTie=enactments.filter(item=>item.at===tie);
+        assert.deepEqual(atTie.map(item=>item.threadId),ids,
+          "an arrival was enacted before a simultaneous departure");
+        assert.equal(lived.getCurrentSituation(leaving.thread.threadId).location.kind,
+          "transit","a departing Thread stayed behind at the tie");
+        assert.equal(lived.getCurrentSituation(arriving.thread.threadId)
+          .location.placeRef,place.ref,"the arriving Thread did not reach the venue");
+        assert.deepEqual(lived.listCurrentVenueSituations({
+          venueRef:place.physicalVenue.ref,at:tie,limit:8,
+        }).map(person=>person.threadId),[arriving.thread.threadId],
+        "a simultaneous departure became historical company");
+        assert.equal(experience.listEncounterStories(arriving.thread.threadId).length,0,
+          "plan-simultaneous departure and arrival manufactured shared history");
+        assert.equal(experience.inspectSocialOpportunities(arriving.thread.threadId).length,0,
+          "an empty arrival fabricated a social obligation");
+      }finally{experience.close();lived.close();}
+    });
+  }
+});
 
 test("World rejects a rushed cross-city arrival and autonomous life completes a feasible journey",async()=>
   withDatabase(async databasePath=>{
