@@ -55,6 +55,7 @@ import { openSemanticStateStore } from "#services/world-kernel/src/semantic-stat
 import { openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import { openAutobiographicalMemoryStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { openSituatedLifeStore } from "#services/world-kernel/src/situated-life-store.mjs";
+import { openEmbodimentStore } from "#services/world-kernel/src/embodiment-store.mjs";
 import { createThreadPresentationPublisher } from "../service-boundaries.mjs";
 
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
@@ -286,7 +287,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       this.worldEnvironmentEvolutionProcess=combineWorldEnvironmentProcesses(
         createWorldEnvironmentOpportunity(shared),
         createWorldEnvironmentEvolution(shared),
-        createWorldArrivalPerception(shared),
+        createWorldArrivalPerception({
+          ...shared,embodimentStore:openEmbodimentStore(runtime.worldStorage),
+        }),
       );
       runtime.reconciliationProcess.setEnvironmentEvolutionProcess(
         this.worldEnvironmentEvolutionProcess,
@@ -333,6 +336,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const meetingService=createSocialMeetingService({
         worldReader:runtime.worldStore,livedNow,livedNowStore,
         identityStore,situatedLifeStore,semanticStateStore,memoryStore,experienceStore,
+        embodimentStore:openEmbodimentStore(runtime.worldStorage),
         modelAdapter:{
           invoke:(request)=>encounterModelAdapter().invoke(request),
           streamExpression:(request)=>encounterModelAdapter().streamExpression(request),
@@ -380,6 +384,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         experienceStore,
+        embodimentStore:openEmbodimentStore(runtime.worldStorage),
         modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
         onWorldFollowupQueued:({dueAt})=>{
