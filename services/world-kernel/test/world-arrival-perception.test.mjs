@@ -208,6 +208,7 @@ test("one enacted arrival permits distinct noticing and missed attention with re
       experienceStore:store,
       livedNowStore:{
         getCurrentSituation:id=>ctx.situations.find(x=>x.threadId===id)??null,
+        inspectLivedBoundary:()=>null,
         getSituationAt:livedNowStore.getSituationAt,
         getPreviousSituation:()=>null,
         getWorldPlace:livedNowStore.getWorldPlace,
