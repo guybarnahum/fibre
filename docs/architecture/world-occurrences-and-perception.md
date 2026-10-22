@@ -248,6 +248,10 @@ instant, unless the Thread already has an authoritative later CurrentSituation;
 never travel backwards. An overdue backlog can retain paced World wakeups,
 but `hasDue` names the actual durable backlog so environmental perception and
 social choice wait until all due life boundaries have been processed.
+A failed boundary retains its per-Thread backoff and is **not** treated as an
+enacted departure or confirmed company; automatic meeting eligibility and
+arrival-witness capture conservatively exclude unresolved failed life. The
+ordinary backoff remains intact rather than adding rapid global retries.
 This pacing avoids unbounded bursts of plan-renewal cognition after outages.
 
 Historical arrival witnesses are verified against the **latest** enacted
