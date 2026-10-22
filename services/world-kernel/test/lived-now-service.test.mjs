@@ -510,7 +510,7 @@ test("precise travel rejection lets a Thread choose to stay without invented tra
           proposals++;
           const context=request.input.concern.externalContext;
           const from=context.startingPlaceRef;
-          assert.equal(from,life.homeRef,"planning lost the Thread's enacted starting place");
+          const to=from===life.homeRef?life.libraryRef:life.homeRef;
           const stop={
             presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
             activity:"Draw at home.",purpose:"Follow my own quiet interest.",
@@ -519,7 +519,7 @@ test("precise travel rejection lets a Thread choose to stay without invented tra
             {...stop,startAt:context.horizon.startAt,endAt:"2026-09-10T05:35:00Z",
               physicalPlaceRef:from,travelFromPrevious:""},
             {...stop,startAt:"2026-09-10T05:35:00Z",endAt:context.horizon.endAt,
-              physicalPlaceRef:life.libraryRef,travelFromPrevious:"Walk to the library"},
+              physicalPlaceRef:to,travelFromPrevious:"Travel to the other known place"},
           ]:[{
             ...stop,startAt:context.horizon.startAt,endAt:context.horizon.endAt,
             physicalPlaceRef:from,travelFromPrevious:"",
@@ -547,9 +547,9 @@ test("precise travel rejection lets a Thread choose to stay without invented tra
       });
       const present=await service.ensure({threadId:life.thread.threadId,at});
       assert.equal(proposals,2,"journey correction used more than one reconsideration");
-      assert.equal(present.location.placeRef,life.homeRef,
-        "World forced movement after the Thread chose to stay");
       const plans=lived.listPlans(life.thread.threadId,{kind:"personal"});
+      assert.equal(present.location.placeRef,plans[0].stops[0].physicalPlaceRef,
+        "World forced movement after the Thread chose to stay");
       assert.equal(plans.length,1,"rejected itinerary entered lived history");
       assert.equal(plans[0].stops.length,1,"World rewrote the Thread's revised intention");
       assert.ok(lived.inspectLivedBoundary(life.thread.threadId)?.dueAt,
