@@ -238,7 +238,9 @@ export function createWorldReconciliationProcess({
         const lifeCaughtUp=(!livedBoundaryResult.enabled
           ||(livedBoundaryResult.ok
             &&livedBoundaryResult.result?.hasDue!==true
-            &&(livedBoundaryResult.result?.failed??0)===0))
+            &&(livedBoundaryResult.result?.failed??0)===0
+            &&!(livedBoundaryResult.result?.results??[]).some(entry=>
+              entry.outcome==="blocked"||entry.outcome==="retry_scheduled")))
           &&(!firstLifeResult.enabled
             ||(firstLifeResult.ok
               &&firstLifeResult.result?.hasDue!==true
