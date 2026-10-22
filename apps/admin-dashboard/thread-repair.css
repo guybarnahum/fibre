@@ -724,14 +724,14 @@
 .thread-population-table{table-layout:fixed;min-width:1320px}
 .thread-population-table th:nth-child(1){width:3%}
 .thread-population-table th:nth-child(2){width:15%}
-.thread-population-table th:nth-child(3){width:12.5%}
+.thread-population-table th:nth-child(3){width:12%}
 .thread-population-table th:nth-child(4){width:12%}
 .thread-population-table th:nth-child(5){width:13%}
 .thread-population-table th:nth-child(6){width:4.5%}
 .thread-population-table th:nth-child(7){width:7.5%}
-.thread-population-table th:nth-child(8){width:12%}
-.thread-population-table th:nth-child(9){width:9%}
-.thread-population-table th:nth-child(10){width:7%}
+.thread-population-table th:nth-child(8){width:11.5%}
+.thread-population-table th:nth-child(9){width:8.5%}
+.thread-population-table th:nth-child(10){width:8.5%}
 .thread-population-table th:nth-child(11){width:4.5%}
 
 .thread-population-table th,
