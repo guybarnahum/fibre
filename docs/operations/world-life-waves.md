@@ -71,6 +71,8 @@ receives the last-observed timestamp. The missing interval is visible through
 the chronology of admitted situations; it is not currently a separate
 timeline-event type.
 
+**C1 source state (not deployed for recurring audits):** World storage now has a bounded, idempotent `repairLostLivedBoundaries()` operation to restore missing, cleared or obsolete per-Thread wake debt while preserving healthy wake and failure-retry deadlines. It returns repaired deadlines and whether another bounded batch is needed. It is **not called by the hourly watchdog yet**; C2 owns the scheduled audit, its durable daily checkpoint and re-arming World. Do not report lost-row recurrence as autonomously covered until C2 has been validated and deployed.
+
 After deploying this revision, inspect the read-only census **before**
 manually applying a world-life wave: legacy lives may already be queued for
 automatic recovery. Manual waves are for bounded controlled experiments or
