@@ -720,19 +720,19 @@
 .thread-population-metrics strong { font-size:17px; line-height:1; }
 
 
-/* Identity and physical context get the space; short metadata stays compact. */
-.thread-population-table{table-layout:fixed;min-width:1320px}
-.thread-population-table th:nth-child(1){width:3%}
-.thread-population-table th:nth-child(2){width:15%}
-.thread-population-table th:nth-child(3){width:12%}
-.thread-population-table th:nth-child(4){width:12%}
-.thread-population-table th:nth-child(5){width:13%}
-.thread-population-table th:nth-child(6){width:4.5%}
-.thread-population-table th:nth-child(7){width:7.5%}
-.thread-population-table th:nth-child(8){width:11.5%}
-.thread-population-table th:nth-child(9){width:8.5%}
-.thread-population-table th:nth-child(10){width:8.5%}
-.thread-population-table th:nth-child(11){width:4.5%}
+/* Compact facts; use recovered space for identity rather than empty city columns. */
+.thread-population-table{table-layout:fixed;min-width:1200px}
+.thread-population-table th:nth-child(1){width:3.5%}
+.thread-population-table th:nth-child(2){width:31%}
+.thread-population-table th:nth-child(3){width:9%}
+.thread-population-table th:nth-child(4){width:4%}
+.thread-population-table th:nth-child(5){width:4%}
+.thread-population-table th:nth-child(6){width:3.5%}
+.thread-population-table th:nth-child(7){width:7%}
+.thread-population-table th:nth-child(8){width:13%}
+.thread-population-table th:nth-child(9){width:10%}
+.thread-population-table th:nth-child(10){width:10%}
+.thread-population-table th:nth-child(11){width:5%}
 
 .thread-population-table th,
 .thread-population-table td {
@@ -755,17 +755,26 @@
 .thread-population-person > div { min-width:0; }
 .thread-population-ethnicity {
   min-width:0;
-  white-space:normal;
-  overflow-wrap:anywhere;
-  line-height:1.35;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
   color:var(--text);
 }
 .thread-population-birthplace,
 .thread-population-current-place {
   min-width:0;
-  white-space:normal;
-  line-height:1.35;
+  text-align:center;
 }
+.thread-population-table :is(.thread-population-birthplace,.thread-population-current-place) .thread-location{
+  display:inline-flex;
+  justify-content:center;
+}
+.thread-population-table :is(.thread-population-birthplace,.thread-population-current-place) .thread-location-flag{
+  font-size:24px;
+}
+.thread-population-table td:nth-child(6){text-align:center}
+.thread-population-sex{display:inline-flex;align-items:center;justify-content:center;color:var(--text)}
+.thread-population-sex .fa-action-icon{width:17px;height:17px}
 .thread-location {
   display:inline-flex;
   align-items:center;
@@ -909,25 +918,25 @@
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 @container thread-population (max-width:1150px){
-  .thread-population-table{min-width:960px}
+  .thread-population-table{min-width:860px}
   .thread-population-table tr>:is(:nth-child(6),:nth-child(7),:nth-child(9)){display:none}
-  .thread-population-table th:nth-child(1){width:4%}
-  .thread-population-table th:nth-child(2){width:20%}
-  .thread-population-table th:nth-child(3){width:15%}
-  .thread-population-table th:nth-child(4){width:16%}
-  .thread-population-table th:nth-child(5){width:17%}
-  .thread-population-table th:nth-child(8){width:13%}
-  .thread-population-table th:nth-child(10){width:9%}
+  .thread-population-table th:nth-child(1){width:5%}
+  .thread-population-table th:nth-child(2){width:33%}
+  .thread-population-table th:nth-child(3){width:16%}
+  .thread-population-table th:nth-child(4){width:5%}
+  .thread-population-table th:nth-child(5){width:5%}
+  .thread-population-table th:nth-child(8){width:20%}
+  .thread-population-table th:nth-child(10){width:10%}
   .thread-population-table th:nth-child(11){width:6%}
 }
 @container thread-population (max-width:760px){
   .thread-population-table{min-width:590px}
   .thread-population-table tr>:is(:nth-child(3),:nth-child(4),:nth-child(10)){display:none}
-  .thread-population-table th:nth-child(1){width:6%}
-  .thread-population-table th:nth-child(2){width:30%}
-  .thread-population-table th:nth-child(5){width:33%}
+  .thread-population-table th:nth-child(1){width:8%}
+  .thread-population-table th:nth-child(2){width:54%}
+  .thread-population-table th:nth-child(5){width:8%}
   .thread-population-table th:nth-child(8){width:20%}
-  .thread-population-table th:nth-child(11){width:11%}
+  .thread-population-table th:nth-child(11){width:10%}
 }
 
 .thread-population-activity-only { opacity:.68; }
@@ -950,20 +959,23 @@
   font-size:10px;
   line-height:1.5;
 }
-.stillborn-table { min-width:920px; table-layout:fixed; }
-.stillborn-table th:nth-child(1), .stillborn-table td:nth-child(1) { width:30%; }
-.stillborn-table th:nth-child(2), .stillborn-table td:nth-child(2) { width:13%; }
+.stillborn-table { min-width:1080px; table-layout:fixed; }
+.stillborn-table th:nth-child(1), .stillborn-table td:nth-child(1) { width:16%; }
+.stillborn-table th:nth-child(2), .stillborn-table td:nth-child(2) { width:12%; }
 .stillborn-table th:nth-child(3), .stillborn-table td:nth-child(3) { width:12%; }
-.stillborn-table th:nth-child(4), .stillborn-table td:nth-child(4) { width:33%; }
-.stillborn-table th:nth-child(5), .stillborn-table td:nth-child(5) { width:12%; }
+.stillborn-table th:nth-child(4), .stillborn-table td:nth-child(4) { width:38%; }
+.stillborn-table th:nth-child(5), .stillborn-table td:nth-child(5) { width:22%; }
 .stillborn-table td { font-size:10px; vertical-align:top; }
 .stillborn-thread-identifier .thread-id-copy { width:100%; white-space:normal; }
 .stillborn-table .stillborn-reason {
-  min-width:320px;
+  min-width:0;
   white-space:normal;
+  overflow-wrap:anywhere;
   line-height:1.45;
   color:var(--muted);
 }
+.stillborn-table .thread-population-actions{white-space:nowrap}
+.stillborn-table .thread-population-actions :is(button,a){white-space:nowrap}
 .stillborn-row { background:color-mix(in srgb,var(--danger-soft) 42%,transparent); }
 .stillborn-row:hover { background:color-mix(in srgb,var(--danger-soft) 68%,transparent); }
 
