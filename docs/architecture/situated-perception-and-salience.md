@@ -1,7 +1,7 @@
 ---
 id: architecture-situated-perception-salience
 status: accepted
-last-reviewed: 2026-09-23
+last-reviewed: 2026-10-22
 canonical: true
 ---
 
