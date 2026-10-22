@@ -42,7 +42,7 @@ export async function auditLivedContinuity({livedNowStore,reconciliationRuntime,
   });
   return {
     audited:true,repaired:result.repaired.length,
-    hasMore:result.hasMore,nextAuditAt,
+    hasMore:result.hasMore,nextAuditAt,earliestLifeWakeAt:nextDueAt,
   };
 }
 
