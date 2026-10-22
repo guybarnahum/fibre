@@ -26,3 +26,28 @@ test("one shared editor exposes the missing birth-city correction and maintenanc
     action:"identity",operationKey:"admin_identity_test",birthPlace:place,
   },"birth city correction bypassed canonical World identity command");
 });
+
+test("a malformed birth place can be replaced with a verified city as well as repaired",()=>{
+  const diagnosis={exists:true,health:"operator_decision_required",
+    identity:{birthPlace:"Old unmapped place"},
+    findings:[{code:"BIRTH_GEOGRAPHY_RECOVERABLE",
+      state:"operator_decision_required",identityAction:{
+        id:"repair_birth_geography",label:"Repair birth place",
+        fixed:{birthPlace:{displayName:"Tbilisi, Georgia"}},
+        input:{fields:[{name:"countryCode",kind:"country_code",required:true}]},
+      }}],
+  };
+  const actions=threadEditActions(diagnosis,null);
+  assert.equal(actions.filter(a=>a.id==="repair_birth_geography").length,1,
+    "a recoverable birth place lost its existing country-code repair");
+  const change=actions.filter(a=>a.id==="change_birth_place");
+  assert.equal(change.length,1,"malformed birth place has no full correction");
+  assert.equal(change[0].fields[0].kind,"place_search",
+    "birthplace replacement allowed an unverified typed place");
+  const chosen={displayName:"Batumi, Georgia",country:"Georgia",
+    countryCode:"GE",city:"Batumi",lat:41.6168,long:41.6367};
+  assert.deepEqual(identityActionPayload(change[0].action,{birthPlace:chosen},
+    {operationKey:"admin_birthplace_correction"}),{
+    action:"identity",operationKey:"admin_birthplace_correction",birthPlace:chosen,
+  },"replacement bypassed the existing World identity command");
+});
