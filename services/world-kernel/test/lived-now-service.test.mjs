@@ -4,13 +4,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
+import { createLocalInfraDriver } from "#infra/providers/local";
 
 import { openWorldStore } from "../src/persistence.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
 import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
 import { createLivedNowService, LivedNowCoverageError,planningLocalityForPlace } from "../src/lived-now-service.mjs";
-import { createLivedBoundaryProcess, nextLivedBoundary } from "../src/lived-now-boundary.mjs";
+import { auditLivedContinuity,createLivedBoundaryProcess,nextLivedBoundary } from "../src/lived-now-boundary.mjs";
+import { createWorldReconciliationProcess,createWorldReconciliationRuntime } from "../src/world-reconciliation-process.mjs";
 import { livedPlanId, livedSituationId, plannedPositionAt } from "../src/lived-now.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import {
@@ -993,6 +995,115 @@ test("World audits lost life daily and preserves restored deadlines between chec
     assert.equal(lived.continuityAuditDue(nextBatch),true,
       "World stranded the remainder of a bounded recovery batch");
     lived.close();
+  }));
+
+test("periodic recovery restores a lost Thread wake through World into continuing life",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    const plan=personalPlan(life);
+    const planAt="2030-06-01T05:00:00Z";
+    plan.planId=livedPlanId({
+      threadId:life.thread.threadId,kind:"personal",authoredAt:planAt,
+    });
+    plan.authoredAt=planAt;
+    plan.horizonStart=planAt;
+    plan.horizonEnd="2030-06-01T06:30:00Z";
+    plan.stops[0].startAt=planAt;
+    plan.stops[0].endAt="2030-06-01T05:15:00Z";
+    plan.stops[1].startAt="2030-06-01T05:30:00Z";
+    plan.stops[1].endAt=plan.horizonEnd;
+
+    let lived=openLivedNowStore(storage);
+    lived.recordPlan(plan);
+    const start=await createLivedNowService({livedNowStore:lived}).ensure({
+      threadId:life.thread.threadId,at:"2030-06-01T05:05:00Z",
+    });
+    lived.scheduleNextLivedBoundary({
+      threadId:life.thread.threadId,situationId:start.situationId,
+      dueAt:nextLivedBoundary(lived,start),
+    });
+    lived.close();
+    const damaged=new DatabaseSync(databasePath);
+    damaged.prepare("DELETE FROM lived_now_next_boundaries WHERE thread_id=?")
+      .run(life.thread.threadId);
+    damaged.close();
+
+    lived=openLivedNowStore(storage);
+    const livedNow=createLivedNowService({
+      livedNowStore:lived,
+      onSituationResolved:situation=>lived.scheduleNextLivedBoundary({
+        threadId:situation.threadId,situationId:situation.situationId,
+        dueAt:nextLivedBoundary(lived,situation),
+      }),
+    });
+    let clock=Date.parse("2030-06-01T05:08:00Z");
+    const infra=createLocalInfraDriver({
+      stateScopes:{world:":memory:"},
+      schedulerScopes:{world:{onWake:async()=>{}}},
+    });
+    const process=createWorldReconciliationProcess({
+      livedBoundaryProcess:createLivedBoundaryProcess({
+        livedNowStore:lived,livedNow,now:()=>new Date(clock).toISOString(),
+      }),
+    });
+    const runtime=createWorldReconciliationRuntime({
+      infraDriver:infra,process,now:()=>clock,
+      retryState:{get:async()=>0,set:async()=>{}},
+    });
+    try{
+      const at=new Date(clock).toISOString();
+      await assert.rejects(auditLivedContinuity({
+        livedNowStore:lived,at,
+        reconciliationRuntime:{requestWakeAt:async()=>{throw new Error("alarm unavailable");}},
+      }),/alarm unavailable/);
+      assert.equal(lived.continuityAuditDue(at),true,
+        "failed alarm handoff falsely completed World continuity audit");
+      assert.ok(lived.inspectLivedBoundary(life.thread.threadId)?.dueAt,
+        "failed alarm handoff discarded the repaired Thread's wake");
+
+      const retry=await auditLivedContinuity({
+        livedNowStore:lived,reconciliationRuntime:runtime,at,
+      });
+      assert.equal(retry.audited,true,"World never retried lost-life recovery");
+      assert.equal(retry.repaired,0,
+        "scheduler retry rewrote the Thread's already restored obligation");
+      assert.equal(await infra.scheduler.get("world"),
+        Date.parse("2030-06-01T05:23:00Z"),
+        "World did not re-arm durable life after a failed scheduler handoff");
+      assert.equal(lived.continuityAuditDue(at),false,
+        "successful recovery did not checkpoint the audit");
+      assert.equal(lived.getCurrentSituation(life.thread.threadId).situationId,
+        start.situationId,"the audit invented a life transition");
+
+      clock=Date.parse("2030-06-01T05:23:00Z");
+      const departure=await runtime.handleWake();
+      const moving=lived.getCurrentSituation(life.thread.threadId);
+      assert.equal(departure.livedBoundary.result.attempted,1,
+        "World did not run the restored autonomous life obligation");
+      assert.equal(moving.phase,"in_transit",
+        "recovered Thread failed to enact its own planned departure");
+      assert.equal(await infra.scheduler.get("world"),
+        Date.parse("2030-06-01T05:30:00Z"),
+        "World did not schedule life after the repaired wake");
+
+      clock=Date.parse("2030-06-01T05:30:00Z");
+      const arrival=await runtime.handleWake();
+      const arrived=lived.getCurrentSituation(life.thread.threadId);
+      assert.equal(arrival.livedBoundary.result.attempted,1,
+        "World did not continue beyond the recovery boundary");
+      assert.equal(arrived.location.placeRef,life.libraryRef,
+        "recovered Thread did not reach its own planned destination");
+      assert.notEqual(arrived.situationId,moving.situationId,
+        "continuing life failed to establish a new present");
+      assert.ok(Date.parse(lived.inspectLivedBoundary(life.thread.threadId).dueAt)
+        >clock,"continuing life lost its next autonomous wake");
+      assert.equal(lived.listPlans(life.thread.threadId,{kind:"personal"}).length,1,
+        "recovery fabricated a new Flight Plan");
+    }finally{
+      await runtime.stop();
+      lived.close();
+    }
   }));
 
 test("a failed Thread wake retains a quiet recovery deadline and eventually resumes life",async()=>
