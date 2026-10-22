@@ -24,6 +24,23 @@ function continuouslyPresent(lived,threadId,venue,since,at){
   return false; // Unbounded history is not proof of uninterrupted company.
 }
 
+// An unknown continuity window is not evidence that a person left.
+function recordedDeparture(lived,threadId,venue,since,at){
+  let cursor=lived.getCurrentSituation(threadId);
+  if(cursor===null||Date.parse(cursor.establishedAt)>Date.parse(at))return false;
+  for(let count=0;count<16;count++){
+    if(Date.parse(cursor.establishedAt)<=Date.parse(since))return false;
+    if(cursor.location?.kind==="transit"
+      ||(cursor.location?.kind==="place"
+        &&lived.getWorldPlace(threadId,cursor.location.placeRef,{
+          required:false,
+        })?.physicalVenue?.ref!==venue))return true;
+    cursor=lived.getPreviousSituation(threadId,cursor.establishedAt);
+    if(cursor===null)return false;
+  }
+  return false;
+}
+
 function historicalCompany(lived,opportunity){
   const own=lived.getSituationAt(opportunity.threadId,opportunity.dueAt);
   const ownVenue=own?.location?.kind==="place"
@@ -52,8 +69,8 @@ function missedWindow(lived,opportunity,at){
   const venue=lived.getWorldPlace(
     own.threadId,own.location.placeRef,{required:false},
   )?.physicalVenue?.ref??null;
-  return !continuouslyPresent(lived,own.threadId,venue,opportunity.dueAt,at)
-    ||company.some(other=>!continuouslyPresent(
+  return recordedDeparture(lived,own.threadId,venue,opportunity.dueAt,at)
+    ||company.some(other=>recordedDeparture(
       lived,other.threadId,venue,opportunity.dueAt,at,
     ));
 }
