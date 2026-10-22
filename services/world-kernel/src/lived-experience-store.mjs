@@ -1185,6 +1185,32 @@ export class LivedExperienceStore {
     return rows;
   }
 
+  // A prior accepted exchange alone is not acquaintance. Both people
+  // must also share a later admitted spoken Encounter Story.
+  hasMetEncounter(observerId,otherId,{before}={}){
+    assertId("known person observer",observerId);
+    assertId("known person candidate",otherId);
+    assertIsoTimestamp("known person before",before);
+    return this.#database.prepare(`
+      SELECT 1 FROM social_interaction_records i
+      WHERE i.response_decision='accept' AND i.occurred_at<?
+        AND ((i.initiator_thread_id=? AND i.recipient_thread_id=?)
+          OR (i.initiator_thread_id=? AND i.recipient_thread_id=?))
+        AND EXISTS (
+          SELECT 1 FROM encounter_story_records e
+          JOIN encounter_story_thread_presence p1
+            ON p1.encounter_ref=e.encounter_id AND p1.thread_id=?
+          JOIN encounter_story_thread_presence p2
+            ON p2.encounter_ref=e.encounter_id AND p2.thread_id=?
+          WHERE e.occurred_at=i.occurred_at
+            AND EXISTS (
+              SELECT 1 FROM json_each(e.story_json,'$.beats') beat
+              WHERE json_extract(beat.value,'$.kind')='utterance'
+            )
+        ) LIMIT 1
+    `).get(before,observerId,otherId,otherId,observerId,observerId,otherId)!==undefined;
+  }
+
   listAcceptedHumanMeetings(threadId,{since,until,limit=8}={}){
     assertId("Human meeting threadId",threadId);
     assertIsoTimestamp("Human meeting since",since);
