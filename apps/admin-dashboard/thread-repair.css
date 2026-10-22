@@ -890,6 +890,46 @@
 .thread-population-table td:nth-child(10){font-variant-numeric:tabular-nums}
 .stillborn-table tr > :last-child { min-width:140px; }
 
+/* The available table panel, not the window, determines visible priorities. */
+.thread-population-scroll{container:thread-population / inline-size}
+.thread-population-person>div{max-width:100%}
+.thread-population-table .thread-population-name{
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.thread-population-table .thread-id-copy{max-width:100%;overflow:hidden}
+.thread-population-table .thread-id-copy .fa-action-label{
+  overflow:hidden;text-overflow:ellipsis;
+}
+.thread-population-table .thread-location{max-width:100%}
+.thread-population-table .thread-location-text{
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;
+  white-space:normal;overflow:hidden;overflow-wrap:anywhere;
+}
+.thread-population-table td:nth-child(10){
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+@container thread-population (max-width:1150px){
+  .thread-population-table{min-width:960px}
+  .thread-population-table tr>:is(:nth-child(6),:nth-child(7),:nth-child(9)){display:none}
+  .thread-population-table th:nth-child(1){width:4%}
+  .thread-population-table th:nth-child(2){width:20%}
+  .thread-population-table th:nth-child(3){width:15%}
+  .thread-population-table th:nth-child(4){width:16%}
+  .thread-population-table th:nth-child(5){width:17%}
+  .thread-population-table th:nth-child(8){width:13%}
+  .thread-population-table th:nth-child(10){width:9%}
+  .thread-population-table th:nth-child(11){width:6%}
+}
+@container thread-population (max-width:760px){
+  .thread-population-table{min-width:590px}
+  .thread-population-table tr>:is(:nth-child(3),:nth-child(4),:nth-child(10)){display:none}
+  .thread-population-table th:nth-child(1){width:6%}
+  .thread-population-table th:nth-child(2){width:30%}
+  .thread-population-table th:nth-child(5){width:33%}
+  .thread-population-table th:nth-child(8){width:20%}
+  .thread-population-table th:nth-child(11){width:11%}
+}
+
 .thread-population-activity-only { opacity:.68; }
 .thread-population-activity-only .thread-population-name { font-weight:600; }
 
