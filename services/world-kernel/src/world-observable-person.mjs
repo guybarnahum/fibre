@@ -21,8 +21,9 @@ export function personKnownToObserver({
 }={}){
   if(observerThreadId==null||observerThreadId===threadId)return false;
   const relation=situatedLifeStore?.listCurrentLifeRelations?.(observerThreadId)
-    ?.some(item=>item.relatedParty?.kind==="thread"
-      &&item.relatedParty.partyId===threadId)??false;
+    ?.some(item=>item.relatedParty?.partyId===threadId
+      &&(item.relatedParty.kind==="thread"
+        ||item.relatedParty.kind===undefined))??false;
   return relation||(experienceStore?.hasMetEncounter?.(
     observerThreadId,threadId,{before:at},
   )??false);
