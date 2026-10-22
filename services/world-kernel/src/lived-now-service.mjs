@@ -446,6 +446,7 @@ async function formPlan({
     threadId,
     startAt,
   });
+  const sourceEventRef=latestEventRefAt(worldStore,threadId,startAt);
   const propose=async(planningRejection)=>{
     const plan=await formPersonalLivedPlan({
       threadId,
@@ -453,7 +454,7 @@ async function formPlan({
       horizonEnd:endAt,
       availablePlaceRefs:placeRefs,
       cityGuidePlaces:guidePlaces,
-      sourceReferences:[latestEventRefAt(worldStore,threadId,startAt)],
+      sourceReferences:[sourceEventRef],
       sourceStores:{
         worldStore,identityStore,semanticStateStore,memoryStore,
         situatedLifeStore,livedNowStore,
