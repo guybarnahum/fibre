@@ -144,14 +144,16 @@ function requireMethod(owner, name) {
 // Bounded, provenance-bearing evidence of life without recorded reciprocal contact.
 // This is not proof of subjective loneliness or a complete account of a person's social life.
 export function socialContactEvidenceForLivedHistory({
-  threadId,currentSituation,livedNowStore,experienceStore,
+  threadId,currentSituation,livedNowStore,experienceStore,asOf=currentSituation?.establishedAt,
 }) {
   if(currentSituation===null||experienceStore===null||experienceStore===undefined)return null;
   if(currentSituation.threadId!==threadId)throw new TypeError("social contact situation belongs to another Thread");
   requireMethod(livedNowStore,"getPreviousSituation");
   requireMethod(experienceStore,"listSocialInteractions");
   requireMethod(experienceStore,"listAcceptedHumanMeetings");
-  const end=Date.parse(currentSituation.establishedAt);
+  const end=Date.parse(asOf);
+  if(!Number.isFinite(end)||end<Date.parse(currentSituation.establishedAt))
+    throw new TypeError("regulation asOf precedes the enacted present");
   let before=currentSituation.establishedAt;
   let observedStart=end;
   let firstRef=currentSituation.situationId;
@@ -171,7 +173,7 @@ export function socialContactEvidenceForLivedHistory({
     .map(item=>({ref:item.interactionId,occurredAt:item.occurredAt}));
   const human=experienceStore.listAcceptedHumanMeetings(threadId,{
     since:new Date(observedStart).toISOString(),
-    until:currentSituation.establishedAt,
+    until:asOf,
     limit:8,
   }).map(item=>({ref:item.encounterRef,occurredAt:item.occurredAt}));
   const contact=[...recent,...human].filter(item=>
@@ -192,19 +194,30 @@ export function socialContactEvidenceForLivedHistory({
 // No extra model call, time tick, or family-specific consumer path.
 export function livedRegulationForLivedHistory({
   thread,livedNowStore,currentSituation,experienceStore=null,
+  asOf=currentSituation?.establishedAt,
 }) {
   if(currentSituation===null)return null;
   if(thread?.threadId!==currentSituation.threadId){
     throw new TypeError("lived regulation situation belongs to another Thread");
   }
-  const continuity=explorationContinuityForLivedHistory({livedNowStore,currentSituation});
+  if(!Number.isFinite(Date.parse(asOf))
+    ||Date.parse(asOf)<Date.parse(currentSituation.establishedAt)){
+    throw new TypeError("regulation asOf precedes the enacted present");
+  }
+  // A decision-time frame may evaluate elapsed life without authoring a
+  // fictitious World situation. History lookup remains tied to real records.
+  const decisionSituation=asOf===currentSituation.establishedAt
+    ?currentSituation:{...currentSituation,establishedAt:asOf};
+  const continuity=explorationContinuityForLivedHistory({
+    livedNowStore,currentSituation:decisionSituation,
+  });
   const contact=experienceStore===null?null:socialContactEvidenceForLivedHistory({
-    threadId:thread.threadId,currentSituation,livedNowStore,experienceStore,
+    threadId:thread.threadId,currentSituation,livedNowStore,experienceStore,asOf,
   });
   if(!continuity.grounded&&contact===null)return null;
   return evaluateIntrinsicRegulation({
     perceptFrame:{
-      asOf:currentSituation.establishedAt,
+      asOf,
       evidenceRefs:[...new Set([
         ...(continuity.grounded?continuity.evidenceRefs:[]),
         ...(contact?.evidenceRefs??[]),
