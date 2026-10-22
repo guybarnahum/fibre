@@ -4,6 +4,23 @@
 
 The dashboard is deliberately not a semantic authority. Activity remains non-authoritative and fail-open; World and service records decide Fibre truth. The browser never receives a Fibre private/admin token. Authenticated operator mutations are narrow service actions—such as initiating a Birth, bounded Thread repair, FID reissue, or meeting initiation—and the owning Fibre service remains authoritative.
 
+## Admin layout containment (October 22)
+
+The shared Admin shell keeps the document within the viewport and uses the same
+theme-colored root/background even when a view has wide content. Raw Activity,
+Threads, and Stillborn tables scroll **inside their own panels**, with bounded
+height and sticky table headings. Threads and Stillborn keep their Action
+column visible at the right edge while the other columns scroll. This is
+presentation only: table records, sorting, actions, and World authority do
+not change. Appearance, World Events, and Life & Causes inherit the shared
+viewport/theme guard but retain their existing grids and local scrolling.
+
+Verify at normal browser zoom in both light and dark appearance, without
+dragging the entire page sideways: the right viewport edge stays themed,
+the Threads pencil remains visible, wide table contents remain reachable
+using the table's own scrollbar, and Raw/Stillborn still scroll correctly.
+Column width balancing and responsive column priority are separate follow-ups.
+
 ## Thread identity and maintenance editor (October 21)
 
 The Threads table uses one **Edit** pencil instead of a growing action
