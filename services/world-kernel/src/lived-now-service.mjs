@@ -409,6 +409,7 @@ async function formPlan({
   endAt,
   startingPlace,
   materializedAt = null,
+  unobservedSince = null,
 }) {
   const existing = materializedAt === null
     ? forwardPlan(livedNowStore, threadId, startAt)
@@ -468,6 +469,7 @@ async function formPlan({
       ...(interoception===null?{}:{interoception}),
       ...(materializedAt===null?{}:{materializedAt}),
       ...(planningRejection===null?{}:{planningRejection}),
+      ...(unobservedSince===null?{}:{unobservedSince}),
     });
     return livedNowStore.recordPlan(plan);
   };
@@ -570,6 +572,7 @@ async function catchUpDormantInterval({
     startAt: at,
     endAt: futureEnd,
     startingPlace: placeRef,
+    unobservedSince:unobservedGap?current.establishedAt:null,
   });
 }
 
