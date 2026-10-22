@@ -433,8 +433,9 @@ test("a rejected instantaneous journey is reconsidered by its Thread before Worl
             calls===1?null:"personal Flight Plan place change requires transit time",
             "the Thread did not receive the exact World travel rejection");
           const from=context.startingPlaceRef;
-          const to=context.availablePlaces.find(place=>place.ref!==from)?.ref;
-          assert.ok(to,"the Thread needs a real alternative destination");
+          const to=from===life.homeRef?life.libraryRef:life.homeRef;
+          assert.ok(context.availablePlaces.some(place=>place.ref===to),
+            "the alternative destination must be World-grounded");
           const base={
             presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
             activity:"Read quietly",purpose:"Continue an ordinary morning",
