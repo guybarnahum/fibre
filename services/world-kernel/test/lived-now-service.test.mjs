@@ -548,9 +548,9 @@ test("precise travel rejection lets a Thread choose to stay without invented tra
       const present=await service.ensure({threadId:life.thread.threadId,at});
       assert.equal(proposals,2,"journey correction used more than one reconsideration");
       const plans=lived.listPlans(life.thread.threadId,{kind:"personal"});
+      assert.equal(plans.length,1,"rejected itinerary entered lived history");
       assert.equal(present.location.placeRef,plans[0].stops[0].physicalPlaceRef,
         "World forced movement after the Thread chose to stay");
-      assert.equal(plans.length,1,"rejected itinerary entered lived history");
       assert.equal(plans[0].stops.length,1,"World rewrote the Thread's revised intention");
       assert.ok(lived.inspectLivedBoundary(life.thread.threadId)?.dueAt,
         "remaining at home stranded the Thread's future life");
