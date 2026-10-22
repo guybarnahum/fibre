@@ -23,6 +23,12 @@ const MAX_RETROSPECTIVE_WINDOWS = 4;
 // Alarm delivery is not exact to the millisecond. A brief post-horizon lag
 // should renew forward life, not fabricate a retrospective Flight Plan.
 const BOUNDARY_DELIVERY_GRACE_MS = 60_000;
+const TRAVEL_PLAN_REJECTIONS = new Set([
+  "new place requires elapsed travel time",
+  "personal Flight Plan place change requires transit time",
+  "Flight Plan place change requires elapsed transit time",
+  "Flight Plan arrival is too soon for the geographical distance",
+]);
 
 export class LivedNowCoverageError extends Error {}
 
@@ -445,32 +451,39 @@ async function formPlan({
     threadId,
     startAt,
   });
-  const plan = await formPersonalLivedPlan({
-    threadId,
-    authoredAt: startAt,
-    horizonEnd: endAt,
-    availablePlaceRefs: placeRefs,
-    cityGuidePlaces:guidePlaces,
-    sourceReferences: [latestEventRefAt(worldStore, threadId, startAt)],
-    sourceStores:{
-      worldStore,
-      identityStore,
-      semanticStateStore,
-      memoryStore,
-      situatedLifeStore,
-      livedNowStore,
-    },
-    modelAdapter,
-    resolveDestinationGeography,
-    startingPlaceRef: startingPlace,
-    startingSituationId:materializedAt===null
-      ?livedNowStore.getCurrentSituation(threadId)?.situationId??null
-      :null,
-    worldTimeZone,
-    ...(interoception === null ? {} : { interoception }),
-    ...(materializedAt === null ? {} : { materializedAt }),
-  });
-  return livedNowStore.recordPlan(plan);
+  const propose=async(planningRejection)=>{
+    const plan=await formPersonalLivedPlan({
+      threadId,
+      authoredAt:startAt,
+      horizonEnd:endAt,
+      availablePlaceRefs:placeRefs,
+      cityGuidePlaces:guidePlaces,
+      sourceReferences:[latestEventRefAt(worldStore,threadId,startAt)],
+      sourceStores:{
+        worldStore,identityStore,semanticStateStore,memoryStore,
+        situatedLifeStore,livedNowStore,
+      },
+      modelAdapter,resolveDestinationGeography,
+      startingPlaceRef:startingPlace,
+      startingSituationId:materializedAt===null
+        ?livedNowStore.getCurrentSituation(threadId)?.situationId??null
+        :null,
+      worldTimeZone,
+      ...(interoception===null?{}:{interoception}),
+      ...(materializedAt===null?{}:{materializedAt}),
+      ...(planningRejection===null?{}:{planningRejection}),
+    });
+    return livedNowStore.recordPlan(plan);
+  };
+  try{
+    return await propose(null);
+  }catch(error){
+    // Travel is a Thread-authored choice; World may reject impossible timing.
+    // Offer the exact rejection to that same Thread once, not a fabricated gap
+    // or three blind alarm retries. Other failures remain visible.
+    if(!TRAVEL_PLAN_REJECTIONS.has(error?.message))throw error;
+    return propose(error.message);
+  }
 }
 
 async function catchUpDormantInterval({
