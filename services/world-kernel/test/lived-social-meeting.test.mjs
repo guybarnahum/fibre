@@ -95,6 +95,7 @@ function fixture({
   mediatedContext = null,
   plannedCompanions = true,
   plannedCompanionRefs = null,
+  withoutLifeRelations = false,
   selaPresent = false,
   sustainedSameness = false,
   observedSolitudeHours = 0,
@@ -183,6 +184,7 @@ function fixture({
     });
   }
   const initiationNames = [];
+  const observedAtInitiation=[];
   const stanceNames = [];
   const liveContributionNames = [];
   const liveExpressionNames = [];
@@ -210,6 +212,7 @@ function fixture({
         const percept = call.input.concern.externalContext.situatedPercept;
         assert.equal(percept.setting.place?.displayName, "The same neighborhood café",
           "social cognition should receive the actual setting");
+        observedAtInitiation.push(structuredClone(percept.observed[0]));
         const observedThreadId = percept.observed[0]?.threadId;
         assert.equal(
           percept.observed[0]?.currentActivity,
@@ -533,7 +536,7 @@ function fixture({
       getCurrentIdentityView(threadId) { return { threadId, assertions:[] }; },
     },
     situatedLifeStore:{
-      listCurrentLifeRelations(threadId) { return structuredClone(relations(threadId)); },
+      listCurrentLifeRelations(threadId) { return withoutLifeRelations?[]:structuredClone(relations(threadId)); },
       listCurrentPlaceEpisodes(threadId) { return structuredClone(placeEpisodes.get(threadId)); },
     },
     semanticStateStore:{
@@ -653,6 +656,7 @@ function fixture({
     ensured,
     socialInteractions,
     initiationNames,
+    observedAtInitiation,
     stanceNames,
     liveContributionNames,
     liveExpressionNames,
@@ -1232,4 +1236,22 @@ test("one noticed arrival changes later social judgment through personal Experie
     "chosen encounter did not create a new World Story");
   assert.equal(uneasy.stories.length,1,
     "a refusal to initiate created a new World Story");
+});
+
+test("the initiation model sees observed traits, not an unearned stranger's name",async()=>{
+  const stranger=fixture({
+    plannedCompanions:true,withoutLifeRelations:true,
+    initiationFor:()=>"not_initiate",
+  });
+  const known=fixture({
+    plannedCompanions:true,initiationFor:()=>"not_initiate",
+  });
+  await stranger.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  await known.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  assert.equal(stranger.observedAtInitiation[0]?.name,null,
+    "initiation cognition learned a stranger's name from World identity");
+  assert.equal(typeof stranger.observedAtInitiation[0]?.observableDescription,"string",
+    "initiation cognition lacked a public description of the person");
+  assert.equal(known.observedAtInitiation[0]?.name,"Noor",
+    "a real life relation could not recover an already-known name");
 });
