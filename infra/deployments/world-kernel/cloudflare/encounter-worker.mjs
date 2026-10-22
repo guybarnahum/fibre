@@ -908,4 +908,17 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   }
 }
 
-export default baseWorker;
+// A single hourly watchdog repairs a missing World alarm without polling
+// individual Threads. Ordinary life remains driven by admitted Flight Plans.
+export default Object.freeze({
+  ...baseWorker,
+  async scheduled(_controller,env){
+    const response=await env.WORLD_STATE.getByName("world").fetch(
+      new Request("https://world.internal/internal/reconciliation/wake",{
+        method:"POST",
+        headers:{"x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN},
+      }),
+    );
+    if(!response.ok)throw new Error("World continuity watchdog could not re-arm reconciliation");
+  },
+});
