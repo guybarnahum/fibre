@@ -85,7 +85,15 @@ export function createLivedBoundaryProcess({
             threadId:item.threadId,
             at:enactAt,
           });
-          livedNowStore.settleLivedBoundary(item);
+          const settled=livedNowStore.settleLivedBoundary(item);
+          if(settled&&present?.establishedAt>item.dueAt){
+            // The old wake was overtaken by newer authoritative life.
+            // Do not leave the current scene unarmed after settling it.
+            livedNowStore.scheduleNextLivedBoundary?.({
+              threadId:item.threadId,situationId:current.situationId,
+              dueAt:nextLivedBoundary(livedNowStore,current),
+            });
+          }
           results.push({
             threadId:item.threadId,
             outcome:"advanced",
