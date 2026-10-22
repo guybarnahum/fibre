@@ -474,8 +474,9 @@ test("a rejected instantaneous journey is reconsidered by its Thread before Worl
         "World enacted the proposed destination before travel");
       assert.equal(plannedPositionAt(plans[0],"2026-09-10T05:40:00Z").kind,
         "in_transit","the renewed journey still has no real transit interval");
-      assert.equal(lived.inspectLivedBoundary(life.thread.threadId)?.dueAt,
-        "2026-09-10T05:35:00Z","the admitted life was not scheduled to continue");
+      assert.equal(Date.parse(lived.inspectLivedBoundary(life.thread.threadId)?.dueAt??""),
+        Date.parse(plans[0].stops[0].endAt),
+        "the admitted life was not scheduled to continue");
     }finally{
       situated.close();memory.close();semantic.close();identity.close();
       world.close();lived.close();
