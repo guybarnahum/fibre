@@ -815,6 +815,27 @@ test("E7.5 admitted Flight Plan boundaries advance life without polling",async()
     lived.close();
   }));
 
+test("an interrupted World's overdue life debt is paced, not awakened in a burst",async()=>{
+  const at="2026-10-22T04:10:00Z";
+  let ensured=0;
+  const process=createLivedBoundaryProcess({
+    livedNowStore:{
+      listDueLivedBoundaries:()=>[{
+        threadId:"thr_first",situationId:"sit_first",dueAt:"2026-09-25T04:00:00Z",
+      }],
+      nextLivedBoundaryAt:()=>"2026-09-25T04:15:00Z",
+      settleLivedBoundary:()=>true,
+      failLivedBoundary:()=>{throw new Error("unexpected failure");},
+    },
+    livedNow:{async ensure(){ensured++;return {situationId:"sit_advanced"};}},
+    now:()=>at,
+  });
+  const result=await process.runOnce();
+  assert.equal(ensured,1,"World woke more than one stranded Thread");
+  assert.equal(Date.parse(result.nextDueAt)-Date.parse(at),10*60_000,
+    "World scheduled an immediate stampede of overdue cognition");
+});
+
 test("an established legacy Thread without a wake frontier is adopted once",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
