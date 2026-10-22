@@ -719,6 +719,21 @@
 .thread-population-metrics span { font-size:9px; color:var(--muted); font-weight:650; }
 .thread-population-metrics strong { font-size:17px; line-height:1; }
 
+
+/* Identity and physical context get the space; short metadata stays compact. */
+.thread-population-table{table-layout:fixed;min-width:1320px}
+.thread-population-table th:nth-child(1){width:3%}
+.thread-population-table th:nth-child(2){width:15%}
+.thread-population-table th:nth-child(3){width:12.5%}
+.thread-population-table th:nth-child(4){width:12%}
+.thread-population-table th:nth-child(5){width:13%}
+.thread-population-table th:nth-child(6){width:4.5%}
+.thread-population-table th:nth-child(7){width:7.5%}
+.thread-population-table th:nth-child(8){width:12%}
+.thread-population-table th:nth-child(9){width:9%}
+.thread-population-table th:nth-child(10){width:7%}
+.thread-population-table th:nth-child(11){width:4.5%}
+
 .thread-population-table th,
 .thread-population-table td {
   padding-top:7px;
@@ -736,19 +751,18 @@
   text-align:left;
 }
 .thread-population-table td:nth-child(2) { padding-left:4px; }
-.thread-population-person { display:flex; align-items:center; gap:8px; min-width:190px; }
+.thread-population-person { display:flex; align-items:center; gap:8px; min-width:0; }
 .thread-population-person > div { min-width:0; }
 .thread-population-ethnicity {
-  min-width:150px;
-  max-width:220px;
+  min-width:0;
   white-space:normal;
+  overflow-wrap:anywhere;
   line-height:1.35;
   color:var(--text);
 }
 .thread-population-birthplace,
 .thread-population-current-place {
-  min-width:150px;
-  max-width:220px;
+  min-width:0;
   white-space:normal;
   line-height:1.35;
 }
@@ -867,7 +881,13 @@
 .activity-view-panel :is(.thread-population-table,.stillborn-table) tbody tr:hover > :last-child {
   background:var(--surface-subtle);
 }
-.thread-population-table tr > :last-child { width:64px; min-width:64px; }
+.thread-population-table tr > :last-child { min-width:60px; }
+.thread-population-table :is(td:nth-child(8),td:nth-child(9)) :is(.thread-health-tag,.status){
+  max-width:100%;
+  white-space:normal;
+  line-height:1.25;
+}
+.thread-population-table td:nth-child(10){font-variant-numeric:tabular-nums}
 .stillborn-table tr > :last-child { min-width:140px; }
 
 .thread-population-activity-only { opacity:.68; }
@@ -1030,7 +1050,6 @@
   .thread-birth-map-caption { align-items:flex-start; flex-direction:column; gap:2px; }
   .thread-birth-map-caption span { text-align:left; }
   .thread-health-tag { white-space:normal; }
-  .thread-population-table { min-width:1120px; }
   .thread-action-choice-group { grid-template-columns:1fr; }
 }
 
