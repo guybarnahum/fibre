@@ -13,6 +13,7 @@ import { canonicalJson,sha256 } from "../src/persistence-common.mjs";
 import { createWorldSocialOpportunity } from "../src/world-social-opportunity.mjs";
 import { createWorldArrivalPerception } from "../src/world-arrival-perception.mjs";
 import { createWorldReconciliationProcess } from "../src/world-reconciliation-process.mjs";
+import { createSocialMeetingService } from "../src/lived-social-meeting.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 
 const seed=JSON.parse(readFileSync(
@@ -622,7 +623,7 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       dueAt:blockedDue,at:blockedDue,message:"Life needs another attempt.",
     });
     assert.equal(lived.inspectLivedBoundary(ids[0]).failedAttempts,1);
-    let met=0;
+    let attemptedLifeEnactment=0;
     const arrival=createWorldArrivalPerception({
       experienceStore:experience,livedNowStore:lived,
       worldReader:{getThread:id=>structuredClone(people.get(id)??null)},
@@ -634,17 +635,29 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       }},
       now:()=>decisionAt,
     });
+    const meetingService=createSocialMeetingService({
+      worldReader:{getThread:id=>structuredClone(people.get(id)??null)},
+      livedNow:{async ensure(){
+        attemptedLifeEnactment++;
+        throw Error("social decision must not enact a life");
+      }},
+      livedNowStore:lived,
+      identityStore:{getCurrentIdentityView:()=>({assertions:[]})},
+      situatedLifeStore:{
+        listCurrentLifeRelations:()=>[],listCurrentPlaceEpisodes:()=>[],
+      },
+      semanticStateStore:{listCurrentState:()=>[]},
+      memoryStore:{listCurrentMemories:()=>[]},
+      experienceStore:experience,
+      modelAdapter:{
+        async invoke(){throw Error("ordinary quiet co-presence forced cognition");},
+        async *streamExpression(){throw Error("ordinary quiet scene forced speech");},
+      },
+      boundedVenueDiscovery:true,
+    });
     const social=createWorldSocialOpportunity({
       experienceStore:experience,livedNowStore:lived,now:()=>decisionAt,
-      meetingService:{async meet(){
-        met++;
-        return {attempts:[{
-          counterpartyThreadId:ids[3],outcome:"not_initiated",
-          salience:{outcome:"salient",anchors:[],sourceReferences:[]},
-          initiation:{decision:"not_initiate",reason:"Keep reading."},
-          stance:null,encounterStory:null,
-        }]};
-      }},
+      meetingService,
     });
     const process=createWorldReconciliationProcess({
       firstLifeProcess:{async runOnce(){
@@ -659,15 +672,16 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
     const result=await process.runOnce();
     assert.equal(result.environmentEvolution.result.results[0].outcome,"recorded",
       "other venue's failed life suppressed real arrival perception");
-    assert.equal(result.socialOpportunity.result.results[0].outcome,"not_initiated",
+    assert.equal(result.socialOpportunity.result.results[0].outcome,"background",
       "first-life backlog suppressed an independent social decision");
-    assert.equal(met,1,"a separate venue did not reach voluntary consideration");
+    assert.equal(attemptedLifeEnactment,0,
+      "automatic social consideration advanced someone else's lived history");
     assert.equal(experience.inspectSocialOpportunities(ids[0])[0].startedAt,null,
       "failed life consumed its pending social chance");
     assert.equal(experience.nextArrivalPerceptionAt(),null,
       "deferred perception repeatedly woke unrelated World cognition");
     assert.equal(experience.inspectSocialOpportunities(ids[2])[0].outcome,
-      "not_initiated","World failed to record independent social choice");
+      "background","World failed to record a voluntary quiet social judgment");
     // The reader's only current company is the person whose life failed.
     // This is uncertainty, not absence of company or permission to spend
     // a one-shot meeting opportunity.
