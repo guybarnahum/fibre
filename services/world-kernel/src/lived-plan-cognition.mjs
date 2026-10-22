@@ -13,6 +13,7 @@ import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {
   livedPlanId,
   normalizeLivedPlan,
+  invalidFlightPlanTravel,
 } from "./lived-now.mjs";
 
 const STOP_SCHEMA = Object.freeze({
@@ -367,7 +368,7 @@ async function resolveNewPlaces({
       if(previous.physicalPlaceRef!==request
         &&(Date.parse(stop.startAt)<=Date.parse(previous.endAt)
           ||!stop.travelFromPrevious?.trim())){
-        throw new TypeError("new place requires elapsed travel time");
+        throw invalidFlightPlanTravel("new place requires elapsed travel time");
       }
     }
     let result=store.resolvePlace({threadId,...place});
@@ -513,7 +514,7 @@ export async function formPersonalLivedPlan({
     const previous=stops[i-1],next=stops[i];
     if(previous.physicalPlaceRef!==next.physicalPlaceRef
       &&Date.parse(next.startAt)<=Date.parse(previous.endAt)){
-      throw new TypeError("personal Flight Plan place change requires transit time");
+      throw invalidFlightPlanTravel("personal Flight Plan place change requires transit time");
     }
   }
   if (stops[0].startAt !== authoredAt) {
