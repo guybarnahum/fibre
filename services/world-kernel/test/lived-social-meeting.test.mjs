@@ -91,6 +91,7 @@ function fixture({
   sharedWorldPlace = true,
   recentSocialInteractions = [],
   priorArrivalExperience = null,
+  noticedArrivalWitness = null,
   noorActivity = "Sketching at the same café table.",
   mediatedContext = null,
   plannedCompanions = true,
@@ -181,6 +182,35 @@ function fixture({
     attentions.push({
       threadId:mina.threadId,encounterRef:encounterId,situationId:"sit_mina_earlier",
       occurredAt:earlier,outcome:"noticed",experience,
+    });
+  }
+  if(noticedArrivalWitness!==null){
+    const observer=situations.get(mina.threadId);
+    const witness=situations.get(noticedArrivalWitness);
+    const storyId="story_mina_arrival_with_captured_witness";
+    stories.push({
+      encounterId:storyId,occurredAt:AT,
+      threadPresence:[
+        {threadId:mina.threadId,situationId:observer.situationId},
+        {threadId:witness.threadId,situationId:witness.situationId},
+      ],
+      story:{storyVersion:"encounter-story-v0.1",beats:[
+        {actorThreadId:mina.threadId,kind:"action",text:"A person arrives."},
+        {actorThreadId:witness.threadId,kind:"occurrence",
+          text:"A person is already reading."},
+      ]},
+    });
+    const experience={
+      experienceId:"exp_mina_noticed_captured_witness",
+      threadId:mina.threadId,encounterRef:storyId,
+      situationId:observer.situationId,occurredAt:AT,
+      experienceText:"I noticed someone reading quietly as I arrived.",
+    };
+    experiences.push(structuredClone(experience));
+    attentions.push({
+      threadId:mina.threadId,encounterRef:storyId,
+      situationId:observer.situationId,occurredAt:AT,
+      outcome:"noticed",experience,
     });
   }
   const initiationNames = [];
@@ -1254,4 +1284,23 @@ test("the initiation model sees observed traits, not an unearned stranger's name
     "initiation cognition lacked a public description of the person");
   assert.equal(known.observedAtInitiation[0]?.name,"Noor",
     "a real life relation could not recover an already-known name");
+});
+
+test("an arriving Thread considers its noticed witness before lower-ID bystanders",async()=>{
+  const f=fixture({
+    boundedVenueDiscovery:true,selaPresent:true,
+    plannedCompanions:false,noticedArrivalWitness:sela.threadId,
+    initiationFor:()=>"not_initiate",
+  });
+  const result=await f.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,
+  });
+  assert.deepEqual(result.discoveredThreadIds,[sela.threadId],
+    "Thread-ID order displaced the actually noticed witness");
+  assert.equal(result.attempts.length,1,
+    "one noticed arrival created multiple social decisions");
+  assert.equal(result.attempts[0].counterpartyThreadId,sela.threadId,
+    "the arrival decision targeted an unseen bystander");
+  assert.equal(result.attempts[0].outcome,"not_initiated",
+    "noticing a witness compelled conversation");
 });
