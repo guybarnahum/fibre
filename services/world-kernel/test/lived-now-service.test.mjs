@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { DatabaseSync } from "node:sqlite";
 
 import { openWorldStore } from "../src/persistence.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
@@ -808,6 +809,32 @@ test("E7.5 admitted Flight Plan boundaries advance life without polling",async()
     assert.equal((await boundary.runOnce()).attempted,0,
       "same Flight Plan boundary was replayed");
     lived.close();
+  }));
+
+test("an established legacy Thread without a wake frontier is adopted once",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    const first=openLivedNowStore(storage);
+    first.recordPlan(personalPlan(life));
+    await createLivedNowService({livedNowStore:first}).ensure({
+      threadId:life.thread.threadId,at:"2026-09-10T05:05:00Z",
+    });
+    assert.equal(first.inspectLivedBoundary(life.thread.threadId),null);
+    first.close();
+    const oldDatabase=new DatabaseSync(databasePath);
+    oldDatabase.exec("DROP TABLE lived_now_recovery_adopted");
+    oldDatabase.close();
+    const recovered=openLivedNowStore(storage);
+    const boundary=recovered.inspectLivedBoundary(life.thread.threadId);
+    assert.ok(boundary?.dueAt,"World failed to adopt an established stranded Thread");
+    assert.ok(Date.parse(boundary.dueAt)>Date.now(),
+      "recovery produced an immediate burst of legacy wake work");
+    recovered.close();
+    const repeated=openLivedNowStore(storage);
+    assert.equal(repeated.inspectLivedBoundary(life.thread.threadId)?.dueAt,
+      boundary.dueAt,"World repeatedly reset a recovered Thread's deadline");
+    repeated.close();
   }));
 
 test("a failed Thread wake retains a quiet recovery deadline and eventually resumes life",async()=>
