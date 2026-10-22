@@ -95,6 +95,30 @@ test("World reconciliation isolates Genesis delivery from visual publication", a
   assert.equal(worldReconciliationNeedsRetry(result), true);
 });
 
+test("World does not judge social presence while due life remains unenacted",async()=>{
+  let due=true,social=0,environment=0;
+  const process=createWorldReconciliationProcess({
+    livedBoundaryProcess:{async runOnce(){
+      return {attempted:4,failed:0,hasDue:due,nextDueAt:due
+        ?"2026-10-22T18:10:00.000Z":null};
+    }},
+    socialOpportunityProcess:{async runOnce(){
+      social++;return {attempted:0,failed:0};
+    }},
+    environmentEvolutionProcess:{async runOnce(){
+      environment++;return {attempted:0,failed:0};
+    }},
+  });
+  const first=await process.runOnce();
+  assert.equal(first.livedBoundary.result.hasDue,true);
+  assert.equal(social,0,"social cognition inspected an unfinished World scene");
+  assert.equal(environment,0,"environment perceived people before due departures");
+  due=false;
+  await process.runOnce();
+  assert.equal(social,1,"settled World life never restored social opportunity");
+  assert.equal(environment,1,"settled World life never restored environmental perception");
+});
+
 test("World reconciliation scheduler emits no Activity for an idle sweep", async () => {
   const activityCalls = [];
   const process = createWorldReconciliationProcess({
