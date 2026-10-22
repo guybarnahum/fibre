@@ -51,6 +51,31 @@ one birth at a time. Confirm publication and independently enacted current
 city before counting the new citizen. Do not alter existing Threads'
 birthplaces to make population counts look better.
 
+## Automatic continuity recovery
+
+World uses admitted Flight Plan deadlines as its normal event-driven clock.
+An hourly Cloudflare watchdog is a fallback if that single World alarm goes
+missing. Repeated failures keep a delayed, inspectable wake obligation rather
+than abandoning the Thread after three attempts. A coverage failure is retried
+after a day; other failures use capped backoff. Old established Threads missing
+wake frontiers are adopted once at schema installation, with recovery attempts
+spread 15 minutes apart. Multiple overdue lives are paced at one per ten
+minutes, not awakened in a model-request storm. Deliberately retired Threads
+are excluded.
+
+If the last witnessed situation is over four days old, World opens a new
+Thread-authored horizon at the actual present from grounded continuity and
+leaves the intervening life unobserved. It does not fabricate a month of
+retrospective plans, relationships, visits or experiences. The planning mind
+receives the last-observed timestamp. The missing interval is visible through
+the chronology of admitted situations; it is not currently a separate
+timeline-event type.
+
+After deploying this revision, inspect the read-only census **before**
+manually applying a world-life wave: legacy lives may already be queued for
+automatic recovery. Manual waves are for bounded controlled experiments or
+evidence-guided exceptional repair, not the normal life engine.
+
 ## Measure then wake in explicit waves
 
 Prepare staging/cloud service configs before measuring. Run in terminal A:
