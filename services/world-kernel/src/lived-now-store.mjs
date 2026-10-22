@@ -189,6 +189,12 @@ function createTables(database) {
     CREATE INDEX IF NOT EXISTS idx_lived_now_next_boundaries_due
       ON lived_now_next_boundaries(due_at)
       WHERE due_at IS NOT NULL;
+
+    -- One small operational checkpoint; the Thread's own Plan remains its clock.
+    CREATE TABLE IF NOT EXISTS lived_now_continuity_audit (
+      id INTEGER PRIMARY KEY CHECK(id=1),
+      next_due_at TEXT NOT NULL
+    ) STRICT;
   `);
   // One-time migration from append-only evidence, using the existing
   // (thread_id,established_at,situation_id) index. Never replay histories
@@ -849,6 +855,26 @@ export class LivedNowStore {
         nextWakeAt:repaired[0]?.dueAt??null,
       });
     });
+  }
+
+  continuityAuditDue(at){
+    assertIsoTimestamp("continuity audit at",at);
+    const next=this.#database.prepare(
+      "SELECT next_due_at FROM lived_now_continuity_audit WHERE id=1",
+    ).get()?.next_due_at??null;
+    return next===null||next<=at;
+  }
+
+  recordContinuityAudit({at,hasMore=false}={}){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only lived-now store cannot record audit");
+    assertIsoTimestamp("continuity audit at",at);
+    const nextDueAt=new Date(Date.parse(at)+(hasMore?3_600_000:86_400_000)).toISOString();
+    this.#database.prepare(`
+      INSERT INTO lived_now_continuity_audit(id,next_due_at)
+      VALUES(1,?)
+      ON CONFLICT(id) DO UPDATE SET next_due_at=excluded.next_due_at
+    `).run(nextDueAt);
+    return nextDueAt;
   }
 
   nextLivedBoundaryAt(){
