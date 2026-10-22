@@ -12,6 +12,7 @@
       "fallthrough": true
     }
   ],
+  "triggers": { "crons": ["0 * * * *"] },
   "vars": {
     "FIBRE_DEPLOYMENT_ENV": "cloudflare",
     "FIBRE_WORLD_RECONCILIATION_MS": "5000"
