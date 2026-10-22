@@ -107,6 +107,8 @@ E7.5 later demonstrated a **naturally advanced staging Flight Plan boundary**: G
 
 **October 16 source change — validation and staging proof pending:** a newly published Genesis birth now atomically earns a single indexed first-life obligation. Existing event-driven World reconciliation invokes the same LivedNow authority to author the first *actual* present and roll forward through Flight Plan boundaries. The realized first moment is not backdated to publication after an elapsed unobserved gap; absence of an admitted place blocks without invented life; retries are bounded. The schema does not enqueue previously born dormant Threads. This is committed implementation, **not yet a locally validated or staging-observed birth-to-autonomous-life result**. The [LivedNow design](../architecture/lived-now-and-meetings.md) owns the exact boundary.
 
+**October 22 continuity recovery:** staging directly observed Leilani Kealoha author a new present-tense Flight Plan from an automatically adopted dormant wake, with no operator `ensure`. Existing World alarms remain the ordinary Plan-driven life clock; an hourly Cloudflare watchdog repairs a missing or stale World alarm. C1 and C2 source now adds a bounded, idempotent repair for lost *individual* wake obligations, with a durable once-daily checkpoint and paced recovery, without invoking cognition during audits. **C2 requires local validation and redeployment; spontaneous recurrent orphan repair and full population recovery remain unproven pending C3.** The [World life runbook](../operations/world-life-waves.md) retains the deployment and observation boundaries.
+
 ## World place visual seeds — October 18, source only
 
 The public World-place authority now stores an optional mutable
