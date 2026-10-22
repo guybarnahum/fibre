@@ -253,6 +253,7 @@ export function createThreadIdentityViewer({threadId,name=null,url=null,compact=
   const id=document.createElement("small");
   id.className="mono";
   id.textContent=threadId??"—";
+  id.title=threadId??"Thread ID unavailable";
   copy.append(nameButton,id);
 
   wrapper.append(createThreadPortrait({threadId,name,url,link:true}),copy);
