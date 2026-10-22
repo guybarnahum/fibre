@@ -40,7 +40,8 @@ function historicalCompany(lived,opportunity){
   return lived.listCurrentVenueSituations({
     venueRef:ownVenue,at:opportunity.dueAt,limit:8,
     excludeThreadId:opportunity.threadId,
-  }).filter(other=>atVenue(lived,other,ownVenue));
+  }).filter(other=>other.threadId!==opportunity.threadId
+    &&atVenue(lived,other,ownVenue));
 }
 
 function missedWindow(lived,opportunity,at){
@@ -93,7 +94,6 @@ export function createWorldSocialOpportunity({
       let error=null;
       if(opportunity!==null){
         try{
-          const current=livedNowStore.getCurrentSituation(opportunity.threadId);
           const overdue=Date.parse(at)-Date.parse(opportunity.dueAt);
           const initial=livedNowStore.getSituationAt(
             opportunity.threadId,opportunity.dueAt,
@@ -103,9 +103,6 @@ export function createWorldSocialOpportunity({
               opportunity.threadId,initial.location.placeRef,{required:false},
             )?.physicalVenue?.ref??null:null;
           const observed=opportunity.kind==="observed";
-          const target=observed
-            ?livedNowStore.getCurrentSituation(opportunity.counterpartyThreadId)
-            :null;
           const hasDue=threadId=>{
             const debt=livedNowStore.inspectLivedBoundary?.(threadId);
             return (debt?.failedAttempts??0)>0
@@ -118,7 +115,7 @@ export function createWorldSocialOpportunity({
               venue,opportunity.dueAt,at)
             &&!hasDue(opportunity.threadId)
             &&(!observed||(continuouslyPresent(livedNowStore,
-              target?.threadId??opportunity.counterpartyThreadId,
+              opportunity.counterpartyThreadId,
               venue,opportunity.dueAt,at)
               &&!hasDue(opportunity.counterpartyThreadId)));
           if(!present){
