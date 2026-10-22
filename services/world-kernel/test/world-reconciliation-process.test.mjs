@@ -12,6 +12,7 @@ import {
   createWorldReconciliationProcess,
   createWorldReconciliationRuntime,
   worldReconciliationNeedsRetry,
+  worldAlarmNeedsRevival,
 } from "../src/world-reconciliation-process.mjs";
 
 function createRuntimeFixture({
@@ -50,6 +51,23 @@ function memoryRetryState(initial = 0) {
     async set(next) { value = next; },
   };
 }
+
+test("World continuity watchdog revives missing or stale alarms without polling healthy life",()=>{
+  const at=Date.parse("2026-10-22T04:00:00Z");
+  const life="2026-10-22T04:30:00Z";
+  assert.equal(worldAlarmNeedsRevival({
+    scheduledTimeMs:at+15*60_000,earliestLivedBoundaryAt:life,
+  },at),false,"healthy life triggered needless reconciliation");
+  assert.equal(worldAlarmNeedsRevival({
+    scheduledTimeMs:null,earliestLivedBoundaryAt:life,
+  },at),true,"missing World alarm left a Thread stranded");
+  assert.equal(worldAlarmNeedsRevival({
+    scheduledTimeMs:at-10*60_000,earliestLivedBoundaryAt:life,
+  },at),true,"stale World alarm was never revived");
+  assert.equal(worldAlarmNeedsRevival({
+    scheduledTimeMs:at+90*60_000,earliestLivedBoundaryAt:life,
+  },at),true,"World alarm could sleep through an earlier life deadline");
+});
 
 test("World reconciliation isolates Genesis delivery from visual publication", async () => {
   const calls = [];
