@@ -1,6 +1,7 @@
 import {admitEncounterAttention} from "./lived-encounter-attention.mjs";
 import {createEncounterVisualization} from "./lived-encounter-visualization.mjs";
 import {assertIsoTimestamp} from "./persistence-common.mjs";
+import {observablePerson} from "./world-observable-person.mjs";
 
 const FRESH_ATTENTION_MS=60*60_000;
 
@@ -11,6 +12,7 @@ const FRESH_ATTENTION_MS=60*60_000;
 export function createWorldArrivalPerception({
   experienceStore,livedNowStore,worldReader,semanticStateStore,memoryStore,
   modelAdapter,onExperienceQueued=null,now=()=>new Date().toISOString(),
+  embodimentStore=null,
 }={}){
   return Object.freeze({
     async runOnce(){
@@ -48,9 +50,23 @@ export function createWorldArrivalPerception({
           }):[];
           let encounterRef=null;
           if(witnesses.length>0){
+            const describe=situation=>{
+              const person=worldReader.getThread(situation.threadId,{required:false});
+              return observablePerson({
+                threadId:situation.threadId,situation,
+                name:person?.identity?.name??null,
+                embodimentStore,
+              }).observableDescription;
+            };
             const story={storyVersion:"encounter-story-v0.1",
-              beats:[{actorThreadId:arrival.threadId,kind:"action",
-                text:"A Thread arrives at the shared venue."}]};
+              beats:[
+                {actorThreadId:arrival.threadId,kind:"action",
+                  text:`${describe(arrival)} arrives at the venue.`},
+                ...witnesses.map(situation=>({
+                  actorThreadId:situation.threadId,kind:"occurrence",
+                  text:`${describe(situation)} is present at the venue.`,
+                })),
+              ]};
             const encounter=experienceStore.recordEncounterStory({
               occurredAt:obligation.dueAt,
               threadPresence:[
@@ -98,6 +114,26 @@ export function createWorldArrivalPerception({
                     venueRef:obligation.venueRef,dueAt:obligation.dueAt,
                   });
                 }
+              }
+              // The arriver may also notice the people already present.
+              // The *same* objective encounter and existing attention model
+              // permit a personal Experience without authoring any new event.
+              const arrivingThread=worldReader.getThread(arrival.threadId,{required:false});
+              if(arrivingThread!==null&&arrivingThread.status!=="retired"){
+                const prior=experienceStore.getThreadEncounterAttention(
+                  arrival.threadId,encounter.encounterId,
+                );
+                const attention=await admitEncounterAttention({
+                  thread:arrivingThread,situation:arrival,encounterStory:encounter,
+                  semanticStates:prior===null
+                    ?semanticStateStore.listCurrentState(arrival.threadId):[],
+                  memories:prior===null
+                    ?memoryStore.listCurrentMemories(arrival.threadId,{
+                      limit:6,newestFirst:true,
+                    }).filter(m=>Date.parse(m.recordedAt)<=Date.parse(obligation.dueAt)):[],
+                  experienceStore,modelAdapter,onExperienceQueued,
+                });
+                if(attention.outcome==="noticed")noticed++;
               }
             }
           }
