@@ -140,15 +140,19 @@ test("one enacted arrival permits distinct noticing and missed attention with re
       "independently situated witnesses were lost");
     assert.deepEqual(story.visualization.visualizationSourceReferences,
       [work.situationId,work.venueRef],"event lost its enacted source");
+    assert.equal(story.story.beats.length,3,
+      "real arrival did not identify its already-present witnesses");
+    assert.ok(story.story.beats.every(beat=>!beat.text.includes("Thread")),
+      "lived Story leaked internal ontology");
     const noticed=store.getThreadEncounterAttention(ids[1],story.encounterId);
     const ignored=store.getThreadEncounterAttention(ids[2],story.encounterId);
     assert.equal(noticed?.outcome,"noticed","first witness did not notice");
     assert.ok(noticed?.experience?.experienceId,"noticed event has no Experience");
     assert.equal(ignored?.outcome,"not_noticed","second witness was forced to notice");
     assert.equal(ignored?.experience,null,"missed event became an Experience");
-    assert.equal(store.getThreadEncounterAttention(ids[0],story.encounterId),null,
-      "actor was forced to experience its own action");
-    assert.equal(calls,3,"replay rerolled admitted personal attention");
+    assert.equal(store.getThreadEncounterAttention(ids[0],story.encounterId)?.outcome,
+      "not_noticed","arriver was not given independent attention");
+    assert.equal(calls,4,"replay rerolled admitted personal attention");
     assert.equal(store.nextArrivalPerceptionAt(),null,"completed event kept polling");
 
     // An observed arrival is a personal causal input, not generic
