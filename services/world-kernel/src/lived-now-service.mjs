@@ -13,6 +13,7 @@ import {
 import {
   livedSituationId,
   plannedPositionAt,
+  FLIGHT_PLAN_TRAVEL_INFEASIBLE,
 } from "./lived-now.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
@@ -23,12 +24,6 @@ const MAX_RETROSPECTIVE_WINDOWS = 4;
 // Alarm delivery is not exact to the millisecond. A brief post-horizon lag
 // should renew forward life, not fabricate a retrospective Flight Plan.
 const BOUNDARY_DELIVERY_GRACE_MS = 60_000;
-const TRAVEL_PLAN_REJECTIONS = new Set([
-  "new place requires elapsed travel time",
-  "personal Flight Plan place change requires transit time",
-  "Flight Plan place change requires elapsed transit time",
-  "Flight Plan arrival is too soon for the geographical distance",
-]);
 
 export class LivedNowCoverageError extends Error {}
 
@@ -481,7 +476,7 @@ async function formPlan({
     // Travel is a Thread-authored choice; World may reject impossible timing.
     // Offer the exact rejection to that same Thread once, not a fabricated gap
     // or three blind alarm retries. Other failures remain visible.
-    if(!TRAVEL_PLAN_REJECTIONS.has(error?.message))throw error;
+    if(error?.fibreReason!==FLIGHT_PLAN_TRAVEL_INFEASIBLE)throw error;
     return propose(error.message);
   }
 }
