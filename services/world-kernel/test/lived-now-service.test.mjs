@@ -404,6 +404,81 @@ test("a real LivedNow transition can become current interior state exactly once"
     lived.close();
   }));
 
+test("a rejected instantaneous journey is reconsidered by its Thread before World schedules life",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    const lived=openLivedNowStore(storage);
+    const world=openWorldStore(storage);
+    const identity=openIdentityStore(storage);
+    const semantic=openSemanticStateStore(storage);
+    const memory=openAutobiographicalMemoryStore(storage);
+    const situated=openSituatedLifeStore(storage);
+    let calls=0;
+    const requestIds=[];
+    const at="2026-09-10T05:10:00Z";
+    try{
+      const service=createLivedNowService({
+        livedNowStore:lived,worldStore:world,identityStore:identity,
+        semanticStateStore:semantic,memoryStore:memory,situatedLifeStore:situated,
+        modelAdapter:{async invoke(request){
+          if(request.input?.interoception)return {
+            output:{states:[]},
+            provenance:{provider:"fixture",modelId:"fixture-regulation"},
+          };
+          calls++;
+          requestIds.push(request.clientRequestId);
+          const context=request.input.concern.externalContext;
+          assert.equal(context.planningRejection??null,
+            calls===1?null:"personal Flight Plan place change requires transit time",
+            "the Thread did not receive the exact World travel rejection");
+          const from=context.startingPlaceRef;
+          const to=context.availablePlaces.find(place=>place.ref!==from)?.ref;
+          assert.ok(to,"the Thread needs a real alternative destination");
+          const base={
+            presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
+            activity:"Read quietly",purpose:"Continue an ordinary morning",
+          };
+          return {
+            output:{
+              result:{stops:[
+                {...base,startAt:context.horizon.startAt,endAt:"2026-09-10T05:35:00Z",
+                  physicalPlaceRef:from,travelFromPrevious:""},
+                {...base,startAt:calls===1?"2026-09-10T05:35:00Z":"2026-09-10T05:50:00Z",
+                  endAt:context.horizon.endAt,physicalPlaceRef:to,
+                  travelFromPrevious:"Walk to the library"},
+              ]},
+              evidenceRefs:[],conflictingMotives:[],uncertainty:null,
+            },
+            provenance:{provider:"fixture",modelId:"fixture-lived-planning",
+              providerRequestId:request.clientRequestId},
+          };
+        }},
+        onSituationResolved(current){
+          lived.scheduleNextLivedBoundary({
+            threadId:current.threadId,situationId:current.situationId,
+            dueAt:nextLivedBoundary(lived,current),
+          });
+        },
+      });
+      const current=await service.ensure({threadId:life.thread.threadId,at});
+      const plans=lived.listPlans(life.thread.threadId,{kind:"personal"});
+      assert.equal(calls,2,"a rejected journey was not reconsidered exactly once");
+      assert.notEqual(requestIds[0],requestIds[1],
+        "reconsideration reused the rejected cognition request");
+      assert.equal(plans.length,1,"an inadmissible journey entered World history");
+      assert.equal(current.location.placeRef,plans[0].stops[0].physicalPlaceRef,
+        "World enacted the proposed destination before travel");
+      assert.equal(plannedPositionAt(plans[0],"2026-09-10T05:40:00Z").kind,
+        "in_transit","the renewed journey still has no real transit interval");
+      assert.equal(lived.inspectLivedBoundary(life.thread.threadId)?.dueAt,
+        "2026-09-10T05:35:00Z","the admitted life was not scheduled to continue");
+    }finally{
+      situated.close();memory.close();semantic.close();identity.close();
+      world.close();lived.close();
+    }
+  }));
+
 test("N1 refuses to present a stale scene when elapsed life has no plan coverage", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
