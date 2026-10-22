@@ -227,14 +227,6 @@ export class LivedExperienceStore {
   listDueArrivalPerceptions({at}){
     assertIsoTimestamp("arrival perception now",at);
     const debtFilter=this.#hasLivedBoundaryFrontier()?`
-        ${debtFilter}`:"";
-    // Skip only this arrival's unresolved actor/witness obligations before
-    // the bounded LIMIT. Deferred work stays untouched and cannot starve a
-    // later independent arrival. A life wake makes it eligible again.
-    const row=this.#database.prepare(`
-      SELECT w.situation_id,w.venue_ref,w.due_at,w.witness_situations_json
-      FROM world_arrival_perception_work w
-      WHERE w.completed_at IS NULL AND w.due_at<=?
         AND NOT EXISTS (
           SELECT 1 FROM lived_now_next_boundaries b
           WHERE (b.thread_id=(SELECT s.thread_id FROM current_situation_records s
@@ -244,7 +236,13 @@ export class LivedExperienceStore {
               FROM json_each(w.witness_situations_json)
             ))
             AND (b.failed_attempts>0 OR b.due_at<=w.due_at)
-        )
+        )`:"";
+    // Only affected witnesses wait; an unrelated later event can go first.
+    const row=this.#database.prepare(`
+      SELECT w.situation_id,w.venue_ref,w.due_at,w.witness_situations_json
+      FROM world_arrival_perception_work w
+      WHERE w.completed_at IS NULL AND w.due_at<=?
+        ${debtFilter}
       ORDER BY w.due_at,w.situation_id LIMIT 1
     `).get(at);
     return row===undefined?[]:[Object.freeze({
