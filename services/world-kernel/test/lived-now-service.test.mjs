@@ -756,37 +756,51 @@ test("E7.5 admitted Flight Plan boundaries advance life without polling",async()
     lived.close();
   }));
 
-test("E7.5 repeatedly unavailable cognition becomes a quiet, inspectable blocked frontier",async()=>
+test("a failed Thread wake retains a quiet recovery deadline and eventually resumes life",async()=>
   withDatabase(async(databasePath)=>{
     const life=seedLife(databasePath);
     const lived=openLivedNowStore(localWorldStateStorage(databasePath));
     lived.recordPlan(personalPlan(life));
-    const situation=await createLivedNowService({livedNowStore:lived}).ensure({
+    const service=createLivedNowService({
+      livedNowStore:lived,
+      onSituationResolved:situation=>lived.scheduleNextLivedBoundary({
+        threadId:situation.threadId,situationId:situation.situationId,
+        dueAt:nextLivedBoundary(lived,situation),
+      }),
+    });
+    const situation=await service.ensure({
       threadId:life.thread.threadId,at:"2026-09-10T05:05:00Z",
     });
-    const dueAt=nextLivedBoundary(lived,situation);
-    lived.scheduleNextLivedBoundary({
-      threadId:situation.threadId,situationId:situation.situationId,dueAt,
-    });
+    let clock=nextLivedBoundary(lived,situation);
     let attempts=0;
     const process=createLivedBoundaryProcess({
       livedNowStore:lived,
-      livedNow:{async ensure(){attempts++;throw new Error("provider temporarily unavailable");}},
-      now:()=>dueAt,
+      livedNow:{async ensure(input){
+        attempts++;
+        if(attempts<=3)throw new Error("provider temporarily unavailable");
+        return service.ensure(input);
+      }},
+      now:()=>clock,
     });
-    assert.equal((await process.runOnce()).failed,1);
-    assert.equal((await process.runOnce()).failed,1);
-    const blocked=await process.runOnce();
-    assert.equal(blocked.failed,0,"exhausted cognition kept its retry alarm");
-    assert.equal(blocked.results[0].outcome,"blocked");
-    assert.equal(blocked.nextDueAt,null,"blocked life kept a persistent wake");
+    for(let i=0;i<3;i++){
+      const result=await process.runOnce();
+      assert.equal(result.attempted,1,"World missed its recoverable wake");
+      const next=lived.inspectLivedBoundary(life.thread.threadId)?.dueAt;
+      assert.ok(Date.parse(next)>Date.parse(clock),
+        "a failed Thread was abandoned instead of rescheduled");
+      clock=next;
+    }
     assert.equal(lived.inspectLivedBoundary(life.thread.threadId)?.blockedReason,
-      "provider temporarily unavailable","operator lost the bounded failure reason");
-    assert.equal((await process.runOnce()).attempted,0);
-    assert.equal(attempts,3,"blocked life continued spending cognition");
+      "provider temporarily unavailable","World lost the failure explanation");
+    assert.equal(attempts,3,"recovery ran unbounded cognition");
+    const resumed=await process.runOnce();
+    assert.equal(resumed.attempted,1,"World never retried the stranded Thread");
+    const recovered=lived.inspectLivedBoundary(life.thread.threadId);
+    assert.equal(recovered.blockedReason,null,"life stayed blocked after successful recovery");
+    assert.equal(recovered.failedAttempts,0,"life retained the previous failure streak");
+    assert.ok(recovered.dueAt!==null,"life resumed without its next autonomous wake");
     lived.close();
   }));
-
 
 test("an admitted later situation re-arms an exhausted life frontier without rewriting past",async()=>
   withDatabase(async databasePath=>{
@@ -804,14 +818,17 @@ test("an admitted later situation re-arms an exhausted life frontier without rew
       const original=await service.ensure({
         threadId:life.thread.threadId,at:"2026-09-10T05:05:00Z",
       });
-      const dueAt=nextLivedBoundary(lived,original);
-      for(let i=0;i<3;i++)lived.failLivedBoundary({
-        threadId:life.thread.threadId,situationId:original.situationId,
-        dueAt,message:"prior cognition unavailable",
-      });
+      let dueAt=nextLivedBoundary(lived,original);
+      for(let i=0;i<3;i++){
+        lived.failLivedBoundary({
+          threadId:life.thread.threadId,situationId:original.situationId,
+          dueAt,at:dueAt,message:"prior cognition unavailable",
+        });
+        dueAt=lived.inspectLivedBoundary(life.thread.threadId).dueAt;
+      }
       assert.equal(lived.inspectLivedBoundary(life.thread.threadId).failedAttempts,3);
-      assert.equal(lived.nextLivedBoundaryAt(),null,
-        "a blocked Thread silently kept an automatic polling alarm");
+      assert.ok(lived.nextLivedBoundaryAt()!==null,
+        "a failed life lost its durable recovery obligation");
       const progressed=await service.ensure({
         threadId:life.thread.threadId,at:"2026-09-10T05:30:00Z",
       });
