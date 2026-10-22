@@ -241,6 +241,56 @@ test("one enacted arrival permits distinct noticing and missed attention with re
   }finally{ctx.close();}
 });
 
+test("an arriver's own noticed company changes later social salience",async()=>{
+  for(const noticed of [false,true]){
+    const ctx=setup();
+    try{
+      const {ids,store,livedNowStore,threads}=ctx;
+      store.enqueueArrivalPerception(ctx.work);
+      const process=createWorldArrivalPerception({
+        experienceStore:store,livedNowStore,
+        worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
+        semanticStateStore:{listCurrentState:()=>[]},
+        memoryStore:{listCurrentMemories:()=>[]},
+        modelAdapter:{async invoke({input}){
+          return {
+            output:input.thread.threadId===ids[0]&&noticed
+              ?{outcome:"noticed",experienceText:"I became aware of a reader."}
+              :{outcome:"not_noticed",experienceText:null},
+            provenance:{provider:"fixture",modelId:"arrival-attention"},
+          };
+        }},
+        now:()=>AT,
+      });
+      assert.equal((await process.runOnce()).failed,0,
+        "arrival attention did not settle");
+      const scene=store.listEncounterStories(ids[0])[0];
+      const attention=store.getThreadEncounterAttention(ids[0],scene.encounterId);
+      assert.equal(attention.outcome,noticed?"noticed":"not_noticed",
+        "arriver's attention was imposed by bystanders");
+      const percept=projectSituatedPercept({
+        observerThreadId:ids[0],situation:ctx.situations[0],at:AT,
+        observedThreads:[{
+          threadId:ids[1],name:"Unknown reader",situation:ctx.situations[1],
+        }],
+        situatedLifeStore:{
+          listCurrentPlaceEpisodes:()=>[],listCurrentLifeRelations:()=>[],
+        },
+        livedNowStore,experienceStore:store,
+      });
+      const gate=evaluateSalience({
+        opportunity:percept.opportunities[0],situatedPercept:percept,
+      });
+      assert.equal(percept.observed[0].name,null,
+        "a stranger's name became visible without acquaintance");
+      assert.equal(gate.outcome,noticed?"salient":"background",
+        "an arriver's independently noticed company did not change salience");
+      assert.equal(gate.anchors.includes("recent_observable_history"),noticed,
+        "arriver's perceived occurrence was not causally available");
+    }finally{ctx.close();}
+  }
+});
+
 test("late inspection retains arrival truth without inventing old psychology",async()=>{
   const ctx=setup();
   try{
