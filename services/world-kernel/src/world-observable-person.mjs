@@ -57,6 +57,5 @@ export function observablePerson({
   return Object.freeze({
     name:known&&typeof name==="string"?name:null,
     observableDescription:description.slice(0,480),
-    appearanceRef:appearance===null?null:threadId,
   });
 }
