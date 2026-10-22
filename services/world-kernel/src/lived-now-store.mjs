@@ -890,7 +890,7 @@ export class LivedNowStore {
       throw new TypeError("lived boundary limit must be 1-4");
     }
     return this.#database.prepare(`
-      SELECT b.thread_id,b.situation_id,b.due_at
+      SELECT b.thread_id,b.situation_id,b.due_at,b.failed_attempts
       FROM lived_now_next_boundaries b
       LEFT JOIN current_situation_frontier f ON f.thread_id=b.thread_id
       WHERE b.due_at IS NOT NULL AND b.due_at<=?
@@ -901,6 +901,7 @@ export class LivedNowStore {
         b.thread_id LIMIT ?
     `).all(at,limit).map((row)=>Object.freeze({
       threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
+      failedAttempts:row.failed_attempts,
     }));
   }
 
