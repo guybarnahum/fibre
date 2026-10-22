@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-10-13
+last-reviewed: 2026-10-22
 canonical: true
 ---
 
