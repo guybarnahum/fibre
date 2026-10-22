@@ -318,6 +318,16 @@ function normalizeCognitiveStop(output, index, places, horizonStart, horizonEnd)
   };
 }
 
+// Give the same Thread enough precise timing to reconsider its own journey.
+// World never inserts a gap or selects an alternative on the Thread's behalf.
+function infeasibleTravelBetween(previous,next,index){
+  return invalidFlightPlanTravel(
+    `Flight Plan stops ${index} and ${index+1} change physical place without elapsed transit time: `
+    +`stop ${index} ends at ${previous.endAt}; stop ${index+1} starts at ${next.startAt}. `
+    +"End the prior stop earlier, start the destination later, or choose to stay at the same place.",
+  );
+}
+
 // A place name is a fleeting Thread-authored proposal, never durable
 // World authority. Every admitted Flight Plan still cites physical place refs.
 function proposedPlace(value){
@@ -366,10 +376,16 @@ async function resolveNewPlaces({
       const stop=normalized[index];
       if(stop.physicalPlaceRef!==request)continue;
       const previous=normalized[index-1];
-      if(previous.physicalPlaceRef!==request
-        &&(Date.parse(stop.startAt)<=Date.parse(previous.endAt)
-          ||!stop.travelFromPrevious?.trim())){
-        throw invalidFlightPlanTravel("new place requires elapsed travel time");
+      if(previous.physicalPlaceRef!==request){
+        if(Date.parse(stop.startAt)<=Date.parse(previous.endAt)){
+          throw infeasibleTravelBetween(previous,stop,index);
+        }
+        if(!stop.travelFromPrevious?.trim()){
+          throw invalidFlightPlanTravel(
+            `Flight Plan stop ${index+1} changes physical place but has no travelFromPrevious; `
+            +"describe the intended journey or stay at the previous place.",
+          );
+        }
       }
     }
     let result=store.resolvePlace({threadId,...place});
@@ -518,7 +534,7 @@ export async function formPersonalLivedPlan({
     const previous=stops[i-1],next=stops[i];
     if(previous.physicalPlaceRef!==next.physicalPlaceRef
       &&Date.parse(next.startAt)<=Date.parse(previous.endAt)){
-      throw invalidFlightPlanTravel("personal Flight Plan place change requires transit time");
+      throw infeasibleTravelBetween(previous,next,i);
     }
   }
   if (stops[0].startAt !== authoredAt) {
