@@ -3,6 +3,7 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
+import { observablePerson } from "./world-observable-person.mjs";
 
 const MAX_RECENT_EVENTS = 8;
 const MAX_ENCOUNTER_BEATS = 4;
@@ -123,6 +124,7 @@ export function projectSituatedPercept({
   observedThreads = [],
   situatedLifeStore,
   livedNowStore = null,
+  embodimentStore = null,
   experienceStore,
 }) {
   assertId("Situated Percept observerThreadId", observerThreadId);
@@ -144,10 +146,16 @@ export function projectSituatedPercept({
     if (candidate.situation.threadId !== candidate.threadId) {
       throw new TypeError("Situated Percept observed situation belongs to another Thread");
     }
+    const person=observablePerson({
+      threadId:candidate.threadId,situation:candidate.situation,
+      observerThreadId,name:candidate.name??null,at,
+      embodimentStore,situatedLifeStore,experienceStore,
+    });
     return Object.freeze({
       kind:"thread",
       threadId:candidate.threadId,
-      name:candidate.name ?? null,
+      name:person.name,
+      observableDescription:person.observableDescription,
       currentActivity:candidate.situation.activity ?? null,
       situationRef:candidate.situation.situationId,
     });
