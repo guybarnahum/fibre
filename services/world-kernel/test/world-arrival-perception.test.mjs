@@ -347,7 +347,7 @@ test("objective arrivals redact full and partial names from public portrait and 
     const recorded=story.story.beats.map(beat=>beat.text).join(" ");
     assert.match(recorded,/small freckle/,
       "authorized observable appearance disappeared from the Story");
-    assert.doesNotMatch(recorded,/\\b(?:Mina|Rivera)\\b/i,
+    assert.doesNotMatch(recorded,/\b(?:Mina|Rivera)\b/i,
       "objective arrival revealed a private name token");
   }finally{ctx.close();}
 });
