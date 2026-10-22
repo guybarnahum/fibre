@@ -396,7 +396,7 @@ export class LivedExperienceStore {
       assertId("observed social Thread",threadId);
     }
     assertIsoTimestamp("social opportunity completion",at);
-    if(!["no_co_presence","missed_window","expired","background","not_initiated","not_met","met","scene_changed"].includes(outcome)){
+    if(!["no_co_presence","missed_window","expired","life_unresolved","background","not_initiated","not_met","met","scene_changed"].includes(outcome)){
       throw new TypeError("social opportunity outcome is invalid");
     }
     const table=observed
