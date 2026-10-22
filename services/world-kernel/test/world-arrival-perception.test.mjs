@@ -10,6 +10,7 @@ import {createWorldArrivalPerception} from "../src/world-arrival-perception.mjs"
 import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs";
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import {evaluateSalience} from "../src/salience-gate.mjs";
+import {embodimentSpecificationDigest} from "../src/embodiment-domain.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -297,6 +298,58 @@ test("an arriver's own noticed company changes later social salience",async()=>{
         "arriver's perceived occurrence was not causally available");
     }finally{ctx.close();}
   }
+});
+
+test("objective arrivals redact full and partial names from public portrait and activity",async()=>{
+  const ctx=setup();
+  try{
+    const {ids,threads,store,work,livedNowStore}=ctx;
+    const name="Mina Rivera";
+    threads.get(ids[0]).identity.name=name;
+    ctx.situations[0].activity="Mina reads quietly by the window.";
+    const specification={
+      subject:{partyId:ids[0],
+        description:"Mina Rivera has dark eyes and a small freckle. Mina wears short hair."},
+      method:"canonical synthetic portrait specification",
+      description:"A neutral visual portrayal of a real person, without invented motives.",
+      model:"reference-renderer",
+    };
+    const portrait={
+      embodimentId:"emb_named_arrival",revision:1,threadId:ids[0],
+      kind:"portrait",representationKind:"synthetic_generation",
+      truthStatus:"synthetic_representation_not_historical_evidence",
+      rightsBasis:"thread_self_owned",permissionReferences:[],
+      sourceReferences:["evt_"+ids[0]],specification,
+      specificationDigest:embodimentSpecificationDigest(specification),
+      respecification:null,status:"available",unavailableReason:null,
+      asset:{assetRef:"asset://embodiment/arrival-reference",
+        referenceObjectRef:"asset_named_arrival_reference",
+        sha256:"sha256:"+"a".repeat(64),mediaType:"image/webp",
+        width:512,height:512,durationMs:null},
+      visibility:"public",recordedAt:AT,
+    };
+    store.enqueueArrivalPerception(work);
+    const process=createWorldArrivalPerception({
+      experienceStore:store,livedNowStore,
+      worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
+      embodimentStore:{listCurrent:id=>id===ids[0]?[portrait]:[]},
+      semanticStateStore:{listCurrentState:()=>[]},
+      memoryStore:{listCurrentMemories:()=>[]},
+      modelAdapter:{async invoke(){return{
+        output:{outcome:"not_noticed",experienceText:null},
+        provenance:{provider:"fixture",modelId:"attention"},
+      };}},
+      now:()=>AT,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.failed,0,result.results[0]?.message??"arrival failed");
+    const story=store.listEncounterStories(ids[0])[0];
+    const recorded=story.story.beats.map(beat=>beat.text).join(" ");
+    assert.match(recorded,/small freckle/,
+      "authorized observable appearance disappeared from the Story");
+    assert.doesNotMatch(recorded,/\\b(?:Mina|Rivera)\\b/i,
+      "objective arrival revealed a private name token");
+  }finally{ctx.close();}
 });
 
 test("late inspection retains arrival truth without inventing old psychology",async()=>{
