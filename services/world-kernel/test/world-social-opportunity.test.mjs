@@ -70,6 +70,9 @@ test("an enacted arrival permits immediate voluntary consideration without forci
     getCurrentSituation(threadId){
       return situations.find(s=>s.threadId===threadId)??null;
     },
+    getSituationAt:(threadId,at)=>situations.find(s=>
+      s.threadId===threadId&&s.establishedAt<=at)??null,
+    getPreviousSituation:()=>null,
     getWorldPlace(_threadId,ref){
       return {physicalVenue:{
         ref:ref==="wpl_park"?"venue_actual_park":"venue_actual_cafe",
@@ -345,7 +348,9 @@ test("a witnessed short overlap expires without inventing a social refusal or co
   let meetingCalls=0;
   const livedNowStore={
     getCurrentSituation:threadId=>threadId===ids[0]?visitor:departure,
-    getSituation:id=>[visitor,witness].find(s=>s.situationId===id)??null,
+    getSituationAt:(threadId,at)=>threadId===ids[0]?visitor
+      :at<left?witness:departure,
+    getPreviousSituation:(threadId)=>threadId===ids[1]?witness:null,
     getWorldPlace:(_id,ref)=>ref==="wpl_dedaena"
       ?{physicalVenue:{ref:venueRef}}:null,
     listCurrentVenueSituations:({venueRef:venue,at,excludeThreadId})=>{
@@ -433,6 +438,8 @@ test("sustained shared presence reaches voluntary social consideration without f
   let attempts=0;
   const livedNowStore={
     getCurrentSituation:id=>id===ids[0]?arrival:reader,
+    getSituationAt:id=>id===ids[0]?arrival:reader,
+    getPreviousSituation:()=>null,
     getWorldPlace:()=>({physicalVenue:{ref:venueRef}}),
     listCurrentVenueSituations:({at,excludeThreadId})=>{
       assert.equal(at,considered,"shared presence was decided at historical time");
