@@ -126,8 +126,10 @@ export function createSocialMeetingService({
 
   function dueLife(threadId,at){
     if(!boundedVenueDiscovery)return false;
-    const dueAt=livedNowStore.inspectLivedBoundary(threadId)?.dueAt??null;
-    return dueAt!==null&&Date.parse(dueAt)<=Date.parse(at);
+    const obligation=livedNowStore.inspectLivedBoundary(threadId);
+    const dueAt=obligation?.dueAt??null;
+    return (obligation?.failedAttempts??0)>0
+      ||(dueAt!==null&&Date.parse(dueAt)<=Date.parse(at));
   }
 
   async function currentContext(threadId, at) {
