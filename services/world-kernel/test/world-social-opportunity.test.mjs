@@ -14,6 +14,8 @@ import { createWorldSocialOpportunity } from "../src/world-social-opportunity.mj
 import { createWorldArrivalPerception } from "../src/world-arrival-perception.mjs";
 import { createWorldReconciliationProcess } from "../src/world-reconciliation-process.mjs";
 import { createSocialMeetingService } from "../src/lived-social-meeting.mjs";
+import {observablePerson} from "../src/world-observable-person.mjs";
+import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 
 const seed=JSON.parse(readFileSync(
@@ -716,3 +718,52 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
   }
 });
 
+
+test("only actual acquaintance reveals a name in an ordinary perceived person",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-identity-familiarity-"));
+  const storage={infraDriver:createSqliteStateInfraDriver({
+    scopes:{world:join(directory,"world.sqlite")}}),stateScopeId:"world"};
+  const ids=["thr_observing_witness","thr_unfamiliar_person"];
+  const world=openWorldStore(storage);
+  for(const threadId of ids){
+    const thread=structuredClone(seed);
+    thread.threadId=threadId;thread.provenance.lastEventId="evt_"+threadId;
+    world.seedThread(thread);
+  }
+  world.close();
+  const store=openLivedExperienceStore(storage);
+  const at="2026-10-22T12:00:00.000Z";
+  const situation={threadId:ids[1],situationId:"sit_unfamiliar_person",
+    establishedAt:at,wakefulness:"awake",
+    location:{kind:"place",placeRef:"wpl_public_cafe"},
+    activity:"Reading a book."};
+  try{
+    const observe=(relations)=>projectSituatedPercept({
+      observerThreadId:ids[0],
+      situation:{...situation,threadId:ids[0],
+        situationId:"sit_observing_witness"},
+      observedThreads:[{threadId:ids[1],name:"Aisha N.",situation}],
+      situatedLifeStore:{
+        listCurrentPlaceEpisodes:()=>[],
+        listCurrentLifeRelations:()=>relations,
+      },
+      experienceStore:store,
+    }).observed[0];
+    const unknown=observe([]);
+    assert.equal(unknown.name,null,"a stranger inherited an unearned name");
+    assert.match(unknown.observableDescription,/a person/,
+      "missing public embodiment invented physical attributes");
+    const related=observe([{
+      relatedParty:{kind:"thread",partyId:ids[1]},
+    }]);
+    assert.equal(related.name,"Aisha N.",
+      "established acquaintance lost the person's known name");
+    const description=observablePerson({
+      threadId:ids[1],situation,observerThreadId:ids[0],
+      name:"Aisha N.",experienceStore:store,
+      situatedLifeStore:{listCurrentLifeRelations:()=>[]},
+    });
+    assert.equal(description.name,null,
+      "public situation alone made a stranger personally known");
+  }finally{store.close();rmSync(directory,{recursive:true,force:true});}
+});
