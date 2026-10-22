@@ -862,6 +862,94 @@ test("an established legacy Thread without a wake frontier is adopted once",asyn
     repeated.close();
   }));
 
+test("a lost or obsolete life deadline is repaired without rewriting the Thread",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    let lived=openLivedNowStore(storage);
+    lived.recordPlan(personalPlan(life));
+    const initial=await createLivedNowService({livedNowStore:lived}).ensure({
+      threadId:life.thread.threadId,at:"2026-09-10T05:05:00Z",
+    });
+    const originalDue="2026-09-10T05:15:00.000Z";
+    lived.scheduleNextLivedBoundary({
+      threadId:life.thread.threadId,situationId:initial.situationId,dueAt:originalDue,
+    });
+    const auditAt="2026-10-22T04:00:00Z";
+    assert.equal(lived.repairLostLivedBoundaries({at:auditAt}).repaired.length,0,
+      "continuity audit disturbed an existing life deadline");
+    lived.close();
+
+    const database=new DatabaseSync(databasePath);
+    database.prepare("DELETE FROM lived_now_next_boundaries WHERE thread_id=?")
+      .run(life.thread.threadId);
+    database.close();
+
+    lived=openLivedNowStore(storage);
+    const missing=lived.repairLostLivedBoundaries({at:auditAt});
+    assert.equal(missing.repaired.length,1,"a missing wake left an established life stranded");
+    assert.equal(missing.nextWakeAt,"2026-10-22T04:15:00.000Z",
+      "lost life was not given a paced recovery deadline");
+    assert.equal(lived.inspectLivedBoundary(life.thread.threadId)?.situationId,
+      initial.situationId,"recovery was not attached to the enacted present");
+    assert.equal(lived.repairLostLivedBoundaries({at:auditAt}).repaired.length,0,
+      "repeated audit rescheduled an already recovered Thread");
+
+    const current=await createLivedNowService({livedNowStore:lived}).ensure({
+      threadId:life.thread.threadId,at:"2026-09-10T05:35:00Z",
+    });
+    assert.notEqual(current.situationId,initial.situationId,
+      "fixture did not advance the enacted situation");
+    const stale=lived.repairLostLivedBoundaries({at:"2026-10-22T05:00:00Z"});
+    assert.equal(stale.repaired.length,1,
+      "a wake attached to an old situation left current life unscheduled");
+    assert.equal(lived.inspectLivedBoundary(life.thread.threadId)?.situationId,
+      current.situationId,"obsolete wake was not reconciled with current life");
+    assert.equal(lived.listPlans(life.thread.threadId,{kind:"personal"}).length,1,
+      "repair invented a new Flight Plan instead of scheduling existing life");
+    assert.equal(lived.getCurrentSituation(life.thread.threadId).situationId,
+      current.situationId,"repair rewrote the Thread's enacted history");
+    lived.close();
+  }));
+
+test("continuity repair preserves failure retries and never revives retired Threads",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    let lived=openLivedNowStore(storage);
+    lived.recordPlan(personalPlan(life));
+    const situation=await createLivedNowService({livedNowStore:lived}).ensure({
+      threadId:life.thread.threadId,at:"2026-09-10T05:05:00Z",
+    });
+    const initialDue="2026-09-10T05:15:00.000Z";
+    lived.scheduleNextLivedBoundary({
+      threadId:life.thread.threadId,situationId:situation.situationId,dueAt:initialDue,
+    });
+    lived.failLivedBoundary({
+      threadId:life.thread.threadId,situationId:situation.situationId,
+      dueAt:initialDue,at:initialDue,message:"provider unavailable",
+    });
+    const retry=lived.inspectLivedBoundary(life.thread.threadId);
+    assert.equal(lived.repairLostLivedBoundaries({at:"2026-10-22T04:00:00Z"})
+      .repaired.length,0,"continuity audit replaced an existing retry");
+    assert.deepEqual(lived.inspectLivedBoundary(life.thread.threadId),retry,
+      "continuity audit reset the Thread's failure history");
+    lived.close();
+
+    const database=new DatabaseSync(databasePath);
+    database.prepare("DELETE FROM lived_now_next_boundaries WHERE thread_id=?")
+      .run(life.thread.threadId);
+    database.prepare("UPDATE threads SET status='retired' WHERE thread_id=?")
+      .run(life.thread.threadId);
+    database.close();
+    lived=openLivedNowStore(storage);
+    assert.equal(lived.repairLostLivedBoundaries({at:"2026-10-22T04:00:00Z"})
+      .repaired.length,0,"retired Thread was revived by continuity audit");
+    assert.equal(lived.inspectLivedBoundary(life.thread.threadId),null,
+      "retired Thread was assigned a wake");
+    lived.close();
+  }));
+
 test("a failed Thread wake retains a quiet recovery deadline and eventually resumes life",async()=>
   withDatabase(async(databasePath)=>{
     const life=seedLife(databasePath);
