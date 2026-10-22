@@ -89,17 +89,14 @@ Do not use staging during the initial 90-second baseline. When the tool
 announces the World-life window, in terminal B:
 
 ```sh
-# First, a single known Thread after deploying the planning fix:
 npm run world-life:wave -- --env staging \
   --file .fibre/world-social/staging/candidates/cities-EXAMPLE.json \
   --thread thr_443b1151f4c24ac8b7cbd1e9fb4df4c724cb3d4a
 
-# Only after dry-run confirmation and cost review:
 npm run world-life:wave -- --env staging \
   --file .fibre/world-social/staging/candidates/cities-EXAMPLE.json \
   --thread thr_443b1151f4c24ac8b7cbd1e9fb4df4c724cb3d4a --apply
 
-# After this canary succeeds, a small geographic wave:
 npm run world-life:wave -- --env staging \
   --file .fibre/world-social/staging/candidates/cities-EXAMPLE.json \
   --city London --country-code GB --offset 0 --limit 3
