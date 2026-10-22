@@ -119,6 +119,12 @@ test("one enacted arrival permits distinct noticing and missed attention with re
         assert.equal(input.encounterStory.occurredAt,AT,"World changed event time");
         assert.equal(input.encounterStory.story.beats[0].actorThreadId,ids[0],
           "actor was misattributed");
+        const own=input.encounterStory.story.beats.filter(beat=>beat.self);
+        assert.deepEqual(own.map(beat=>beat.actorThreadId),[input.thread.threadId],
+          "attention failed to distinguish own beat from other people");
+        assert.ok(input.encounterStory.story.beats.every(beat=>
+          beat.self===(beat.actorThreadId===input.thread.threadId)),
+        "observer-relative self markers contradict the objective actors");
         if(input.thread.threadId===ids[2]&&interrupt){
           interrupt=false;throw new Error("model interrupted");
         }
@@ -142,6 +148,8 @@ test("one enacted arrival permits distinct noticing and missed attention with re
       [work.situationId,work.venueRef],"event lost its enacted source");
     assert.equal(story.story.beats.length,3,
       "real arrival did not identify its already-present witnesses");
+    assert.ok(story.story.beats.every(beat=>!Object.hasOwn(beat,"self")),
+      "observer identity was written into the objective World Story");
     assert.ok(story.story.beats.every(beat=>!beat.text.includes("Thread")),
       "lived Story leaked internal ontology");
     const noticed=store.getThreadEncounterAttention(ids[1],story.encounterId);
@@ -294,11 +302,11 @@ test("an arriver's own noticed company changes later social salience",async()=>{
 test("late inspection retains arrival truth without inventing old psychology",async()=>{
   const ctx=setup();
   try{
-    const {ids,store,work,livedNowStore}=ctx;
+    const {ids,store,work,livedNowStore,threads}=ctx;
     store.enqueueArrivalPerception(work);
     const process=createWorldArrivalPerception({
       experienceStore:store,livedNowStore,
-      worldReader:{getThread:()=>{throw new Error("no retro cognition");}},
+      worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
       semanticStateStore:{listCurrentState:()=>{throw new Error("no retro state");}},
       memoryStore:{listCurrentMemories:()=>{throw new Error("no retro memory");}},
       modelAdapter:{invoke:()=>{throw new Error("no retro model");}},
