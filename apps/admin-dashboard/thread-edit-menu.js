@@ -130,6 +130,8 @@ function menu(){
   const avatar=element("div","thread-edit-avatar");
   const identity=element("div","thread-edit-identity");
   const title=element("h2","thread-edit-title","Edit Thread");
+  title.id="thread-edit-title";
+  dialog.setAttribute("aria-labelledby",title.id);
   const meta=element("p","thread-edit-meta");
   const badge=element("span","thread-edit-attention");
   badge.hidden=true;
@@ -188,8 +190,10 @@ function renderThreadChoices(list,actions,onChoose){
       symbol.append(faIcon(icon));
       const copy=element("span","thread-edit-choice-copy");
       copy.append(element("strong",null,spec.label));
-      copy.append(element("small",null,
-        spec.required&&spec.description?spec.description:detail));
+      const summary=element("small",null,
+        spec.required&&spec.description?spec.description:detail);
+      summary.title=spec.description??detail;
+      copy.append(summary);
       const arrow=element("span","thread-edit-chevron","›");
       arrow.setAttribute("aria-hidden","true");
       choice.append(symbol,copy,arrow);
