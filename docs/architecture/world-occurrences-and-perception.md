@@ -227,6 +227,55 @@ Experience govern any subsequent conversation. A salient arrival can
 still yield `not_initiated`; the recipient can decline. An interrupted
 outward attempt is not automatically replayed.
 
+### World-time social correctness — October 22 source correction
+
+A social opportunity must **read** an enacted scene, never advance it. The
+automatic venue-bounded social engine now reads both parties' current
+situations without `LivedNow.ensure`; an unresolved personal boundary due at
+or before the decision makes that party ineligible until World independently
+enacts life. The explicit visitor-facing `/meet` path still currentizes
+participants as before. Decision-time intrinsic Body pressure is evaluated
+with an explicit `asOf` timestamp and bounded existing history, not by
+appending a fresh CurrentSituation. A subsequent accepted encounter rechecks
+both participants' already-enacted situation IDs and due-life obligations.
+
+World enacts up to **four** due lives per bounded reconciliation pass in
+plan-time order, and an equal-time occupant **departure precedes an arrival**,
+regardless of Thread-ID order. The precedence applies in SQL **before the
+batch limit**, so an overflow batch cannot accidentally treat a departing
+occupant as present. When a planned wake is overdue, enact at its stored plan
+instant, unless the Thread already has an authoritative later CurrentSituation;
+never travel backwards. An overdue backlog can retain paced World wakeups,
+but `hasDue` names the actual durable backlog so environmental perception and
+social choice wait until all due life boundaries have been processed.
+This pacing avoids unbounded bursts of plan-renewal cognition after outages.
+
+Historical arrival witnesses are verified against the **latest** enacted
+situation as of the arrival instant. A departure at exactly T closes presence
+at T: arriving at T creates no positive overlap, objective shared Story,
+personal noticing, or implied social obligation from that departing person.
+A situation refreshed while a person remains awake at the same physical
+venue does not itself revoke their social chance. The arrival must have
+continuous bounded venue evidence since its due instant; missing history
+cannot be substituted with an assumption.
+
+`missed_window` now requires evidence of actual event-time company and a
+later loss of continuous shared presence. For `observed`, noticing alone
+is not evidence that anyone later departed; for `arrival`, an unrelated
+situation ID change is not a lost window. A zero-length tie is
+`no_co_presence`; an uninterrupted but older-than-one-hour opportunity
+remains `expired`. An empty ordinary social result uses the same
+classification rather than silently defaulting to `no_co_presence`.
+No historical scene licenses retrospective conversation or alters the
+one-shot claim and no-replay-on-interruption rules.
+
+**Status:** source-only, pending Guy's local validation and staging evidence.
+This is a repair of World causal correctness, **not proof that spontaneous
+meetings have increased**. Explicit `/meet`, salience thresholds, recipient
+consent, private attention, retention, and the number of opportunities per
+arrival retain their existing authority. Staging must independently show
+plan-time departures and scene-faithful social outcomes before closing it.
+
 ### Social opportunity timing and lost windows — October 21 source
 
 World now distinguishes three non-decisions when a social chance is
