@@ -183,6 +183,18 @@ World ref, but an unknown or ambiguous reference is never guessed.
 No extra model call, synthetic preference, venue co-presence or invented
 historical journey is introduced by this recovery.
 
+When a *new* Thread-authored Flight Plan fails admission for one of the
+explicit travel-feasibility reasons (no elapsed transit, new-place travel
+without time, or insufficient time for known distance), the same Thread may
+reconsider **once** with World's exact rejection in its planning context.
+The second proposal is a distinct cognitive request; it must independently
+pass the original World validation and admission. Fibre does not insert travel
+minutes, change destinations, fabricate presence, or admit the rejected plan.
+Successful planning still takes one model call; an observed travel failure
+can take two. Other errors and any second rejection propagate unchanged.
+This is bounded domain-level reconsideration, not general provider retry or
+proof of fleet-wide recoverability.
+
 The bounded operator census `world-social:candidates` includes
 `lifeContinuity` and `lifeStatusCounts` for every inspected Thread,
 including people without a grounded current city. It reports
