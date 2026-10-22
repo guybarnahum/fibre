@@ -10,7 +10,7 @@ import { openEmbodimentInspectionStore } from "#services/world-kernel/src/embodi
 import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import {readWorldEventOverview} from "#services/world-kernel/src/world-event-observatory.mjs";
-import { openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { openLivedNowStore,openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
 import {
   explorationContinuityForLivedHistory,
@@ -943,6 +943,30 @@ export class FibreWorldDurableObject extends DurableObject {
         return Response.json({
           reconciliation:await reconciliationState(runtime),
           earliestLivedBoundaryAt:lived.nextLivedBoundaryAt(),
+          continuityAuditDue:lived.continuityAuditDue(new Date().toISOString()),
+        });
+      }finally{lived.close();}
+    }
+    if (url.pathname === "/internal/reconciliation/continuity-audit") {
+      if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } },{status:400});
+      if (request.method !== "POST") return Response.json({ error:{ code:"METHOD_NOT_ALLOWED" } },{status:405});
+      if (!privateOperatorAuthorized(request,this.env)) {
+        return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } },{status:403});
+      }
+      const runtime=this.runtimeForRequest();
+      const lived=openLivedNowStore(runtime.worldStorage);
+      try {
+        const at=new Date().toISOString();
+        if(!lived.continuityAuditDue(at))return Response.json({ok:true,audited:false});
+        const result=lived.repairLostLivedBoundaries({at});
+        // Never checkpoint an audit until all repaired wakes are offered to World.
+        if(result.nextWakeAt!==null){
+          await runtime.reconciliationRuntime.requestWakeAt(Date.parse(result.nextWakeAt));
+        }
+        const nextAuditAt=lived.recordContinuityAudit({at,hasMore:result.hasMore});
+        return Response.json({
+          ok:true,audited:true,repaired:result.repaired.length,
+          hasMore:result.hasMore,nextAuditAt,
         });
       }finally{lived.close();}
     }
