@@ -62,16 +62,28 @@ export function createLivedBoundaryProcess({
   return Object.freeze({
     async runOnce(){
       const at=now();
-      const due=livedNowStore.listDueLivedBoundaries({at,limit:1});
+      const due=livedNowStore.listDueLivedBoundaries({at,limit:4});
+      // At equal plan instants, an existing occupant's departure closes
+      // presence before another person's arrival can capture witnesses.
+      // A bounded batch does not scan the population or change the clock.
+      const ordered=due.map(item=>({
+        ...item,departing:livedNowStore.getCurrentSituation?.(item.threadId)
+          ?.location?.kind==="place",
+      })).sort((a,b)=>a.dueAt.localeCompare(b.dueAt)
+        ||Number(b.departing)-Number(a.departing)
+        ||a.threadId.localeCompare(b.threadId));
       const failed=0;
       const results=[];
-      for(const item of due){
+      for(const item of ordered){
         try{
-          // The normal LivedNow authority performs all plan renewal,
-          // care resolution, regulation and material-scene callbacks.
+          // Plan-time enactment preserves the original place interval.
+          // Never move behind a more recent authoritative present.
+          const present=livedNowStore.getCurrentSituation?.(item.threadId);
+          const enactAt=present?.establishedAt>item.dueAt
+            ?present.establishedAt:item.dueAt;
           const current=await livedNow.ensure({
             threadId:item.threadId,
-            at,
+            at:enactAt,
           });
           livedNowStore.settleLivedBoundary(item);
           results.push({
