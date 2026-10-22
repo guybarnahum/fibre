@@ -30,13 +30,14 @@ export function createWorldArrivalPerception({
             &&arrival?.establishedAt===obligation.dueAt
             &&place?.physicalVenue?.ref===obligation.venueRef;
           const witnesses=eligible?obligation.witnesses.flatMap(candidate=>{
-            const situation=livedNowStore.getSituation(candidate.situationId,{
-              required:false,
-            });
+            // A scheduled witness is only a hint. Later enacted history may
+            // show a departure at precisely the arrival time.
+            const situation=livedNowStore.getSituationAt(
+              candidate.threadId,obligation.dueAt,
+            );
             if(situation?.threadId!==candidate.threadId
               ||situation.location?.kind!=="place"
-              ||situation.wakefulness==="asleep"
-              ||Date.parse(situation.establishedAt)>Date.parse(obligation.dueAt)){
+              ||situation.wakefulness==="asleep"){
               return [];
             }
             const witnessPlace=livedNowStore.getWorldPlace(
