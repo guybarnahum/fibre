@@ -34,6 +34,30 @@ and timestamps remain readable through their existing or new hover labels;
 no source facts or edit operations are removed. The internal scrollbar remains
 available on narrow screens.
 
+## Operator table density and World map (October 22)
+
+Thread population uses compact Font Awesome male/female symbols with explicit
+sex tooltips, and country flags alone for recorded birth/current city with
+the full grounded place label on hover. Long physical-origin text truncates
+inside a narrow column with its complete value as a tooltip. The Thread,
+Health and always-visible Edit action remain prominent. This changes only
+the overview: the full authoritative fields remain in the Thread Observatory.
+
+Stillborn reserves a compact identifier and date, a useful width for the
+source failure meaning, and enough space for both existing actions. Raw
+Activity alone retains its narrow first-column constraint; the previous
+unscoped rule must never compress World Events or other tables. Table
+column headings use natural capitalization across Admin. World Events
+fills the available Admin main width like the Threads map, and its
+Involved Threads table has an explicit identity column and local horizontal
+scroll rather than overlapping the recorded actor/evidence cells. The
+Appearance coverage table already has its own bounded column layout.
+
+Browser acceptance: at typical desktop and smaller viewport widths, confirm
+full-width World geography, compact Thread flags/sex with meaningful hover,
+visible Edit and Stillborn actions, non-overlapping World identity/Acted
+cells, title-case table headings, and no page-wide horizontal drag.
+
 ## Thread identity and maintenance editor (October 21)
 
 The Threads table uses one **Edit** pencil instead of a growing action
