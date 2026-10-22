@@ -9,6 +9,34 @@ canonical: true
 
 **North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
 
+**October 22 spontaneous-social correctness, source-only:** World social
+opportunities now read the already-enacted scene rather than invoking
+`LivedNow.ensure` on another person's life; due departures are enacted
+before equal-time arrivals, and actual event-time witnesses and lost
+windows are re-verified against bounded history. The existing ordinary
+meeting decisions, consent, salience and outward expression remain the
+only social authority. This fixes potential false shared-world history
+and avoids incidental situation writes, **not** a demonstrated increase
+in spontaneous meetings. Guy's focused/full validation and staged
+observation are pending. See
+[World-time social correctness](../architecture/world-occurrences-and-perception.md#world-time-social-correctness--october-22-source-correction).
+
+**Vision/ambition review:** the capability preserved is trustworthy
+independent life and chosen interaction; historical evidence can influence
+later choices only when genuinely witnessed, never because another Thread
+forced a time tick. Deferred unchanged: more spontaneous encounters, richer
+motivation, long-term relationships and native social judgment maturity;
+each remains on the existing situated salience → consent → Experience →
+Memory path. No new identity or psychology fields, permanent constraint,
+shadow World authority, model call, timer or population scan is introduced.
+A bounded four-life enactment pass and sixteen-situation continuity read
+are reversible runtime caps. This source change itself claims no causal
+personality differential and closes no accepted ambition path; the
+alternative of scheduling new individual social time ticks was rejected
+because it would turn World evidence into generated activity. The local
+acceptance artifacts exercise false/witnessed co-presence and do not
+substitute fixture judgments for live social agency.
+
 **Accepted Admin UX direction, October 19 (Slices 1–4 source implemented,
 local and staging validation pending):**
 [Life Observatory](../architecture/life-observatory.md) replaces the
