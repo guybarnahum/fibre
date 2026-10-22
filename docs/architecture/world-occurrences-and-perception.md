@@ -246,13 +246,26 @@ batch limit**, so an overflow batch cannot accidentally treat a departing
 occupant as present. When a planned wake is overdue, enact at its stored plan
 instant, unless the Thread already has an authoritative later CurrentSituation;
 never travel backwards. An overdue backlog can retain paced World wakeups,
-but `hasDue` names the actual durable backlog so environmental perception and
-social choice wait until all due life boundaries have been processed.
-A failed boundary retains its per-Thread backoff and is **not** treated as an
-enacted departure or confirmed company; automatic meeting eligibility and
-arrival-witness capture conservatively exclude unresolved failed life. The
-ordinary backoff remains intact rather than adding rapid global retries.
-This pacing avoids unbounded bursts of plan-renewal cognition after outages.
+and `hasDue` names the actual durable backlog. **Backlog is not a
+World-wide pause**: environmental perception and social choice run for other
+independent venues, even while unrelated personal boundaries or Genesis
+first-life obligations remain due. An arrival-perception obligation is skipped
+without completion only if its actor or a stored witness has an unprocessed
+boundary due at the event time, or unresolved failed life. A social opportunity
+is examined without a claim until its initiator, observed counterpart, or
+currently discovered venue company is eligible; one deferred chance does not
+block later unrelated due work. A claimed chance is never silently replayed.
+In the unusual case of a newly unresolved candidate after the claim, a distinct
+`life_unresolved` outcome is recorded rather than false `no_co_presence`.
+Skipped work is resumed on its existing life wake, not by a polling timer.
+
+A failed life still retains its original *Flight Plan enactment time*: the
+backoff deadline schedules the retry but is not substituted for the historical
+event timestamp. Enactment clamps to an already later authoritative present,
+comparing parsed instants rather than timestamp strings. Failed life does not
+establish a departure or confirmed company, and each Thread's existing retry
+backoff remains intact. This avoids unbounded plan-renewal bursts and prevents
+one stalled person from freezing a city of independent people.
 
 Historical arrival witnesses are verified against the **latest** enacted
 situation as of the arrival instant. A departure at exactly T closes presence
