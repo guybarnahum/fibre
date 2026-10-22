@@ -84,7 +84,8 @@ test("restless people notice unfamiliar arrivals, not every nearby person",()=>{
     situatedPercept:{
       observerThreadId:observer,setting:{mode:"physical",participantRefs:[]},
       observed:[{threadId:counterpart,name:known?"Known friend":null}],
-      recentEvents:noticed?[{kind:"encounter",noticedArrivalThreadIds:[counterpart]}]:[],
+      recentEvents:noticed?[{kind:"encounter",counterpartyThreadIds:[counterpart],
+        noticedArrivalThreadIds:[counterpart]}]:[],
       sourceReferences:["sit_restless"],
     },
   });
@@ -95,6 +96,8 @@ test("restless people notice unfamiliar arrivals, not every nearby person",()=>{
     "stillness alone manufactured interest in a stranger");
   assert.equal(familiar.outcome,"salient",
     "an admitted noticed encounter lost its normal observable-history anchor");
+  assert.deepEqual(familiar.anchors,["recent_observable_history"],
+    "familiar noticed company was confused with novelty");
   assert.equal(familiar.anchors.includes("novel_person_under_exploration_pressure"),
     false,"an already-known person became novelty");
   assert.equal(stranger.anchors.includes("novel_person_under_exploration_pressure"),
