@@ -696,6 +696,20 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       "pending","unresolved company was recorded as no co-presence");
     assert.equal(experience.inspectSocialOpportunities(ids[1])[0].startedAt,
       null,"a pending social chance was claimed before life recovery");
+    // Life recovers through its existing authoritative re-arm. The same
+    // persisted social chance now becomes decidable, even when too old
+    // to justify starting new conversation.
+    lived.scheduleNextLivedBoundary({
+      threadId:ids[0],situationId:scenes.get(ids[0]).situationId,
+      dueAt:"2026-10-21T11:50:00.000Z",
+    });
+    assert.equal(lived.inspectLivedBoundary(ids[0]).failedAttempts,0,
+      "recovered life retained failed status");
+    const recovered=await process.runOnce();
+    assert.equal(recovered.socialOpportunity.result.results[0]?.outcome,
+      "expired","a recovered life stranded its deferred social opportunity");
+    assert.equal(experience.inspectSocialOpportunities(ids[1])[0].outcome,
+      "expired","the same social chance was not resolved after recovery");
   }finally{
     experience.close();lived.close();
     rmSync(directory,{recursive:true,force:true});
