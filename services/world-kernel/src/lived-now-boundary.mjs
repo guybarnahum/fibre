@@ -72,14 +72,20 @@ export function createLivedBoundaryProcess({
           // Plan-time enactment preserves the original place interval.
           // Never move behind a more recent authoritative present.
           const present=livedNowStore.getCurrentSituation?.(item.threadId);
-          const enactAt=present?.establishedAt>item.dueAt
-            ?present.establishedAt:item.dueAt;
+          // A retry_due_at is backoff, not the original plan instant.
+          const plannedAt=(item.failedAttempts??0)>0&&present!==null
+            ?nextLivedBoundary(livedNowStore,present):null;
+          const boundaryAt=plannedAt??item.dueAt;
+          const enactAt=present!==null
+            &&Date.parse(present.establishedAt)>Date.parse(boundaryAt)
+            ?present.establishedAt:boundaryAt;
           const current=await livedNow.ensure({
             threadId:item.threadId,
             at:enactAt,
           });
           const settled=livedNowStore.settleLivedBoundary(item);
-          if(settled&&present?.establishedAt>item.dueAt){
+          if(settled&&present!==null
+            &&Date.parse(present.establishedAt)>Date.parse(boundaryAt)){
             // The old wake was overtaken by newer authoritative life.
             // Do not leave the current scene unarmed after settling it.
             livedNowStore.scheduleNextLivedBoundary?.({
