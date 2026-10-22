@@ -971,6 +971,20 @@ export class LivedNowStore {
     return row === undefined ? null : situationFromRow(row);
   }
 
+  // Historical scene reads must resolve the latest situation at the
+  // occurrence instant, including a departure enacted at that same instant.
+  getSituationAt(threadId,at){
+    this.#requireThread(threadId);
+    assertIsoTimestamp("historical situation at",at);
+    const row=this.#database.prepare(`
+      SELECT situation_id,thread_id,established_at,record_json,record_digest
+      FROM current_situation_records
+      WHERE thread_id=? AND established_at<=?
+      ORDER BY established_at DESC,situation_id DESC LIMIT 1
+    `).get(threadId,at);
+    return row===undefined?null:situationFromRow(row);
+  }
+
   getPreviousSituation(threadId, before) {
     this.#requireThread(threadId);
     assertIsoTimestamp("previous situation before", before);
