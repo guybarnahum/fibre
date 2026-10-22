@@ -11,6 +11,7 @@ import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContext
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import {readWorldEventOverview} from "#services/world-kernel/src/world-event-observatory.mjs";
 import { openLivedNowStore,openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
+import { auditLivedContinuity } from "#services/world-kernel/src/lived-now-boundary.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
 import {
   explorationContinuityForLivedHistory,
@@ -957,17 +958,10 @@ export class FibreWorldDurableObject extends DurableObject {
       const lived=openLivedNowStore(runtime.worldStorage);
       try {
         const at=new Date().toISOString();
-        if(!lived.continuityAuditDue(at))return Response.json({ok:true,audited:false});
-        const result=lived.repairLostLivedBoundaries({at});
-        // Never checkpoint an audit until all repaired wakes are offered to World.
-        if(result.nextWakeAt!==null){
-          await runtime.reconciliationRuntime.requestWakeAt(Date.parse(result.nextWakeAt));
-        }
-        const nextAuditAt=lived.recordContinuityAudit({at,hasMore:result.hasMore});
-        return Response.json({
-          ok:true,audited:true,repaired:result.repaired.length,
-          hasMore:result.hasMore,nextAuditAt,
+        const result=await auditLivedContinuity({
+          livedNowStore:lived,reconciliationRuntime:runtime.reconciliationRuntime,at,
         });
+        return Response.json({ok:true,...result});
       }finally{lived.close();}
     }
     const runtime = this.runtimeForRequest();
