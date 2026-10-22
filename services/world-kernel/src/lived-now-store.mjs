@@ -80,6 +80,10 @@ function createTables(database) {
     SELECT 1 FROM sqlite_master
     WHERE type='table' AND name='current_situation_frontier'
   `).get()===undefined;
+  const needsRecoveryAdoption=database.prepare(`
+    SELECT 1 FROM sqlite_master
+    WHERE type='table' AND name='lived_now_recovery_adopted'
+  `).get()===undefined;
   database.exec(`
     CREATE TABLE IF NOT EXISTS lived_now_plans (
       plan_id TEXT PRIMARY KEY,
@@ -204,6 +208,38 @@ function createTables(database) {
         ORDER BY established_at DESC,situation_id DESC LIMIT 1
       )
     `);
+  }
+  // Adopt only historically established lives that lost their wake
+  // obligations. One bounded migration; normal wakes use the due-time index.
+  if(needsRecoveryAdoption){
+    database.exec(`
+      CREATE TABLE lived_now_recovery_adopted (completed INTEGER PRIMARY KEY);
+    `);
+    const stranded=database.prepare(`
+      SELECT f.thread_id,f.situation_id
+      FROM current_situation_frontier f
+      LEFT JOIN lived_now_next_boundaries b ON b.thread_id=f.thread_id
+      WHERE (b.thread_id IS NULL OR b.due_at IS NULL)
+        AND EXISTS (
+          SELECT 1 FROM lived_now_plans p
+          WHERE p.subject_thread_id=f.thread_id AND p.plan_kind='personal'
+        )
+      ORDER BY f.thread_id
+    `).all();
+    const adopt=database.prepare(`
+      INSERT INTO lived_now_next_boundaries
+        (thread_id,situation_id,due_at,blocked_reason,failed_attempts)
+      VALUES(?,?,?,NULL,0)
+      ON CONFLICT(thread_id) DO UPDATE SET
+        situation_id=excluded.situation_id,due_at=excluded.due_at
+      WHERE lived_now_next_boundaries.due_at IS NULL
+    `);
+    const base=Date.now();
+    for(const [index,entry] of stranded.entries()){
+      const dueAt=new Date(base+(index+1)*15*60_000).toISOString();
+      adopt.run(entry.thread_id,entry.situation_id,dueAt);
+    }
+    database.prepare("INSERT INTO lived_now_recovery_adopted(completed) VALUES(1)").run();
   }
   createLiveWorldPlaceTables(database);
   createLiveWorldGeographyTables(database);
@@ -784,28 +820,33 @@ export class LivedNowStore {
     }));
   }
 
-  failLivedBoundary({threadId,situationId,dueAt,message}){
+  failLivedBoundary({threadId,situationId,dueAt,message,at=new Date().toISOString(),unavailable=false}){
     if(this.#readOnly)throw new LivedNowConflictError("read-only lived-now store cannot fail");
     assertId("failed lived boundary threadId",threadId);
     assertId("failed lived boundary situationId",situationId);
     assertIsoTimestamp("failed lived boundary dueAt",dueAt);
+    assertIsoTimestamp("failed lived boundary at",at);
     if(typeof message!=="string"||!message||message.length>180){
       throw new TypeError("failed lived boundary needs short error");
     }
-    // Bounded transients: after three unsuccessful wakes, stop until a new
-    // authoritative LivedNow update re-arms the frontier.
+    const prior=this.#database.prepare(`
+      SELECT failed_attempts FROM lived_now_next_boundaries
+      WHERE thread_id=? AND situation_id=? AND due_at=?
+    `).get(threadId,situationId,dueAt);
+    if(prior===undefined)return {stale:true,blocked:false,attempts:0};
+    const attempts=prior.failed_attempts+1;
+    // Keep one durable recovery deadline even after repeated failure.
+    // A persistent coverage failure waits a day; transient failures back off.
+    const delay=unavailable?24*60*60_000
+      :Math.min(24*60*60_000,60_000*2**Math.min(attempts-1,11));
+    const nextAt=new Date(Date.parse(at)+delay).toISOString();
     this.#database.prepare(`
       UPDATE lived_now_next_boundaries
-      SET failed_attempts=failed_attempts+1,
-        blocked_reason=CASE WHEN failed_attempts>=2 THEN ? ELSE NULL END,
-        due_at=CASE WHEN failed_attempts>=2 THEN NULL ELSE due_at END
+      SET failed_attempts=?,blocked_reason=?,due_at=?
       WHERE thread_id=? AND situation_id=? AND due_at=?
-    `).run(message,threadId,situationId,dueAt);
-    const row=this.#database.prepare(`
-      SELECT due_at,failed_attempts
-      FROM lived_now_next_boundaries WHERE thread_id=?
-    `).get(threadId);
-    return {blocked:row?.due_at===null,attempts:row?.failed_attempts??0};
+    `).run(attempts,unavailable||attempts>=3?message:null,nextAt,
+      threadId,situationId,dueAt);
+    return {blocked:unavailable||attempts>=3,attempts,nextDueAt:nextAt};
   }
 
   inspectLivedBoundary(threadId){
