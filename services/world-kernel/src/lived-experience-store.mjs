@@ -206,10 +206,6 @@ export class LivedExperienceStore {
 
   nextArrivalPerceptionAt(){
     const debtFilter=this.#hasLivedBoundaryFrontier()?`
-        ${debtFilter}`:"";
-    return this.#database.prepare(`
-      SELECT w.due_at FROM world_arrival_perception_work w
-      WHERE w.completed_at IS NULL
         AND NOT EXISTS (
           SELECT 1 FROM lived_now_next_boundaries b
           WHERE (b.thread_id=(SELECT s.thread_id FROM current_situation_records s
@@ -219,7 +215,11 @@ export class LivedExperienceStore {
               FROM json_each(w.witness_situations_json)
             ))
             AND (b.failed_attempts>0 OR b.due_at<=w.due_at)
-        )
+        )`:"";
+    return this.#database.prepare(`
+      SELECT w.due_at FROM world_arrival_perception_work w
+      WHERE w.completed_at IS NULL
+        ${debtFilter}
       ORDER BY w.due_at LIMIT 1
     `).get()?.due_at??null;
   }
@@ -307,7 +307,12 @@ export class LivedExperienceStore {
     if(after!==null)assertIsoTimestamp("social opportunity after",after);
     const hasDebt=this.#hasLivedBoundaryFrontier();
     const debtFilter=hasDebt?`
-        ${debtFilter}`:"";
+        AND NOT EXISTS (
+          SELECT 1 FROM lived_now_next_boundaries b
+          WHERE (b.thread_id=o.thread_id OR b.thread_id=o.counterparty_thread_id)
+            AND (b.failed_attempts>0 OR b.due_at<=o.due_at
+              OR (? IS NOT NULL AND b.due_at<=?))
+        )`:"";
     return this.#database.prepare(`
       SELECT o.due_at FROM (
         SELECT thread_id,NULL AS counterparty_thread_id,due_at
@@ -317,12 +322,7 @@ export class LivedExperienceStore {
         FROM world_observed_social_opportunities WHERE started_at IS NULL
       ) o
       WHERE (? IS NULL OR o.due_at>?)
-        AND NOT EXISTS (
-          SELECT 1 FROM lived_now_next_boundaries b
-          WHERE (b.thread_id=o.thread_id OR b.thread_id=o.counterparty_thread_id)
-            AND (b.failed_attempts>0 OR b.due_at<=o.due_at
-              OR (? IS NOT NULL AND b.due_at<=?))
-        )
+        ${debtFilter}
       ORDER BY o.due_at LIMIT 1
     `).get(...(hasDebt?[after,after,after,after]:[after,after]))?.due_at??null;
   }
