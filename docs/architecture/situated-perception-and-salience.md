@@ -156,6 +156,38 @@ Direct address need not pass ordinary low-level salience because being actually 
 Do not invent a human's feelings, motives, intentions or personality from appearance. Only admitted observable/public facts may enter the Situated Percept. Continuous conversation should remain a continuing encounter made of outward acts, not a separate conversation-store authority.
 
 
+## Observing people: what a Thread can actually know (October 22)
+
+A physical presence does not disclose a person's internal Thread ID or
+globally registered name. The World-owned `observablePerson` projection
+gives an observer bounded public portrayal from an **available public
+portrait Embodiment** (the same family-prior-stripped subject description
+authorized for presentation), plus currently enacted activity. If that
+authority is absent the description is merely "a person" with the enacted
+activity; there is no inference of nationality, religion, ancestry,
+temperament, intention or worth. This description is **context-only**,
+not a new World fact, private judgment, or authority to invent a gesture.
+
+A name is observer-known only if the two Threads have a current lived
+relation or a prior accepted-and-spoken Encounter Story. Otherwise
+`observed.name` is `null`, even when World itself knows the civil name.
+Introductions, speaker-claimed names, remembering introductions and
+recognizing faces across time are **deferred**, not silently guessed from
+a portrait. See [observer knowledge owner decision](../decisions/observer-grounded-person-knowledge.md).
+
+A recent, personally **noticed** arrival Story can make the newcomer
+salient to a witness through `recent_observable_history` and, if the
+newcomer is still unfamiliar, make the person's novelty relevant to an
+existing exploration drive. `novel_person_under_exploration_pressure`
+is a genuine drive×stimulus anchor; generic prolonged stillness is not.
+For an arriver, actually noticing already-present witnesses similarly
+makes their established presence recent observable history. Body
+regulation still records both `exploration` and `social_contact` even
+when no social gate opens. The exploration regulator's
+`exploration:{novelty:0}` is provisional low-stimulation evidence from
+sustained sameness, **not** a general boredom or stranger-interest score;
+real novelty and engagement refinement remain deferred to Body-needs work.
+
 ## Salience is mechanical attention, not meaning
 
 Most of the World should remain background.
