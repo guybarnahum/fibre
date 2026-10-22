@@ -671,6 +671,11 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       environmentEvolutionProcess:arrival,
       socialOpportunityProcess:social,
     });
+    const premature=await social.runOnce();
+    assert.equal(premature.attempted,0,
+      "social decision spent the arrival chance before perception completed");
+    assert.equal(experience.inspectSocialOpportunities(ids[2])[0].startedAt,null,
+      "social choice bypassed unspent arrival attention");
     const result=await process.runOnce();
     assert.equal(result.environmentEvolution.result.results[0].outcome,"recorded",
       "other venue's failed life suppressed real arrival perception");
