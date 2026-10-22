@@ -43,7 +43,7 @@ export function createLivedBoundaryProcess({
     async runOnce(){
       const at=now();
       const due=livedNowStore.listDueLivedBoundaries({at,limit:1});
-      let failed=0;
+      const failed=0;
       const results=[];
       for(const item of due){
         try{
@@ -61,23 +61,22 @@ export function createLivedBoundaryProcess({
           });
         }catch(error){
           const message=String(error?.message??error).slice(0,180);
-          // A persistently ungrounded life is not a reason to burn cognition
-          // every five minutes. A later real ensure can re-arm its frontier.
-          if(error instanceof LivedNowCoverageError){
-            livedNowStore.settleLivedBoundary({...item,blockedReason:message});
-            results.push({threadId:item.threadId,outcome:"blocked",message});
-          }else{
-            const failure=livedNowStore.failLivedBoundary({...item,message});
-            if(!failure.blocked)failed+=1;
-            results.push({
-              threadId:item.threadId,
-              outcome:failure.blocked?"blocked":"failed",
-              message,
-            });
-          }
+          const failure=livedNowStore.failLivedBoundary({
+            ...item,message,at,unavailable:error instanceof LivedNowCoverageError,
+          });
+          results.push({
+            threadId:item.threadId,
+            outcome:failure.blocked?"blocked":"retry_scheduled",
+            message,
+          });
         }
       }
-      const nextDueAt=livedNowStore.nextLivedBoundaryAt();
+      const next=livedNowStore.nextLivedBoundaryAt();
+      // A scheduler outage may leave many overdue lives. Recover one per
+      // bounded interval rather than sending a burst of model requests.
+      const nextDueAt=due.length>0&&next!==null
+        &&Date.parse(next)<Date.parse(at)-15*60_000
+        ?new Date(Date.parse(at)+10*60_000).toISOString():next;
       return Object.freeze({
         attempted:due.length,failed,
         nextDueAt,
