@@ -301,7 +301,7 @@ export function renderWorldEventsPage(){
         const scroller=el("div","world-events-involvement-scroll");
         const table=el("table","world-events-involvement");
         const heading=el("tr");
-        for(const label of ["Thread","Caused / acted","Noticed","Memory","Later change"]){
+        for(const label of ["Thread","Acted","Noticed","Memory","Later change"]){
           const cell=el("th",null,label);cell.scope="col";heading.append(cell);
         }
         const thead=el("thead");thead.append(heading);
