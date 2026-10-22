@@ -763,12 +763,40 @@ test("only actual acquaintance reveals a name in an ordinary perceived person",(
     }]);
     assert.equal(related.name,"Aisha N.",
       "established acquaintance lost the person's known name");
+    const previous="2026-10-21T12:00:00.000Z";
+    store.recordSocialInteraction({
+      occurredAt:previous,
+      initiatorThreadId:ids[0],recipientThreadId:ids[1],
+      initiatorSituationId:"sit_prior_observer",
+      recipientSituationId:"sit_prior_person",
+      requestText:"Would you like to talk?",
+      responseDecision:"accept",
+      responseExpression:"Yes.",suggestedAt:null,
+    });
+    assert.equal(observe([]).name,null,
+      "a request accepted without an encounter taught an unearned name");
+    const priorStory={storyVersion:"encounter-story-v0.1",
+      beats:[{actorThreadId:ids[0],kind:"utterance",text:"Hello there."}]};
+    store.recordEncounterStory({
+      occurredAt:previous,
+      threadPresence:[
+        {threadId:ids[0],situationId:"sit_prior_observer"},
+        {threadId:ids[1],situationId:"sit_prior_person"},
+      ],
+      story:priorStory,
+      visualization:createEncounterVisualization({
+        occurredAt:previous,story:priorStory,scene:"At a shared table.",
+        sourceReferences:["sit_prior_observer"],depictedThreadRefs:[],
+      }),
+    });
+    assert.equal(observe([]).name,"Aisha N.",
+      "an actual admitted meeting failed to establish familiarity");
     const description=observablePerson({
       threadId:ids[1],situation,observerThreadId:ids[0],
       name:"Aisha N.",experienceStore:store,
       situatedLifeStore:{listCurrentLifeRelations:()=>[]},
     });
-    assert.equal(description.name,null,
-      "public situation alone made a stranger personally known");
+    assert.equal(description.name,"Aisha N.",
+      "the actual admitted meeting did not establish name knowledge");
   }finally{store.close();rmSync(directory,{recursive:true,force:true});}
 });
