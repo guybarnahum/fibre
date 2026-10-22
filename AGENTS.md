@@ -35,6 +35,11 @@ For public progress, milestone summaries, website status, or claims about what F
 - `docs/state/public-progress.md`
 - `docs/state/public-progress.json`
 
+## Operator CLI snippets
+
+- Commands intended for Guy to paste into `zsh` must contain **only executable shell commands**. Do not include `#` comment lines (including inline comments), prose, prompts, or illustrative output inside a command block. Put explanation outside the block. Guy's interactive shell rejects pasted comment lines.
+- Favor exact commands on `main`; Guy performs local validation and deployment. Never instruct creating a branch.
+
 ## Validation workflow
 
 - During development, use focused tests or `npm test` as needed.
