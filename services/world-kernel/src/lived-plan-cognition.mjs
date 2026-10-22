@@ -532,9 +532,15 @@ export async function formPersonalLivedPlan({
   // The positive gap is enacted as World transit by the existing scheduler.
   for(let i=1;i<stops.length;i++){
     const previous=stops[i-1],next=stops[i];
-    if(previous.physicalPlaceRef!==next.physicalPlaceRef
-      &&Date.parse(next.startAt)<=Date.parse(previous.endAt)){
+    if(previous.physicalPlaceRef===next.physicalPlaceRef)continue;
+    if(Date.parse(next.startAt)<=Date.parse(previous.endAt)){
       throw infeasibleTravelBetween(previous,next,i);
+    }
+    if(next.travelFromPrevious===null){
+      throw invalidFlightPlanTravel(
+        `Flight Plan stop ${i+1} changes physical place but has no travelFromPrevious; `
+        +"describe the intended journey or stay at the previous place.",
+      );
     }
   }
   if (stops[0].startAt !== authoredAt) {
