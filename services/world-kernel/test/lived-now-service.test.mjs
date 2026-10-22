@@ -660,6 +660,7 @@ test("a month without World wakes leaves an honest gap and resumes from the last
     const memory=openAutobiographicalMemoryStore(storage);
     const situated=openSituatedLifeStore(storage);
     let planningCalls=0;
+    let unobservedSince=null;
     const service=createLivedNowService({
       livedNowStore:lived,worldStore:world,identityStore:identity,
       semanticStateStore:semantic,memoryStore:memory,situatedLifeStore:situated,
@@ -670,6 +671,7 @@ test("a month without World wakes leaves an honest gap and resumes from the last
         }
         planningCalls++;
         const context=input.input.concern.externalContext;
+        unobservedSince=context.unobservedSince??null;
         return {
           output:{result:{stops:[{
             startAt:context.horizon.startAt,endAt:context.horizon.endAt,
@@ -694,6 +696,8 @@ test("a month without World wakes leaves an honest gap and resumes from the last
       assert.equal(plans.filter(plan=>plan.materialization?.mode==="retrospective").length,0,
         "World invented an unwitnessed month of biography");
       assert.equal(planningCalls,1,"one recovery required more than one new personal plan");
+      assert.equal(unobservedSince,"2026-09-10T05:10:00Z",
+        "the Thread was not told that its intervening life is unobserved");
       assert.ok(plans.some(plan=>plan.authoredAt===resumedAt
         &&plan.materialization===undefined),
         "a recovered Thread has no new self-authored future");
