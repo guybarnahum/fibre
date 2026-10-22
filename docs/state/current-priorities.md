@@ -9,6 +9,20 @@ canonical: true
 
 **North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
 
+**October 22 mutual arrival noticing, source-only:** Objective World arrival
+now offers personal attention to the arriving Thread as well as already-present
+witnesses; only a noticed Experience can become later social evidence.
+Public appearance is context-only and names require acquired familiarity.
+Exploration pressure now needs a noticed unfamiliar newcomer to make a
+particular person salient; exploration-alone stillness remains Body evidence,
+not automatic social interest. A bounded prerequisite keeps arrival social
+choices unclaimed until objective perception finishes. **Pending local
+validation and staging**; no claim of increased spontaneous meetings or
+self-authored relationship development. Source proof and deferred vision
+paths are recorded in [observer knowledge decision](../decisions/observer-grounded-person-knowledge.md).
+The independent-world time fixes and per-item life recovery remain governed
+by the earlier correctness note.
+
 **October 22 spontaneous-social correctness, source-only:** World social
 opportunities now read the already-enacted scene rather than invoking
 `LivedNow.ensure` on another person's life; due departures are enacted
