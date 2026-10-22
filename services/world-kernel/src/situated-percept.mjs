@@ -106,6 +106,14 @@ function recentEvents(experienceStore, observerThreadId, observedIds, at) {
           kind:beat.kind,
           text:beat.text,
         })),
+        // A lived observer noticed a real actor arrival only when the Story
+        // contains the arrival action and already-present witness beats.
+        noticedArrivalThreadIds:story.story.beats.some(beat=>
+          beat.kind==="occurrence"&&beat.actorThreadId===observerThreadId)
+          ?story.story.beats.filter(beat=>beat.kind==="action"
+            &&observed.has(beat.actorThreadId))
+            .map(beat=>beat.actorThreadId)
+          :[],
        }];
     })
     .sort((left,right) => Date.parse(right.occurredAt) - Date.parse(left.occurredAt))
