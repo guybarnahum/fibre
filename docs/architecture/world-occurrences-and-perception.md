@@ -1,7 +1,7 @@
 ---
 id: architecture-world-occurrences-and-perception
 status: accepted
-last-reviewed: 2026-10-18
+last-reviewed: 2026-10-22
 canonical: false
 ---
 
