@@ -435,11 +435,16 @@ test("sustained shared presence reaches voluntary social consideration without f
     establishedAt:"2026-10-21T10:15:00.063Z",
     wakefulness:"awake",location:{kind:"place",placeRef:"wpl_cafe"},
   };
+  // Another observation previously rotated this person's situation ID,
+  // even though they never left the same venue.
+  const refreshed={...arrival,situationId:"sit_long_same_venue",
+    establishedAt:"2026-10-21T11:20:00.063Z"};
   let attempts=0;
   const livedNowStore={
-    getCurrentSituation:id=>id===ids[0]?arrival:reader,
-    getSituationAt:id=>id===ids[0]?arrival:reader,
-    getPreviousSituation:()=>null,
+    getCurrentSituation:id=>id===ids[0]?refreshed:reader,
+    getSituationAt:(id,at)=>id===ids[0]?(at>=refreshed.establishedAt?refreshed:arrival):reader,
+    getPreviousSituation:(id,before)=>id===ids[0]&&before>arrival.establishedAt
+      ?arrival:null,
     getWorldPlace:()=>({physicalVenue:{ref:venueRef}}),
     listCurrentVenueSituations:({at,excludeThreadId})=>{
       assert.equal(at,considered,"shared presence was decided at historical time");
@@ -467,7 +472,7 @@ test("sustained shared presence reaches voluntary social consideration without f
       }},
     });
     assert.equal((await process.runOnce()).results[0].outcome,"not_initiated",
-      "a sustained shared visit never reached the voluntary decision path");
+      "an unchanged venue visit lost eligibility when its situation ID changed");
     assert.equal(attempts,1,"shared company triggered repeated social cognition");
     const record=store.inspectSocialOpportunities(arrival.threadId)[0];
     assert.equal(record.decision.initiation.decision,"not_initiate",
