@@ -46,5 +46,9 @@ export function coPresentAtActorArrival(livedNowStore,occurrence,venueRef){
   }).filter(candidate=>candidate.threadId!==occurrence.actorThreadId
     &&candidate.location?.kind==="place"
     &&candidate.wakefulness!=="asleep"
-    &&Date.parse(candidate.establishedAt)<=Date.parse(occurrence.occurredAt));
+    &&Date.parse(candidate.establishedAt)<=Date.parse(occurrence.occurredAt)
+    // A failed, not-yet-enacted departure is uncertainty, not proof
+    // this person remained available to witness a simultaneous arrival.
+    &&(livedNowStore.inspectLivedBoundary?.(candidate.threadId)
+      ?.failedAttempts??0)===0);
 }
