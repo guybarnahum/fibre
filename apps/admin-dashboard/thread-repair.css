@@ -853,6 +853,23 @@
   height:13px;
   flex-basis:13px;
 }
+/* Keep operator actions visible while a wide table scrolls inside its panel. */
+.activity-view-panel :is(.thread-population-table,.stillborn-table) tr > :last-child {
+  position:sticky;
+  right:0;
+  z-index:2;
+  background:var(--surface);
+  box-shadow:-1px 0 0 var(--border),-10px 0 12px -12px rgba(0,0,0,.32);
+}
+.activity-view-panel :is(.thread-population-table,.stillborn-table) thead tr > :last-child {
+  z-index:5;
+}
+.activity-view-panel :is(.thread-population-table,.stillborn-table) tbody tr:hover > :last-child {
+  background:var(--surface-subtle);
+}
+.thread-population-table tr > :last-child { width:64px; min-width:64px; }
+.stillborn-table tr > :last-child { min-width:140px; }
+
 .thread-population-activity-only { opacity:.68; }
 .thread-population-activity-only .thread-population-name { font-weight:600; }
 
