@@ -4,6 +4,17 @@ import { openWorldReconciliationRetryStore } from "./world-reconciliation-retry-
 export const WORLD_RECONCILIATION_SCOPE_ID = "world";
 const DEFAULT_MAX_RETRY_MS = 300_000;
 
+// One cheap hourly check can revive a missing or stale World alarm.
+// Healthy scheduled lives do not require an extra reconciliation pass.
+export function worldAlarmNeedsRevival({
+  scheduledTimeMs=null,earliestLivedBoundaryAt=null,
+}={},at=Date.now()){
+  if(scheduledTimeMs===null)return true;
+  if(scheduledTimeMs<=at-60_000)return true;
+  const lifeDue=Date.parse(earliestLivedBoundaryAt??"");
+  return Number.isFinite(lifeDue)&&scheduledTimeMs>lifeDue;
+}
+
 function optionalMethod(name, value, method) {
   if (value === null) return null;
   if (!value || typeof value[method] !== "function") {
