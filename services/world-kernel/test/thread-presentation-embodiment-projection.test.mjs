@@ -6,6 +6,7 @@ import {
   embodimentSpecificationDigest,
 } from "../src/embodiment-domain.mjs";
 import { projectPublicEmbodimentVisualIdentity } from "../src/thread-presentation-embodiment-projection.mjs";
+import {observablePerson} from "../src/world-observable-person.mjs";
 
 function portrait({
   visibility = "public",
@@ -124,4 +125,26 @@ test("private, restricted, unavailable, reference-less, and non-portrait embodim
   assert.equal(projectPublicEmbodimentVisualIdentity(voice, {
     provenanceRef: "prov_voice",
   }), null);
+});
+
+test("ordinary World perception uses public morphology without a stranger's ancestry or name",()=>{
+  const portraitRecord=portrait();
+  const situation={
+    situationId:"sit_public_appearance",
+    threadId:portraitRecord.threadId,
+    establishedAt:"2026-10-22T12:00:00.000Z",
+    activity:"Reading a newspaper.",
+  };
+  const person=observablePerson({
+    threadId:portraitRecord.threadId,situation,
+    observerThreadId:"thr_other_observer",name:"Hidden Person",
+    embodimentStore:{listCurrent:()=>[portraitRecord]},
+    situatedLifeStore:{listCurrentLifeRelations:()=>[]},
+    experienceStore:{hasMetEncounter:()=>false},
+  });
+  assert.equal(person.name,null,"unknown stranger's name leaked");
+  assert.match(person.observableDescription,/softly angular oval face/,
+    "verified public morphology did not reach situated perception");
+  assert.doesNotMatch(person.observableDescription,/broad family appearance prior/,
+    "ancestry prior leaked into public observation");
 });
