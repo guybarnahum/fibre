@@ -11,6 +11,8 @@ import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { normalizeCurrentSituation } from "../src/lived-now.mjs";
 import { canonicalJson,sha256 } from "../src/persistence-common.mjs";
 import { createWorldSocialOpportunity } from "../src/world-social-opportunity.mjs";
+import { createWorldArrivalPerception } from "../src/world-arrival-perception.mjs";
+import { createWorldReconciliationProcess } from "../src/world-reconciliation-process.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 
 const seed=JSON.parse(readFileSync(
@@ -533,3 +535,142 @@ test("sustained shared presence reaches voluntary social consideration without f
       "a completed voluntary judgment was invoked twice");
   }finally{store.close();rmSync(dir,{recursive:true,force:true});}
 });
+
+test("unrelated life debt and Genesis cannot consume another venue's arrival or social chance",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-independent-venues-"));
+  const databasePath=join(directory,"world.sqlite");
+  const storage={infraDriver:createSqliteStateInfraDriver({
+    scopes:{world:databasePath}}),stateScopeId:"world"};
+  const ids=["thr_debt_arrival","thr_debt_reader","thr_free_arrival","thr_free_reader"];
+  const world=openWorldStore(storage);
+  const people=new Map();
+  for(const threadId of ids){
+    const person=structuredClone(seed);
+    person.threadId=threadId;person.provenance.lastEventId="evt_"+threadId;
+    world.seedThread(person);people.set(threadId,person);
+  }
+  world.close();
+  const lived=openLivedNowStore(storage);
+  const experience=openLivedExperienceStore(storage);
+  try{
+    const place=(label,number)=>lived.admitPublicPlace({
+      venueIdentity:"fixture:life-debt-"+label,
+      displayName:label+" public café",
+      streetAddress:number+" Example Street, Tucson",
+      locality:"Tucson",country:"United States",countryCode:"US",
+      lat:32.22+number/10000,long:-110.97,
+      timeZone:"America/Phoenix",evidenceRef:"https://example.org/"+label,
+      affordances:["Conversation","Reading"],
+    });
+    const blockedPlace=place("debt",21),freePlace=place("free",22);
+    const due="2026-10-21T11:15:00.000Z";
+    const freeDue="2026-10-21T11:15:01.000Z";
+    const decisionAt="2026-10-21T11:18:00.000Z";
+    const scenes=new Map();
+    const database=new DatabaseSync(databasePath,{enableForeignKeyConstraints:true});
+    try{
+      const insert=database.prepare(`INSERT INTO current_situation_records
+        (situation_id,thread_id,established_at,record_json,record_digest)
+        VALUES (?,?,?,?,?)`);
+      for(const [threadId,placeRef,establishedAt] of [
+        [ids[0],blockedPlace.ref,due],
+        [ids[1],blockedPlace.ref,"2026-10-21T10:00:00.000Z"],
+        [ids[2],freePlace.ref,freeDue],
+        [ids[3],freePlace.ref,"2026-10-21T10:00:00.000Z"],
+      ]){
+        const situation=normalizeCurrentSituation({
+          situationId:"sit_"+threadId,threadId,establishedAt,
+          phase:"at_place",location:{kind:"place",placeRef},
+          mediatedContext:null,activity:"Reading at a café.",
+          wakefulness:"awake",reason:"An independent visit.",
+          participantRefs:[],evidenceRefs:["evt_"+threadId],
+          sourcePlanRefs:["plan_"+threadId],
+          resolution:{
+            kind:"personal_plan",conflict:false,observedDivergence:false,
+            governingPlanRef:"plan_"+threadId,
+            constrainedPlanRef:null,summary:"An independently enacted visit.",
+          },
+          provenance:"world_enacted",
+        });
+        const json=canonicalJson(situation);
+        insert.run(situation.situationId,threadId,establishedAt,json,
+          "sha256:"+sha256(json));
+        scenes.set(threadId,situation);
+      }
+    }finally{database.close();}
+    for(const [arrival,witness,worldPlace,at] of [
+      [ids[0],ids[1],blockedPlace,due],
+      [ids[2],ids[3],freePlace,freeDue],
+    ]){
+      experience.enqueueArrivalPerception({
+        situationId:scenes.get(arrival).situationId,
+        venueRef:worldPlace.physicalVenue.ref,dueAt:at,
+        witnesses:[{threadId:witness,situationId:scenes.get(witness).situationId}],
+      });
+      experience.enqueueSocialOpportunity({
+        threadId:arrival,situationId:scenes.get(arrival).situationId,
+        dueAt:at,
+      });
+    }
+    const blockedDue="2026-10-21T11:17:00.000Z";
+    lived.scheduleNextLivedBoundary({
+      threadId:ids[0],situationId:scenes.get(ids[0]).situationId,
+      dueAt:blockedDue,
+    });
+    lived.failLivedBoundary({
+      threadId:ids[0],situationId:scenes.get(ids[0]).situationId,
+      dueAt:blockedDue,at:blockedDue,message:"Life needs another attempt.",
+    });
+    assert.equal(lived.inspectLivedBoundary(ids[0]).failedAttempts,1);
+    let met=0;
+    const arrival=createWorldArrivalPerception({
+      experienceStore:experience,livedNowStore:lived,
+      worldReader:{getThread:id=>structuredClone(people.get(id)??null)},
+      semanticStateStore:{listCurrentState:()=>[]},
+      memoryStore:{listCurrentMemories:()=>[]},
+      modelAdapter:{async invoke(){
+        return {output:{outcome:"not_noticed",experienceText:null},
+          provenance:{provider:"fixture",modelId:"no-attention"}};
+      }},
+      now:()=>decisionAt,
+    });
+    const social=createWorldSocialOpportunity({
+      experienceStore:experience,livedNowStore:lived,now:()=>decisionAt,
+      meetingService:{async meet(){
+        met++;
+        return {attempts:[{
+          counterpartyThreadId:ids[3],outcome:"not_initiated",
+          salience:{outcome:"salient",anchors:[],sourceReferences:[]},
+          initiation:{decision:"not_initiate",reason:"Keep reading."},
+          stance:null,encounterStory:null,
+        }]};
+      }},
+    });
+    const process=createWorldReconciliationProcess({
+      firstLifeProcess:{async runOnce(){
+        return {hasDue:true,attempted:1,failed:0,nextDueAt:decisionAt};
+      }},
+      livedBoundaryProcess:{async runOnce(){
+        return {hasDue:true,attempted:0,failed:0,nextDueAt:decisionAt};
+      }},
+      environmentEvolutionProcess:arrival,
+      socialOpportunityProcess:social,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.environmentEvolution.result.results[0].outcome,"recorded",
+      "other venue's failed life suppressed real arrival perception");
+    assert.equal(result.socialOpportunity.result.results[0].outcome,"not_initiated",
+      "first-life backlog suppressed an independent social decision");
+    assert.equal(met,1,"a separate venue did not reach voluntary consideration");
+    assert.equal(experience.inspectSocialOpportunities(ids[0])[0].startedAt,null,
+      "failed life consumed its pending social chance");
+    assert.equal(experience.nextArrivalPerceptionAt(),null,
+      "deferred perception repeatedly woke unrelated World cognition");
+    assert.equal(experience.inspectSocialOpportunities(ids[2])[0].outcome,
+      "not_initiated","World failed to record independent social choice");
+  }finally{
+    experience.close();lived.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
+
