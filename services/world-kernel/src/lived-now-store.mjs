@@ -800,6 +800,57 @@ export class LivedNowStore {
     return {scheduled:dueAt!==null,stale:false};
   }
 
+  // The daily continuity audit only repairs missing or obsolete wake debt.
+  // Healthy deadlines, including delayed retries, are never reconsidered.
+  repairLostLivedBoundaries({at,limit=32}={}){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only lived-now store cannot repair life");
+    assertIsoTimestamp("life recovery at",at);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>64){
+      throw new TypeError("life recovery limit must be 1-64");
+    }
+    return this.#database.transaction(()=>{
+      const lost=this.#database.prepare(`
+        SELECT f.thread_id,f.situation_id
+        FROM current_situation_frontier f
+        JOIN threads t ON t.thread_id=f.thread_id AND t.status<>'retired'
+        LEFT JOIN lived_now_next_boundaries b ON b.thread_id=f.thread_id
+        WHERE (b.thread_id IS NULL OR b.due_at IS NULL
+          OR b.situation_id<>f.situation_id)
+          AND EXISTS (
+            SELECT 1 FROM lived_now_plans p
+            WHERE p.subject_thread_id=f.thread_id AND p.plan_kind='personal'
+          )
+        ORDER BY f.thread_id LIMIT ?
+      `).all(limit+1);
+      const repair=this.#database.prepare(`
+        INSERT INTO lived_now_next_boundaries
+          (thread_id,situation_id,due_at,blocked_reason,failed_attempts)
+        VALUES(?,?,?,NULL,0)
+        ON CONFLICT(thread_id) DO UPDATE SET
+          situation_id=excluded.situation_id,
+          due_at=excluded.due_at,
+          blocked_reason=NULL,
+          failed_attempts=0
+        WHERE lived_now_next_boundaries.due_at IS NULL
+          OR lived_now_next_boundaries.situation_id<>excluded.situation_id
+      `);
+      const repaired=[];
+      for(const [index,item] of lost.slice(0,limit).entries()){
+        const dueAt=new Date(Date.parse(at)+(index+1)*15*60_000).toISOString();
+        if(repair.run(item.thread_id,item.situation_id,dueAt).changes===1){
+          repaired.push(Object.freeze({
+            threadId:item.thread_id,situationId:item.situation_id,dueAt,
+          }));
+        }
+      }
+      return Object.freeze({
+        repaired:Object.freeze(repaired),
+        hasMore:lost.length>limit,
+        nextWakeAt:repaired[0]?.dueAt??null,
+      });
+    });
+  }
+
   nextLivedBoundaryAt(){
     return this.#database.prepare(`
       SELECT due_at FROM lived_now_next_boundaries
