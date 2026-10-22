@@ -232,28 +232,16 @@ export function createWorldReconciliationProcess({
           "lived_boundary_advance",
           livedBoundary===null?null:()=>livedBoundary.runOnce(),
         );
-        // Perception/social judgment cannot inspect a scene while earlier
-        // due World life boundaries remain unenacted. The normal indexed
-        // nextDueAt schedules another bounded life pass.
-        const lifeCaughtUp=(!livedBoundaryResult.enabled
-          ||(livedBoundaryResult.ok
-            &&livedBoundaryResult.result?.hasDue!==true
-            &&(livedBoundaryResult.result?.failed??0)===0
-            &&!(livedBoundaryResult.result?.results??[]).some(entry=>
-              entry.outcome==="blocked"||entry.outcome==="retry_scheduled")))
-          &&(!firstLifeResult.enabled
-            ||(firstLifeResult.ok
-              &&firstLifeResult.result?.hasDue!==true
-              &&(firstLifeResult.result?.failed??0)===0));
+        // Per-work World processes inspect their own participants and defer
+        // only unresolved scenes. Unrelated lives and Genesis first-life
+        // cannot suspend an entire World's perception or social decisions.
         const environmentResult=await isolated(
           "world_environment_evolution",
-          lifeCaughtUp&&environmentEvolution!==null
-            ?()=>environmentEvolution.runOnce():null,
+          environmentEvolution===null?null:()=>environmentEvolution.runOnce(),
         );
         const socialResult=await isolated(
           "world_social_opportunity",
-          lifeCaughtUp&&socialOpportunity!==null
-            ?()=>socialOpportunity.runOnce():null,
+          socialOpportunity===null?null:()=>socialOpportunity.runOnce(),
         );
         // Partial per-opportunity failures stay retryable and report through
         // the same injected boundary as other reconciliation failures.
