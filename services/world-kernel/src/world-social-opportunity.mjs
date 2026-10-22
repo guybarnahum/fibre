@@ -106,11 +106,11 @@ export function createWorldSocialOpportunity({
           const target=observed
             ?livedNowStore.getCurrentSituation(opportunity.counterpartyThreadId)
             :null;
-          const dueFor=threadId=>livedNowStore.inspectLivedBoundary?.(threadId)
-            ?.dueAt??null;
           const hasDue=threadId=>{
-            const due=dueFor(threadId);
-            return due!==null&&Date.parse(due)<=Date.parse(at);
+            const debt=livedNowStore.inspectLivedBoundary?.(threadId);
+            return (debt?.failedAttempts??0)>0
+              ||(debt?.dueAt!==null&&debt?.dueAt!==undefined
+                &&Date.parse(debt.dueAt)<=Date.parse(at));
           };
           const present=venue!==null
             &&(!observed||venue===opportunity.venueRef)
