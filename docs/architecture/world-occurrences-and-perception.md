@@ -287,8 +287,15 @@ Skipped work is resumed on its existing life wake, not by a polling timer.
 
 A failed life still retains its original *Flight Plan enactment time*: the
 backoff deadline schedules the retry but is not substituted for the historical
-event timestamp. Enactment clamps to an already later authoritative present,
-comparing parsed instants rather than timestamp strings. Failed life does not
+event timestamp whenever the admitted Plan still covers the boundary. **If
+no admitted plan covers the retry, the current implementation falls back to
+the retry time**; this is a known evidence limit, not a historically attested
+plan transition. Enactment clamps to an already later authoritative present,
+comparing parsed instants rather than timestamp strings. A boundary equal to
+the present instant must re-arm independent life instead of losing the next
+wake. Candidate-scoped social uncertainty checks scan at most sixteen oldest
+due opportunities, with a single cached decision per opportunity per pass;
+starvation beyond that bound remains a deferred, measurable queue concern. Failed life does not
 establish a departure or confirmed company, and each Thread's existing retry
 backoff remains intact. This avoids unbounded plan-renewal bursts and prevents
 one stalled person from freezing a city of independent people.
