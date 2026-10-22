@@ -890,9 +890,15 @@ export class LivedNowStore {
       throw new TypeError("lived boundary limit must be 1-4");
     }
     return this.#database.prepare(`
-      SELECT thread_id,situation_id,due_at FROM lived_now_next_boundaries
-      WHERE due_at IS NOT NULL AND due_at<=?
-      ORDER BY due_at,thread_id LIMIT ?
+      SELECT b.thread_id,b.situation_id,b.due_at
+      FROM lived_now_next_boundaries b
+      LEFT JOIN current_situation_frontier f ON f.thread_id=b.thread_id
+      WHERE b.due_at IS NOT NULL AND b.due_at<=?
+      -- The limit itself must respect departure-first ordering. Sorting the
+      -- returned batch alone could strand a simultaneous departure outside it.
+      ORDER BY b.due_at,
+        CASE WHEN f.place_ref IS NOT NULL THEN 0 ELSE 1 END,
+        b.thread_id LIMIT ?
     `).all(at,limit).map((row)=>Object.freeze({
       threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
     }));
