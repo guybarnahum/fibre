@@ -77,6 +77,35 @@ be explicitly changed. This is an operator-authorized correction, never
 an inferred replacement from the Thread's current city or a rewriting of
 Genesis history.
 
+## Edit Thread operator sheet (October 22)
+
+The shared Edit Thread action opens a compact operator sheet with the Thread's
+portrait, name, available FIN, birth date and recorded birth place, plus an
+explicit missing/malformed birth-place notice when World's current diagnosis
+requires correction. Identity, Documents and Maintenance actions are grouped
+in a two-column icon-led grid on desktop and a single column on narrow screens.
+All available operations still come from an on-click authoritative World
+diagnosis, and each launches the existing confirmed Thread action dialog.
+
+**Birth place correction:** a missing birth place offers the existing
+`set_birth_place` verified-city search. A recoverable but malformed place
+may already offer `repair_birth_geography` or `set_birth_country_code`,
+which preserves available coordinates and asks for a country code. The sheet
+also keeps **Change birth place** available as an alternative when those
+narrow repairs are the only diagnosed birth actions. That alternative still
+requires selecting a canonical city from the established GeoNames search and
+submits an ordinary history-preserving World `identity` correction.
+No free-text birth place, guessing from current location, automatic rewrite
+of past Genesis evidence or new service endpoint is introduced.
+
+Browser acceptance: open Edit from the Threads table and from Observatory;
+check the correct avatar and person header, available actions with icons,
+scrolling at limited viewport height, and the place-search selection and
+confirmation form on an incomplete or malformed birth record. Source tests
+cover the choice between preserving recoverable geography and replacing it
+with an explicitly verified place; successful staging execution of an
+operator correction requires a real operator-selected city.
+
 ## World Events — authenticated God-view (source implementation, staging unverified)
 
 `/world-events` presents a World map whose city pulses are driven by recent
