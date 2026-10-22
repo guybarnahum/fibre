@@ -96,6 +96,7 @@ export function createSocialMeetingService({
   if(boundedVenueDiscovery){
     requireMethod("livedNowStore",livedNowStore,"getWorldPlace");
     requireMethod("livedNowStore",livedNowStore,"listCurrentVenueSituations");
+    requireMethod("livedNowStore",livedNowStore,"inspectLivedBoundary");
   }
   requireMethod("livedNowStore", livedNowStore, "listWorldPlaces");
   requireMethod("livedNowStore", livedNowStore, "latestPlan");
@@ -123,8 +124,20 @@ export function createSocialMeetingService({
     throw new TypeError("social meeting onExperienceQueued must be a function or null");
   }
 
+  function dueLife(threadId,at){
+    if(!boundedVenueDiscovery)return false;
+    const dueAt=livedNowStore.inspectLivedBoundary(threadId)?.dueAt??null;
+    return dueAt!==null&&Date.parse(dueAt)<=Date.parse(at);
+  }
+
   async function currentContext(threadId, at) {
-    await livedNow.ensure({ threadId, at });
+    if(boundedVenueDiscovery){
+      // Social judgment reads World. A party with unprocessed life is not
+      // eligible; the separate life engine alone authors the next situation.
+      if(dueLife(threadId,at))return null;
+    }else{
+      await livedNow.ensure({ threadId, at });
+    }
     return contextFor({
       threadId,
       worldReader,
@@ -176,7 +189,7 @@ export function createSocialMeetingService({
       if (!compatible(initiator, candidate, livedNowStore)) continue;
 
       const refreshed = await currentContext(candidateSituation.threadId, at);
-      if (compatible(initiator, refreshed, livedNowStore)) {
+      if (refreshed!==null&&compatible(initiator, refreshed, livedNowStore)) {
         discovered.push(refreshed);
         if(boundedVenueDiscovery)break; // One candidate, one bounded social decision.
       }
@@ -209,7 +222,9 @@ export function createSocialMeetingService({
       semanticStateStore,
       memoryStore,
     });
-    const sceneMoved=latestInitiator.situation.situationId!==initiator.situation.situationId
+    const sceneMoved=(boundedVenueDiscovery&&(dueLife(initiator.thread.threadId,at)
+      ||dueLife(counterparty.thread.threadId,at)))
+      ||latestInitiator.situation.situationId!==initiator.situation.situationId
       ||latestCounterparty.situation.situationId!==counterparty.situation.situationId
       ||!compatible(latestInitiator,latestCounterparty,livedNowStore);
     if(sceneMoved){
@@ -360,6 +375,10 @@ export function createSocialMeetingService({
       }
 
       const initiator = await currentContext(input.initiatorThreadId, input.at);
+      if(initiator===null)return Object.freeze({
+        outcome:"not_met",discoveredThreadIds:Object.freeze([]),
+        attempts:Object.freeze([]),encounterCount:0,
+      });
       const discovered = await discoverCoPresent(
         initiator,input.at,counterpartyThreadId,
       );
@@ -378,7 +397,7 @@ export function createSocialMeetingService({
         thread:initiator.thread,
         livedNowStore,
         currentSituation:initiator.situation,
-        experienceStore,
+        experienceStore,asOf:boundedVenueDiscovery?input.at:initiator.situation.establishedAt,
       });
 
       const discoveredById = new Map(discovered.map((context) => [
