@@ -83,7 +83,8 @@ export function createWorldSocialOpportunity({
   now=()=>new Date().toISOString(),
 }={}){
   for(const method of [
-    "claimDueSocialOpportunity","nextSocialOpportunityAt","completeSocialOpportunity",
+    "listDueSocialOpportunities","claimDueSocialOpportunity",
+    "nextSocialOpportunityAt","completeSocialOpportunity",
   ]){
     if(typeof experienceStore?.[method]!=="function"){
       throw new TypeError(`social opportunity requires ${method}()`);
@@ -101,11 +102,42 @@ export function createWorldSocialOpportunity({
     throw new TypeError("social opportunity requires the ordinary meeting service");
   }
 
+  const lifeUnresolved=(threadId,at)=>{
+    const debt=livedNowStore.inspectLivedBoundary(threadId);
+    return (debt?.failedAttempts??0)>0
+      ||(debt?.dueAt!==null&&debt?.dueAt!==undefined
+        &&Date.parse(debt.dueAt)<=Date.parse(at));
+  };
+
+  function unresolvedVenueCompany(opportunity,at){
+    if(opportunity.kind==="observed"){
+      return lifeUnresolved(opportunity.threadId,at)
+        ||lifeUnresolved(opportunity.counterpartyThreadId,at);
+    }
+    if(lifeUnresolved(opportunity.threadId,at))return true;
+    const own=livedNowStore.getCurrentSituation(opportunity.threadId);
+    const venue=own?.location?.kind==="place"
+      ?livedNowStore.getWorldPlace(
+        opportunity.threadId,own.location.placeRef,{required:false},
+      )?.physicalVenue?.ref??null:null;
+    if(venue===null||!atVenue(livedNowStore,own,venue))return false;
+    const company=livedNowStore.listCurrentVenueSituations({
+      venueRef:venue,at,limit:8,excludeThreadId:opportunity.threadId,
+    }).filter(person=>atVenue(livedNowStore,person,venue));
+    return company.length>0
+      &&company.every(person=>lifeUnresolved(person.threadId,at));
+  }
+
   return Object.freeze({
     async runOnce(){
       const at=now();
       assertIsoTimestamp("social opportunity at",at);
-      const opportunity=experienceStore.claimDueSocialOpportunity({at});
+      // Never start an irreversible one-shot while its scene is uncertain.
+      // Inspect a bounded set; skipped opportunities remain untouched.
+      const candidates=experienceStore.listDueSocialOpportunities({at,limit:8});
+      const selected=candidates.find(item=>!unresolvedVenueCompany(item,at))??null;
+      const opportunity=selected===null?null
+        :experienceStore.claimDueSocialOpportunity({at,selected});
       let outcome=null;
       let decision=null;
       let error=null;
@@ -120,12 +152,7 @@ export function createWorldSocialOpportunity({
               opportunity.threadId,initial.location.placeRef,{required:false},
             )?.physicalVenue?.ref??null:null;
           const observed=opportunity.kind==="observed";
-          const hasDue=threadId=>{
-            const debt=livedNowStore.inspectLivedBoundary(threadId);
-            return (debt?.failedAttempts??0)>0
-              ||(debt?.dueAt!==null&&debt?.dueAt!==undefined
-                &&Date.parse(debt.dueAt)<=Date.parse(at));
-          };
+          const hasDue=threadId=>lifeUnresolved(threadId,at);
           const present=venue!==null
             &&(!observed||venue===opportunity.venueRef)
             &&continuouslyPresent(livedNowStore,opportunity.threadId,
@@ -164,8 +191,9 @@ export function createWorldSocialOpportunity({
                   counterpartyThreadId:opportunity.counterpartyThreadId}
                 :{initiatorThreadId:opportunity.threadId,at});
               const attempt=result.attempts?.[0]??null;
-              outcome=attempt?.outcome??(missedWindow(livedNowStore,opportunity,at)
-                ?"missed_window":"no_co_presence");
+              outcome=attempt?.outcome??(unresolvedVenueCompany(opportunity,at)
+                ?"life_unresolved":missedWindow(livedNowStore,opportunity,at)
+                  ?"missed_window":"no_co_presence");
               // One witness for the actual opportunity, not a second
               // event or a retrospective explanation model.
               if(typeof attempt?.counterpartyThreadId==="string"){
@@ -207,12 +235,18 @@ export function createWorldSocialOpportunity({
           error=String(cause?.message??cause).slice(0,200);
         }
       }
-      const nextDueAt=experienceStore.nextSocialOpportunityAt();
+      // A blocked due opportunity does not keep waking World in a hot
+      // loop. Its already-armed life boundary will cause reinspection.
+      const anotherReady=candidates.some(item=>item!==selected
+        &&!unresolvedVenueCompany(item,at));
+      const nextDueAt=anotherReady
+        ?experienceStore.nextSocialOpportunityAt()
+        :experienceStore.nextSocialOpportunityAt({after:at});
       return Object.freeze({
         attempted:opportunity===null?0:1,
         failed:error===null?0:1,
         nextDueAt,
-        hasDue:nextDueAt!==null&&Date.parse(nextDueAt)<=Date.parse(at),
+        hasDue:anotherReady,
         results:Object.freeze(opportunity===null?[]:[Object.freeze({
           situationId:opportunity.situationId,
           outcome:error===null?outcome:"interrupted",
