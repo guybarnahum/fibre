@@ -175,6 +175,15 @@ Introductions, speaker-claimed names, remembering introductions and
 recognizing faces across time are **deferred**, not silently guessed from
 a portrait. See [observer knowledge owner decision](../decisions/observer-grounded-person-knowledge.md).
 
+**Deferred — observable activity authority.** The current
+`Currently: <activity>` phrase in `observablePerson` reuses the
+plan-authored `CurrentSituation.activity` prose. That prose can reveal
+private purpose or intent even when it is not visible in the World.
+A later, World-owned activity category or observed affordance should
+provide the public description instead. Until then this field is
+**context-only and not authoritative observable evidence**; it must
+not justify claims of witnessed motivation or private knowledge.
+
 A recent, personally **noticed** arrival Story can make the newcomer
 salient to a witness through `recent_observable_history` and, if the
 newcomer is still unfamiliar, make the person's novelty relevant to an
