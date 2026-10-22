@@ -101,6 +101,7 @@ function fixture({
   inheritedSocialSensitivity = null,
   moveAfterAcceptance = false,
   boundedVenueDiscovery = false,
+  dueThreadId = null,
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
@@ -458,6 +459,9 @@ function fixture({
     },
     livedNowStore:{
       getCurrentSituation(threadId) { return structuredClone(situations.get(threadId)); },
+      inspectLivedBoundary(threadId){
+        return threadId===dueThreadId?{dueAt:AT}:null;
+      },
       listCurrentSituations() { return structuredClone([...situations.values()]); },
       listWorldPlaces(threadId) {
         const ref = worldPlaceFor(threadId);
@@ -661,6 +665,30 @@ function attemptFor(result, threadId = noor.threadId) {
   assert.ok(attempt, `expected consideration for ${threadId}`);
   return attempt;
 }
+
+test("an automatic social decision cannot enact an unprocessed candidate departure",async()=>{
+  const f=fixture({boundedVenueDiscovery:true,dueThreadId:noor.threadId});
+  const result=await f.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  assert.deepEqual(result.discoveredThreadIds,[],
+    "World approached someone whose own departure is due");
+  assert.equal(f.ensured.length,0,
+    "social judgment advanced a Thread's independent life");
+  assert.equal(f.modelCallCount(),0,
+    "an ineligible scene spent model cognition");
+  assert.equal(f.stories.length,0,
+    "a due departure manufactured social history");
+});
+
+test("an eligible automatic social choice reads both already-enacted lives",async()=>{
+  const f=fixture({boundedVenueDiscovery:true,initiationFor:()=> "not_initiate"});
+  const result=await f.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  assert.equal(f.ensured.length,0,
+    "an automatic social decision rotated the World situation history");
+  assert.deepEqual(result.discoveredThreadIds,[noor.threadId],
+    "a valid shared scene disappeared when World stopped calling ensure");
+  assert.equal(result.attempts[0].outcome,"not_initiated",
+    "a read-only decision lost Thread-owned non-initiation");
+});
 
 test("E2 accepted meeting is one Encounter Story with distinct Thread Experiences", async () => {
   const f = fixture();
