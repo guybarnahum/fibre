@@ -34,14 +34,17 @@ export function personKnownToObserver({
 
 function redactUnknownName(description,name){
   if(typeof name!=="string"||name.trim()==="")return description;
-  // A portrait brief might say "Mina Cohen" once and "Mina" elsewhere.
-  // Match full words, including non-ASCII names, and avoid partial matches
-  // inside unrelated appearance words.
-  const parts=[name.trim(),...(name.match(/[\\p{L}\\p{N}]+/gu)??[])]
-    .filter(part=>part.length>1)
-    .sort((a,b)=>b.length-a.length);
+  // Remove a complete name and its individual words from public prose.
+  const parts=[name.trim(),...(name.match(/[\p{L}\p{N}]+/gu)??[])]
+    .filter(part=>part.length>1).sort((a,b)=>b.length-a.length);
   return [...new Set(parts)].reduce((text,part)=>{
-    const escaped=part.replace(/[.*+?^${}()|[\\]\\]/g,"\\// One World-owned projection reused by objective arrival and private percept.");
+    const escaped=part.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    return text.replace(new RegExp(
+      `(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`,"giu",
+    ),"a person");
+  },description);
+}
+// One World-owned projection reused by objective arrival and private percept.");
     return text.replace(new RegExp(
       `(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`,"giu",
     ),"a person");
