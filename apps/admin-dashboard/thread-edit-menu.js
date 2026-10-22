@@ -1,5 +1,6 @@
 import {actionFields,openThreadActionDialog} from "./thread-action-dialog.js";
-import {decorateActionButton} from "./fa-icons.js";
+import {decorateActionButton,faIcon} from "./fa-icons.js";
+import {createThreadPortrait} from "./thread-person-ui.js";
 import {identityActionPayload} from "./thread-identity-action.js";
 import {reissueFidCard,resumeFidReissue} from "./thread-observatory.js";
 
@@ -28,6 +29,18 @@ export function threadEditActions(diagnosis,reconciliation){
         description:"Apply preserved evidence to authoritative World identity.",
         fields:actionFields(migration),migration});
     }
+  }
+  // Recovered but malformed geography may offer only a country-code repair.
+  // Keep the verified-city replacement available through the same World command.
+  if(findings.some(f=>String(f?.code??"").startsWith("BIRTH_"))
+    &&!actions.some(a=>a.kind==="identity"&&a.fields.some(f=>f.name==="birthPlace"))){
+    actions.push({
+      kind:"identity",id:"change_birth_place",label:"Change birth place",
+      description:"Choose a verified birth city.",
+      fields:[{name:"birthPlace",label:"Verified birth city",kind:"place_search",required:true,
+        ...(diagnosis?.identity?.birthPlace?{default:diagnosis.identity.birthPlace}:{})}],
+      action:{id:"change_birth_place",command:"identity"},required:true,
+    });
   }
   const dead=reconciliation?.state==="dead_letter";
   const pending=reconciliation?.state==="pending";
@@ -76,19 +89,113 @@ function actionBody(spec,input){
   return {repairKey:operation(spec.id==="reconcile"?"admin_reconcile":"admin_repair")};
 }
 
+const element=(tag,className="",text=null)=>{
+  const node=document.createElement(tag);
+  if(className)node.className=className;
+  if(text!==null)node.textContent=text;
+  return node;
+};
+
+function actionLook(spec){
+  if(spec.kind==="fid")return {group:"Documents",icon:"id-card",
+    detail:"Issue a new card; keep the existing FIN."};
+  if(spec.kind==="photo")return {group:"Documents",icon:"image",
+    detail:"Review and correct the official photograph."};
+  if(spec.kind==="migration")return {group:"Maintenance",icon:"wrench",
+    detail:spec.description};
+  if(spec.kind==="repair")return {group:"Maintenance",icon:"wrench",
+    detail:spec.description};
+  if(spec.id.includes("birth_place")||spec.id.includes("birth_geography")
+    ||spec.id==="set_birth_country_code")return {group:"Identity",icon:"location-dot",
+      detail:spec.id==="repair_birth_geography"||spec.id==="set_birth_country_code"
+        ?"Verify the stored birthplace's country code.":"Choose an authoritative, verified birth city."};
+  if(spec.id.includes("birth_date"))return {group:"Identity",icon:"cake-candles",
+    detail:"Correct the recorded date of birth."};
+  if(spec.id.includes("name"))return {group:"Identity",icon:"edit",
+    detail:"Correct the Thread's recorded name."};
+  if(spec.id.includes("language")||spec.action?.command==="raised_languages"){
+    return {group:"Identity",icon:"language",detail:"Correct the languages of upbringing."};
+  }
+  if(spec.id.includes("sex"))return {group:"Identity",icon:"venus-mars",
+    detail:"Correct the recorded sex."};
+  return {group:"Identity",icon:"edit",detail:spec.description};
+}
+
 function menu(){
   let dialog=document.querySelector("#thread-edit-menu");
   if(dialog)return dialog;
-  dialog=document.createElement("dialog");
-  dialog.id="thread-edit-menu";dialog.className="thread-edit-menu";
-  const title=document.createElement("h2");
-  const list=document.createElement("div");list.className="thread-edit-list";
-  const close=document.createElement("button");close.type="button";
-  close.className="secondary";close.textContent="Close";
-  close.addEventListener("click",()=>dialog.close());
-  dialog.append(title,list,close);
+  dialog=element("dialog","thread-edit-menu");
+  dialog.id="thread-edit-menu";
+  const head=element("header","thread-edit-head");
+  const avatar=element("div","thread-edit-avatar");
+  const identity=element("div","thread-edit-identity");
+  const title=element("h2","thread-edit-title","Edit Thread");
+  const meta=element("p","thread-edit-meta");
+  const badge=element("span","thread-edit-attention");
+  badge.hidden=true;
+  identity.append(title,meta,badge);
+  const dismiss=element("button","thread-edit-dismiss","×");
+  dismiss.type="button";dismiss.setAttribute("aria-label","Close Thread editor");
+  dismiss.addEventListener("click",()=>dialog.close());
+  head.append(avatar,identity,dismiss);
+
+  const list=element("div","thread-edit-list");
+  const footer=element("footer","thread-edit-footer");
+  const close=element("button","secondary","Close");
+  close.type="button";close.addEventListener("click",()=>dialog.close());
+  footer.append(close);
+  dialog.append(head,list,footer);
   document.body.append(dialog);
   return dialog;
+}
+
+function renderThreadHeader(dialog,threadId,name,diagnosis=null){
+  const facts=diagnosis?.identity??{};
+  const label=facts.name??name??"Thread";
+  dialog.querySelector(".thread-edit-title").textContent=label;
+  const avatar=dialog.querySelector(".thread-edit-avatar");
+  avatar.replaceChildren(createThreadPortrait({threadId,name:label,link:false}));
+  const details=[
+    facts.fibreIdentityNumber?String(facts.fibreIdentityNumber):null,
+    facts.birthDate?String(facts.birthDate):null,
+    facts.birthPlace?String(facts.birthPlace):null,
+  ].filter(Boolean);
+  dialog.querySelector(".thread-edit-meta").textContent=
+    details.length?details.join(" · "):"Authoritative World identity";
+  const needsBirth=(diagnosis?.findings??[]).some(f=>
+    ["BIRTH_PLACE_MISSING","BIRTH_GEOGRAPHY_RECOVERABLE",
+      "BIRTH_COUNTRY_CODE_MISSING"].includes(f.code));
+  const attention=dialog.querySelector(".thread-edit-attention");
+  attention.hidden=!needsBirth&&(!diagnosis||diagnosis.health==="healthy");
+  attention.textContent=needsBirth?"Birth place needs correction":"Needs attention";
+}
+
+function renderThreadChoices(list,actions,onChoose){
+  list.replaceChildren();
+  for(const group of ["Identity","Documents","Maintenance"]){
+    const entries=actions.filter(spec=>actionLook(spec).group===group);
+    if(!entries.length)continue;
+    const section=element("section","thread-edit-group");
+    section.append(element("h3",null,group));
+    const grid=element("div","thread-edit-grid");
+    for(const spec of entries){
+      const {icon,detail}=actionLook(spec);
+      const choice=element("button","thread-edit-choice");
+      choice.type="button";
+      const symbol=element("span","thread-edit-symbol");
+      symbol.append(faIcon(icon));
+      const copy=element("span","thread-edit-choice-copy");
+      copy.append(element("strong",null,spec.label));
+      copy.append(element("small",null,
+        spec.required&&spec.description?spec.description:detail));
+      const arrow=element("span","thread-edit-chevron","›");
+      arrow.setAttribute("aria-hidden","true");
+      choice.append(symbol,copy,arrow);
+      choice.addEventListener("click",()=>onChoose(spec));
+      grid.append(choice);
+    }
+    section.append(grid);list.append(section);
+  }
 }
 
 export function createThreadEditButton({threadId,name=null,iconOnly=false,onComplete=null}={}){
@@ -99,21 +206,15 @@ export function createThreadEditButton({threadId,name=null,iconOnly=false,onComp
   button.addEventListener("click",async event=>{
     event.stopPropagation();
     const dialog=menu(),list=dialog.querySelector(".thread-edit-list");
-    dialog.querySelector("h2").textContent="Edit "+(name??"Thread");
+    dialog.dataset.threadId=threadId;
+    renderThreadHeader(dialog,threadId,name);
     list.textContent="Loading available actions…";
     dialog.showModal();
     try{
       const data=await repairRequest(threadId);
-      if(!dialog.open)return;
-      list.replaceChildren();
-      for(const spec of threadEditActions(data.diagnosis,data.reconciliation)){
-        const choice=document.createElement("button");
-        choice.type="button";choice.className="thread-edit-choice";
-        const label=document.createElement("strong");
-        label.textContent=spec.label+(spec.required?" · action required":"");
-        const hint=document.createElement("small");hint.textContent=spec.description;
-        choice.append(label,hint);
-        choice.addEventListener("click",()=>{
+      if(!dialog.open||dialog.dataset.threadId!==threadId)return;
+      renderThreadHeader(dialog,threadId,name,data.diagnosis);
+      renderThreadChoices(list,threadEditActions(data.diagnosis,data.reconciliation),(spec)=>{
           dialog.close();
           if(spec.kind==="photo"){
             const onThreadPage=location.pathname==="/thread/"+encodeURIComponent(threadId);
@@ -164,11 +265,11 @@ export function createThreadEditButton({threadId,name=null,iconOnly=false,onComp
                 }).catch(error=>console.warn("FIN Card reissue follow-up failed",error));
             },
           });
-        });
-        list.append(choice);
-      }
+      });
     }catch(error){
-      if(dialog.open)list.textContent="Unable to load Thread actions: "+String(error.message??error);
+      if(dialog.open&&dialog.dataset.threadId===threadId){
+        list.textContent="Unable to load Thread actions: "+String(error.message??error);
+      }
     }
   });
   return button;
