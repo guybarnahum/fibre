@@ -264,7 +264,8 @@ continuous bounded venue evidence since its due instant; missing history
 cannot be substituted with an assumption.
 
 `missed_window` now requires evidence of actual event-time company and a
-later loss of continuous shared presence. For `observed`, noticing alone
+subsequently **recorded departure** from the venue. A bounded history read
+that runs out without departure evidence is unknown, not a missed chance. For `observed`, noticing alone
 is not evidence that anyone later departed; for `arrival`, an unrelated
 situation ID change is not a lost window. A zero-length tie is
 `no_co_presence`; an uninterrupted but older-than-one-hour opportunity
