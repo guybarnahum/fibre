@@ -239,9 +239,9 @@ export function createWorldSocialOpportunity({
       // loop. Its already-armed life boundary will cause reinspection.
       const anotherReady=candidates.some(item=>item!==selected
         &&!unresolvedVenueCompany(item,at));
-      const nextDueAt=anotherReady
-        ?experienceStore.nextSocialOpportunityAt()
-        :experienceStore.nextSocialOpportunityAt({after:at});
+      const nextDueAt=experienceStore.nextSocialOpportunityAt({
+        after:anotherReady?null:at,asOf:at,
+      });
       return Object.freeze({
         attempted:opportunity===null?0:1,
         failed:error===null?0:1,
