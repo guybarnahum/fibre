@@ -13,6 +13,15 @@ import { ageYearsAt } from "./visual-identity-reference-domain.mjs";
 export const LIVED_PLAN_KINDS = Object.freeze(["personal", "care"]);
 export const CARE_CONSTRAINTS = Object.freeze(["preferred", "required"]);
 export const WAKEFULNESS_STATES = Object.freeze(["awake", "asleep", "unknown"]);
+
+// World feasibility is a distinct domain rejection, not a provider outage.
+// Preserve the original error type while letting planning recognize the cause.
+export const FLIGHT_PLAN_TRAVEL_INFEASIBLE = "flight_plan_travel_infeasible";
+export function invalidFlightPlanTravel(message, ErrorType=TypeError) {
+  const error=new ErrorType(message);
+  error.fibreReason=FLIGHT_PLAN_TRAVEL_INFEASIBLE;
+  return error;
+}
 const SHA256_PATTERN = /^sha256:[0-9a-f]{64}$/u;
 
 function assertEnum(name, value, allowed) {
