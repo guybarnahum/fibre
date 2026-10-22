@@ -139,7 +139,10 @@ export function createWorldSocialOpportunity({
       const unresolved=item=>{
         const key=item.kind+":"+item.threadId+":"+item.situationId;
         if(!uncertainty.has(key)){
-          uncertainty.set(key,unresolvedVenueCompany(item,at));
+          uncertainty.set(key,
+            (item.kind==="arrival"
+              &&experienceStore.arrivalPerceptionPending?.(item.situationId)===true)
+            ||unresolvedVenueCompany(item,at));
         }
         return uncertainty.get(key);
       };
