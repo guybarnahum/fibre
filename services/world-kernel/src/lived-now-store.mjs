@@ -838,8 +838,8 @@ export class LivedNowStore {
     const attempts=prior.failed_attempts+1;
     // Keep one durable recovery deadline even after repeated failure.
     // A persistent coverage failure waits a day; transient failures back off.
-    const delay=unavailable?24*60*60_000
-      :Math.min(24*60*60_000,60_000*2**Math.min(attempts-1,11));
+    const delay=unavailable||attempts>=4
+      ?24*60*60_000:60_000*2**(attempts-1);
     const nextAt=new Date(Date.parse(at)+delay).toISOString();
     this.#database.prepare(`
       UPDATE lived_now_next_boundaries
