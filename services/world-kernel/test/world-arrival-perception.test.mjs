@@ -44,6 +44,9 @@ function setup(){
     }))};
   const livedNowStore={
     getSituation:id=>structuredClone(bySituation.get(id)??null),
+    getSituationAt:(id,at)=>structuredClone(situations.find(s=>
+      s.threadId===id&&s.establishedAt<=at)??null),
+    getPreviousSituation:()=>null,
     getWorldPlace:()=>({physicalVenue:{
       ref:"venue_verified_cafe",displayName:"An attested café",
     }}),
@@ -173,6 +176,8 @@ test("one enacted arrival permits distinct noticing and missed attention with re
       experienceStore:store,
       livedNowStore:{
         getCurrentSituation:id=>ctx.situations.find(x=>x.threadId===id)??null,
+        getSituationAt:livedNowStore.getSituationAt,
+        getPreviousSituation:()=>null,
         getWorldPlace:livedNowStore.getWorldPlace,
         listCurrentVenueSituations:()=>{throw Error("targeted attention must not scan population");},
       },
