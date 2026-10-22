@@ -301,8 +301,9 @@ export class LivedExperienceStore {
     return Object.freeze({inserted,dueAt});
   }
 
-  nextSocialOpportunityAt({after=null}={}){
+  nextSocialOpportunityAt({after=null,asOf=null}={}){
     if(after!==null)assertIsoTimestamp("social opportunity after",after);
+    if(asOf!==null)assertIsoTimestamp("social opportunity asOf",asOf);
     const hasDebt=this.#hasLivedBoundaryFrontier();
     const debtFilter=hasDebt?`
         AND NOT EXISTS (
@@ -322,7 +323,7 @@ export class LivedExperienceStore {
       WHERE (? IS NULL OR o.due_at>?)
         ${debtFilter}
       ORDER BY o.due_at LIMIT 1
-    `).get(...(hasDebt?[after,after,after,after]:[after,after]))?.due_at??null;
+    `).get(...(hasDebt?[after,after,asOf,asOf]:[after,after]))?.due_at??null;
   }
 
   listDueSocialOpportunities({at,limit=8}){
