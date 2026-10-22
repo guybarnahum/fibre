@@ -318,6 +318,50 @@ test("independently admitted public places reveal only actual same-venue visitor
   }
 });
 
+test("arrival exactly as another Thread leaves never creates a missed social window",async()=>{
+  const dir=mkdtempSync(join(tmpdir(),"fibre-zero-social-overlap-"));
+  const storage={infraDriver:createSqliteStateInfraDriver({
+    scopes:{world:join(dir,"world.sqlite")}}),stateScopeId:"world"};
+  const world=openWorldStore(storage);
+  const ids=["thr_tie_arrives","thr_tie_leaves"];
+  for(const threadId of ids){
+    const thread=structuredClone(seed);
+    thread.threadId=threadId;thread.provenance.lastEventId="evt_"+threadId;
+    world.seedThread(thread);
+  }
+  world.close();
+  const store=openLivedExperienceStore(storage);
+  const due="2026-10-22T17:00:00.000Z";
+  const placeRef="wpl_tie_venue",venueRef="venue_tie";
+  const arrival={threadId:ids[0],situationId:"sit_tie_arrival",
+    establishedAt:due,wakefulness:"awake",
+    location:{kind:"place",placeRef}};
+  const departure={threadId:ids[1],situationId:"sit_tie_departure",
+    establishedAt:due,wakefulness:"awake",
+    location:{kind:"transit",fromPlaceRef:placeRef,toPlaceRef:"per:home"}};
+  let modelCalls=0;
+  try{
+    store.enqueueSocialOpportunity({
+      threadId:ids[0],situationId:arrival.situationId,dueAt:due,
+    });
+    const livedNowStore={
+      getCurrentSituation:id=>id===ids[0]?arrival:departure,
+      getSituationAt:id=>id===ids[0]?arrival:departure,
+      getPreviousSituation:()=>null,
+      getWorldPlace:(_id,ref)=>ref===placeRef?{physicalVenue:{ref:venueRef}}:null,
+      listCurrentVenueSituations:()=>[arrival],
+    };
+    const process=createWorldSocialOpportunity({
+      experienceStore:store,livedNowStore,
+      meetingService:{async meet(){modelCalls++;throw Error("false conversation");}},
+      now:()=>due,
+    });
+    assert.equal((await process.runOnce()).results[0].outcome,"no_co_presence",
+      "simultaneous departure manufactured a missed meeting");
+    assert.equal(modelCalls,0,"zero-length overlap reached social cognition");
+  }finally{store.close();rmSync(dir,{recursive:true,force:true});}
+});
+
 test("a witnessed short overlap expires without inventing a social refusal or conversation",async()=>{
   const dir=mkdtempSync(join(tmpdir(),"fibre-missed-social-window-"));
   const storage={infraDriver:createSqliteStateInfraDriver({
