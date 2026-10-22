@@ -24,7 +24,15 @@ width allocation: identity, ethnicity and enacted places dominate; sex,
 dates, status badges and the pinned Edit action occupy smaller columns.
 Text-heavy status badges may wrap rather than push adjacent columns aside.
 Narrow screens still scroll inside the table, not across the whole document.
-Responsive column hiding remains a separate optional polish pass.
+The Threads overview also adapts to the **panel's measured width**, rather
+than guessing from browser width or sidebar state. Below 1150px of available
+panel space, Sex, Birth date and Reconciliation move out of the table overview.
+Below 760px, Ethnicity, Birth place and Last activity also move to the
+existing Thread Observatory. Life, identity, enacted Current place, Health
+and pinned Edit remain in every layout. Full names, location labels, origins
+and timestamps remain readable through their existing or new hover labels;
+no source facts or edit operations are removed. The internal scrollbar remains
+available on narrow screens.
 
 ## Thread identity and maintenance editor (October 21)
 
