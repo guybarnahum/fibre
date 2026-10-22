@@ -156,18 +156,20 @@ function renderThreadHeader(dialog,threadId,name,diagnosis=null){
   const avatar=dialog.querySelector(".thread-edit-avatar");
   avatar.replaceChildren(createThreadPortrait({threadId,name:label,link:false}));
   const details=[
-    facts.fibreIdentityNumber?String(facts.fibreIdentityNumber):null,
-    facts.birthDate?String(facts.birthDate):null,
+    facts.fibreIdentityNumber?"FIN "+facts.fibreIdentityNumber:null,
+    facts.birthDate?"Born "+facts.birthDate:null,
     facts.birthPlace?String(facts.birthPlace):null,
   ].filter(Boolean);
   dialog.querySelector(".thread-edit-meta").textContent=
     details.length?details.join(" · "):"Authoritative World identity";
-  const needsBirth=(diagnosis?.findings??[]).some(f=>
-    ["BIRTH_PLACE_MISSING","BIRTH_GEOGRAPHY_RECOVERABLE",
-      "BIRTH_COUNTRY_CODE_MISSING"].includes(f.code));
+  const birthCodes=(diagnosis?.findings??[]).map(f=>f.code);
+  const missingBirth=birthCodes.includes("BIRTH_PLACE_MISSING");
+  const needsBirth=missingBirth||birthCodes.includes("BIRTH_GEOGRAPHY_RECOVERABLE")
+    ||birthCodes.includes("BIRTH_COUNTRY_CODE_MISSING");
   const attention=dialog.querySelector(".thread-edit-attention");
   attention.hidden=!needsBirth&&(!diagnosis||diagnosis.health==="healthy");
-  attention.textContent=needsBirth?"Birth place needs correction":"Needs attention";
+  attention.textContent=missingBirth?"Birth place missing"
+    :needsBirth?"Birth place needs correction":"Needs attention";
 }
 
 function renderThreadChoices(list,actions,onChoose){
