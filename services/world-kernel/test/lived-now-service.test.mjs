@@ -647,6 +647,60 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
   }));
 
 
+test("a month without World wakes leaves an honest gap and resumes from the last witnessed place",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    const lived=openLivedNowStore(storage);
+    lived.recordPlan(personalPlan(life));
+    const world=openWorldStore(storage);
+    const identity=openIdentityStore(storage);
+    const semantic=openSemanticStateStore(storage);
+    const memory=openAutobiographicalMemoryStore(storage);
+    const situated=openSituatedLifeStore(storage);
+    let planningCalls=0;
+    const service=createLivedNowService({
+      livedNowStore:lived,worldStore:world,identityStore:identity,
+      semanticStateStore:semantic,memoryStore:memory,situatedLifeStore:situated,
+      modelAdapter:{async invoke(input){
+        if(input.input?.interoception){
+          return {output:{states:[]},provenance:{provider:"fixture",modelId:"gap-regulation",
+            providerRequestId:input.clientRequestId}};
+        }
+        planningCalls++;
+        const context=input.input.concern.externalContext;
+        return {
+          output:{result:{stops:[{
+            startAt:context.horizon.startAt,endAt:context.horizon.endAt,
+            physicalPlaceRef:context.startingPlaceRef,
+            presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
+            activity:"Resume ordinary activities.",purpose:"Continue my chosen life.",
+            travelFromPrevious:"",
+          }]},evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+          provenance:{provider:"fixture",modelId:"gap-renewal",
+            providerRequestId:input.clientRequestId},
+        };
+      }},
+    });
+    try{
+      await service.ensure({threadId:life.thread.threadId,at:"2026-09-10T05:10:00Z"});
+      const resumedAt="2026-10-21T05:10:00Z";
+      const current=await service.ensure({threadId:life.thread.threadId,at:resumedAt});
+      const plans=lived.listPlans(life.thread.threadId,{kind:"personal"});
+      assert.equal(current.establishedAt,resumedAt,"World failed to resume the present");
+      assert.equal(current.location.placeRef,life.homeRef,
+        "World invented a destination during an unwitnessed month");
+      assert.equal(plans.filter(plan=>plan.materialization?.mode==="retrospective").length,0,
+        "World invented an unwitnessed month of biography");
+      assert.equal(planningCalls,1,"one recovery required more than one new personal plan");
+      assert.ok(plans.some(plan=>plan.authoredAt===resumedAt
+        &&plan.materialization===undefined),
+        "a recovered Thread has no new self-authored future");
+    }finally{
+      situated.close();memory.close();semantic.close();identity.close();world.close();lived.close();
+    }
+  }));
+
 test("a slightly delayed horizon alarm renews forward life without inventing retrospective intentions",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
