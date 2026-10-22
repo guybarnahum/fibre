@@ -919,18 +919,24 @@ export default Object.freeze({
     const base="https://world.internal/internal/reconciliation/";
     const status=await world.fetch(new Request(base+"status",{headers}));
     if(!status.ok)throw new Error("World continuity watchdog could not inspect reconciliation");
-    const state=await status.json();
+    let state=await status.json();
     if(state.continuityAuditDue===true){
       const audit=await world.fetch(new Request(base+"continuity-audit",{
         method:"POST",headers,
       }));
       if(!audit.ok)throw new Error("World continuity watchdog could not audit life obligations");
       const result=await audit.json();
-      if(result.repaired>0)console.log(JSON.stringify({
-        event:"world-continuity-obligations-restored",
+      if(result.audited===true)console.log(JSON.stringify({
+        event:"world-life-continuity-audit",
         repaired:result.repaired,hasMore:result.hasMore,
+        earliestLifeWakeAt:result.earliestLifeWakeAt,
         nextAuditAt:result.nextAuditAt,
       }));
+      // The audit may have repaired the very alarm this status read saw
+      // missing. Check its new state before requesting an extra wake.
+      const updated=await world.fetch(new Request(base+"status",{headers}));
+      if(!updated.ok)throw new Error("World continuity watchdog could not verify scheduling");
+      state=await updated.json();
     }
     if(!worldAlarmNeedsRevival({
       scheduledTimeMs:state.reconciliation?.scheduledTimeMs??null,
