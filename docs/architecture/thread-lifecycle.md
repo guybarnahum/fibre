@@ -147,6 +147,8 @@ intrinsic regulation
 
 Freeze remains a compute/runtime boundary; for a lived Thread it is not automatically proof that world-time life stopped. Retrospective catch-up must preserve historical provenance and may create memory only through the ordinary experience/memory authorities.
 
+**Periodic continuity recovery is World maintenance, not a Thread-life motive or a regular cognitive tick.** Once a person has an established CurrentSituation and personal Flight Plan, World periodically checks for lost scheduling obligations so infrastructure failure cannot silently strand them forever. The hourly World-alarm watchdog and durable daily per-Thread obligation audit restore *permission for the ordinary life engine to run*, not the person's physical wakefulness, desires or choices. Healthy future wakes remain untouched; an interrupted past remains unobserved rather than fabricated. See [Periodic recovery of Thread life](lived-now-and-meetings.md#periodic-recovery-of-thread-life).
+
 See [`lived-now-and-meetings.md`](lived-now-and-meetings.md) and [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md).
 
 Do not turn this into a generic scheduler or simulation framework. Until the loop is causally proven, Presentation/UI output alone remains insufficient evidence that continuous autonomous life exists.
