@@ -19,7 +19,12 @@ Verify at normal browser zoom in both light and dark appearance, without
 dragging the entire page sideways: the right viewport edge stays themed,
 the Threads pencil remains visible, wide table contents remain reachable
 using the table's own scrollbar, and Raw/Stillborn still scroll correctly.
-Column width balancing and responsive column priority are separate follow-ups.
+The subsequent column-economy pass gives the Threads table a fixed, bounded
+width allocation: identity, ethnicity and enacted places dominate; sex,
+dates, status badges and the pinned Edit action occupy smaller columns.
+Text-heavy status badges may wrap rather than push adjacent columns aside.
+Narrow screens still scroll inside the table, not across the whole document.
+Responsive column hiding remains a separate optional polish pass.
 
 ## Thread identity and maintenance editor (October 21)
 
