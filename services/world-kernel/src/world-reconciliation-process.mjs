@@ -232,13 +232,21 @@ export function createWorldReconciliationProcess({
           "lived_boundary_advance",
           livedBoundary===null?null:()=>livedBoundary.runOnce(),
         );
+        // Perception/social judgment cannot inspect a scene while earlier
+        // due World life boundaries remain unenacted. The normal indexed
+        // nextDueAt schedules another bounded life pass.
+        const lifeCaughtUp=livedBoundaryResult.ok
+          &&livedBoundaryResult.result?.hasDue!==true
+          &&livedBoundaryResult.result?.failed===0;
         const environmentResult=await isolated(
           "world_environment_evolution",
-          environmentEvolution===null?null:()=>environmentEvolution.runOnce(),
+          lifeCaughtUp&&environmentEvolution!==null
+            ?()=>environmentEvolution.runOnce():null,
         );
         const socialResult=await isolated(
           "world_social_opportunity",
-          socialOpportunity===null?null:()=>socialOpportunity.runOnce(),
+          lifeCaughtUp&&socialOpportunity!==null
+            ?()=>socialOpportunity.runOnce():null,
         );
         // Partial per-opportunity failures stay retryable and report through
         // the same injected boundary as other reconciliation failures.
