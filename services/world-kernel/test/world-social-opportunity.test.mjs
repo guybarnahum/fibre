@@ -67,6 +67,7 @@ test("an enacted arrival permits immediate voluntary consideration without forci
     },
   };
   const livedNowStore={
+    inspectLivedBoundary:()=>null,
     getCurrentSituation(threadId){
       return situations.find(s=>s.threadId===threadId)??null;
     },
@@ -345,6 +346,7 @@ test("arrival exactly as another Thread leaves never creates a missed social win
       threadId:ids[0],situationId:arrival.situationId,dueAt:due,
     });
     const livedNowStore={
+      inspectLivedBoundary:()=>null,
       getCurrentSituation:id=>id===ids[0]?arrival:departure,
       getSituationAt:id=>id===ids[0]?arrival:departure,
       getPreviousSituation:()=>null,
@@ -391,6 +393,7 @@ test("a witnessed short overlap expires without inventing a social refusal or co
   };
   let meetingCalls=0;
   const livedNowStore={
+    inspectLivedBoundary:()=>null,
     getCurrentSituation:threadId=>threadId===ids[0]?visitor:departure,
     getSituationAt:(threadId,at)=>threadId===ids[0]?visitor
       :at<left?witness:departure,
@@ -485,6 +488,7 @@ test("sustained shared presence reaches voluntary social consideration without f
     establishedAt:"2026-10-21T11:20:00.063Z"};
   let attempts=0;
   const livedNowStore={
+    inspectLivedBoundary:()=>null,
     getCurrentSituation:id=>id===ids[0]?refreshed:reader,
     getSituationAt:(id,at)=>id===ids[0]?(at>=refreshed.establishedAt?refreshed:arrival):reader,
     getPreviousSituation:(id,before)=>id===ids[0]&&before>arrival.establishedAt
