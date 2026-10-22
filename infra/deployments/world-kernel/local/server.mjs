@@ -440,6 +440,7 @@ export async function startWorldKernelFromEnvironment(
     experienceStore:livedExperienceStore,
     livedNowStore,
     worldReader:store,
+    embodimentStore,
     semanticStateStore,
     memoryStore:autobiographicalMemoryStore,
     onExperienceQueued:(queued)=>experienceConsolidationWakeScheduler(queued),
@@ -467,7 +468,7 @@ export async function startWorldKernelFromEnvironment(
   let socialModelAdapter=null;
   const socialMeetingService=createSocialMeetingService({
     worldReader:store,livedNow:contactLivedNow,livedNowStore,
-    identityStore,situatedLifeStore,semanticStateStore,
+    identityStore,situatedLifeStore,semanticStateStore,embodimentStore,
     memoryStore:autobiographicalMemoryStore,
     experienceStore:livedExperienceStore,
     modelAdapter:{
