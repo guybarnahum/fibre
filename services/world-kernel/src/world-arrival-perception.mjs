@@ -52,6 +52,8 @@ export function createWorldArrivalPerception({
           if(witnesses.length>0){
             const describe=situation=>observablePerson({
               threadId:situation.threadId,situation,embodimentStore,
+              name:worldReader.getThread(situation.threadId,{required:false})
+                ?.identity?.name??null,
             }).observableDescription;
             const story={storyVersion:"encounter-story-v0.1",
               beats:[
