@@ -893,6 +893,47 @@ test("E7.5 admitted Flight Plan boundaries advance life without polling",async()
     lived.close();
   }));
 
+test("a failed life retries its original planned departure, not the backoff clock",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    try{
+      lived.recordPlan(personalPlan(life));
+      const actual=createLivedNowService({
+        livedNowStore:lived,
+        onSituationResolved:situation=>lived.scheduleNextLivedBoundary({
+          threadId:situation.threadId,situationId:situation.situationId,
+          dueAt:nextLivedBoundary(lived,situation),
+        }),
+      });
+      await actual.ensure({threadId:life.thread.threadId,
+        at:"2026-09-10T05:05:00.000Z"});
+      let clock="2026-09-10T05:15:00.000Z",attempts=0;
+      const witnessed=[];
+      const process=createLivedBoundaryProcess({
+        livedNowStore:lived,
+        livedNow:{async ensure(input){
+          witnessed.push(input.at);
+          if(attempts++===0)throw new Error("provider unavailable");
+          return actual.ensure(input);
+        }},
+        now:()=>clock,
+      });
+      assert.equal((await process.runOnce()).results[0].outcome,"retry_scheduled");
+      clock=lived.inspectLivedBoundary(life.thread.threadId).dueAt;
+      assert.notEqual(clock,"2026-09-10T05:15:00.000Z",
+        "retry did not schedule recovery");
+      const resumed=await process.runOnce();
+      assert.equal(resumed.results[0].outcome,"advanced",
+        "original departure did not recover");
+      assert.deepEqual(witnessed,[
+        "2026-09-10T05:15:00.000Z","2026-09-10T05:15:00.000Z",
+      ],"retry rewrote a Flight Plan boundary as its backoff time");
+      assert.equal(lived.getCurrentSituation(life.thread.threadId).phase,
+        "in_transit","retry did not enact the original departure");
+    }finally{lived.close();}
+  }));
+
 test("an interrupted World's overdue life debt is paced, not awakened in a burst",async()=>{
   const at="2026-10-22T04:10:00Z";
   let ensured=0;
