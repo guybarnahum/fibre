@@ -899,14 +899,13 @@ test("contiguous enacted sameness can accumulate across short snapshots without 
   assert.equal(ordinary.modelCallCount(), 0,
     "background ambient opportunity should remain zero-cognition");
 
-  assert.equal(lowNoveltyAttempt.salience.outcome, "salient",
-    "cumulative enacted sameness should make an otherwise-background opportunity material");
-  assert.equal(lowNoveltyAttempt.salience.anchors.includes("exploration_pressure"), true,
-    "salience should expose exploration pressure as the materiality reason");
-  assert.equal(lowNoveltyAttempt.initiation.decision, "not_initiate",
-    "exploration pressure must not force social engagement");
-  assert.equal(lowNovelty.modelCallCount() > 0, true,
-    "salient opportunity should earn cognition before refusal");
+  assert.equal(lowNoveltyAttempt.salience.outcome, "background",
+    "stillness alone turned ordinary company into social interest");
+  assert.equal(lowNoveltyAttempt.salience.bodyAtGate?.drives.some(
+    drive=>drive.family==="exploration"),true,
+    "genuine restlessness was erased from Body evidence");
+  assert.equal(lowNovelty.modelCallCount(),0,
+    "stillness forced unearned social cognition");
   assert.equal(lowNovelty.socialInteractions.length, 0,
     "private refusal after curiosity must still create no shared interaction");
 });
