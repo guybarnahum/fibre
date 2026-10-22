@@ -205,6 +205,11 @@ When a *new* Thread-authored Flight Plan fails admission for one of the
 explicit travel-feasibility reasons (no elapsed transit, new-place travel
 without time, or insufficient time for known distance), the same Thread may
 reconsider **once** with World's exact rejection in its planning context.
+When two planned stops change physical place without elapsed transit, that
+feedback names their stop numbers and end/start timestamps; missing journey
+descriptions are similarly identified. The Thread can adjust its timing or
+independently decide to stay at the current place. This is corrective
+information, not an operator-authored itinerary.
 The second proposal is a distinct cognitive request; it must independently
 pass the original World validation and admission. Fibre does not insert travel
 minutes, change destinations, fabricate presence, or admit the rejected plan.
