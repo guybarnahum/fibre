@@ -229,10 +229,10 @@ function threadRow(thread) {
   link.type = "button";
   link.className = "thread-population-name thread-link";
   link.dataset.threadId = thread.threadId;
-  link.title = "Inspect";
   link.textContent = thread.admitted === true
     ? identity.name ?? "Unnamed Thread"
     : thread.admitted === false ? "Activity-only ID" : "Unresolved ID";
+  link.title = `Inspect ${link.textContent}`;
   const ids = document.createElement("small");
   ids.className = "thread-population-identifiers mono";
   const identityMeta = [identity.fibreIdentityNumber, identity.lifecycleStatus].filter(Boolean);
@@ -247,7 +247,7 @@ function threadRow(thread) {
   ethnicity.textContent=physicalOriginsText(thread);
   ethnicity.title=ethnicity.textContent==="—"
     ?"No durable parental physical-origin evidence is recorded for this Thread."
-    :"Recorded parental physical-origin evidence; never inferred from birthplace, name, language, culture, or portrait.";
+    :`${ethnicity.textContent} · Recorded parental physical-origin evidence.`;
   const birthplace=threadBirthplaceCell(identity);
   const currentPlace=threadCurrentPlaceCell(thread.currentLocation,thread.operatorCurrentPlace,thread.unlocatedPlace);
   const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
@@ -267,6 +267,7 @@ function threadRow(thread) {
   }
   if (thread.reconciliation?.lastError?.message) reconciliation.title = thread.reconciliation.lastError.message;
   const lastActivity = document.createElement("td"); lastActivity.className = "time"; lastActivity.textContent = when(thread.lastActivityAt);
+  lastActivity.title = lastActivity.textContent;
 
   tr.append(portraitCell, person, ethnicity, birthplace, currentPlace, sex, birthDate, health, reconciliation, lastActivity, actionCell(thread));
   return tr;
