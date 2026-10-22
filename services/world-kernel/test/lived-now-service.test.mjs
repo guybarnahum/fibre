@@ -895,6 +895,18 @@ test("a lost or obsolete life deadline is repaired without rewriting the Thread"
     assert.equal(lived.repairLostLivedBoundaries({at:auditAt}).repaired.length,0,
       "repeated audit rescheduled an already recovered Thread");
 
+    lived.close();
+    const clearedDatabase=new DatabaseSync(databasePath);
+    clearedDatabase.prepare(
+      "UPDATE lived_now_next_boundaries SET due_at=NULL WHERE thread_id=?",
+    ).run(life.thread.threadId);
+    clearedDatabase.close();
+    lived=openLivedNowStore(storage);
+    assert.equal(lived.repairLostLivedBoundaries({at:"2026-10-22T04:20:00Z"})
+      .repaired.length,1,"a cleared wake permanently stopped established life");
+    assert.equal(lived.inspectLivedBoundary(life.thread.threadId)?.dueAt,
+      "2026-10-22T04:35:00.000Z","a cleared wake was not given a future recovery");
+
     const current=await createLivedNowService({livedNowStore:lived}).ensure({
       threadId:life.thread.threadId,at:"2026-09-10T05:35:00Z",
     });
