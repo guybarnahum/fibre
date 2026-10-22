@@ -76,7 +76,7 @@ export function createLivedBoundaryProcess({
           const plannedAt=(item.failedAttempts??0)>0&&present!==null
             ?nextLivedBoundary(livedNowStore,present):null;
           const boundaryAt=plannedAt??item.dueAt;
-          const enactAt=present!==null
+          const enactAt=present?.establishedAt
             &&Date.parse(present.establishedAt)>Date.parse(boundaryAt)
             ?present.establishedAt:boundaryAt;
           const current=await livedNow.ensure({
@@ -84,7 +84,7 @@ export function createLivedBoundaryProcess({
             at:enactAt,
           });
           const settled=livedNowStore.settleLivedBoundary(item);
-          if(settled&&present!==null
+          if(settled&&present?.establishedAt
             &&Date.parse(present.establishedAt)>Date.parse(boundaryAt)){
             // The old wake was overtaken by newer authoritative life.
             // Do not leave the current scene unarmed after settling it.
