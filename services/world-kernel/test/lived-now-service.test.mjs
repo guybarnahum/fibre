@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
-import { createLocalInfraDriver } from "#infra/providers/local";
+import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 
 import { openWorldStore } from "../src/persistence.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
@@ -1038,9 +1038,17 @@ test("periodic recovery restores a lost Thread wake through World into continuin
       }),
     });
     let clock=Date.parse("2030-06-01T05:08:00Z");
-    const infra=createLocalInfraDriver({
-      stateScopes:{world:":memory:"},
-      schedulerScopes:{world:{onWake:async()=>{}}},
+    // Use the real Cloudflare scheduler adapter without wall-clock timers.
+    let alarm=null;
+    const alarmStorage={
+      sql:{exec:()=>({rowsWritten:0,toArray:()=>[]})},
+      transactionSync:run=>run(),
+      getAlarm:()=>alarm,
+      setAlarm:value=>{alarm=value;},
+      deleteAlarm:()=>{alarm=null;},
+    };
+    const infra=createCloudflareInfraDriver({
+      schedulerScopes:{world:alarmStorage},
     });
     const process=createWorldReconciliationProcess({
       livedBoundaryProcess:createLivedBoundaryProcess({
