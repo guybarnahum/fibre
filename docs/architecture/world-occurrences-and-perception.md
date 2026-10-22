@@ -227,6 +227,32 @@ Experience govern any subsequent conversation. A salient arrival can
 still yield `not_initiated`; the recipient can decline. An interrupted
 outward attempt is not automatically replayed.
 
+### Mutual noticing and objective arrival presence — October 22 source
+
+A verified arrival with captured awake company records **one** objective
+Encounter Story: the newcomer's arrival action and a presence beat for
+each bounded existing witness (at most two). Each beat may use only
+authoritative public appearance and enacted activity; it may not speak
+the globally stored civil name as if a stranger learned it. No new event
+or environmental author's model call is created to manufacture a scene.
+
+Within the existing one-hour freshness window, all witnesses independently
+appraise attention, **then the arriver** may notice the same objective Story
+through ordinary `admitEncounterAttention`. Each noticed result earns an
+observer-owned Experience that can alter the next individual social salience
+gate; a not-noticed appraisal earns none. The arriving person's one-shot
+social opportunity remains **unclaimed** until its own arrival-perception
+work is completed. A deferred perception obligation waits for its existing
+life recovery, never a new timer or a replay of outward words.
+
+Familiarity is observer-relative, not a World property: names in the
+Situated Percept require an established life relation or an admitted
+previous meeting with actual speech. Recognizing introductions and
+learning names remain deferred. Public embodiment only changes the
+bounded observable description given to cognition; it does not claim
+that appearance alone produces a social decision. See
+[observer knowledge decision](../decisions/observer-grounded-person-knowledge.md).
+
 ### World-time social correctness — October 22 source correction
 
 A social opportunity must **read** an enacted scene, never advance it. The
