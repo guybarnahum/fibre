@@ -290,18 +290,60 @@ export class LivedExperienceStore {
     return Object.freeze({inserted,dueAt});
   }
 
-  nextSocialOpportunityAt(){
+  nextSocialOpportunityAt({after=null}={}){
+    if(after!==null)assertIsoTimestamp("social opportunity after",after);
     return this.#database.prepare(`
-      SELECT due_at FROM (
-        SELECT due_at FROM world_social_opportunities WHERE started_at IS NULL
+      SELECT o.due_at FROM (
+        SELECT thread_id,NULL AS counterparty_thread_id,due_at
+        FROM world_social_opportunities WHERE started_at IS NULL
         UNION ALL
-        SELECT due_at FROM world_observed_social_opportunities
-          WHERE started_at IS NULL
-      ) ORDER BY due_at LIMIT 1
-    `).get()?.due_at??null;
+        SELECT thread_id,counterparty_thread_id,due_at
+        FROM world_observed_social_opportunities WHERE started_at IS NULL
+      ) o
+      WHERE (? IS NULL OR o.due_at>?)
+        AND NOT EXISTS (
+          SELECT 1 FROM lived_now_next_boundaries b
+          WHERE (b.thread_id=o.thread_id OR b.thread_id=o.counterparty_thread_id)
+            AND (b.failed_attempts>0 OR b.due_at<=o.due_at
+              OR (? IS NOT NULL AND b.due_at<=?))
+        )
+      ORDER BY o.due_at LIMIT 1
+    `).get(after,after,after,after)?.due_at??null;
   }
 
-  claimDueSocialOpportunity({at}){
+  listDueSocialOpportunities({at,limit=8}){
+    assertIsoTimestamp("social opportunity now",at);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>16){
+      throw new TypeError("bounded social opportunity read requires 1-16 entries");
+    }
+    // Filter known parties' unresolved life in SQL *before* the bound.
+    // Arrival candidates must additionally be checked against their venue.
+    return this.#database.prepare(`
+      SELECT o.* FROM (
+        SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,situation_id,
+          NULL AS counterparty_thread_id,NULL AS venue_ref,due_at
+        FROM world_social_opportunities WHERE started_at IS NULL AND due_at<=?
+        UNION ALL
+        SELECT 'observed' AS kind,encounter_ref,thread_id,situation_id,
+          counterparty_thread_id,venue_ref,due_at
+        FROM world_observed_social_opportunities
+        WHERE started_at IS NULL AND due_at<=?
+      ) o
+      WHERE NOT EXISTS (
+        SELECT 1 FROM lived_now_next_boundaries b
+        WHERE (b.thread_id=o.thread_id OR b.thread_id=o.counterparty_thread_id)
+          AND (b.failed_attempts>0 OR b.due_at<=?)
+      )
+      ORDER BY o.due_at,o.kind,o.situation_id LIMIT ?
+    `).all(at,at,at,limit).map(row=>Object.freeze({
+      kind:row.kind,sourceEncounterRef:row.encounter_ref,
+      threadId:row.thread_id,situationId:row.situation_id,
+      counterpartyThreadId:row.counterparty_thread_id,
+      venueRef:row.venue_ref,dueAt:row.due_at,
+    }));
+  }
+
+  claimDueSocialOpportunity({at,selected=null}){
     assertIsoTimestamp("social opportunity now",at);
     return this.#database.transaction(()=>{
       const row=this.#database.prepare(`
@@ -315,8 +357,14 @@ export class LivedExperienceStore {
             counterparty_thread_id,venue_ref,due_at
           FROM world_observed_social_opportunities
           WHERE started_at IS NULL AND due_at<=?
-        ) ORDER BY due_at,kind,situation_id LIMIT 1
-      `).get(at,at);
+        ) o
+        WHERE (? IS NULL OR (o.kind=? AND o.thread_id=?
+          AND o.situation_id=?
+          AND (? IS NULL OR o.encounter_ref=?)))
+        ORDER BY o.due_at,o.kind,o.situation_id LIMIT 1
+      `).get(at,at,selected?.kind??null,selected?.kind??null,
+        selected?.threadId??null,selected?.situationId??null,
+        selected?.sourceEncounterRef??null,selected?.sourceEncounterRef??null);
       if(row===undefined)return null;
       const observed=row.kind==="observed";
       const changed=observed
