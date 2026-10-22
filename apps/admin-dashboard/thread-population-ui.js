@@ -16,7 +16,7 @@ import {
 } from "./view-invalidation.js";
 import { bindCopyAction } from "./copy-action.js";
 import { threadLifeStatus, threadLifeDescription, populationLifeContinuity } from "./thread-life-status.mjs";
-import { setBlockingButtonState, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
+import { faIcon, setBlockingButtonState, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
 import { createThreadEditButton } from "./thread-edit-menu.js";
 import { countryFlag, rememberPendingBirth, rememberPopulationThread, threadBirthplaceText } from "./thread-label-cache.js";
 import {
@@ -123,10 +123,13 @@ function physicalOriginsText(thread) {
 function threadBirthplaceCell(identity) {
   const cell=document.createElement("td");
   cell.className="thread-population-birthplace";
-  cell.append(createThreadLocation(identity?.birthLocation,{
+  const location=createThreadLocation(identity?.birthLocation,{
     fallback:identity?.birthPlace??null,
-    className:"thread-population-birthplace-value",
-  }));
+    className:"thread-population-birthplace-value",showText:false,
+  });
+  cell.title=location.title;
+  if(!location.textContent)cell.textContent="—";
+  else cell.append(location);
   return cell;
 }
 
@@ -141,10 +144,12 @@ function threadCurrentPlaceCell(location,operatorCurrentPlace,unlocatedPlace=nul
     cell.title=`Enacted place · ${unlocatedPlace.name??unlocatedPlace.placeRef} · geography unknown`;
     return cell;
   }
-  cell.append(createThreadLocation(publicPlace??privatePlace,{
+  const label=createThreadLocation(publicPlace??privatePlace,{
     className:"thread-population-current-place-value",
-    suffix:null,
-  }));
+    showText:false,
+  });
+  if(!label.textContent)cell.textContent="—";
+  else cell.append(label);
   if(privatePlace)cell.title=operatorCurrentPlace.specificPlace??"World-attested current place";
   else if(location?.establishedAt)cell.title="Last enacted · "+when(location.establishedAt);
   return cell;
@@ -247,10 +252,21 @@ function threadRow(thread) {
   ethnicity.textContent=physicalOriginsText(thread);
   ethnicity.title=ethnicity.textContent==="—"
     ?"No durable parental physical-origin evidence is recorded for this Thread."
-    :`${ethnicity.textContent} · Recorded parental physical-origin evidence.`;
+    :ethnicity.textContent;
   const birthplace=threadBirthplaceCell(identity);
   const currentPlace=threadCurrentPlaceCell(thread.currentLocation,thread.operatorCurrentPlace,thread.unlocatedPlace);
-  const sex = document.createElement("td"); sex.textContent = identity.sex ? human(identity.sex) : "—";
+  const sex=document.createElement("td");
+  const recordedSex=typeof identity.sex==="string"?identity.sex.toLowerCase():null;
+  sex.title=identity.sex?human(identity.sex):"Sex unknown";
+  if(recordedSex==="male"||recordedSex==="female"){
+    const marker=document.createElement("span");
+    marker.className="thread-population-sex";
+    marker.setAttribute("role","img");
+    marker.setAttribute("aria-label",recordedSex);
+    marker.title=recordedSex;
+    marker.append(faIcon(recordedSex==="male"?"mars":"venus"));
+    sex.append(marker);
+  }else sex.textContent="—";
   const birthDate = document.createElement("td"); birthDate.textContent = identity.birthDate ?? "—";
   const health = document.createElement("td"); health.append(badge(thread.admitted === false ? "not admitted" : thread.health, healthKind(thread.health)));
   const reconciliation = document.createElement("td");
