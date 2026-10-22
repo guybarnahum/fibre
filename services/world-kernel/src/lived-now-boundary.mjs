@@ -31,9 +31,11 @@ export function nextLivedBoundary(livedNowStore,situation){
 export async function auditLivedContinuity({livedNowStore,reconciliationRuntime,at}){
   if(!livedNowStore.continuityAuditDue(at))return {audited:false};
   const result=livedNowStore.repairLostLivedBoundaries({at});
-  // Keep the audit due if scheduling fails; the next watchdog can retry.
-  if(result.nextWakeAt!==null){
-    await reconciliationRuntime.requestWakeAt(Date.parse(result.nextWakeAt));
+  // Reconcile the earliest durable debt, not just today's new repairs:
+  // a previous audit may have saved a wake before its scheduler handoff failed.
+  const nextDueAt=livedNowStore.nextLivedBoundaryAt();
+  if(nextDueAt!==null){
+    await reconciliationRuntime.requestWakeAt(Date.parse(nextDueAt));
   }
   const nextAuditAt=livedNowStore.recordContinuityAudit({
     at,hasMore:result.hasMore,
