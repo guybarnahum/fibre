@@ -6,7 +6,9 @@ import { canonicalVisualAppearanceLayers } from "./canonical-visual-identity-fro
 function publicAppearance(threadId,embodimentStore){
   const portraits=embodimentStore?.listCurrent?.(threadId)??[];
   for(const embodiment of portraits){
-    const projection=projectPublicEmbodimentVisualIdentity(embodiment);
+    const projection=projectPublicEmbodimentVisualIdentity(embodiment,{
+      provenanceRef:embodiment.embodimentId,
+    });
     if(projection===null)continue;
     const layers=canonicalVisualAppearanceLayers(projection.subjectDescription);
     const description=layers===null?projection.subjectDescription
