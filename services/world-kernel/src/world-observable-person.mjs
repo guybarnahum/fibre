@@ -14,7 +14,7 @@ function publicAppearance(threadId,embodimentStore){
     const description=layers===null?projection.subjectDescription
       :[layers.geometryDescription.slice(0,160),
         layers.surfaceDescription.slice(0,160)].join("; ");
-    return description.trim().slice(0,340);
+    return description.replace(/\bThreads?\b/gi,"person").trim().slice(0,340);
   }
   return null;
 }
