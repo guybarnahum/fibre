@@ -920,6 +920,18 @@ export default Object.freeze({
     const status=await world.fetch(new Request(base+"status",{headers}));
     if(!status.ok)throw new Error("World continuity watchdog could not inspect reconciliation");
     const state=await status.json();
+    if(state.continuityAuditDue===true){
+      const audit=await world.fetch(new Request(base+"continuity-audit",{
+        method:"POST",headers,
+      }));
+      if(!audit.ok)throw new Error("World continuity watchdog could not audit life obligations");
+      const result=await audit.json();
+      if(result.repaired>0)console.log(JSON.stringify({
+        event:"world-continuity-obligations-restored",
+        repaired:result.repaired,hasMore:result.hasMore,
+        nextAuditAt:result.nextAuditAt,
+      }));
+    }
     if(!worldAlarmNeedsRevival({
       scheduledTimeMs:state.reconciliation?.scheduledTimeMs??null,
       earliestLivedBoundaryAt:state.earliestLivedBoundaryAt??null,
