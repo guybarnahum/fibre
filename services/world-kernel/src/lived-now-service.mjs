@@ -506,15 +506,18 @@ async function catchUpDormantInterval({
   });
 
   const priorPlan=personalPlanForSituation(livedNowStore,current);
-  let anchor = advanceThroughExistingPlan(livedNowStore, current, at);
-  let placeRef = startingPlaceRef(anchor);
+  const unobservedGap=Date.parse(at)-Date.parse(current.establishedAt)>4*DAY_MS;
+  // A long outage is missing life, not permission to invent weeks of history.
+  // Resume from the last enacted place; preserve the unobserved interval.
+  // A last-observed transit can still resolve through its admitted final stop.
+  let anchor=unobservedGap&&current.phase==="at_place"
+    ?current:advanceThroughExistingPlan(livedNowStore,current,at);
+  let placeRef=startingPlaceRef(anchor);
   const sinceHorizon=Date.parse(at)-Date.parse(priorPlan?.horizonEnd??"");
   const boundaryDelivery=anchor.establishedAt===priorPlan?.horizonEnd
     &&sinceHorizon>0&&sinceHorizon<=BOUNDARY_DELIVERY_GRACE_MS;
-  // The admitted plan establishes life through its final instant. Seconds
-  // of alarm-delivery lag are not a dormant biography requiring invented
-  // retrospective intentions. Longer gaps retain bounded historical catch-up.
-  const windows=boundaryDelivery?[]:dormantWindows(anchor.establishedAt,at);
+  const windows=unobservedGap||boundaryDelivery
+    ?[]:dormantWindows(anchor.establishedAt,at);
   let finalRetrospectivePlan = null;
 
   for (let index = 0; index < windows.length; index += 1) {
