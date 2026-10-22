@@ -112,7 +112,7 @@ export function createLivedBoundaryProcess({
       return Object.freeze({
         attempted:due.length,failed,
         nextDueAt,
-        hasDue:nextDueAt!==null&&Date.parse(nextDueAt)<=Date.parse(at),
+        hasDue:next!==null&&Date.parse(next)<=Date.parse(at),
         results:Object.freeze(results),
       });
     },
