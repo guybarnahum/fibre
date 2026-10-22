@@ -133,14 +133,14 @@ Refreshing the candidate snapshot between waves changes the selected
 set; if it is refreshed, recompute offsets and avoid repeat selection
 based on already-saved wave evidence.
 
-A prior blocked wake is not repaired by merely resetting its three-attempt
-counter. The underlying planner output must first be admissible. Successful
-`LivedNow.ensure` should admit a new Thread-owned plan and naturally
-re-arm its per-Thread life frontier; verify the resulting plan horizon
-and non-null next wake with `thread-journey:probe`. If a wake fails,
-inspect the saved World response `code`, `detail` and
-`diagnostics.stage` before retrying. An HTTP error may follow already
-committed historical World boundaries: never assume it rolled back.
+A failed wake is not repaired by resetting its attempt counter.
+World now retains a paced recovery deadline, but the underlying plan must
+still be admissible. Successful `LivedNow.ensure` admits a new Thread-owned
+plan and re-arms its per-Thread life frontier; verify its plan horizon
+and non-null next wake with `thread-journey:probe`. On an exceptional
+manual failure, inspect the saved response `code`, `detail` and
+`diagnostics.stage` before intervening again. An HTTP error may follow
+already committed historical World boundaries: never assume it rolled back.
 
 **Stop expansion** when any provider quota/row-read limit is approached,
 a wave fails, World reconciliation backlog grows, admitted life is
