@@ -34,7 +34,7 @@ export function personKnownToObserver({
 
 function redactUnknownName(description,name){
   if(typeof name!=="string"||name.trim()==="")return description;
-  // Remove a complete name and its individual words from public prose.
+  // A public portrait can contain the full name and individual name tokens.
   const parts=[name.trim(),...(name.match(/[\p{L}\p{N}]+/gu)??[])]
     .filter(part=>part.length>1).sort((a,b)=>b.length-a.length);
   return [...new Set(parts)].reduce((text,part)=>{
@@ -44,16 +44,9 @@ function redactUnknownName(description,name){
     ),"a person");
   },description);
 }
-// One World-owned projection reused by objective arrival and private percept.");
-    return text.replace(new RegExp(
-      `(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`,"giu",
-    ),"a person");
-  },description);
-}
 
-// One World-owned projection reused by objective arrival and private percept.
-// The name field reflects *observer knowledge*, never the other person's
-// globally stored legal identity being magically visible to strangers.
+// This is an observer-relative projection, not a new identity authority.
+// Objective stories have no observer and must not disclose civil names.
 export function observablePerson({
   threadId,situation,observerThreadId=null,name=null,
   embodimentStore=null,situatedLifeStore=null,experienceStore=null,
