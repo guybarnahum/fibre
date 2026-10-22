@@ -74,7 +74,7 @@ export function createWorldSocialOpportunity({
   }
   for(const method of [
     "getCurrentSituation","getSituationAt","getPreviousSituation",
-    "getWorldPlace","listCurrentVenueSituations",
+    "inspectLivedBoundary","getWorldPlace","listCurrentVenueSituations",
   ]){
     if(typeof livedNowStore?.[method]!=="function"){
       throw new TypeError(`social opportunity requires ${method}()`);
@@ -104,7 +104,7 @@ export function createWorldSocialOpportunity({
             )?.physicalVenue?.ref??null:null;
           const observed=opportunity.kind==="observed";
           const hasDue=threadId=>{
-            const debt=livedNowStore.inspectLivedBoundary?.(threadId);
+            const debt=livedNowStore.inspectLivedBoundary(threadId);
             return (debt?.failedAttempts??0)>0
               ||(debt?.dueAt!==null&&debt?.dueAt!==undefined
                 &&Date.parse(debt.dueAt)<=Date.parse(at));
