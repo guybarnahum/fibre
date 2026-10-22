@@ -63,18 +63,11 @@ export function createLivedBoundaryProcess({
     async runOnce(){
       const at=now();
       const due=livedNowStore.listDueLivedBoundaries({at,limit:4});
-      // At equal plan instants, an existing occupant's departure closes
-      // presence before another person's arrival can capture witnesses.
-      // A bounded batch does not scan the population or change the clock.
-      const ordered=due.map(item=>({
-        ...item,departing:livedNowStore.getCurrentSituation?.(item.threadId)
-          ?.location?.kind==="place",
-      })).sort((a,b)=>a.dueAt.localeCompare(b.dueAt)
-        ||Number(b.departing)-Number(a.departing)
-        ||a.threadId.localeCompare(b.threadId));
+      // The indexed queue already orders due instants and puts departures
+      // before equal-time arrivals, even across bounded batch limits.
       const failed=0;
       const results=[];
-      for(const item of ordered){
+      for(const item of due){
         try{
           // Plan-time enactment preserves the original place interval.
           // Never move behind a more recent authoritative present.
