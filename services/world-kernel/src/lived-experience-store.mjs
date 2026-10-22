@@ -251,6 +251,14 @@ export class LivedExperienceStore {
     })];
   }
 
+  arrivalPerceptionPending(situationId){
+    assertId("arrival social prerequisite",situationId);
+    return this.#database.prepare(`
+      SELECT 1 FROM world_arrival_perception_work
+      WHERE situation_id=? AND completed_at IS NULL
+    `).get(situationId)!==undefined;
+  }
+
   completeArrivalPerception({situationId,encounterRef=null,at}){
     assertId("arrival perception situation",situationId);
     if(encounterRef!==null)assertId("arrival perception story",encounterRef);
