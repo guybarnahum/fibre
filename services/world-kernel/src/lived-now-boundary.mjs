@@ -26,6 +26,24 @@ export function nextLivedBoundary(livedNowStore,situation){
   return times[0]??null;
 }
 
+// The World watchdog repairs only lost obligations; actual life remains
+// governed by each Thread's admitted Plan and the ordinary LivedNow wake.
+export async function auditLivedContinuity({livedNowStore,reconciliationRuntime,at}){
+  if(!livedNowStore.continuityAuditDue(at))return {audited:false};
+  const result=livedNowStore.repairLostLivedBoundaries({at});
+  // Keep the audit due if scheduling fails; the next watchdog can retry.
+  if(result.nextWakeAt!==null){
+    await reconciliationRuntime.requestWakeAt(Date.parse(result.nextWakeAt));
+  }
+  const nextAuditAt=livedNowStore.recordContinuityAudit({
+    at,hasMore:result.hasMore,
+  });
+  return {
+    audited:true,repaired:result.repaired.length,
+    hasMore:result.hasMore,nextAuditAt,
+  };
+}
+
 export function createLivedBoundaryProcess({
   livedNowStore,livedNow,now=()=>new Date().toISOString(),
 }={}){
