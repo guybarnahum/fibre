@@ -875,7 +875,7 @@ test("background co-presence costs no cognition and creates no private refusal",
     "background opportunity must create no Encounter Story");
 });
 
-test("contiguous enacted sameness can accumulate across short snapshots without forcing engagement", async () => {
+test("contiguous stillness preserves exploration Body evidence without unearned social cognition", async () => {
   const ordinary = fixture({
     plannedCompanions:false,
     sustainedSameness:false,
@@ -911,7 +911,7 @@ test("contiguous enacted sameness can accumulate across short snapshots without 
   assert.equal(lowNovelty.modelCallCount(),0,
     "stillness forced unearned social cognition");
   assert.equal(lowNovelty.socialInteractions.length, 0,
-    "private refusal after curiosity must still create no shared interaction");
+    "background interest created a false social interaction");
 });
 
 test("observable setting can bend social judgment for the same person", async () => {
