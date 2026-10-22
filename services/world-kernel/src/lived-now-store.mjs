@@ -218,6 +218,7 @@ function createTables(database) {
     const stranded=database.prepare(`
       SELECT f.thread_id,f.situation_id
       FROM current_situation_frontier f
+      JOIN threads t ON t.thread_id=f.thread_id AND t.status<>'retired'
       LEFT JOIN lived_now_next_boundaries b ON b.thread_id=f.thread_id
       WHERE (b.thread_id IS NULL OR b.due_at IS NULL)
         AND EXISTS (
