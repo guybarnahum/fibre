@@ -55,6 +55,38 @@ function setup(){
     close(){store.close();rmSync(dir,{recursive:true,force:true});}};
 }
 
+test("an event-time departure cannot remain an arrival witness",async()=>{
+  const ctx=setup();
+  try{
+    ctx.store.enqueueArrivalPerception(ctx.work);
+    const original=ctx.livedNowStore.getSituationAt;
+    ctx.livedNowStore.getSituationAt=(id,at)=>{
+      const scene=original(id,at);
+      return id===ctx.ids[0]?scene:{
+        ...scene,establishedAt:at,
+        location:{kind:"transit",fromPlaceRef:"wpl_verified_cafe",
+          toPlaceRef:"per:home",progress:0},
+      };
+    };
+    let calls=0;
+    const process=createWorldArrivalPerception({
+      experienceStore:ctx.store,livedNowStore:ctx.livedNowStore,
+      worldReader:{getThread:()=>null},
+      semanticStateStore:{listCurrentState:()=>[]},
+      memoryStore:{listCurrentMemories:()=>[]},
+      modelAdapter:{async invoke(){calls++;throw Error("invented notice");}},
+      now:()=>AT,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.failed,0,"World could not settle the invalid witness set");
+    assert.equal(result.results[0].outcome,"not_observable",
+      "departed people became event-time witnesses");
+    assert.equal(ctx.store.listEncounterStories(ctx.ids[0]).length,0,
+      "simultaneous departure invented an Encounter Story");
+    assert.equal(calls,0,"absent witnesses received personal attention cognition");
+  }finally{ctx.close();}
+});
+
 test("one enacted arrival permits distinct noticing and missed attention with retry",async()=>{
   const ctx=setup();
   try{
