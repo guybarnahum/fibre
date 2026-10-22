@@ -134,8 +134,16 @@ export function createWorldSocialOpportunity({
       assertIsoTimestamp("social opportunity at",at);
       // Never start an irreversible one-shot while its scene is uncertain.
       // Inspect a bounded set; skipped opportunities remain untouched.
-      const candidates=experienceStore.listDueSocialOpportunities({at,limit:8});
-      const selected=candidates.find(item=>!unresolvedVenueCompany(item,at))??null;
+      const candidates=experienceStore.listDueSocialOpportunities({at,limit:16});
+      const uncertainty=new Map();
+      const unresolved=item=>{
+        const key=item.kind+":"+item.threadId+":"+item.situationId;
+        if(!uncertainty.has(key)){
+          uncertainty.set(key,unresolvedVenueCompany(item,at));
+        }
+        return uncertainty.get(key);
+      };
+      const selected=candidates.find(item=>!unresolved(item))??null;
       const opportunity=selected===null?null
         :experienceStore.claimDueSocialOpportunity({at,selected});
       let outcome=null;
@@ -238,7 +246,7 @@ export function createWorldSocialOpportunity({
       // A blocked due opportunity does not keep waking World in a hot
       // loop. Its already-armed life boundary will cause reinspection.
       const anotherReady=candidates.some(item=>item!==selected
-        &&!unresolvedVenueCompany(item,at));
+        &&!unresolved(item));
       const nextDueAt=experienceStore.nextSocialOpportunityAt({
         after:anotherReady?null:at,asOf:at,
       });
