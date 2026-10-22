@@ -486,6 +486,80 @@ test("a rejected instantaneous journey is reconsidered by its Thread before Worl
     }
   }));
 
+test("precise travel rejection lets a Thread choose to stay without invented transit",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    const lived=openLivedNowStore(storage);
+    const world=openWorldStore(storage);
+    const identity=openIdentityStore(storage);
+    const semantic=openSemanticStateStore(storage);
+    const memory=openAutobiographicalMemoryStore(storage);
+    const situated=openSituatedLifeStore(storage);
+    let proposals=0;
+    const at="2026-09-10T05:10:00Z";
+    try{
+      const service=createLivedNowService({
+        livedNowStore:lived,worldStore:world,identityStore:identity,
+        semanticStateStore:semantic,memoryStore:memory,situatedLifeStore:situated,
+        modelAdapter:{async invoke(request){
+          if(request.input?.interoception)return {
+            output:{states:[]},
+            provenance:{provider:"fixture",modelId:"fixture-regulation"},
+          };
+          proposals++;
+          const context=request.input.concern.externalContext;
+          const from=context.startingPlaceRef;
+          assert.equal(from,life.homeRef,"planning lost the Thread's enacted starting place");
+          const stop={
+            presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
+            activity:"Draw at home.",purpose:"Follow my own quiet interest.",
+          };
+          const stops=proposals===1?[
+            {...stop,startAt:context.horizon.startAt,endAt:"2026-09-10T05:35:00Z",
+              physicalPlaceRef:from,travelFromPrevious:""},
+            {...stop,startAt:"2026-09-10T05:35:00Z",endAt:context.horizon.endAt,
+              physicalPlaceRef:life.libraryRef,travelFromPrevious:"Walk to the library"},
+          ]:[{
+            ...stop,startAt:context.horizon.startAt,endAt:context.horizon.endAt,
+            physicalPlaceRef:from,travelFromPrevious:"",
+          }];
+          if(proposals===2){
+            assert.match(context.planningRejection,/stops 1 and 2/,
+              "Thread did not learn which journey was impossible");
+            assert.match(context.planningRejection,/05:35:00Z/,
+              "Thread did not receive its rejected travel timing");
+            assert.match(context.planningRejection,/choose to stay/,
+              "World did not preserve the option of remaining where it is");
+          }
+          return {
+            output:{result:{stops},evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+            provenance:{provider:"fixture",modelId:"fixture-lived-planning",
+              providerRequestId:request.clientRequestId},
+          };
+        }},
+        onSituationResolved(current){
+          lived.scheduleNextLivedBoundary({
+            threadId:current.threadId,situationId:current.situationId,
+            dueAt:nextLivedBoundary(lived,current),
+          });
+        },
+      });
+      const present=await service.ensure({threadId:life.thread.threadId,at});
+      assert.equal(proposals,2,"journey correction used more than one reconsideration");
+      assert.equal(present.location.placeRef,life.homeRef,
+        "World forced movement after the Thread chose to stay");
+      const plans=lived.listPlans(life.thread.threadId,{kind:"personal"});
+      assert.equal(plans.length,1,"rejected itinerary entered lived history");
+      assert.equal(plans[0].stops.length,1,"World rewrote the Thread's revised intention");
+      assert.ok(lived.inspectLivedBoundary(life.thread.threadId)?.dueAt,
+        "remaining at home stranded the Thread's future life");
+    }finally{
+      situated.close();memory.close();semantic.close();identity.close();
+      world.close();lived.close();
+    }
+  }));
+
 test("N1 refuses to present a stale scene when elapsed life has no plan coverage", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
