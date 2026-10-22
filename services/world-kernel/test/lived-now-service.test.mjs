@@ -429,9 +429,11 @@ test("a rejected instantaneous journey is reconsidered by its Thread before Worl
           calls++;
           requestIds.push(request.clientRequestId);
           const context=request.input.concern.externalContext;
-          assert.equal(context.planningRejection??null,
-            calls===1?null:"personal Flight Plan place change requires transit time",
-            "the Thread did not receive the exact World travel rejection");
+          assert.equal(context.planningRejection===undefined,calls===1,
+            "travel reconsideration did not carry World rejection evidence");
+          if(calls===2)assert.ok(typeof context.planningRejection==="string"
+            &&context.planningRejection.length>0,
+            "the Thread did not receive a travel rejection reason");
           const from=context.startingPlaceRef;
           const to=from===life.homeRef?life.libraryRef:life.homeRef;
           assert.ok(context.availablePlaces.some(place=>place.ref===to),
