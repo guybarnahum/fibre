@@ -962,6 +962,39 @@ test("continuity repair preserves failure retries and never revives retired Thre
     lived.close();
   }));
 
+test("World audits lost life daily and preserves restored deadlines between checks",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    const lived=openLivedNowStore(storage);
+    lived.recordPlan(personalPlan(life));
+    const original=await createLivedNowService({livedNowStore:lived}).ensure({
+      threadId:life.thread.threadId,at:"2026-09-10T05:05:00Z",
+    });
+    const at="2026-10-22T05:00:00.000Z";
+    assert.equal(lived.continuityAuditDue(at),true,
+      "World did not recognize the first life audit");
+    const result=lived.repairLostLivedBoundaries({at});
+    assert.equal(result.repaired.length,1,"World did not recover a lost life deadline");
+    const deadline=lived.inspectLivedBoundary(life.thread.threadId)?.dueAt;
+    const nextAudit=lived.recordContinuityAudit({at,hasMore:result.hasMore});
+    assert.equal(lived.continuityAuditDue("2026-10-23T04:00:00.000Z"),false,
+      "World re-audited healthy lives before the daily checkpoint");
+    assert.equal(lived.continuityAuditDue(nextAudit),true,
+      "World failed to schedule its next life continuity check");
+    assert.equal(lived.inspectLivedBoundary(life.thread.threadId)?.dueAt,deadline,
+      "daily checkpoint changed the Thread's earned wake");
+    assert.equal(lived.getCurrentSituation(life.thread.threadId).situationId,
+      original.situationId,"auditing manufactured new life");
+
+    const nextBatch=lived.recordContinuityAudit({at,hasMore:true});
+    assert.equal(lived.continuityAuditDue("2026-10-22T05:59:59.000Z"),false,
+      "a bounded batch was immediately retried");
+    assert.equal(lived.continuityAuditDue(nextBatch),true,
+      "World stranded the remainder of a bounded recovery batch");
+    lived.close();
+  }));
+
 test("a failed Thread wake retains a quiet recovery deadline and eventually resumes life",async()=>
   withDatabase(async(databasePath)=>{
     const life=seedLife(databasePath);
