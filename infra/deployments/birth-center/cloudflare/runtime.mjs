@@ -328,7 +328,7 @@ export function recentBirths(runtime, {nowMs=Date.now}={}) {
     const times=[birth?.updatedAt,development?.updatedAt,disposition?.updatedAt,disposition?.settledAt]
       .map(v=>Date.parse(v??"")).filter(Number.isFinite);
     const latest=Math.max(...times);
-    if(!Number.isFinite(latest)||latest<cutoff||latest>now+60_000)continue;
+    if(!Number.isFinite(latest)||latest>now+60_000)continue;
     const published=disposition?.outcome==="born"||birth?.status==="published"
       ||(development?.status==="submitted"
         &&runtime.provisionalBirthStore?.get?.(development.genesisId)?.status==="published");
@@ -352,6 +352,7 @@ export function recentBirths(runtime, {nowMs=Date.now}={}) {
     const updatedAt=new Date(latest).toISOString();
     const timing=birthTiming({createdAt,updatedAt},nowMs);
     const active=!["published","stillborn","failed"].includes(status);
+    if(!active&&latest<cutoff)continue;
     history.push(Object.freeze({
       source:development?"development":"birth",requestId,
       requestedAt:birth?.requestedAt??development?.plan?.genome?.header?.createdAt??null,
