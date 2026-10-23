@@ -185,6 +185,27 @@ test("God-view maps a known current home without pretending the birthplace or an
   assert.equal(new Set(threads.map(t=>t.operatorCurrentPlace.placeRef)).size,3,
     "a common city is not proof of physical co-presence");
 });
+test("population map displays locality, never a Genesis learning narrative",()=>{
+  const description="Learning at home and community. "+("Long World history and everyday activities. ").repeat(18);
+  const threads=["thr_hilo_1","thr_hilo_2"].map(threadId=>({
+    threadId,
+    identity:{lifecycleStatus:"frozen"},
+    operatorCurrentPlace:{
+      kind:"place",current:true,
+      locality:"Hilo, Hawaii",country:"United States",countryCode:"US",
+      displayName:description,specificPlace:description,
+      lat:19.70737,long:-155.08158,
+    },
+  }));
+  const grouped=groupThreadsByCurrentLocation(threads);
+  assert.equal(grouped.locations.length,1,
+    "two residents were not grouped at one city");
+  assert.equal(grouped.locations[0].count,2);
+  assert.equal(grouped.locations[0].place.displayName,"Hilo, Hawaii, United States",
+    "World narrative leaked into the city map hover label");
+  assert.equal(grouped.locations[0].place.countryCode,"US");
+});
+
 test("known but unmappable current life is never replaced with its birthplace",()=>{
   const grouped=groupThreadsByCurrentLocation([{
     threadId:"thr_ambiguous_current",
