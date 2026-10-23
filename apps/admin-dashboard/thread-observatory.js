@@ -482,10 +482,11 @@ export function observatoryCurrentPlace(livedNow){
     const episode=(livedNow?.placeEpisodes??[]).find(place=>
       `per:${place.episodeId}:${place.revision}`===currentRef);
     const original=(atPrivatePlace?privatePlace:operatorPlace)?.specificPlace?.trim();
-    const description=atPrivatePlace?original:readableGenesisPlace(
-      original,worldPlace?.sourcePlaceId??(episode?.provenance==="genesis_created"
-        ?episode.place?.placeId:null),
-    );
+    const description=atPrivatePlace?original
+      :worldPlace?.physicalVenue?.displayName??readableGenesisPlace(
+        original,worldPlace?.sourcePlaceId??(episode?.provenance==="genesis_created"
+          ?episode.place?.placeId:null),
+      );
     return description&&description!==city?description+" · "+city:city;
   }
   const publicVenue=situation?.location?.kind==="place"
