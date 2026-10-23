@@ -30,6 +30,7 @@ import {
   bindLivePhysicalVenue,
   createLiveWorldPlaceTables,
   ensureLiveWorldPlaces,
+  genesisWorldPlacesForThread,
   liveWorldContext,
   listLiveWorldPlaces,
   resolveLivePhysicalVenue,
@@ -758,6 +759,11 @@ export class LivedNowStore {
 
   getPhysicalVenue(reference){
     return resolveLivePhysicalVenue(this.#database,reference);
+  }
+
+  listGenesisWorldPlaces(threadId){
+    this.#requireThread(threadId);
+    return genesisWorldPlacesForThread(this.#database,threadId);
   }
 
   getWorldPlace(threadId, reference, { required = true } = {}) {
