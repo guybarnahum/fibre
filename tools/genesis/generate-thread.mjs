@@ -266,12 +266,12 @@ async function main() {
   const emit=(stage,detail={})=>{
     activeStage=stage;stageStart=Date.now();
     process.stdout.write(JSON.stringify({event:"thread-birth-progress",stage,
-      requestId:birthRequestId,...detail})+"\\n");
+      requestId:birthRequestId,...detail})+"\n");
   };
   const heartbeat=setInterval(()=>{
     process.stdout.write(JSON.stringify({event:"thread-birth-progress",
       stage:activeStage,requestId:birthRequestId,
-      elapsedSeconds:Math.floor((Date.now()-stageStart)/1000)})+"\\n");
+      elapsedSeconds:Math.floor((Date.now()-stageStart)/1000)})+"\n");
   },10_000);
   heartbeat.unref?.();
   try {
@@ -365,7 +365,7 @@ async function main() {
             requestId,kind:event.type,attempt:event.attempt,
             maximumAttempts:event.maximumAttempts,
             ...(event.failure?{failureCode:event.failure.code,retrying:event.retrying}:{}),
-          })+"\\n");
+          })+"\n");
         }
       },
     });
