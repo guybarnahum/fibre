@@ -230,6 +230,12 @@ test("a shared visit owns one Body-band obligation across activity changes",asyn
     assert.equal(outcomes.at(-1),"not_initiated",
       "one real crossing failed to preserve a choice of silence");
     assert.equal(decisions,1,"one band produced repeated social decisions");
+    const afterCompletion=f.experience.enqueueSocialOpportunity({
+      threadId:reader,situationId:third.situationId,dueAt:bands[0].dueAt,
+      trigger:"need_band",needBand:0.4,visitSince:first.establishedAt,
+    });
+    assert.equal(afterCompletion.alreadyScheduled,true,
+      "a completed Body band became a second obligation in the same visit");
     assert.equal(f.experience.inspectSocialOpportunities(reader)
       .filter(row=>row.trigger==="need_band").length,1,
       "processing a crossing re-created the same band");
