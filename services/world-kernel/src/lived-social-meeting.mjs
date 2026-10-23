@@ -110,6 +110,7 @@ export function createSocialMeetingService({
   requireMethod("experienceStore", experienceStore, "recordEncounterStory");
   requireMethod("experienceStore", experienceStore, "listEncounterStories");
   requireMethod("experienceStore", experienceStore, "recordSocialInteraction");
+  requireMethod("experienceStore", experienceStore, "enqueueObservedSocialOpportunity");
   requireMethod("experienceStore", experienceStore, "listSocialInteractions");
   requireMethod("experienceStore", experienceStore, "getThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
@@ -289,7 +290,11 @@ export function createSocialMeetingService({
       story,
       visualization:createEncounterVisualization({
         occurredAt:at,story,
-        scene:"At "+(place?.physicalVenue?.displayName??"the shared place")+".",
+        scene:place?.physicalVenue?.displayName
+          ?"At "+place.physicalVenue.displayName+"."
+          :currentLeft.situation.mediatedContext
+            ?"During "+currentLeft.situation.mediatedContext+"."
+            :"Within the shared observed situation.",
         sourceReferences:[
           currentLeft.situation.situationId,currentRight.situation.situationId,
           ...(venue===null?[]:[venue]),
@@ -317,7 +322,7 @@ export function createSocialMeetingService({
     if(attention.outcome==="noticed"&&venue!==null){
       const since=sharedVisitSince(currentLeft,currentRight,venue,at);
       if(since!==null){
-        experienceStore.enqueueObservedSocialOpportunity?.({
+        experienceStore.enqueueObservedSocialOpportunity({
           encounterRef:encounterStory.encounterId,
           threadId:currentRight.thread.threadId,
           situationId:currentRight.situation.situationId,
