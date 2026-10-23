@@ -97,6 +97,17 @@ Serialized policy/protocol identifiers may carry versions where compatibility re
 
 `GenesisWorldSpec` contains factual circumstances only. It may include time frame, places, household/family shape, languages, material circumstances, mobility, institutions, schooling/community context and intellectual environment.
 
+### Place identity and authored context (October 2026)
+
+A Genesis WorldSpec place has an immutable `placeId` and a meaning-bearing authored `description`. Five modern Genesis settings—home, school, transit, learning, and commerce—also have **derived short presentation labels**. A label does not replace the original description, make an invented venue real, or prove two Threads share a physical place. Verified named venues remain independently attested World authority.
+
+Both CLI and Birth Center World authoring target one or two concrete sentences (roughly 30–70 words where helpful) per physical/social setting. Broad household, educational, cultural and institutional context stays in the corresponding WorldSpec fields. These are guidance, not hard length limits.
+
+Situated-life episode display names remain bounded to 160 UTF-8 bytes; modern Genesis episodes now use short derived setting labels, while unrelated historical settings retain a meaningful excerpt. Original rich WorldSpec prose remains authoritative and is retrieved by private Flight Plan cognition in one bounded World read. Live Genesis learning contexts project a short display label **and** the complete stored description without changing their durable record or digest. Current Observatory and transit labels similarly derive from existing place refs/kinds, never from a description's length. Older WorldSpecs and place episodes are not migrated or reauthored.
+
+**Boundary:** This improves the fidelity of place evidence *reaching* cognition, not proof that two Threads make different choices. Named physical venue admission, social co-presence and City Guide planning remain separately governed by existing World authorities.
+
+
 It may not encode:
 
 - finished personality conclusions;
