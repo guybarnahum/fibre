@@ -217,7 +217,8 @@ export function planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,p
   if(worldPlace?.authority==="world-place-v1"&&worldPlace.locality&&worldPlace.countryCode){
     return {locality:worldPlace.locality,countryCode:worldPlace.countryCode};
   }
-  const authored=authoredGenesisPlaceLocality(episode);
+  const authored=authoredGenesisPlaceLocality(episode)
+    ??authoredGenesisPlaceLocality(worldPlace);
   if(authored!==null)return {locality:authored.city,countryCode:authored.countryCode};
   if(!(isModernGenesisPlace(episode)||isModernGenesisWorldPlace(worldPlace))
     ||typeof livedNowStore.listLocatedGenesisContexts!=="function")return null;
