@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { nextBirthStatusCheckAt, pendingBirths, publishQueuedBirths, reconcileStaleBirths, stillbornBirths } from "../runtime.mjs";
+import { nextBirthStatusCheckAt, pendingBirths, recentBirths, publishQueuedBirths, reconcileStaleBirths, stillbornBirths } from "../runtime.mjs";
 
 const NOW = Date.parse("2026-09-25T15:00:00.000Z");
 const TOKEN = "test-token-1234567890";
@@ -43,6 +43,44 @@ function developmentFor(request) {
   };
 }
 
+
+test("Birth Center retains every outcome for three days without doubling a request",()=>{
+  const now=Date.parse("2026-10-23T19:20:00.000Z");
+  const published=staleModern({requestId:"london",status:"authoring",
+    locationSource:"cli",createdAt:"2026-10-23T18:50:00.000Z",
+    updatedAt:"2026-10-23T18:51:00.000Z"});
+  const failed=staleModern({requestId:"aborted",status:"failed",
+    threadId:null,genesisId:null,error:"model incomplete",
+    locationSource:"cli",createdAt:"2026-10-23T17:50:00.000Z",
+    updatedAt:"2026-10-23T17:55:00.000Z"});
+  const stillborn=staleModern({requestId:"stillborn",
+    createdAt:"2026-10-23T17:40:00.000Z",
+    updatedAt:"2026-10-23T17:40:00.000Z"});
+  const old=staleModern({requestId:"old",status:"published",
+    createdAt:"2026-10-17T00:00:00.000Z",
+    updatedAt:"2026-10-17T00:02:00.000Z"});
+  const developmentA=developmentFor(published),developmentB=developmentFor(stillborn);
+  const outcomes={
+    london:{outcome:"born",updatedAt:"2026-10-23T19:00:00.000Z"},
+    stillborn:{outcome:"stillborn",failureMessage:"World did not admit",
+      updatedAt:"2026-10-23T18:30:00.000Z"},
+  };
+  const runtime={
+    birthRequestStore:{recent:()=>[published,failed,stillborn,old]},
+    developmentRequestStore:{
+      recent:()=>[developmentA,developmentB],
+      getDisposition:id=>outcomes[id]??null,
+    },
+    provisionalBirthStore:{get:()=>null},
+  };
+  const births=recentBirths(runtime,{nowMs:()=>now});
+  assert.deepEqual(new Set(births.map(x=>x.requestId)),
+    new Set(["london","aborted","stillborn"]),
+    "recent history lost, duplicated or retained a birth beyond three days");
+  assert.equal(births.find(x=>x.requestId==="london").stage,"in-world");
+  assert.equal(births.find(x=>x.requestId==="aborted").stage,"failed");
+  assert.equal(births.find(x=>x.requestId==="stillborn").stage,"stillborn");
+});
 
 test("stale births wake immediately once, then retry on the normal interval", () => {
   const request = staleModern();
