@@ -349,6 +349,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       });
       this.worldSocialOpportunityProcess=createWorldSocialOpportunity({
         experienceStore,livedNowStore,meetingService,
+        worldReader:runtime.worldStore,
       });
       runtime.reconciliationProcess.setSocialOpportunityProcess(
         this.worldSocialOpportunityProcess,

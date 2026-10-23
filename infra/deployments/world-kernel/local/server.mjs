@@ -501,7 +501,7 @@ export async function startWorldKernelFromEnvironment(
   });
   const socialOpportunityProcess=createWorldSocialOpportunity({
     experienceStore:livedExperienceStore,livedNowStore,
-    meetingService:socialMeetingService,
+    meetingService:socialMeetingService,worldReader:store,
   });
   const reconciliationProcess = createWorldReconciliationProcess({
     firstLifeProcess,livedBoundaryProcess,

@@ -111,9 +111,7 @@ export function createSocialMeetingService({
   requireMethod("experienceStore", experienceStore, "listEncounterStories");
   requireMethod("experienceStore", experienceStore, "recordSocialInteraction");
   requireMethod("experienceStore", experienceStore, "enqueueObservedSocialOpportunity");
-  requireMethod("experienceStore", experienceStore, "socialChoicesThisVisit");
-  requireMethod("experienceStore", experienceStore, "reconsiderationCountForPair");
-  requireMethod("experienceStore", experienceStore, "listSocialInteractions");
+   requireMethod("experienceStore", experienceStore, "listSocialInteractions");
   requireMethod("experienceStore", experienceStore, "getThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "queueThreadExperienceConsolidation");
