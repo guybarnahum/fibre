@@ -244,6 +244,51 @@ test("a predicted social-need band is not a poll and can be invalidated by conta
 });
 
 
+
+test("a grounded Body crossing earns consideration but never forces an act",async()=>{
+  let judgments=0;
+  const f=groundedReconsiderationFixture({onInvoke:request=>{
+    assert.equal(request.input?.concern?.kind,"social_initiation",
+      "the Body event bypassed the ordinary social mind");
+    const frame=request.input.concern.externalContext.interoception;
+    assert.ok(frame?.drives?.some(drive=>drive.family==="social_contact"
+      &&drive.pressure>=0.6),
+    "a social need crossing lost its grounded Body evidence");
+    judgments++;
+    return {
+      output:{result:{
+        act:"none",expression:null,experienceText:null,
+        reason:"I still want to read quietly.",
+      },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+      provenance:{provider:"fixture",modelId:"band-choice"},
+    };
+  }});
+  try{
+    const [reader,neighbor]=f.people;
+    f.enact(neighbor,"2026-10-23T05:00:00.000Z","Reading.");
+    f.enact(reader,"2026-10-23T05:00:00.000Z","Reading.");
+    const earlier=f.enact(reader,"2026-10-23T12:00:00.000Z","Reading.");
+    const scene=f.enact(reader,"2026-10-23T17:00:00.000Z","Reading.");
+    const [due]=enqueueEnactedSocialReconsideration({
+      situation:scene,previous:earlier,
+      thread:f.world.getThread(reader),
+      livedNowStore:f.lived,experienceStore:f.experience,
+      nextBoundaryAt:"2026-10-24T01:00:00.000Z",
+    });
+    assert.ok(due,"grounded social pressure did not schedule its crossing");
+    const process=createWorldSocialOpportunity({
+      experienceStore:f.experience,livedNowStore:f.lived,
+      meetingService:f.meeting,worldReader:f.world,now:()=>due,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.results[0].outcome,"not_initiated",
+      "a real Body event did not preserve the person's choice of silence");
+    assert.equal(judgments,1,"one need crossing spent repeated cognition");
+    assert.equal(f.experience.listEncounterStories(reader).length,0,
+      "declining to act at a Body crossing fabricated shared history");
+  }finally{f.close();}
+});
+
 test("a later voluntary choice recalls the Thread's own earlier silence",async()=>{
   let decisions=0;
   const f=groundedReconsiderationFixture({onInvoke:request=>{
