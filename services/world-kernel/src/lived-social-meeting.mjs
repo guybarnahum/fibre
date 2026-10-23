@@ -88,6 +88,15 @@ export function recordWorldAcquaintance({
     throw new TypeError("World acquaintance requires situated life relation authority");
   }
   const participants=[initiatorThreadId,counterpartyThreadId];
+  if(interaction?.responseDecision!=="accept"
+    ||typeof interaction.interactionId!=="string"
+    ||interaction.initiatorThreadId!==initiatorThreadId
+    ||interaction.recipientThreadId!==counterpartyThreadId
+    ||interaction.occurredAt!==encounterStory.occurredAt
+    ||!encounterStory.story?.beats?.some(beat=>
+      beat.kind==="utterance"&&beat.actorThreadId===initiatorThreadId)){
+    throw new TypeError("acquaintance requires admitted accepted and spoken contact");
+  }
   if(!participants.every(threadId=>encounterStory.threadPresence.some(
     item=>item.threadId===threadId))){
     throw new TypeError("acquaintance requires both participants in admitted Story");
