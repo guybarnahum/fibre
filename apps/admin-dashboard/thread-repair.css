@@ -1235,3 +1235,19 @@
 .thread-action-place-choice{width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;text-align:left;background:var(--surface-subtle,transparent);color:inherit;cursor:pointer}
 .thread-action-place-choice:hover,.thread-action-place-choice:focus-visible{border-color:var(--accent)}
 .thread-action-place-note{font-size:11px;color:var(--muted)}
+
+.thread-birth-city-marker{
+  fill:color-mix(in srgb,var(--accent) 65%,white);
+  stroke:var(--surface);stroke-width:1.3;vector-effect:non-scaling-stroke;
+  cursor:pointer;transition:fill .15s ease,stroke-width .15s ease;
+}
+.thread-birth-city-marker:not(.anchor){opacity:.6}
+.thread-birth-city-marker:hover{fill:var(--accent);opacity:1;stroke-width:2.4}
+#thread-birth-map-marker{pointer-events:none}
+.thread-birth-stage-marker.completed{animation:none;opacity:1}
+.thread-birth-stage-marker.stage-failed{fill:var(--danger)}
+.thread-birth-stage-marker.stage-stillborn{fill:var(--muted)}
+.thread-birth-stage-legend .stage-failed::before{background:var(--danger);animation:none}
+.thread-birth-stage-legend .stage-stillborn::before{background:var(--muted);animation:none}
+.thread-birth-stage-badge.stage-failed{color:var(--danger);background:var(--danger-soft)}
+.thread-birth-stage-badge.stage-stillborn{color:var(--muted);background:var(--surface-subtle)}
