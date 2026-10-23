@@ -761,6 +761,11 @@ test("a chosen small act becomes one World Story and an independent noticed oppo
       "a small gesture was expanded into invented dialogue");
     assert.equal(attempt.encounterStory.story.beats[0].kind,beatKind,
       "World recorded the wrong kind of outward act");
+    const outward=attempt.encounterStory.story.beats[0].text;
+    assert.doesNotMatch(outward,/Currently:/u,
+      "a social gesture incorrectly narrated the speaker's activity");
+    if(act!=="acknowledge")assert.match(outward,/ says: "/u,
+      "the recipient could not tell who actually spoke");
     assert.equal(f.socialInteractions.length,0,
       "a gesture became a consented conversation");
     assert.equal(f.attentions.filter(a=>a.encounterRef===
