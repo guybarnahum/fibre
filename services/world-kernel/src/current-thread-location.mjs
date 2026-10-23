@@ -1,4 +1,5 @@
 import {
+  FIBRE_LOCALITY_GEOGRAPHY,
   resolveLocalityGeography,
   resolveMentionedLocalityGeography,
 } from "#core/src/locality-geography.mjs";
@@ -33,6 +34,22 @@ function modernGenesisSeed(placeId){
   const match=/^place_(?:modern_([0-9a-f]{12})|([a-z0-9-]+_[a-z0-9-]+)_([0-9a-f]{12}))_(home|school|transit|learning|commerce)$/u
     .exec(placeId??"");
   return match===null?null:match[1]??`${match[2]}_${match[3]}`;
+}
+
+// The CLI's authored Genesis places carry one country/city-scoped World
+// identity. That is place provenance, not an inference from the person's
+// birthplace. Only a Genesis-admitted episode with a catalogued locality
+// may use it, and only as operator/private context.
+export function authoredGenesisPlaceLocality(episode){
+  if(episode?.provenance!=="genesis_created")return null;
+  const id=episode.place?.placeId??"";
+  const match=/^place_([a-z0-9-]+)_([a-z0-9-]+)_([0-9a-f]{12})_(home|school|transit|learning|commerce)$/u.exec(id);
+  if(match===null)return null;
+  const fold=value=>value.normalize("NFKD").replace(/[\u0300-\u036f]/gu,"")
+    .toLowerCase().replace(/[^a-z0-9]+/gu,"-").replace(/^-+|-+$/gu,"");
+  const matches=FIBRE_LOCALITY_GEOGRAPHY.filter(place=>
+    fold(place.country)===match[1]&&fold(place.city)===match[2]);
+  return matches.length===1?matches[0]:null;
 }
 
 function modernGenesisContext(episode){
@@ -185,16 +202,20 @@ export function projectOperatorCurrentPlace({
         mapPrecision:finiteCoordinates(shared)?"city":null,
       });
     }
-    if(privateContextLocations.length===0)return null;
-    const situated=projectCurrentThreadLocation({
-      currentSituation,placeEpisodes,worldPlaces,
-      contextLocations:privateContextLocations,
-    });
-    if(situated===null)return null;
     const activeRef=currentSituation?.location?.kind==="place"
       ?currentSituation.location.placeRef:null;
     const activeEpisode=placeEpisodes.find(episode=>
       placeEpisodeRevisionRef(episode)===activeRef);
+    const authored=authoredGenesisPlaceLocality(activeEpisode);
+    const contextLocations=authored===null?privateContextLocations:[
+      ...privateContextLocations,{placeRef:activeRef,geography:authored},
+    ];
+    if(contextLocations.length===0)return null;
+    const situated=projectCurrentThreadLocation({
+      currentSituation,placeEpisodes,worldPlaces,
+      contextLocations,
+    });
+    if(situated===null)return null;
     const activeWorld=worldPlaces.find(place=>place.ref===activeRef);
     return Object.freeze({
       ...situated,
