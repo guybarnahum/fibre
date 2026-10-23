@@ -102,6 +102,7 @@ function fixture({
   observedSolitudeHours = 0,
   inheritedSocialSensitivity = null,
   moveAfterAcceptance = false,
+  moveAfterInitiation = false,
   boundedVenueDiscovery = false,
   dueThreadId = null,
 } = {}) {
@@ -259,6 +260,13 @@ function fixture({
           call.input.developedSelfEvidence,
           call.input.concern.externalContext,
         );
+        if(moveAfterInitiation){
+          const before=situations.get(noor.threadId);
+          situations.set(noor.threadId,{
+            ...before,situationId:"sit_noor_left_before_act",
+            activity:"Leaving the café.",
+          });
+        }
         const observedName = percept.observed[0]?.name ?? "there";
         const cited = call.input.developedSelfEvidence.find((item) => item.kind === "memory")
           ?? call.input.developedSelfEvidence.find((item) =>
@@ -762,6 +770,51 @@ test("a chosen small act becomes one World Story and an independent noticed oppo
     assert.doesNotMatch(JSON.stringify(attempt.encounterStory.story),
       /\b(?:Mina|Noor)\b/u,"strangers' names leaked into World history");
   }
+});
+
+test("the recipient independently chooses whether and how to answer a greeting",async()=>{
+  const quiet=fixture({boundedVenueDiscovery:true,
+    initiationFor:name=>name==="Mina"?"greet":"none"});
+  const first=await quiet.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,counterpartyThreadId:noor.threadId,
+  });
+  assert.equal(attemptFor(first).outcome,"acted","the original greeting was lost");
+  assert.equal(quiet.observedSocialOpportunities.length,1,
+    "a noticed greeting did not offer a voluntary reply");
+  const declined=await quiet.meeting.meet({
+    initiatorThreadId:noor.threadId,at:AT,counterpartyThreadId:mina.threadId,
+  });
+  assert.equal(attemptFor(declined,mina.threadId).outcome,"not_initiated",
+    "the recipient could not choose silence");
+  assert.equal(quiet.stories.length,1,
+    "declining to return a greeting manufactured a second Story");
+
+  const reciprocal=fixture({boundedVenueDiscovery:true,initiationFor:()=> "greet"});
+  await reciprocal.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,counterpartyThreadId:noor.threadId,
+  });
+  const reply=await reciprocal.meeting.meet({
+    initiatorThreadId:noor.threadId,at:AT,counterpartyThreadId:mina.threadId,
+  });
+  assert.equal(attemptFor(reply,mina.threadId).outcome,"acted",
+    "the recipient could not choose a greeting of their own");
+  assert.equal(reciprocal.stories.length,2,
+    "two independent greetings did not become two objective acts");
+  assert.equal(reciprocal.observedSocialOpportunities.length,2,
+    "the returned greeting did not offer the first speaker an independent choice");
+});
+
+test("a departure before a chosen gesture prevents a fictitious act",async()=>{
+  const f=fixture({boundedVenueDiscovery:true,moveAfterInitiation:true,
+    initiationFor:()=> "greet"});
+  const result=await f.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,counterpartyThreadId:noor.threadId,
+  });
+  assert.equal(attemptFor(result).outcome,"scene_changed",
+    "World acted on a scene that no longer existed");
+  assert.equal(f.stories.length,0,"World fabricated speech after departure");
+  assert.equal(f.observedSocialOpportunities.length,0,
+    "an interrupted shared scene manufactured a reply");
 });
 
 test("E2 accepted meeting is one Encounter Story with distinct Thread Experiences", async () => {
