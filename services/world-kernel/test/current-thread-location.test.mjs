@@ -262,6 +262,9 @@ test("an unanchored enacted Addis Genesis home has its authored current city in 
     place:{placeId:"place_ethiopia_addis-ababa_5aa977ea14eb_home",
       displayName:"place_ethiopia_addis-ababa_5aa977ea14eb_home",
       countryCode:null,region:null,locality:null,precision:"unspecified"},
+    startAt:"2026-01-01T00:00:00.000Z",endAt:null,
+    sourceReferences:["evt_yonas_birth"],visibility:"private",
+    recordedAt:"2026-10-23T19:00:00.000Z",
   };
   const situation={threadId:episode.threadId,
     establishedAt:"2026-10-23T19:12:29.685Z",
