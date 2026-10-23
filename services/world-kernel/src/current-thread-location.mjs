@@ -40,9 +40,10 @@ function modernGenesisSeed(placeId){
 // identity. That is place provenance, not an inference from the person's
 // birthplace. Only a Genesis-admitted episode with a catalogued locality
 // may use it, and only as operator/private context.
-export function authoredGenesisPlaceLocality(episode){
-  if(episode?.provenance!=="genesis_created")return null;
-  const id=episode.place?.placeId??"";
+export function authoredGenesisPlaceLocality(source){
+  const id=source?.provenance==="genesis_created"
+    ?source.place?.placeId??""
+    :isModernGenesisWorldPlace(source)?source.sourcePlaceId:"";
   const match=/^place_([a-z0-9-]+)_([a-z0-9-]+)_([0-9a-f]{12})_(home|school|transit|learning|commerce)$/u.exec(id);
   if(match===null)return null;
   const fold=value=>value.normalize("NFKD").replace(/[\u0300-\u036f]/gu,"")
@@ -206,7 +207,9 @@ export function projectOperatorCurrentPlace({
       ?currentSituation.location.placeRef:null;
     const activeEpisode=placeEpisodes.find(episode=>
       placeEpisodeRevisionRef(episode)===activeRef);
-    const authored=authoredGenesisPlaceLocality(activeEpisode);
+    const activeWorld=worldPlaces.find(place=>place.ref===activeRef);
+    const authored=authoredGenesisPlaceLocality(activeEpisode)
+      ??authoredGenesisPlaceLocality(activeWorld);
     const contextLocations=authored===null?privateContextLocations:[
       ...privateContextLocations,{placeRef:activeRef,geography:authored},
     ];
@@ -216,7 +219,6 @@ export function projectOperatorCurrentPlace({
       contextLocations,
     });
     if(situated===null)return null;
-    const activeWorld=worldPlaces.find(place=>place.ref===activeRef);
     return Object.freeze({
       ...situated,
       specificPlace:activeEpisode?.place?.displayName
