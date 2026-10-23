@@ -577,20 +577,14 @@ export function createSocialMeetingService({
         // An observed arrival or small act is a new opportunity inside
         // the same shared visit; the observer owns their earlier choices.
         // Explicit reconsideration already supplies its witnessed start.
-        const decisionVisitSince=visitSince??(
-          boundedVenueDiscovery&&counterpartyThreadId!==null
+        const venue=boundedVenueDiscovery&&counterpartyThreadId!==null
           &&initiator.situation.location?.kind==="place"
-            ?(()=> {
-              const venue=livedNowStore.getWorldPlace(
-                initiator.thread.threadId,initiator.situation.location.placeRef,
-                {required:false},
-              )?.physicalVenue?.ref??null;
-              return venue===null?null:sharedVisitSince(
-                initiator,counterparty,venue,
-              );
-            })()
-            :null
-        );
+          ?livedNowStore.getWorldPlace(
+            initiator.thread.threadId,initiator.situation.location.placeRef,
+            {required:false},
+          )?.physicalVenue?.ref??null:null;
+        const decisionVisitSince=visitSince??(venue===null?null
+          :sharedVisitSince(initiator,counterparty,venue));
         const initiation = await formSocialEncounterRequest({
           threadId:initiator.thread.threadId,
           at:input.at,
