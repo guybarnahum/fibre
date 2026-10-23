@@ -460,6 +460,8 @@ main().catch((error) => {
   process.stderr.write(`${JSON.stringify({
     event: "thread-birth-failed",
     errorName: error?.constructor?.name ?? "Error",
+    errorCode:error?.code ?? null,
+    retryable:error?.retryable ?? null,
     message: error?.message ?? String(error),
   })}\n`);
   process.exitCode = 1;
