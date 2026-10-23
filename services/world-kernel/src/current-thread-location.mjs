@@ -28,8 +28,11 @@ function localityGeography(place) {
 // legacy learning contexts. Their source place IDs, not names or birthplace,
 // establish whether they belong to the same local context.
 function modernGenesisSeed(placeId){
-  return /^place_modern_([0-9a-f]{12})_(home|school|transit|learning|commerce)$/u
-    .exec(placeId??"")?.[1]??null;
+  // Genesis authored by the CLI names its five sibling contexts with
+  // country/city and a shared world digest. Keep the historical short form.
+  const match=/^place_(?:modern_([0-9a-f]{12})|([a-z0-9-]+_[a-z0-9-]+)_([0-9a-f]{12}))_(home|school|transit|learning|commerce)$/u
+    .exec(placeId??"");
+  return match===null?null:match[1]??`${match[2]}_${match[3]}`;
 }
 
 function modernGenesisContext(episode){
