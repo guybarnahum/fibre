@@ -6,6 +6,7 @@ import { createGenesisDevelopmentService } from "#services/birth-center/src/gene
 import { createBirthInitiationService } from "#services/birth-center/src/birth-initiation.mjs";
 import { createBirthInitiationApi } from "#services/birth-center/src/birth-api.mjs";
 import { BIRTHPLACES } from "#services/birth-center/src/birthplace-sampler.mjs";
+import { genesisSexForThread } from "#services/birth-center/src/genesis-sex.mjs";
 import { createBirthCenterRuntime } from "#services/birth-center/src/runtime.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createWorldKernelBirthPublisher } from "../world-kernel-boundary.mjs";
@@ -310,6 +311,65 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
   return queued.sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 }
 
+// Three-day observational history; never deletes a birth or changes its authority.
+export function recentBirths(runtime, {nowMs=Date.now}={}) {
+  const byId=new Map();
+  for(const birth of runtime.birthRequestStore.recent({limit:256}))
+    byId.set(birth.requestId,{birth,development:null});
+  for(const development of runtime.developmentRequestStore.recent({limit:256})){
+    const entry=byId.get(development.requestId)??{birth:null,development:null};
+    entry.development=development;
+    byId.set(development.requestId,entry);
+  }
+  const now=nowMs(), cutoff=now-3*24*3600_000;
+  const history=[];
+  for(const [requestId,{birth,development}] of byId){
+    const disposition=development===null?null:runtime.developmentRequestStore.getDisposition(requestId);
+    const times=[birth?.updatedAt,development?.updatedAt,disposition?.updatedAt,disposition?.settledAt]
+      .map(v=>Date.parse(v??"")).filter(Number.isFinite);
+    const latest=Math.max(...times);
+    if(!Number.isFinite(latest)||latest<cutoff||latest>now+60_000)continue;
+    const published=disposition?.outcome==="born"||birth?.status==="published"
+      ||(development?.status==="submitted"
+        &&runtime.provisionalBirthStore?.get?.(development.genesisId)?.status==="published");
+    const stillborn=disposition?.outcome==="stillborn";
+    const failed=!published&&!stillborn&&(
+      disposition?.failureRetryable===false
+      ||(development===null&&birth?.status==="failed"));
+    const status=published?"published":stillborn?"stillborn":failed?"failed"
+      :development?.status??birth?.status??"queued";
+    const stage=published?"in-world":stillborn?"stillborn":failed?"failed"
+      :operatorBirthStage(status);
+    const identity=development?.plan?.subjectIdentity??null;
+    const threadId=development?.threadId??birth?.threadId??null;
+    const sex=birth?.sex??identity?.sex??(threadId===null?null:genesisSexForThread({threadId}));
+    const place=identity?.place??null;
+    const requestedLocation=birth?.requestedLocation??(
+      place?.country&&place?.city?place:null);
+    const location=birth?.location??requestedLocationDisplay(requestedLocation)
+      ??identity?.birthCity??null;
+    const createdAt=birth?.createdAt??development?.createdAt??null;
+    const updatedAt=new Date(latest).toISOString();
+    const timing=birthTiming({createdAt,updatedAt},nowMs);
+    const active=!["published","stillborn","failed"].includes(status);
+    history.push(Object.freeze({
+      source:development?"development":"birth",requestId,
+      requestedAt:birth?.requestedAt??development?.plan?.genome?.header?.createdAt??null,
+      requestedLocation,genesisId:development?.genesisId??birth?.genesisId??null,
+      threadId,location,locationSource:birth?.locationSource??null,sex,
+      name:birthSubjectName(identity,sex),status,stage,createdAt,updatedAt,
+      ageMs:timing.ageMs,idleMs:timing.idleMs,
+      stale:active&&timing.stale,
+      classification:failed?"birth_failed":null,
+      staleReason:active&&timing.stale?"No recorded birth progress for five minutes.":null,
+      error:disposition?.failureMessage??birth?.error??null,
+      failureCode:disposition?.failureCode??null,
+      failureRetryable:disposition?.failureRetryable??null,
+    }));
+  }
+  return history.sort((a,b)=>Date.parse(b.updatedAt)-Date.parse(a.updatedAt));
+}
+
 export async function reconcileStaleBirths(runtime, {
   worldBinding,
   privateToken,
@@ -491,6 +551,7 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
   const birthApi = createBirthInitiationApi({
     service:birthService,
     pendingBirths:() => pendingBirths(runtime, { nowMs }),
+    recentBirths:() => recentBirths(runtime, { nowMs }),
     stillbornBirths:() => stillbornBirths(runtime),
     birthplaces:BIRTHPLACES,
     requestStore:runtime.birthRequestStore,
