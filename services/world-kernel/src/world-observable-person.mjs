@@ -19,31 +19,42 @@ function publicAppearance(threadId,embodimentStore){
   return null;
 }
 
-export function personKnownToObserver({
+function observerNameKnowledge({
   observerThreadId,threadId,situatedLifeStore,experienceStore,at,
 }={}){
-  if(observerThreadId==null||observerThreadId===threadId)return false;
-  const relation=situatedLifeStore?.listCurrentLifeRelations?.(observerThreadId)
+  if(observerThreadId==null||observerThreadId===threadId)
+    return {full:false,heard:null};
+  const related=situatedLifeStore?.listCurrentLifeRelations?.(observerThreadId)
     ?.some(item=>item.relatedParty?.partyId===threadId
       &&(item.relatedParty.kind==="thread"
         ||item.relatedParty.kind===undefined))??false;
-  return relation||(experienceStore?.hasMetEncounter?.(
+  if(related)return {full:true,heard:null};
+  const heard=experienceStore?.heardSelfIntroductionName?.(
     observerThreadId,threadId,{before:at},
-  )??false)||(experienceStore?.hasNoticedSelfIntroduction?.(
+  )??null;
+  if(heard!==null)return {full:false,heard};
+  return {full:experienceStore?.hasMetEncounter?.(
     observerThreadId,threadId,{before:at},
-  )??false);
+  )??false,heard:null};
 }
 
-function redactUnknownName(description,name){
+export function personKnownToObserver(options={}){
+  const knowledge=observerNameKnowledge(options);
+  return knowledge.full||knowledge.heard!==null;
+}
+
+function redactUnknownName(description,name,heardName=null){
   if(typeof name!=="string"||name.trim()==="")return description;
-  // A public portrait can contain the full name and individual name tokens.
-  const parts=[name.trim(),...(name.match(/[\p{L}\p{N}]+/gu)??[])]
+  const allowed=new Set((heardName?.match(/[\p{L}\p{N}]+/gu)??[])
+    .map(token=>token.toLocaleLowerCase()));
+  const parts=[name.trim(),...(name.match(/[\p{L}\p{N}]+/gu)??[])
+    .filter(part=>!allowed.has(part.toLocaleLowerCase()))]
     .filter(part=>part.length>1).sort((a,b)=>b.length-a.length);
   return [...new Set(parts)].reduce((text,part)=>{
-    const escaped=part.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+    const escaped=part.replace(/[|\\{}()[\]^$+*?.-]/g,"\\$&");
     return text.replace(new RegExp(
-      `(?<![\\p{L}\\p{N}])${escaped}(?![\\p{L}\\p{N}])`,"giu",
-    ),"a person");
+      "(?<![\\p{L}\\p{N}])"+escaped+"(?![\\p{L}\\p{N}])","giu",
+    ),part===name.trim()&&heardName!==null?heardName:"a person");
   },description);
 }
 
@@ -54,9 +65,11 @@ export function observablePerson({
   embodimentStore=null,situatedLifeStore=null,experienceStore=null,
   at=situation.establishedAt,
 }={}){
-  const known=personKnownToObserver({
+  const knowledge=observerNameKnowledge({
     observerThreadId,threadId,situatedLifeStore,experienceStore,at,
   });
+  const known=knowledge.full;
+  const heardName=knowledge.heard;
   const appearance=publicAppearance(threadId,embodimentStore);
   const activity=typeof situation.activity==="string"
     ?situation.activity.trim().slice(0,120):"";
@@ -67,8 +80,8 @@ export function observablePerson({
   // Objective World Stories have no observer, hence no authority to reveal
   // names. For unfamiliar witnesses, redact both portrait and activity prose.
   return Object.freeze({
-    name:known&&typeof name==="string"?name:null,
+    name:typeof name!=="string"?null:known?name:heardName,
     observableDescription:(known?description
-      :redactUnknownName(description,name)).slice(0,480),
+      :redactUnknownName(description,name,heardName)).slice(0,480),
   });
 }
