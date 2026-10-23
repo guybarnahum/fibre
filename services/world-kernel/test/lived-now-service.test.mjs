@@ -1742,6 +1742,9 @@ test("Yonas discovers his authored Addis locality without a separate birth-city 
     place:{placeId:"place_ethiopia_addis-ababa_5aa977ea14eb_home",
       displayName:"A personal home",countryCode:null,
       locality:null,region:null,precision:"unspecified"},
+    startAt:"2026-01-01T00:00:00.000Z",endAt:null,
+    sourceReferences:["evt_yonas_birth"],visibility:"private",
+    recordedAt:"2026-10-23T19:00:00.000Z",
   };
   const livedNowStore={
     getPrivatePlace:()=>null,getPublicPlace:()=>null,
