@@ -419,6 +419,7 @@ test("social cognition prefers the encountered person's factual relation and ret
     const later="2026-10-23T12:00:00.000Z";
     const initial=f.enact(reader,at,"Reading.");
     const other=f.enact(neighbor,at,"Reading.");
+    f.enact(bystander,at,"Reading.");
     const story={storyVersion:"encounter-story-v0.1",beats:[{
       actorThreadId:neighbor,kind:"utterance",text:"Good morning.",
     }]};
@@ -488,15 +489,25 @@ test("social cognition prefers the encountered person's factual relation and ret
       .find(relation=>relation.relatedParty.partyId===neighbor);
     const selected=[];
     const modelAdapter={async invoke({input}){
-      selected.push(input.developedSelfEvidence);
+      selected.push(input);
       return {output:{result:{answer:"none"},evidenceRefs:[],
         conflictingMotives:[],uncertainty:null},
         provenance:{provider:"fixture",modelId:"person-focus"}};
     }};
-    const call=focusPartyId=>runInteriorCognition({
-      threadId:reader,at:later,
+    const presentA=f.enact(reader,later,"Reading.");
+    const presentB=f.enact(bystander,later,"Reading.");
+    const situated=subject=>projectSituatedPercept({
+      observerThreadId:subject.threadId,situation:subject,at:later,
+      observedThreads:[{threadId:neighbor,name:f.world.getThread(neighbor).identity.name,
+        situation:other}],
+      situatedLifeStore:life,livedNowStore:f.lived,
+      experienceStore:f.experience,
+    });
+    const call=(subject,focusPartyId)=>runInteriorCognition({
+      threadId:subject.threadId,at:later,
       concern:{kind:"social_initiation",
-        question:"How might I engage the observed person?",focusPartyId},
+        question:"How might I engage the observed person?",focusPartyId,
+        externalContext:{situatedPercept:situated(subject)}},
       adapter:{id:"social-focus-proof",instruction:"Select without forcing an act.",
         resultSchema:{type:"object",additionalProperties:false,
           properties:{answer:{type:"string"}},required:["answer"]}},
@@ -505,15 +516,30 @@ test("social cognition prefers the encountered person's factual relation and ret
         semanticStateStore:semantic,experienceStore:f.experience},
       modelAdapter,
     });
-    await call(bystander);
-    await call(neighbor);
-    const refs=evidence=>evidence.map(item=>item.ref);
-    assert.ok(!refs(selected[0]).includes(personal.memoryId),
+    const stranger=await call(presentA,bystander);
+    const acquainted=await call(presentA,neighbor);
+    const otherPerson=await call(presentB,neighbor);
+    const refs=record=>record.provenance.selectedEvidenceRefs;
+    assert.ok(!refs(stranger).includes(personal.memoryId),
       "stranger focus unexpectedly prioritized the other person's Memory");
-    assert.ok(refs(selected[1]).includes(personal.memoryId),
+    assert.ok(refs(acquainted).includes(personal.memoryId),
       "the encountered person's actual remembered meaning was not selected");
-    assert.ok(refs(selected[1]).includes(focusedRelation.relationId),
-      "the encountered person's relationship was crowded out by unrelated ties");
+    assert.ok(refs(acquainted).includes(focusedRelation.relationId),
+      "the encountered person's relation was crowded out by unrelated ties");
+    assert.ok(!refs(otherPerson).includes(personal.memoryId),
+      "another Thread obtained an unowned Memory");
+    assert.equal(selected[1].concern.externalContext.situatedPercept
+      .observed[0].name,f.world.getThread(neighbor).identity.name,
+      "acquaintance did not provide a grounded known name");
+    assert.equal(selected[2].concern.externalContext.situatedPercept
+      .observed[0].name,null,
+      "an unfamiliar Thread was granted another person's knowledge");
+    assert.ok(selected[1].concern.externalContext.situatedPercept
+      .observed[0].familiarity?.noticedBeforeCount>0,
+      "a real noticed episode did not become later recognition");
+    assert.equal(selected[2].concern.externalContext.situatedPercept
+      .observed[0].familiarity,null,
+      "an unobserved earlier encounter created recognition");
   }finally{
     semantic.close();identity.close();memories.close();life.close();f.close();
   }
