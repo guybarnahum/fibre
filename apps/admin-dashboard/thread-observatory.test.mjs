@@ -840,6 +840,32 @@ test("Observatory displays authoritative current city separately from immutable 
     "a public current venue lost its World place identity");
 });
 
+test("long Genesis setting prose never replaces current-place identity or a real venue",()=>{
+  const ref="wpl_addis_learning";
+  const story="The community learning center offers reading and tutoring. "+
+    "Children share books, digital devices and small study groups. ".repeat(12);
+  const sourcePlaceId="place_ethiopia_addis-ababa_5aa977ea14eb_learning";
+  const currentSituation={location:{kind:"place",placeRef:ref}};
+  const livedNow={
+    currentSituation,
+    operatorCurrentPlace:{
+      kind:"place",placeRef:ref,specificPlace:story,
+      locality:"Addis Ababa",country:"Ethiopia",countryCode:"ET",
+    },
+    worldPlaces:[{
+      ref,sourcePlaceId,placeKind:"library_or_learning",
+      displayName:story,authority:"live-world-place-admission-v1",
+    }],
+  };
+  assert.equal(threadSituationPlace(currentSituation,livedNow).name,"Learning place",
+    "authored setting essay replaced its current identity");
+  assert.equal(observatoryCurrentPlace(livedNow),"Learning place · Addis Ababa, Ethiopia",
+    "long World narrative obscured the Thread's current place");
+  livedNow.worldPlaces[0].physicalVenue={displayName:"Bole Community Library"};
+  assert.equal(threadSituationPlace(currentSituation,livedNow).name,"Bole Community Library",
+    "attested venue lost its own name to a generic Genesis label");
+});
+
 test("Observatory describes modern Genesis home and keeps current city in debug output",()=>{
   const threadId="thr_home_fes";
   const currentSituation={
