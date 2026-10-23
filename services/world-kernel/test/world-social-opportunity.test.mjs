@@ -181,6 +181,190 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
   return {world,lived,experience,people,place,origin,enact,planUntil,meeting,close};
 }
 
+test("a shared visit owns one Body-band obligation across activity changes",async()=>{
+  let decisions=0;
+  const f=groundedReconsiderationFixture({onInvoke:()=>({
+    output:{result:{act:"none",expression:null,experienceText:null,
+      reason:"I prefer the quiet company."},
+      evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+    provenance:{provider:"fixture",modelId:"visit-band"},
+  })});
+  try{
+    const [reader,neighbor]=f.people;
+    f.enact(neighbor,"2026-10-23T04:00:00.000Z","Reading.");
+    const first=f.enact(reader,"2026-10-23T05:00:00.000Z","Reading.");
+    const second=f.enact(reader,"2026-10-23T10:00:00.000Z","Taking notes.");
+    const third=f.enact(reader,"2026-10-23T11:00:00.000Z",
+      "Looking at references.",[neighbor]);
+    for(const [previous,situation] of [[first,second],[second,third]]){
+      enqueueEnactedSocialReconsideration({
+        situation,previous,thread:f.world.getThread(reader),
+        livedNowStore:f.lived,experienceStore:f.experience,
+        nextBoundaryAt:"2026-10-24T01:00:00.000Z",
+      });
+    }
+    const bands=f.experience.inspectSocialOpportunities(reader)
+      .filter(row=>row.trigger==="need_band");
+    assert.equal(bands.length,1,
+      "one continuous visit created duplicate Body crossings");
+    assert.equal(bands[0].needBand,0.4,
+      "a later Body band displaced an already pending one");
+    assert.equal(bands[0].dueAt,"2026-10-23T17:00:00.001Z",
+      "in-venue activity changed the physiological threshold instant");
+    const process=createWorldSocialOpportunity({
+      experienceStore:f.experience,livedNowStore:f.lived,
+      meetingService:{
+        async meet(input){
+          decisions++;
+          return f.meeting.meet(input);
+        },
+      },
+      worldReader:f.world,
+      now:()=>bands[0].dueAt,
+    });
+    const outcomes=[];
+    for(let i=0;i<3;i++){
+      const step=await process.runOnce();
+      outcomes.push(step.results[0]?.outcome);
+    }
+    assert.equal(outcomes.at(-1),"not_initiated",
+      "one real crossing failed to preserve a choice of silence");
+    assert.equal(decisions,1,"one band produced repeated social decisions");
+    assert.equal(f.experience.inspectSocialOpportunities(reader)
+      .filter(row=>row.trigger==="need_band").length,1,
+      "processing a crossing re-created the same band");
+  }finally{f.close();}
+});
+
+test("arrival arms a prior occupant's grounded band, departure cancels action",async()=>{
+  const f=groundedReconsiderationFixture();
+  try{
+    const [reader,neighbor]=f.people;
+    const earliest=f.enact(reader,"2026-10-23T04:00:00.000Z","Reading.");
+    const seated=f.enact(reader,"2026-10-23T05:00:00.000Z","Settled in.");
+    f.planUntil(reader,earliest.establishedAt,"2026-10-24T01:00:00.000Z");
+    assert.deepEqual(enqueueEnactedSocialReconsideration({
+      situation:seated,previous:earliest,thread:f.world.getThread(reader),
+      livedNowStore:f.lived,experienceStore:f.experience,
+      nextBoundaryAt:"2026-10-24T01:00:00.000Z",
+    }),[],"solitary arrival incorrectly predicted a social opportunity");
+    const transit=f.enact(neighbor,"2026-10-23T09:00:00.000Z",
+      "Traveling to the library.",[],{
+        kind:"transit",fromPlaceRef:f.origin.ref,
+        toPlaceRef:f.place.ref,progress:0.5,
+      });
+    const arriving=f.enact(neighbor,"2026-10-23T10:00:00.000Z","Arriving.");
+    const occurrence=enactedActorOccurrence(transit,arriving);
+    const witnesses=coPresentAtActorArrival(
+      f.lived,occurrence,f.place.physicalVenue.ref,
+    ).map(({threadId,situationId})=>({threadId,situationId}));
+    assert.deepEqual(witnesses,[{threadId:reader,situationId:seated.situationId}],
+      "World did not find the person already present");
+    const args={
+      witnesses,at:arriving.establishedAt,venueRef:f.place.physicalVenue.ref,
+      livedNowStore:f.lived,experienceStore:f.experience,worldReader:f.world,
+    };
+    const first=enqueueArrivalWitnessSocialNeedBands(args);
+    assert.equal(first.length,1,
+      "a real arrival did not arm the existing occupant's Body crossing");
+    assert.deepEqual(enqueueArrivalWitnessSocialNeedBands(args),[],
+      "a second arrival callback scheduled the same Body crossing again");
+    f.enact(reader,"2026-10-23T15:00:00.000Z","Leaving.",[],{
+      kind:"transit",fromPlaceRef:f.place.ref,toPlaceRef:f.origin.ref,progress:0.1,
+    });
+    const process=createWorldSocialOpportunity({
+      experienceStore:f.experience,livedNowStore:f.lived,
+      meetingService:f.meeting,worldReader:f.world,now:()=>first[0],
+    });
+    const result=await process.runOnce();
+    assert.equal(result.attempted,1,"a durable band was lost after departure");
+    assert.ok(["no_co_presence","missed_window"].includes(result.results[0].outcome),
+      "a departed occupant was considered socially present");
+    assert.equal(f.experience.listEncounterStories(reader).length,0,
+      "departure fabricated a conversation");
+  }finally{f.close();}
+});
+
+test("a noticed greeting recalls the recipient's earlier silence",async()=>{
+  let observedChoices=0;
+  const f=groundedReconsiderationFixture({onInvoke:request=>{
+    assert.equal(request.input?.concern?.kind,"social_initiation",
+      "a noticed greeting bypassed ordinary social judgment");
+    assert.deepEqual(
+      request.input.concern.externalContext.priorSocialChoicesThisVisit,
+      [{
+        at:"2026-10-23T09:00:00.000Z",act:"none",expression:null,
+        reportedReason:"I wanted to finish my book.",
+      }],
+      "a recipient's earlier choice was absent from a voluntary reply");
+    observedChoices++;
+    return {output:{result:{
+      act:"none",expression:null,experienceText:null,
+      reason:"I will keep reading.",
+    },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+    provenance:{provider:"fixture",modelId:"greeting-reply"}};
+  }});
+  try{
+    const [reader,neighbor]=f.people;
+    const at="2026-10-23T10:00:00.000Z";
+    const visit="2026-10-23T09:00:00.000Z";
+    const neighborAt=f.enact(neighbor,"2026-10-23T08:00:00.000Z","Reading.");
+    const initial=f.enact(reader,visit,"Reading.",[neighbor]);
+    const current=f.enact(reader,at,"Reading.",[neighbor]);
+    f.experience.enqueueSocialOpportunity({
+      threadId:reader,situationId:initial.situationId,dueAt:visit,
+    });
+    assert.ok(f.experience.claimDueSocialOpportunity({at:visit}),
+      "the first social choice had no durable witness");
+    f.experience.completeSocialOpportunity({
+      situationId:initial.situationId,at:visit,outcome:"not_initiated",
+      decision:{counterpartyThreadId:neighbor,initiation:{
+        act:"none",expression:null,
+        reportedReason:"I wanted to finish my book.",
+      }},
+    });
+    const story=f.experience.recordEncounterStory({
+      occurredAt:at,
+      threadPresence:[initial,current].slice(1).map(situation=>({
+        threadId:reader,situationId:situation.situationId,
+      })).concat([{threadId:neighbor,situationId:neighborAt.situationId}]),
+      story:{storyVersion:"encounter-story-v0.1",beats:[{
+        actorThreadId:neighbor,kind:"utterance",text:'A person says: "Hello."',
+      }]},
+      visualization:createEncounterVisualization({
+        occurredAt:at,story:{storyVersion:"encounter-story-v0.1",beats:[{
+          actorThreadId:neighbor,kind:"utterance",text:'A person says: "Hello."',
+        }]},
+        scene:"At the library.",sourceReferences:[
+          current.situationId,neighborAt.situationId,
+        ],depictedThreadRefs:[],
+      }),
+    });
+    f.experience.recordThreadEncounterAttention({
+      threadId:reader,encounterRef:story.encounterId,
+      situationId:current.situationId,occurredAt:at,
+      outcome:"noticed",experienceText:"I noticed a greeting beside my book.",
+    });
+    f.experience.enqueueObservedSocialOpportunity({
+      encounterRef:story.encounterId,sourceKind:"social_act",
+      threadId:reader,situationId:current.situationId,
+      counterpartyThreadId:neighbor,venueRef:f.place.physicalVenue.ref,
+      dueAt:at,visitSince:visit,
+    });
+    const process=createWorldSocialOpportunity({
+      experienceStore:f.experience,livedNowStore:f.lived,
+      meetingService:f.meeting,worldReader:f.world,now:()=>at,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.results[0].outcome,"not_initiated",
+      "the recipient was forced to answer a greeting");
+    assert.equal(observedChoices,1,
+      "one observed greeting spent multiple reply judgments");
+    assert.equal(f.experience.listEncounterStories(reader).length,1,
+      "private non-engagement manufactured a second shared Story");
+  }finally{f.close();}
+});
+
 test("an activity change earns one independent social chance, not a timer",async()=>{
   const f=groundedReconsiderationFixture();
   try{
