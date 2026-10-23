@@ -13,6 +13,7 @@ import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
 import { meetingPresenceCompatible } from "../src/lived-meeting-cognition.mjs";
 import {
   developmentalContextForThread,
+  FLIGHT_PLAN_TRAVEL_INFEASIBLE,
   livedPlanId,
   livedSituationId,
   plannedPositionAt,
@@ -218,7 +219,7 @@ test("prospective personal life reserves transit for distinct places without inv
         stops:[{...baseline.stops[0],endAt:next.startAt},next],
       };
       assert.throws(()=>lived.recordPlan(instant),
-        /requires elapsed transit time/,
+        error=>error?.fibreReason===FLIGHT_PLAN_TRAVEL_INFEASIBLE,
         "World allowed an instantaneous change of physical place");
       assert.equal(lived.listPlans(life.thread.threadId).length,0,
         "rejected travel entered the Thread's life");
