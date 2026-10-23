@@ -194,6 +194,24 @@ test("an activity change earns one independent social chance, not a timer",async
   }finally{f.close();}
 });
 
+test("an activity change without company never manufactures a social chance",()=>{
+  const f=groundedReconsiderationFixture();
+  try{
+    const reader=f.people[0];
+    const first=f.enact(reader,"2026-10-23T09:00:00.000Z","Reading.");
+    const next=f.enact(reader,"2026-10-23T10:00:00.000Z","Resting.");
+    const scheduled=enqueueEnactedSocialReconsideration({
+      situation:next,previous:first,thread:f.world.getThread(reader),
+      livedNowStore:f.lived,experienceStore:f.experience,
+      nextBoundaryAt:"2026-10-23T12:00:00.000Z",
+    });
+    assert.deepEqual(scheduled,[],
+      "being alone was misreported as a social opportunity");
+    assert.equal(f.experience.inspectSocialOpportunities(reader).length,0,
+      "World stored fictional company");
+  }finally{f.close();}
+});
+
 test("a predicted social-need band is not a poll and can be invalidated by contact",async()=>{
   const f=groundedReconsiderationFixture();
   try{
