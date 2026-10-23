@@ -2202,8 +2202,10 @@ export class LivedExperienceStore {
     }));
   }
 
-  // One indexed read maps that other person's actual shared Stories to
-  // this Thread's owned Experiences. Memories can cite those Experience IDs.
+  // Prefer a Memory for a particular person only when that person acted in
+  // the Thread's noticed Story. Mere bystander presence does not establish
+  // what the observer's Experience was about. Other Memories remain eligible
+  // for ordinary (non-person-specific) retrieval.
   listSharedExperienceRefs(threadId,otherThreadId,{before,limit=64}={}){
     assertId("social memory Thread",threadId);
     assertId("social memory person",otherThreadId);
@@ -2217,9 +2219,15 @@ export class LivedExperienceStore {
         ON other.encounter_ref=t.encounter_ref AND other.thread_id=?
       JOIN thread_encounter_experiences x
         ON x.encounter_ref=t.encounter_ref AND x.thread_id=t.thread_id
+      JOIN encounter_story_records story
+        ON story.encounter_id=t.encounter_ref
       WHERE t.thread_id=? AND t.occurred_at<=?
+        AND EXISTS (
+          SELECT 1 FROM json_each(story.story_json,'$.beats') beat
+          WHERE json_extract(beat.value,'$.actorThreadId')=?
+        )
       ORDER BY t.occurred_at DESC,t.encounter_ref DESC LIMIT ?
-    `).all(otherThreadId,threadId,before,limit)
+    `).all(otherThreadId,threadId,before,otherThreadId,limit)
       .map(row=>row.experience_id);
   }
 

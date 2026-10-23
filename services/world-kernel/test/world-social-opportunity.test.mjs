@@ -564,6 +564,12 @@ test("social cognition prefers the encountered person's factual relation and ret
         semanticStateStore:semantic,experienceStore:f.experience},
       modelAdapter,
     });
+    assert.deepEqual(f.experience.listSharedExperienceRefs(
+      reader,bystander,{before:later}),[],
+    "mere presence in a Story attributed another person's Memory to a bystander");
+    assert.deepEqual(f.experience.listSharedExperienceRefs(
+      reader,neighbor,{before:later}),[experience.experienceId],
+    "a participant's observed speech did not link to the Thread's own Experience");
     const stranger=await call(presentA,bystander,presentB);
     const acquainted=await call(presentA,neighbor,other);
     const otherPerson=await call(presentB,neighbor,other);
