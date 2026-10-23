@@ -9,10 +9,12 @@ import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { normalizeCurrentSituation } from "../src/lived-now.mjs";
+import { enactedActorOccurrence,coPresentAtActorArrival } from "../src/world-occurrence.mjs";
 import { canonicalJson,sha256 } from "../src/persistence-common.mjs";
 import {
   createWorldSocialOpportunity,
   enqueueEnactedSocialReconsideration,
+  enqueueArrivalWitnessSocialNeedBands,
   socialNeedBandReached,
 } from "../src/world-social-opportunity.mjs";
 import { createWorldArrivalPerception } from "../src/world-arrival-perception.mjs";
@@ -105,12 +107,22 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
     evidenceRef:"https://example.org/reconsider-library",
     affordances:["Reading","Conversation"],
   });
+  const origin=lived.admitPublicPlace({
+    venueIdentity:"fixture:reconsider-origin",
+    displayName:"Other place",streetAddress:"11 Library Street",
+    locality:"Tucson",country:"United States",countryCode:"US",
+    lat:32.221,long:-110.97,timeZone:"America/Phoenix",
+    evidenceRef:"https://example.org/reconsider-origin",affordances:["Walking"],
+  });
   const db=new DatabaseSync(path,{enableForeignKeyConstraints:true});
-  function enact(threadId,at,activity,participantRefs=[]){
+  function enact(threadId,at,activity,participantRefs=[],
+    location={kind:"place",placeRef:place.ref}){
+
     const situation=normalizeCurrentSituation({
       situationId:"sit_"+threadId+"_"+at.replace(/[^0-9]/gu,""),
-      threadId,establishedAt:at,phase:"at_place",
-      location:{kind:"place",placeRef:place.ref},
+      threadId,establishedAt:at,
+      phase:location.kind==="transit"?"in_transit":"at_place",
+      location,
       mediatedContext:null,activity,wakefulness:"awake",
       reason:"An independent reading visit.",participantRefs,
       evidenceRefs:["evt_"+threadId],sourcePlanRefs:["plan_"+threadId],
@@ -126,6 +138,21 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
       VALUES (?,?,?,?,?)`).run(situation.situationId,threadId,at,json,
       "sha256:"+sha256(json));
     return situation;
+  }
+  function planUntil(threadId,authoredAt,horizonEnd){
+    return lived.recordPlan({
+      planId:"plan_reconsider_"+threadId,kind:"personal",subjectThreadId:threadId,
+      owner:{partyId:threadId,kind:"thread"},
+      authoredAt,horizonStart:authoredAt,horizonEnd,
+      stops:[{
+        startAt:authoredAt,endAt:horizonEnd,physicalPlaceRef:place.ref,
+        mediatedContext:null,activity:"Read at the library.",
+        purpose:"Quietly read and notice what changes around me.",
+        companionRefs:[],travelFromPrevious:null,
+      }],
+      sourceReferences:[place.ref],
+      cognition:{provider:"fixture",modelId:"fixture-plan",providerRequestId:null},
+    });
   }
   const meeting=createSocialMeetingService({
     worldReader:world,livedNow:{async ensure(){
@@ -151,7 +178,7 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
     db.close();experience.close();lived.close();world.close();
     rmSync(directory,{recursive:true,force:true});
   }
-  return {world,lived,experience,people,place,enact,meeting,close};
+  return {world,lived,experience,people,place,origin,enact,planUntil,meeting,close};
 }
 
 test("an activity change earns one independent social chance, not a timer",async()=>{
