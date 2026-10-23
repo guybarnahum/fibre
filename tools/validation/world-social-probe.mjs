@@ -84,8 +84,7 @@ export function groundedLifeSummary(threadId,person,checkedAt){
     })).slice(0,6);
   const now=Date.parse(checkedAt);
   const futureStops=(lived.currentPersonalPlan?.stops??[])
-    .filter((stop)=>stop.presenceMode==="physical"
-      &&bound.some((candidate)=>candidate.ref===stop.physicalPlaceRef)
+    .filter((stop)=>bound.some((candidate)=>candidate.ref===stop.physicalPlaceRef)
       &&Date.parse(stop.endAt)>now)
     .map((stop)=>({
       venueRef:bound.find((candidate)=>candidate.ref===stop.physicalPlaceRef).physicalVenue.ref,
@@ -270,6 +269,41 @@ export function summarizeSocialContinuity(observatories,{limit=24}={}){
   });
 }
 
+export function summarizeSocialActivity(opportunities){
+  const triggers={},outcomes={},acts={},stories=new Map();
+  const needBands={pending:0,completed:0,claims:[]};
+  let decisionsWithPriorChoices=0;
+  for(const item of opportunities){
+    const trigger=item.trigger??item.kind??"unknown",outcome=item.outcome??"pending";
+    triggers[trigger]=(triggers[trigger]??0)+1;
+    outcomes[outcome]=(outcomes[outcome]??0)+1;
+    const act=item.decision?.initiation?.act;
+    if(act)acts[act]=(acts[act]??0)+1;
+    if((item.decision?.initiation?.decisionContext?.priorSocialChoicesThisVisit??[]).length)
+      decisionsWithPriorChoices++;
+    if(trigger==="need_band"){
+      if(item.completedAt)needBands.completed++;else needBands.pending++;
+      needBands.claims.push({threadId:item.threadId,band:item.needBand,
+        dueAt:item.dueAt,startedAt:item.startedAt??null,
+        completedAt:item.completedAt??null});
+    }
+    if(outcome==="acted"&&item.story?.encounterId){
+      const recipient=item.story.participants?.find(p=>p.threadId===item.story.recipientThreadId);
+      stories.set(item.story.encounterId,recipient?.attention??"not_verified");
+    }
+  }
+  const attention=[...stories.values()];
+  return {
+    opportunityTriggers:triggers,opportunityOutcomes:outcomes,initiationActs:acts,
+    smallActStories:stories.size,
+    recipientNoticed:attention.filter(s=>s==="noticed").length,
+    recipientNotNoticed:attention.filter(s=>s==="not_noticed").length,
+    recipientUnverified:attention.filter(s=>!["noticed","not_noticed"].includes(s)).length,
+    needBands,decisionsWithPriorChoices,
+    limitations:"Bounded inspected records only; unverified is not absence.",
+  };
+}
+
 // Operator report is a projection of recorded evidence, never additional
 // World truth. No private addresses or long autobiographical text are printed.
 export function formatWorldSocialReport(evidence,evidencePath){
@@ -321,7 +355,7 @@ export function formatWorldSocialReport(evidence,evidencePath){
         "  Recent public-venue situations: "+n(person.recentPublicVenueVisits?.length)+
           " (bounded history)",
         "  Future public-venue stops in current plan: "+
-          n(person.futureAttestedVenueStops?.length));
+          n(person.futureAttestedVenueStops?.length)+" (visible World places only)");
       for(const visit of (person.recentPublicVenueVisits??[]).slice(0,2)){
         const name=person.availableWorldContexts?.find(p=>
           p.contextPlaceRef===visit.worldPlaceRef)?.description??"verified venue";
@@ -332,7 +366,8 @@ export function formatWorldSocialReport(evidence,evidencePath){
     lines.push("  Current verified-venue visits: "+n(life.currentAttestedVenueVisitCount),
       "  Recent public-venue visitors: "+n(life.recentlyVisitedPublicVenueThreadCount)+
         " (bounded history)",
-      "  Threads with future public-venue stops: "+n(life.futureAttestedVenuePlanCount));
+      "  Threads with future public-venue stops: "+n(life.futureAttestedVenuePlanCount)+
+      " (Observatory scope; candidate scanner uses the city-place catalog)");
   }
   lines.push("",
     "SOCIAL LIFE",
@@ -341,17 +376,36 @@ export function formatWorldSocialReport(evidence,evidencePath){
       :"not checked (single-Thread inspection)"),
     "  Recorded social opportunities: "+n(evidence.socialOpportunities.length)+
       " (bounded inspection)");
+  const summary=evidence.socialActivity??summarizeSocialActivity(evidence.socialOpportunities);
+  const counts=items=>Object.entries(items).sort(([a],[b])=>a.localeCompare(b))
+    .map(([key,value])=>key+"="+value).join(" · ")||"none";
+  lines.push("  By trigger: "+counts(summary.opportunityTriggers),
+    "  By outcome: "+counts(summary.opportunityOutcomes),
+    "  Initiation acts: "+counts(summary.initiationActs),
+    "  Small-act Stories: "+summary.smallActStories+
+      " · recipient noticed="+summary.recipientNoticed+
+      " · not noticed="+summary.recipientNotNoticed+
+      " · unverified="+summary.recipientUnverified,
+    "  Need bands: pending="+summary.needBands.pending+
+      " · completed="+summary.needBands.completed,
+    "  Decisions with earlier choices: "+summary.decisionsWithPriorChoices);
   for(const shared of evidence.sharedCurrentVenues.slice(0,3)){
     lines.push("  · "+short(shared.venueName)+" · "+shared.threads.length+
       " co-present Threads ("+shared.threads.map(p=>p.threadId).join(", ")+")");
   }
-  for(const opportunity of evidence.socialOpportunities.slice(0,3)){
+  for(const opportunity of evidence.socialOpportunities.slice(0,16)){
     const delay=Date.parse(opportunity.startedAt)-Date.parse(opportunity.dueAt);
     const timing=Number.isFinite(delay)
       ?" · considered "+(delay/1000).toFixed(3)+"s after opportunity"
       :"";
-    lines.push("  · "+(opportunity.outcome??"pending").replaceAll("_"," ")+
-      " · "+opportunity.threadId+" · "+(opportunity.trigger??opportunity.kind??"unknown")+
+    const act=opportunity.decision?.initiation?.act??null;
+    const expression=opportunity.decision?.initiation?.expression??null;
+    const counterpart=opportunity.decision?.counterpartyThreadId
+      ??opportunity.counterpartyThreadId??"unknown";
+    lines.push("  · "+time(opportunity.dueAt)+" · "+opportunity.threadId+" → "+counterpart+
+      " · "+(act??opportunity.outcome??"pending")+
+      " / "+(opportunity.outcome??"pending").replaceAll("_"," ")+
+      (typeof expression==="string"&&expression.trim()?" · “"+short(expression,72)+"”":"")+
       (opportunity.needBand===null||opportunity.needBand===undefined
         ?"":" · Body band "+opportunity.needBand)+
       (opportunity.dueAt?" · due "+time(opportunity.dueAt):"")+
@@ -558,6 +612,7 @@ export async function runWorldSocialProbe({
     sharedCurrentVenues:shared,
     socialOpportunities:opportunities.slice(0,40),
     causalContinuity,
+    socialActivity:summarizeSocialActivity(opportunities.slice(0,40)),
     status,
     // A partial directory/Observatory view cannot prove absence across the World.
     evidenceLimitations:"Read-only bounded view; absent or unsampled people and older opportunities may be missing.",
@@ -577,6 +632,7 @@ export async function runWorldSocialProbe({
     futureAttestedVenuePlanCount:planned.length,
     sharedCurrentVenueCount:shared.length,
     recordedOpportunityCount:opportunities.length,
+    socialActivity:evidence.socialActivity,
     voluntaryChoiceCount:choices.length,
     distinctExperienceWitness:proven?.story?.encounterId??null,
     retainedMemoryChainCount:causalContinuity.retainedMemoryChainCount,

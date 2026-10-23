@@ -562,7 +562,9 @@ export class LivedExperienceStore {
         UNION ALL
         SELECT 'observed' AS kind,encounter_ref,
           situation_id,due_at,started_at,completed_at,outcome,decision_json,
-          'observed' AS trigger_kind,NULL AS need_band,NULL AS visit_since
+          CASE WHEN source_kind='social_act' THEN 'social_act'
+            ELSE 'observed' END AS trigger_kind,
+          NULL AS need_band,NULL AS visit_since
         FROM world_observed_social_opportunities WHERE thread_id=?
       ) ORDER BY due_at DESC LIMIT ?
     `).all(threadId,threadId,limit).map(row=>Object.freeze({
