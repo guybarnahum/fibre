@@ -609,7 +609,7 @@ function activeBirthStageCounts() {
 function birthCenterSummaryText() {
   const counts = activeBirthStageCounts();
   const active=counts.genesis+counts.developing+counts.emerging;
-  return `${active} active · ${pendingBirthSnapshot.length} births in the last 3 days · ${counts.genesis} genesis → ${counts.developing} developing → ${counts.emerging} emerging`;
+  return `${active} active · ${pendingBirthSnapshot.length-active} recent outcomes · ${counts.genesis} genesis → ${counts.developing} developing → ${counts.emerging} emerging`;
 }
 
 function renderBirthCenterTopSummary() {
@@ -1090,7 +1090,7 @@ function renderPendingBirths(births) {
   if (births.length === 0) {
     const empty = document.createElement("span");
     empty.className = "thread-birth-pending-empty";
-    empty.textContent = "No births recorded in the last three days.";
+    empty.textContent = "No active births or outcomes recorded in the last three days.";
     birthPending.append(empty);
   } else {
     for (const birth of births) {
@@ -1164,7 +1164,7 @@ async function loadPendingBirths({ quiet = false } = {}) {
   if (!quiet) {
     setRefreshButtonState(birthPendingRefresh,true,{
       tooltip:"Refresh pending births",
-      busyTooltip:"Refreshing pending births",
+      busyTooltip:"Refreshing Birth Center activity",
     });
     if (pendingBirthSnapshot.length === 0) {
       setWaitingContent(birthPending, "Loading births");
