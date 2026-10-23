@@ -760,7 +760,7 @@ test("a chosen small act becomes one World Story and an independent noticed oppo
     assert.equal(f.observedSocialOpportunities[0].sourceKind,"social_act",
       "reciprocity was not bound to the witnessed outward act");
     assert.doesNotMatch(JSON.stringify(attempt.encounterStory.story),
-      /\\b(?:Mina|Noor)\\b/u,"strangers' names leaked into World history");
+      /\b(?:Mina|Noor)\b/u,"strangers' names leaked into World history");
   }
 });
 

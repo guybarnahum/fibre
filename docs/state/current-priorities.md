@@ -9,6 +9,20 @@ canonical: true
 
 **North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
 
+**October 23 graded social acts, source-only — validation and staging open:**
+An independently salient co-present person can now be met with no outward
+act, a nod, greeting, remark or explicit invitation. Small acts become
+objective World Stories with separate attention and optional, one-shot
+recipient opportunities. Conversation still requires consent; a
+four-opportunity per-pair shared-visit computation cap prevents an
+unbounded greeting loop. The only extra cognition is recipient attention
+for a small act and the usual decision when a noticed recipient
+opportunity eventually runs. No social-frequency target, new poller,
+fabricated encounter or Body reward was added. This source change is
+**not** evidence of real staging small acts, increased meeting counts,
+learned names, changed relationships or social-need satisfaction. See
+[Graded acts](../architecture/situated-perception-and-salience.md#graded-social-acts-and-reciprocal-attention-october-23-source).
+
 **October 22 mutual arrival noticing, source-only:** Objective World arrival
 now offers personal attention to the arriving Thread as well as already-present
 witnesses; only a noticed Experience can become later social evidence.

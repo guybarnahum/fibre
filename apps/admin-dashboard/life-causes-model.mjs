@@ -87,7 +87,8 @@ export function recordedLifeMoments({
         kind:"social_choice",
         id:item.kind+":"+item.situationId+":"+(item.sourceEncounterRef??"arrival"),
         at:item.completedAt,
-        title:item.outcome==="met"?"A conversation began"
+        title:item.outcome==="acted"?"Made a small social gesture"
+          :item.outcome==="met"?"A conversation began"
           :item.outcome==="not_initiated"?"Chose not to approach"
           :item.outcome==="background"?"Social opportunity stayed in the background"
           :item.outcome==="not_met"?"Conversation was not accepted"

@@ -139,6 +139,30 @@ function currentVenue(observatory){
   };
 }
 
+
+function enactedActStory(observatories,threadId,opportunity){
+  const ref=opportunity.decision?.encounterRef??null;
+  if(ref===null)return null;
+  const story=(observatories.get(threadId)?.encounterStories??[])
+    .find(item=>item.encounterId===ref);
+  if(!story)return null;
+  const participants=story.threadPresence.map(part=>{
+    const observed=(observatories.get(part.threadId)?.encounterStories??[])
+      .find(item=>item.encounterId===ref);
+    return {
+      threadId:part.threadId,
+      attention:observed?.attention?.outcome??"not_verified",
+      experienceId:observed?.attention?.experience?.experienceId??null,
+    };
+  });
+  return {
+    encounterId:ref,recipientThreadId:opportunity.decision?.counterpartyThreadId??null,
+    outcome:"acted",beatKind:story.story?.beats?.[0]?.kind??null,participants,
+    distinctExperienceConfirmed:participants.length>=2
+      &&participants.every(part=>part.attention==="noticed"&&part.experienceId!==null),
+  };
+}
+
 function acceptedStory(observatories,threadId,opportunity){
   const person=observatories.get(threadId);
   const interaction=(person?.socialInteractions??[]).find((item)=>
@@ -471,7 +495,9 @@ export async function runWorldSocialProbe({
       opportunities.push({
         threadId,...opportunity,
         ...(opportunity.outcome==="met"
-          ?{story:acceptedStory(observatories,threadId,opportunity)}:{}),
+          ?{story:acceptedStory(observatories,threadId,opportunity)}
+          :opportunity.outcome==="acted"
+            ?{story:enactedActStory(observatories,threadId,opportunity)}:{}),
       });
     }
   }
@@ -490,6 +516,7 @@ export async function runWorldSocialProbe({
     :shared.length===0?"no_shared_current_attested_venue_in_sample"
     :"shared_venue_without_recorded_decision";
   const status=!runtimeMatches?"deployment_outdated"
+    :proven?.story?.outcome==="acted"?"small_social_act_with_distinct_experiences"
     :proven?"shared_encounter_with_distinct_experiences"
     :opportunities.some((entry)=>entry.outcome==="met")?"meeting_reported_story_unverified"
     :choices.length>0?"voluntary_social_choice_observed"

@@ -305,6 +305,42 @@ long low-novelty wait
 
 Do not infer boredom merely because a clock advanced.
 
+## Graded social acts and reciprocal attention (October 23 source)
+
+Once the existing salience gate earns a person-specific consideration,
+Interior Cognition asks neutrally how, if at all, that Thread engages:
+`none | acknowledge | greet | remark | invite_conversation`.
+Neither suppress nor manufacture interest. The situated setting includes
+bounded, World-admitted public-place affordances as **context**, not a
+behavioral command. Affordances remain context-only until live differential
+choice is shown.
+
+A chosen nod, greeting or remark creates one objective Encounter Story
+(`action` for acknowledgment, `utterance` for speech), with the initiator's
+immediate, observer-owned Experience and independently appraised recipient
+attention. The other person may not notice. Only a noticed act earns a
+single observed social opportunity to choose an act of their own. The
+recipient can ignore, gesture, speak, invite a conversation, or do nothing;
+no reply is prescribed. An invitation alone retains the existing
+accept/decline/defer and Live Encounter path. `none` remains
+`not_initiated`; a small outward act completes as `acted`, not `met`.
+
+Reciprocity reuses the claimed, one-shot World observed-opportunity record.
+For each pair and independently continuous shared venue visit, at most
+four act-triggered opportunities are admitted across **both directions**.
+The visit's start is derived conservatively from bounded, World-enacted
+situation history; without a provable start, no further opportunity is
+created. This cap prevents unbounded cognition, not long conversation or
+social agency. There is no added timer, global scan, forced contact or
+new meeting state machine. A recipient's possible response requires one
+attention appraisal; a noticed response opportunity later spends the
+ordinary social decision model call.
+
+**Deferred:** a greeting satisfying Body social need, explicit learning
+of names through speech, event-driven reconsideration during continuous
+co-presence beyond these acts, and proof that Memory changes a subsequent
+unforced social choice.
+
 ## Reciprocal social momentum
 
 Actual outward interaction is part of the exterior world and may influence later salience and cognition.

@@ -24,6 +24,21 @@ participant B speech/actions  <----
 
 There is no turn owner.
 
+## Small social acts before conversation
+
+Ordinary first contact need not request an entire conversation. An
+independently salient nearby person may be acknowledged by a nod, greeted,
+or addressed with a brief remark. That observable act is admitted to one
+objective World Encounter Story; the recipient may notice it, experience
+it differently, and choose a separate response. A gesture is not a
+conversation request, a recipient's attention is not consent, and none of
+these acts automatically starts a Live Encounter.
+
+Only an explicit `invite_conversation` proceeds through the existing
+recipient `accept | decline | defer` judgment and, on acceptance, the
+Live Encounter coordinator. No speech quota, default social response or
+mandatory escalation follows from the availability of small acts.
+
 ## Authority model
 
 A Live Encounter coordinates but does not replace existing authorities.
@@ -414,8 +429,9 @@ The current social meeting machinery already provides the correct admission path
 actual co-presence
   -> Situated Percept
   -> salience
-  -> initiator may initiate
-  -> recipient accept | decline | defer
+  -> initiator chooses none | acknowledge | greet | remark | invite_conversation
+  -> small act: objective Story -> independent attention -> optional response opportunity
+  -> invitation: recipient accept | decline | defer
 ```
 
 After acceptance, Thread -> Thread uses the same Live Encounter primitive as Person -> Thread rather than a special fixed opener/reply/closing script.
