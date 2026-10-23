@@ -47,7 +47,8 @@ per-person tick, periodic partner scan or second social engine.
 - **Operational:** the four-opportunity cap controls computational exposure,
   not Thread temperament, social drive or conversational length.
 - **Deferred:** greeting satisfaction of Body needs, introduction/name
-  learning, unscheduled reconsideration throughout a shared stay, retained
+  learning, reconsideration beyond the source-only event triggers now implemented,
+  retained
   autobiographical meaning bending future social choice, long-term
   relationship formation and human visitor integration. These continue
   through World Story → personal Experience → selective Memory → later

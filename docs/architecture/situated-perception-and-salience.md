@@ -341,6 +341,46 @@ of names through speech, event-driven reconsideration during continuous
 co-presence beyond these acts, and proof that Memory changes a subsequent
 unforced social choice.
 
+## Reconsideration after an enacted change (October 23 source)
+
+A prior voluntary `none` does not become a permanent stance toward
+someone sharing the same venue. World may earn another *opportunity*
+without prescribing a changed answer, but only for two real changes:
+
+- **Activity change:** a new World-enacted situation has a different
+  activity but the same physical venue, with another awake person present.
+  A refreshed plan with unchanged activity is not an event.
+- **Predicted social-contact band:** where earlier enacted history already
+  grounds the Body's `social_contact` drive, Fibre analytically predicts
+  when its existing pressure would cross 0.4 or 0.6, using the inherited
+  social sensitivity and the current observed-contact evidence. The
+  prediction must precede the Thread's next lived boundary. At the
+  instant due, it is re-evaluated through the ordinary regulator; an
+  intervening accepted contact may make the prediction obsolete.
+  Missing evidence never becomes clock-derived loneliness or a wake.
+
+Both events reuse the durable social-opportunity claim and existing
+freshness, company-continuity and life-debt rules. During consideration,
+one person is selected from the actual company present at the event.
+A recently noticed Story with that person gives a bounded preference;
+neither that preference nor a previous social decision grants a right
+to contact. Interior Cognition sees up to three of the Thread's *own*
+previous choices toward the same counterpart in this shared visit
+(`priorSocialChoicesThisVisit`), including silence and its explanation.
+This is **context-only**, not automatic reversal or persistence of a
+stance. The normal salience gate and five-act choice remain decisive.
+
+At most three triggered reconsiderations per person per continuous
+venue visit, and at most two per ordered pair, are computation limits.
+Continuous presence is established through at most sixteen prior
+World-enacted situations; missing history is not assumed company.
+No general social tick, repeated pair scan, model call on background
+salience or exploration-band timer was added. Exploration remains a
+provisional organismic proxy, not an automatic interest in strangers.
+This source implementation still requires local validation and natural
+staging observation; it does not establish additional meetings or
+Memory-driven relationship formation.
+
 ## Reciprocal social momentum
 
 Actual outward interaction is part of the exterior world and may influence later salience and cognition.

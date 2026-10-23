@@ -23,6 +23,20 @@ fabricated encounter or Body reward was added. This source change is
 learned names, changed relationships or social-need satisfaction. See
 [Graded acts](../architecture/situated-perception-and-salience.md#graded-social-acts-and-reciprocal-attention-october-23-source).
 
+**October 23 in-venue reconsideration, source-only — validation pending:**
+World can now create one-shot opportunities when a Thread actually changes
+activity while sharing a verified venue, or when previously grounded Body
+evidence predicts the next social-contact pressure crossing. An actual
+crossing and still-continuous company are required at execution;
+otherwise no social choice is made. The existing social gate, five-act
+cognition and conversation consent remain authoritative. Earlier
+self-authored decisions are included as context, never commands.
+Three per-visit and two per-counterpart computation bounds limit model
+exposure. No extra periodic worker, tick, fabricated social drive or
+relationship state has been added. **No increased meeting rate, natural
+reconsideration or Body-driven social action is claimed until staging
+evidence shows it.**
+
 **October 23 renewal-boundary source finding:** A 1 ms gap between
 situation records can be the deliberate inclusive Flight Plan horizon
 followed by the next-millisecond renewal (`nextLivedBoundary`).

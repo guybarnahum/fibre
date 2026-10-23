@@ -104,6 +104,35 @@ may cause an arousal opportunity via the established Body/attention mechanism
 when that capability is explicitly accepted. Never wake someone merely
 because a scheduling callback fires.
 
+## Event-derived reconsideration, never a social clock (October 23 source)
+
+LivedNow's ordinary `onSituationEnacted` callback is the only producer
+of in-venue activity-change reconsideration. Both local and Cloudflare
+World hosts use the same helper against enacted CurrentSituations.
+The movement classifier remains distinct: an activity change is neither
+an arrival nor a departure, and cannot author an arrival Story.
+An occupied, continuously evidenced venue visit earns one durable
+`activity_change` opportunity per changed situation. An unchanged plan
+renewal, sleeper, unobserved partner or empty venue earns none.
+
+When the existing social-contact evidence is grounded, the same enactment
+may schedule the next analytic need-band crossing (0.4 or 0.6) before
+the next personal life boundary. The existing World alarm schedules that
+specific predicted instant; there is no new timer or polling process.
+At the due instant, the observed company and Body evidence are checked
+again. A band not reached is completed as `need_unreached` with no
+social model call; a missed visit is not replayed. A later band can be
+scheduled through the same frontier after the earlier one completes.
+
+The original `world_social_opportunities` queue retains the true scene
+identity and a deterministic per-trigger opportunity identity. For
+reconsiderations its optional trigger, threshold and shared-visit start
+are durable execution evidence. World still enforces single claims,
+freshness, unresolved-life deferral and no model reroll after interruption.
+The Thread's own past decisions are only a bounded cognition context.
+The limit of three reconsiderations per venue visit and two per ordered
+pair is operational, not a social rule or rate target.
+
 ## Processing a World occurrence
 
 ```text
