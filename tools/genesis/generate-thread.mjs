@@ -250,7 +250,32 @@ function parseRemoteArgs(argv){
     options,
   });
 }
+async function reportPreparation({baseUrl,privateToken,requestId,requestedAt,location,sex,action,error=null,timeoutMs}){
+  const response=await fetch(baseUrl+"/internal/births/preparation",{
+    method:"POST",
+    headers:{"content-type":"application/json","x-fibre-private-token":privateToken},
+    body:JSON.stringify({requestId,requestedAt,location,sex,action,...(error===null?{}:{error})}),
+    signal:AbortSignal.timeout(timeoutMs),
+  });
+  const payload=await json(response,"Birth Center preparation");
+  return payload.preparation;
+}
+
 async function main() {
+  let activeStage="starting",stageStart=Date.now(),birthRequestId=null;
+  const emit=(stage,detail={})=>{
+    activeStage=stage;stageStart=Date.now();
+    process.stdout.write(JSON.stringify({event:"thread-birth-progress",stage,
+      requestId:birthRequestId,...detail})+"\\n");
+  };
+  const heartbeat=setInterval(()=>{
+    process.stdout.write(JSON.stringify({event:"thread-birth-progress",
+      stage:activeStage,requestId:birthRequestId,
+      elapsedSeconds:Math.floor((Date.now()-stageStart)/1000)})+"\\n");
+  },10_000);
+  heartbeat.unref?.();
+  try {
+  emit("inspect_deployment");
   const remote=parseRemoteArgs(process.argv.slice(2));
   const options=remote.options;
   if (options.help) {
@@ -273,6 +298,7 @@ async function main() {
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   const viewerOrigin = required(`${targetEnvironment} viewer origin`, deployed.externalViewerOrigin);
   const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
+  emit("read_appearance_calibration");
   const calibrationModel=await readAppearanceCalibrationModel({
     baseUrl:worldKernel,
     privateToken,
@@ -281,6 +307,8 @@ async function main() {
 
   const explicitRequestId = process.env.FIBRE_GENESIS_REQUEST_ID?.trim() || null;
   const requestId = explicitRequestId ?? `genesis-birth-${Date.now().toString(36)}`;
+  birthRequestId=requestId;
+  emit("inspect_prior_development");
   const existing = explicitRequestId === null
     ? null
     : await inspectDevelopmentIfExists({ baseUrl: birthCenter, privateToken, requestId, timeoutMs });
@@ -289,12 +317,13 @@ async function main() {
   if (persistedRequestedAt !== null && explicitRequestedAt !== null && persistedRequestedAt !== explicitRequestedAt) {
     throw new Error(`existing Genesis request ${requestId} was created at ${persistedRequestedAt}; do not override FIBRE_GENESIS_REQUESTED_AT when resuming`);
   }
-  const requestedAt = explicitRequestedAt ?? persistedRequestedAt ?? new Date().toISOString();
+  let requestedAt = explicitRequestedAt ?? persistedRequestedAt ?? new Date().toISOString();
   const baseSlotOrdinal = selectBirthSlot({
     requestId,
     slotCount: cohort.slots.length,
     explicitSlot,
   });
+  emit("resolve_birthplace");
   const canonicalPlace = options.world === null
     ? null
     : await resolveGeoNamesPlace({
@@ -305,15 +334,48 @@ async function main() {
   const selector = canonicalPlace === null
     ? selectDefaultBirthplace(requestId)
     : normalizeGenesisWorldSelector(`${canonicalPlace.country}/${canonicalPlace.city}`);
-  const selection = await resolveGenesisWorldSelection({
-    selector,
-    heritage: options.heritage,
-    forceNewWorld: options.forceNewWorld,
-    cohort,
-    repoRoot: REPO_ROOT,
-    requestId,
-    baseSlotOrdinal,
+  const location=canonicalPlace===null?null:{
+    country:canonicalPlace.country,city:canonicalPlace.city,
+    displayName:canonicalPlace.displayName??(canonicalPlace.city+", "+canonicalPlace.country),
+    lat:canonicalPlace.lat,long:canonicalPlace.long,
+  };
+  emit("register_birth_preparation");
+  const preparation=await reportPreparation({
+    baseUrl:birthCenter,privateToken,requestId,requestedAt,
+    location,sex:options.sex,action:"start",timeoutMs,
   });
+  requestedAt=preparation.requestedAt;
+  if(persistedRequestedAt!==null&&persistedRequestedAt!==requestedAt){
+    throw new Error("Birth Center preparation time differs from durable Genesis development");
+  }
+  emit("author_world_and_family",{place:selector.display});
+  let selection;
+  try {
+    selection = await resolveGenesisWorldSelection({
+      selector,
+      heritage: options.heritage,
+      forceNewWorld: options.forceNewWorld,
+      cohort,
+      repoRoot: REPO_ROOT,
+      requestId,
+      baseSlotOrdinal,
+      onProgress:event=>{
+        if(event.type==="model_attempt"||event.type==="operational_failure"){
+          process.stdout.write(JSON.stringify({event:"thread-birth-model",
+            requestId,kind:event.type,attempt:event.attempt,
+            maximumAttempts:event.maximumAttempts,
+            ...(event.failure?{failureCode:event.failure.code,retrying:event.retrying}:{}),
+          })+"\\n");
+        }
+      },
+    });
+  }catch(error){
+    await reportPreparation({baseUrl:birthCenter,privateToken,requestId,
+      requestedAt,location,sex:options.sex,action:"fail",
+      error:String(error?.message??error),timeoutMs}).catch(()=>{});
+    throw error;
+  }
+  emit("compose_birth_request");
   const body = birthRequest({
     requestId,
     requestedAt,
@@ -344,25 +406,30 @@ async function main() {
     identityMode: "fresh_birth_composition",
   })}\n`);
 
+  emit("submit_development",{genesisId:plan.genesisId,threadId:plan.threadId});
   const birth = (await submit({ baseUrl: birthCenter, privateToken, body, timeoutMs })).development;
   if (birth?.status !== "published") {
+    emit("await_birth_center_publication");
     await poll(
       () => inspectDevelopment({ baseUrl: birthCenter, privateToken, requestId, timeoutMs }),
       (result) => result?.inspection?.provisionalStatus === "published",
       { timeoutMs },
     );
   }
+  emit("await_world_admission");
   const world = await poll(
     () => inspectWorld({ baseUrl: worldKernel, privateToken, plan, timeoutMs }),
     (result) => result?.inspection?.authoritativeThread?.exists === true && result?.inspection?.genesis?.threadPublished === true,
     { timeoutMs },
   );
+  emit("await_public_presentation");
   const presentation = await poll(
     () => inspectPresentation({ baseUrl: threadPresentation, viewerOrigin, threadId: plan.threadId, timeoutMs }),
     (result) => result?.pointer?.threadId === plan.threadId,
     { timeoutMs },
   );
   const validated = assertGenesisReference({ body, plan, world, presentation });
+  emit("birth_verified");
 
   process.stdout.write(`${JSON.stringify({
     event: "thread-birth-complete",
@@ -386,6 +453,7 @@ async function main() {
     worldSpecId: body.worldSpec.worldSpecId,
     identityMode: "fresh_birth_composition",
   })}\n`);
+  } finally { clearInterval(heartbeat); }
 }
 
 main().catch((error) => {

@@ -287,12 +287,20 @@ export function createWorldAuthoringFetch(fetchImpl = globalThis.fetch) {
   };
 }
 
-async function defaultAuthorWorld({ selector, heritage, modelId, requestId }) {
+async function defaultAuthorWorld({ selector, heritage, modelId, requestId, onProgress = null }) {
+  // Larger than the 45s cognition default: authoring family profiles
+  // is a substantial structured-output call before durable Genesis.
+  const timeoutMs=Number(process.env.FIBRE_GENESIS_WORLD_TIMEOUT_MS ?? 180_000);
+  if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1_000){
+    throw new TypeError("FIBRE_GENESIS_WORLD_TIMEOUT_MS must be positive milliseconds");
+  }
   const adapter = createOpenAIModelAdapter({
     modelId,
     fetchImpl: createWorldAuthoringFetch(),
     reasoningEffort: "low",
     maxOutputTokens: 5_000,
+    timeoutMs,
+    observer:onProgress,
   });
   const basePrompt = [
     "Author bounded ordinary-life material for a Fibre Genesis World.",
@@ -347,6 +355,7 @@ export async function resolveGenesisWorldSelection({
   modelId = process.env.FIBRE_GENESIS_WORLD_MODEL?.trim() || DEFAULT_WORLD_MODEL,
   now = () => new Date().toISOString(),
   authorWorld = defaultAuthorWorld,
+  onProgress = null,
 } = {}) {
   if (selector === null) throw new TypeError("Genesis requires a birthplace selector");
 
@@ -359,7 +368,7 @@ export async function resolveGenesisWorldSelection({
     }
   }
 
-  const authored = await authorWorld({ selector, heritage, modelId, requestId });
+  const authored = await authorWorld({ selector, heritage, modelId, requestId, onProgress });
   const createdAt = now();
   const built = buildAuthoredWorld({
     selector,

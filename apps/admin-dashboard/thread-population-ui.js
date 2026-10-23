@@ -697,6 +697,7 @@ function mapCoordinates(event) {
 }
 
 function birthStage(birth) {
+  if (birth?.stage === "failed" || birth?.status === "failed") return "failed";
   if (["genesis","developing","emerging","in-world"].includes(birth?.stage)) return birth.stage;
   return ({
     queued:"genesis",

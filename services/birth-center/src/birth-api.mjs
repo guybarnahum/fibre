@@ -1,5 +1,6 @@
 const TOKEN_ENCODER = new TextEncoder();
 const ROUTE = "/internal/births/initiate";
+const PREPARATION_ROUTE = "/internal/births/preparation";
 const PENDING_ROUTE = "/internal/births/pending";
 const STILLBORN_ROUTE = "/internal/births/stillborn";
 const PLACES_ROUTE = "/internal/births/places";
@@ -92,10 +93,57 @@ export function createBirthInitiationApi({
         throw new TypeError("birth API defer must be a function or null");
       }
       const url = new URL(request.url);
-      if (![ROUTE,PENDING_ROUTE,STILLBORN_ROUTE,PLACES_ROUTE].includes(url.pathname)) return null;
+      if (![ROUTE,PREPARATION_ROUTE,PENDING_ROUTE,STILLBORN_ROUTE,PLACES_ROUTE].includes(url.pathname)) return null;
       if (url.search !== "") return json(400, { error:"query_not_supported" });
       if (!constantTimeEqual(request.headers.get("x-fibre-private-token"), privateToken)) {
         return json(403, { error:"private_token_required" });
+      }
+      if (url.pathname === PREPARATION_ROUTE) {
+        if (request.method !== "POST") return json(405, { error:"method_not_allowed" });
+        if (typeof requestStore?.get !== "function" || typeof requestStore?.progress !== "function") {
+          return json(503, { error:"birth_preparation_not_configured" });
+        }
+        try {
+          const input = await request.json();
+          if (!input || typeof input !== "object" || Array.isArray(input)
+            || Object.keys(input).some(key=>!["action","requestId","requestedAt","location","sex","error"].includes(key))
+            || !["start","fail"].includes(input.action)) {
+            throw new TypeError("Genesis CLI preparation input is invalid");
+          }
+          if (input.action === "fail" && (typeof input.error !== "string" || !input.error.trim())) {
+            throw new TypeError("Genesis CLI failure requires a reason");
+          }
+          const existing = requestStore.get(input.requestId);
+          if (existing?.locationSource && existing.locationSource !== "cli") {
+            throw new TypeError("Genesis CLI cannot take over another birth request");
+          }
+          const normalized = exactInput({
+            requestId:input.requestId,
+            requestedAt:existing?.requestedAt ?? input.requestedAt,
+            location:input.location,
+            sex:input.sex ?? null,
+          });
+          const birth = requestStore.enqueue(normalized);
+          if (birth.status !== "published") {
+            if (input.action === "fail") requestStore.fail(birth.requestId, new Error(input.error.trim().slice(0,400)));
+            else if (birth.status !== "developing" && birth.status !== "publishing") {
+              requestStore.progress(birth.requestId, {
+                status:"authoring",
+                location:normalized.location?.country && normalized.location?.city
+                  ? normalized.location.country+"/"+normalized.location.city:null,
+                locationSource:"cli",
+                error:null,
+              });
+            }
+          }
+          const current = requestStore.get(birth.requestId);
+          return json(200, { ok:true, preparation:{
+            requestId:current.requestId,requestedAt:current.requestedAt,status:current.status,
+          } });
+        } catch (error) {
+          return json(400, { error:"invalid_birth_preparation",
+            detail:error instanceof Error?error.message:String(error) });
+        }
       }
       if (url.pathname === PLACES_ROUTE) {
         if (request.method !== "GET") return json(405, { error:"method_not_allowed" });

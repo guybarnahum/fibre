@@ -236,13 +236,17 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
   const developmentByRequest = new Map(development.map((request) => [request.requestId, request]));
 
   for (const request of runtime.birthRequestStore.recent({ limit:64 })) {
+    const developmentRequest = developmentByRequest.get(request.requestId) ?? null;
+    // CLI preparation is an early witness. The durable development record
+    // takes over once it exists; never show two rows for one birth.
+    if (request.locationSource === "cli" && developmentRequest !== null) continue;
     known.add(request.requestId);
     if (request.status === "published") continue;
 
     const active = runtime.birthRequestStore.isActive(request.status);
     if (!active && request.status !== "failed") continue;
-    const developmentRequest = developmentByRequest.get(request.requestId) ?? null;
-    if (request.status === "failed" && developmentRequest === null && !request.genesisId && !request.threadId) continue;
+    if (request.status === "failed" && developmentRequest === null
+      && !request.genesisId && !request.threadId && request.locationSource !== "cli") continue;
     const disposition = developmentRequest === null
       ? null
       : runtime.developmentRequestStore.getDisposition(request.requestId);
@@ -259,7 +263,7 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
       sex,
       name:birthSubjectName(identity, sex),
       timing:birthTiming(request, nowMs),
-      terminalFailure:request.status === "failed",
+      terminalFailure:request.status === "failed" && request.locationSource !== "cli",
     }));
   }
 

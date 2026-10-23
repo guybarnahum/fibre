@@ -83,6 +83,49 @@ test("birth API exposes durable pending births without changing initiation", asy
 });
 
 
+test("CLI pre-authoring is visible and failed preparation stays recorded", async () => {
+  const stored=new Map();
+  const requests={
+    get(id){return stored.get(id)??null;},
+    enqueue(input){
+      const found=stored.get(input.requestId);
+      if(found){
+        assert.deepEqual(found.requestedLocation,input.location);
+        assert.equal(found.requestedAt,input.requestedAt);
+        return found;
+      }
+      const item={requestId:input.requestId,requestedAt:input.requestedAt,
+        requestedLocation:input.location,sex:input.sex,status:"queued",locationSource:null};
+      stored.set(item.requestId,item);
+      return item;
+    },
+    progress(id,patch){const next={...stored.get(id),...patch};stored.set(id,next);return next;},
+    fail(id,error){return this.progress(id,{status:"failed",error:error.message});},
+  };
+  const api=createBirthInitiationApi({
+    service:{async initiate(){throw Error("CLI preparation must not start another birth");}},
+    privateToken:TOKEN,requestStore:requests,
+  });
+  const url="https://birth.internal/internal/births/preparation";
+  const body={action:"start",requestId:"fibre-population-london-001",
+    requestedAt:"2026-10-23T17:40:00.000Z",
+    location:{country:"United Kingdom",city:"London",lat:51.5,long:-0.12},sex:null};
+  const call=async input=>api.fetch(new Request(url,{method:"POST",
+    headers:{"content-type":"application/json","x-fibre-private-token":TOKEN},
+    body:JSON.stringify(input)}));
+  const started=await call(body);
+  assert.equal(started.status,200);
+  assert.equal(requests.get(body.requestId).status,"authoring",
+    "CLI world authoring was invisible to the Birth Center");
+  const resumed=await call({...body,requestedAt:"2026-10-23T17:42:00.000Z"});
+  assert.equal((await resumed.json()).preparation.requestedAt,body.requestedAt,
+    "retry replaced the original birth request time");
+  const failed=await call({...body,action:"fail",error:"World authoring timed out"});
+  assert.equal(failed.status,200);
+  assert.equal(requests.get(body.requestId).status,"failed",
+    "failed CLI preparation disappeared before development was reserved");
+});
+
 test("Cloudflare-style defer returns immediately after durable enqueue", async () => {
   const events = [];
   let finish;
