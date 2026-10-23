@@ -189,7 +189,7 @@ function missedWindow(lived,opportunity,at){
 // One recently arrived Thread, one bounded candidate and one attempt at most.
 // The durable claim intentionally prevents repeating uncertain outward speech.
 export function createWorldSocialOpportunity({
-  experienceStore,livedNowStore,meetingService,
+  experienceStore,livedNowStore,meetingService,worldReader=null,
   now=()=>new Date().toISOString(),
 }={}){
   for(const method of [
@@ -247,10 +247,10 @@ export function createWorldSocialOpportunity({
       const candidates=experienceStore.listDueSocialOpportunities({at,limit:16});
       const uncertainty=new Map();
       const unresolved=item=>{
-        const key=item.kind+":"+item.threadId+":"+item.situationId;
+        const key=item.kind+":"+item.threadId+":"+(item.opportunityId??item.situationId);
         if(!uncertainty.has(key)){
           uncertainty.set(key,
-            (item.kind==="arrival"
+            (item.trigger==="arrival"
               &&experienceStore.arrivalPerceptionPending?.(item.situationId)===true)
             ||unresolvedVenueCompany(item,at));
         }
@@ -273,6 +273,9 @@ export function createWorldSocialOpportunity({
               opportunity.threadId,initial.location.placeRef,{required:false},
             )?.physicalVenue?.ref??null:null;
           const observed=opportunity.kind==="observed";
+          const reconsideration=["activity_change","need_band"].includes(
+            opportunity.trigger,
+          );
           const hasDue=threadId=>lifeUnresolved(threadId,at);
           const present=venue!==null
             &&(!observed||venue===opportunity.venueRef)
@@ -288,8 +291,41 @@ export function createWorldSocialOpportunity({
               ?"missed_window":"no_co_presence";
           }else if(overdue<0||overdue>60*60_000){
             outcome="expired";
+          }else if(opportunity.trigger==="need_band"
+            &&(!worldReader?.getThread
+              ||!socialNeedBandReached({
+                livedNowStore,experienceStore,
+                thread:worldReader.getThread(opportunity.threadId,{required:false}),
+                situation:initial,at:opportunity.dueAt,band:opportunity.needBand,
+              }))){
+            outcome="need_unreached";
           }else{
-            const other=observed?true
+            // A later arrival does not retroactively create the company
+            // present when this particular reconsideration was earned.
+            const company=reconsideration
+              ?historicalCompany(livedNowStore,opportunity)
+                .filter(person=>continuouslyPresent(livedNowStore,
+                  person.threadId,venue,opportunity.dueAt,at)
+                  &&!hasDue(person.threadId))
+              :[];
+            if(reconsideration&&company.length>1){
+              const noticed=new Set(experienceStore.listEncounterStories(
+                opportunity.threadId,{limit:8},
+              ).filter(story=>
+                experienceStore.getThreadEncounterAttention(
+                  opportunity.threadId,story.encounterId,
+                )?.outcome==="noticed")
+                .flatMap(story=>story.threadPresence.map(person=>person.threadId)));
+              company.sort((a,b)=>Number(noticed.has(b.threadId))
+                -Number(noticed.has(a.threadId)));
+            }
+            const candidate=reconsideration?company.find(person=>
+              experienceStore.reconsiderationCountForPair({
+                threadId:opportunity.threadId,
+                counterpartyThreadId:person.threadId,
+                visitSince:opportunity.visitSince,
+              })<2)??null:null;
+            const other=reconsideration?candidate!==null:observed?true
               :livedNowStore.listCurrentVenueSituations({
                 venueRef:venue,at,limit:8,excludeThreadId:opportunity.threadId,
               }).some((situation)=>{
@@ -302,15 +338,19 @@ export function createWorldSocialOpportunity({
                 return place?.physicalVenue?.ref===venue;
               });
             if(!other){
-              outcome=missedWindow(livedNowStore,opportunity,at)
-                ?"missed_window":"no_co_presence";
+              outcome=reconsideration&&company.length>0?"pair_limit"
+                :missedWindow(livedNowStore,opportunity,at)
+                  ?"missed_window":"no_co_presence";
             }else{
-              // The same salience, Thread-owned initiation, recipient consent,
-              // and lived conversation apply to both causal opportunities.
-              const result=await meetingService.meet(observed
+              // One ordinary Thread decision, from already-enacted company.
+              const result=await meetingService.meet(reconsideration
                 ?{initiatorThreadId:opportunity.threadId,at,
-                  counterpartyThreadId:opportunity.counterpartyThreadId}
-                :{initiatorThreadId:opportunity.threadId,at});
+                  counterpartyThreadId:candidate.threadId,
+                  reconsiderationVisitSince:opportunity.visitSince}
+                :observed
+                  ?{initiatorThreadId:opportunity.threadId,at,
+                    counterpartyThreadId:opportunity.counterpartyThreadId}
+                  :{initiatorThreadId:opportunity.threadId,at});
               const attempt=result.attempts?.[0]??null;
               outcome=attempt?.outcome??(unresolvedVenueCompany(opportunity,at)
                 ?"life_unresolved":missedWindow(livedNowStore,opportunity,at)
@@ -344,10 +384,25 @@ export function createWorldSocialOpportunity({
               }
             }
           }
+          // Advance only the existing durable band frontier. Later contact
+          // may have reset Body pressure; no scheduled band can force action.
+          if(opportunity.trigger==="need_band"&&worldReader?.getThread){
+            const current=livedNowStore.getCurrentSituation(opportunity.threadId);
+            if(current?.situationId===opportunity.situationId){
+              const horizon=nextLivedBoundary(livedNowStore,current);
+              if(horizon!==null)enqueueNextSocialNeedBand({
+                livedNowStore,experienceStore,
+                thread:worldReader.getThread(opportunity.threadId,{required:false}),
+                situation:current,nextBoundaryAt:horizon,
+                visitSince:opportunity.visitSince,at:opportunity.dueAt,
+              });
+            }
+          }
           // started_at is the claimed decision instant; completed_at is the
           // actual end, not a repeated copy of the claim timestamp.
           experienceStore.completeSocialOpportunity({
-            situationId:opportunity.situationId,at:now(),outcome,
+            situationId:opportunity.situationId,opportunityId:opportunity.opportunityId,
+            at:now(),outcome,
             sourceEncounterRef:opportunity.sourceEncounterRef,
             threadId:opportunity.threadId,decision,
           });
