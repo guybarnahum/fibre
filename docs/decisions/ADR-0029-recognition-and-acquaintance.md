@@ -47,8 +47,9 @@ in each participant's own Experience, Memory and semantic life.
 response set `focusPartyId` from the actually perceived counterpart.
 That person's existing relations come first within the six-relationship
 budget. Within four Memories, those linked to that person's actual
-Story via `Memory.eventRefs → own Experience ID → Story presence`
-come first. An indexed read considers up to 64 shared Experience refs.
+Story via `Memory.eventRefs → own Experience ID → Story beat authored
+by the counterpart` come first. Co-presence alone is insufficient
+to attribute personally remembered meaning. An indexed read considers up to 64 shared Experience refs.
 All other evidence follows existing default ordering. The caller and
 model cannot author the private retrieval shortlist. This is context-only
 until later autonomous behavior demonstrates a difference.

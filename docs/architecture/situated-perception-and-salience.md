@@ -375,8 +375,9 @@ Social initiation and social response supply a Fibre-owned
 `focusPartyId` from the counterpart in the Situated Percept. Existing
 Interior Cognition selection first prefers that party's own relations,
 then Memories whose event refs resolve through the observer's own
-Experience → Encounter Story → that party's presence. The same six
-relations / four Memories budgets and default tie-breakers remain.
+Experience → Encounter Story → that party's actual attributed action.
+Mere co-presence does not make a bystander's Memory person-specific.
+The same six relations / four Memories budgets and default tie-breakers remain.
 One indexed, bounded retrieval of up to 64 shared Experience IDs
 supports person-keyed Memory selection. A stranger uses default
 ranking. This is context-only until a later voluntary choice shows
