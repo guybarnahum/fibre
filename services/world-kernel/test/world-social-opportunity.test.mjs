@@ -25,6 +25,7 @@ import {
 } from "../src/lived-social-meeting.mjs";
 import {observablePerson} from "../src/world-observable-person.mjs";
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
+import {evaluateSalience} from "../src/salience-gate.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 
 const seed=JSON.parse(readFileSync(
@@ -183,7 +184,7 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
     db.close();experience.close();lived.close();world.close();
     rmSync(directory,{recursive:true,force:true});
   }
-  return {world,lived,experience,people,place,origin,enact,planUntil,meeting,close};
+  return {storage,world,lived,experience,people,place,origin,enact,planUntil,meeting,close};
 }
 
 test("recognition belongs to the person who noticed a shared Story yesterday",()=>{
@@ -246,10 +247,74 @@ test("recognition belongs to the person who noticed a shared Story yesterday",()
 
 test("an admitted conversation founds and revises symmetric factual acquaintance",()=>{
   const f=groundedReconsiderationFixture();
-  const situated=openSituatedLifeStore({
-    infraDriver:null,
-  });
-  try{}finally{situated.close();f.close();}
+  const situated=openSituatedLifeStore(f.storage);
+  try{
+    const [reader,neighbor]=f.people;
+    const at="2026-10-23T10:00:00.000Z";
+    const a=f.enact(reader,"2026-10-23T09:00:00.000Z","Reading.");
+    const b=f.enact(neighbor,"2026-10-23T09:00:00.000Z","Reading.");
+    const record=(when,first,second)=>{
+      const interaction=f.experience.recordSocialInteraction({
+        occurredAt:when,initiatorThreadId:reader,recipientThreadId:neighbor,
+        initiatorSituationId:first.situationId,
+        recipientSituationId:second.situationId,
+        requestText:"Can we talk?",responseDecision:"accept",
+        responseExpression:"Yes.",suggestedAt:null,
+      });
+      const story={storyVersion:"encounter-story-v0.1",beats:[
+        {kind:"utterance",actorThreadId:reader,text:"Can we talk?"},
+        {kind:"utterance",actorThreadId:neighbor,text:"Yes."},
+      ]};
+      const encounterStory=f.experience.recordEncounterStory({
+        occurredAt:when,threadPresence:[
+          {threadId:reader,situationId:first.situationId},
+          {threadId:neighbor,situationId:second.situationId},
+        ],story,visualization:createEncounterVisualization({
+          occurredAt:when,story,scene:"At the library.",
+          sourceReferences:[first.situationId,second.situationId],
+          depictedThreadRefs:[],
+        }),
+      });
+      recordWorldAcquaintance({
+        situatedLifeStore:situated,worldReader:f.world,
+        encounterStory,interaction,initiatorThreadId:reader,
+        counterpartyThreadId:neighbor,at:when,venue:f.place.physicalVenue,
+      });
+      return encounterStory;
+    };
+    const first=record(at,a,b);
+    for(const [threadId,other] of [[reader,neighbor],[neighbor,reader]]){
+      const relations=situated.listCurrentLifeRelations(threadId)
+        .filter(item=>item.relationKind==="social_contact");
+      assert.equal(relations.length,1,
+        "a real conversation did not establish one acquaintance per direction");
+      assert.equal(relations[0].relatedParty.partyId,other);
+      assert.equal(relations[0].geneticContributionRole,"none");
+      assert.ok(relations[0].sourceReferences.includes(first.encounterId),
+        "acquaintance did not cite an admitted World Story");
+      assert.ok(relations[0].relationshipFacts.every(fact=>
+        !/likes|trusts|feels/iu.test(fact)),
+      "subjective feelings were added to factual acquaintance");
+    }
+    record(at,a,b);
+    assert.equal(situated.lifeRelationHistory(reader,
+      situated.listCurrentLifeRelations(reader).find(x=>
+        x.relationKind==="social_contact").relationId).length,1,
+      "replay created an additional relation revision");
+    const later="2026-10-24T10:00:00.000Z";
+    const nextA=f.enact(reader,later,"Reading.");
+    const nextB=f.enact(neighbor,later,"Reading.");
+    record(later,nextA,nextB);
+    for(const threadId of [reader,neighbor]){
+      const relation=situated.listCurrentLifeRelations(threadId)
+        .find(item=>item.relationKind==="social_contact");
+      assert.equal(relation.revision,2,
+        "a later consented conversation did not revise acquaintance");
+      assert.equal(situated.listCurrentLifeRelations(threadId)
+        .filter(item=>item.relationKind==="social_contact").length,1,
+        "a later meeting created a second acquaintance record");
+    }
+  }finally{situated.close();f.close();}
 });
 
 test("a shared visit owns one Body-band obligation across activity changes",async()=>{
