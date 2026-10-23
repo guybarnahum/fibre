@@ -19,6 +19,7 @@ import { evaluateSalience } from "./salience-gate.mjs";
 import { livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
 import { projectInteroception } from "./interoceptive-cognition.mjs";
 import { observablePerson } from "./world-observable-person.mjs";
+import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
 
 const MEMORY_LIMIT = 6;
 
@@ -226,26 +227,11 @@ export function createSocialMeetingService({
   // A shared visit starts when the second person entered this uninterrupted
   // venue stay. Beyond the bounded situation history we cannot prove the
   // beginning, so decline to create further reply opportunities.
-  function sharedVisitSince(left,right,venue,at){
-    const start=context=>{
-      let cursor=context.situation;
-      for(let i=0;i<16;i++){
-        const prior=livedNowStore.getPreviousSituation(
-          context.thread.threadId,cursor.establishedAt,
-        );
-        if(prior===null)return cursor.establishedAt;
-        if(prior.location?.kind!=="place"||prior.wakefulness==="asleep"
-          ||livedNowStore.getWorldPlace(context.thread.threadId,
-            prior.location.placeRef,{required:false})?.physicalVenue?.ref!==venue){
-          return cursor.establishedAt;
-        }
-        cursor=prior;
-      }
-      return null;
-    };
-    const a=start(left),b=start(right);
-    if(a===null||b===null)return null;
-    return new Date(Math.max(Date.parse(a),Date.parse(b))).toISOString();
+  function sharedVisitSince(left,right,venue){
+    const a=socialVenueVisitSince(livedNowStore,left.situation,venue);
+    const b=socialVenueVisitSince(livedNowStore,right.situation,venue);
+    return a===null||b===null?null
+      :new Date(Math.max(Date.parse(a),Date.parse(b))).toISOString();
   }
 
   async function enactSmallSocialAct({initiator,counterparty,at,salience,initiation}){
