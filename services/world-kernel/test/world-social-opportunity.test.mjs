@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
+import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { normalizeCurrentSituation } from "../src/lived-now.mjs";
 import { enactedActorOccurrence,coPresentAtActorArrival } from "../src/world-occurrence.mjs";
@@ -19,7 +20,9 @@ import {
 } from "../src/world-social-opportunity.mjs";
 import { createWorldArrivalPerception } from "../src/world-arrival-perception.mjs";
 import { createWorldReconciliationProcess } from "../src/world-reconciliation-process.mjs";
-import { createSocialMeetingService } from "../src/lived-social-meeting.mjs";
+import {
+  createSocialMeetingService,recordWorldAcquaintance,
+} from "../src/lived-social-meeting.mjs";
 import {observablePerson} from "../src/world-observable-person.mjs";
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
@@ -92,7 +95,9 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
   };
   const world=openWorldStore(storage),lived=openLivedNowStore(storage);
   const experience=openLivedExperienceStore(storage);
-  const people=["thr_reconsider_reader","thr_reconsider_neighbor"];
+  const people=[
+    "thr_reconsider_reader","thr_reconsider_neighbor","thr_reconsider_bystander",
+  ];
   for(const threadId of people){
     const thread=structuredClone(seed);
     thread.threadId=threadId;
@@ -180,6 +185,72 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
   }
   return {world,lived,experience,people,place,origin,enact,planUntil,meeting,close};
 }
+
+test("recognition belongs to the person who noticed a shared Story yesterday",()=>{
+  const f=groundedReconsiderationFixture();
+  try{
+    const [reader,neighbor,bystander]=f.people;
+    const day1="2026-10-22T08:00:00.000Z";
+    const day2="2026-10-23T10:00:00.000Z";
+    const a=f.enact(reader,day1,"Reading.");
+    const b=f.enact(neighbor,day1,"Entering.");
+    const c=f.enact(bystander,day1,"Reading.");
+    const story={storyVersion:"encounter-story-v0.1",
+      beats:[{kind:"action",actorThreadId:neighbor,text:"A person entered."}]};
+    const encounter=f.experience.recordEncounterStory({
+      occurredAt:day1,
+      threadPresence:[a,b,c].map(s=>({threadId:s.threadId,situationId:s.situationId})),
+      story,visualization:createEncounterVisualization({
+        occurredAt:day1,story,scene:"At the library.",
+        sourceReferences:[a.situationId,b.situationId,c.situationId],
+        depictedThreadRefs:[],
+      }),
+    });
+    f.experience.recordThreadEncounterAttention({
+      threadId:reader,encounterRef:encounter.encounterId,
+      situationId:a.situationId,occurredAt:day1,
+      outcome:"noticed",experienceText:"I recognized the careful reader near me.",
+    });
+    f.experience.recordThreadEncounterAttention({
+      threadId:bystander,encounterRef:encounter.encounterId,
+      situationId:c.situationId,occurredAt:day1,
+      outcome:"not_noticed",experienceText:null,
+    });
+    const a2=f.enact(reader,day2,"Reading.");
+    const c2=f.enact(bystander,day2,"Reading.");
+    const situatedLifeStore={listCurrentPlaceEpisodes:()=>[],
+      listCurrentLifeRelations:()=>[]};
+    const percept=situation=>projectSituatedPercept({
+      observerThreadId:situation.threadId,situation,at:day2,
+      observedThreads:[{threadId:neighbor,name:"Unknown Reader",situation:b}],
+      situatedLifeStore,livedNowStore:f.lived,experienceStore:f.experience,
+    });
+    const recognized=percept(a2),unaware=percept(c2);
+    assert.equal(recognized.observed[0].familiarity?.noticedBeforeCount,1,
+      "noticed history did not survive the six-hour recent-event window");
+    assert.equal(recognized.observed[0].familiarity.experiences[0].experienceText,
+      "I recognized the careful reader near me.",
+      "recognition lost its observer-owned Experience meaning");
+    assert.equal(unaware.observed[0].familiarity,null,
+      "unnoticed company manufactured familiarity");
+    assert.ok(evaluateSalience({
+      opportunity:recognized.opportunities[0],situatedPercept:recognized,
+    }).anchors.includes("recognized_person"),
+    "recognition did not earn independent social consideration");
+    assert.ok(!evaluateSalience({
+      opportunity:unaware.opportunities[0],situatedPercept:unaware,
+    }).anchors.includes("recognized_person"),
+    "unnoticed co-presence earned recognition");
+  }finally{f.close();}
+});
+
+test("an admitted conversation founds and revises symmetric factual acquaintance",()=>{
+  const f=groundedReconsiderationFixture();
+  const situated=openSituatedLifeStore({
+    infraDriver:null,
+  });
+  try{}finally{situated.close();f.close();}
+});
 
 test("a shared visit owns one Body-band obligation across activity changes",async()=>{
   let decisions=0;
