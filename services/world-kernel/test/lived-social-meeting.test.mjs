@@ -818,7 +818,7 @@ test("a self-authored spoken introduction is marked only on its actual Story",as
   const beat=attemptFor(result).encounterStory.story.beats[0];
   assert.equal(beat.disclosesSpeakerName,true,
     "an audible self-introduction did not become a World Story fact");
-  assert.match(beat.text,/Mina Park/,
+  assert.ok(beat.text.includes(mina.identity.name),
     "an introduction flag was admitted without actually naming the speaker");
   const ordinary=fixture({boundedVenueDiscovery:true,
     withoutLifeRelations:true,initiationFor:()=> "greet"});
