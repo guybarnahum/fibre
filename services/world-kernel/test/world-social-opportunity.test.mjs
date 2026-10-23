@@ -419,19 +419,33 @@ test("social cognition prefers the encountered person's factual relation and ret
     const later="2026-10-23T12:00:00.000Z";
     const initial=f.enact(reader,at,"Reading.");
     const other=f.enact(neighbor,at,"Reading.");
-    f.enact(bystander,at,"Reading.");
-    const story={storyVersion:"encounter-story-v0.1",beats:[{
-      actorThreadId:neighbor,kind:"utterance",text:"Good morning.",
-    }]};
+    const witness=f.enact(bystander,at,"Reading.");
+    const interaction=f.experience.recordSocialInteraction({
+      occurredAt:at,initiatorThreadId:reader,recipientThreadId:neighbor,
+      initiatorSituationId:initial.situationId,
+      recipientSituationId:other.situationId,
+      requestText:"Can we talk?",responseDecision:"accept",
+      responseExpression:"Yes.",suggestedAt:null,
+    });
+    const story={storyVersion:"encounter-story-v0.1",beats:[
+      {actorThreadId:reader,kind:"utterance",text:"Can we talk?"},
+      {actorThreadId:neighbor,kind:"utterance",text:"Yes."},
+    ]};
     const encounter=f.experience.recordEncounterStory({
       occurredAt:at,threadPresence:[
         {threadId:reader,situationId:initial.situationId},
         {threadId:neighbor,situationId:other.situationId},
+        {threadId:bystander,situationId:witness.situationId},
       ],story,visualization:createEncounterVisualization({
         occurredAt:at,story,scene:"At the library.",
         sourceReferences:[initial.situationId,other.situationId],
         depictedThreadRefs:[],
       }),
+    });
+    f.experience.recordThreadEncounterAttention({
+      threadId:bystander,encounterRef:encounter.encounterId,
+      situationId:witness.situationId,occurredAt:at,
+      outcome:"not_noticed",experienceText:null,
     });
     const experience=f.experience.recordThreadEncounterAttention({
       threadId:reader,encounterRef:encounter.encounterId,
@@ -440,7 +454,7 @@ test("social cognition prefers the encountered person's factual relation and ret
     }).experience;
     recordWorldAcquaintance({
       situatedLifeStore:life,worldReader:f.world,encounterStory:encounter,
-      initiatorThreadId:reader,counterpartyThreadId:neighbor,
+      interaction,initiatorThreadId:reader,counterpartyThreadId:neighbor,
       at,venue:f.place.physicalVenue,
     });
     const genesis=f.world.listEvents(reader)[0];
