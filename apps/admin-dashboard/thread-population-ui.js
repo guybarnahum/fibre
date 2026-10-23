@@ -762,6 +762,19 @@ function renderBirthPipelineMarkers() {
       const flag = countryFlag(known?.birthLocation?.countryCode);
       title.textContent = [birth.name, [flag, birthplace].filter(Boolean).join(" "), stage, birth.threadId].filter(Boolean).join(" · ");
       circle.append(title);
+      const canonical=birth.requestedLocation;
+      if(canonical?.country&&canonical?.city
+        &&Number.isFinite(Number(canonical.lat))&&Number.isFinite(Number(canonical.long))){
+        circle.classList.add("selectable");
+        circle.addEventListener("click",(event)=>{
+          event.stopPropagation();
+          const displayName=canonical.displayName??canonical.city+", "+canonical.country;
+          setBirthLocation(displayName,{
+            country:canonical.country,city:canonical.city,displayName,
+            lat:Number(canonical.lat),long:Number(canonical.long),
+          });
+        });
+      }
       birthPipelineMarkers.append(circle);
     });
   }
