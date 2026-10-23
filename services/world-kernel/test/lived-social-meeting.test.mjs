@@ -618,6 +618,7 @@ function fixture({
         observedSocialOpportunities.push(structuredClone(candidate));
         return {inserted:true,dueAt:candidate.dueAt};
       },
+      socialChoicesThisVisit(){return [];},
       recordSocialInteraction(candidate) {
         const record = {
           interactionId:`social_fixture_${socialInteractions.length + 1}`,
