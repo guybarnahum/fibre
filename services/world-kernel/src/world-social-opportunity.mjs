@@ -66,6 +66,9 @@ export function enqueueNextSocialNeedBand({
       dueAt:due,trigger:"need_band",needBand:band,visitSince,
     });
     if(result.inserted)return Object.freeze({dueAt:due,band});
+    // The visit already owns this band, whether pending or completed.
+    // Do not arm a higher band until the preceding obligation fires.
+    if(result.alreadyScheduled)return null;
   }
   return null;
 }
@@ -393,9 +396,16 @@ export function createWorldSocialOpportunity({
           // may have reset Body pressure; no scheduled band can force action.
           if(opportunity.trigger==="need_band"&&worldReader?.getThread){
             const current=livedNowStore.getCurrentSituation(opportunity.threadId);
-            if(current?.situationId===opportunity.situationId){
+            if(current!==null&&opportunity.visitSince!==null
+              &&current.location?.kind==="place"){
+              const venue=livedNowStore.getWorldPlace(
+                current.threadId,current.location.placeRef,{required:false},
+              )?.physicalVenue?.ref??null;
+              const since=venue===null?null
+                :socialVenueVisitSince(livedNowStore,current,venue);
               const horizon=nextLivedBoundary(livedNowStore,current);
-              if(horizon!==null)enqueueNextSocialNeedBand({
+              if(since===opportunity.visitSince&&horizon!==null)
+                enqueueNextSocialNeedBand({
                 livedNowStore,experienceStore,
                 thread:worldReader.getThread(opportunity.threadId,{required:false}),
                 situation:current,nextBoundaryAt:horizon,
