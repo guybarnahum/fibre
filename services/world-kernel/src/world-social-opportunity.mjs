@@ -1,4 +1,114 @@
 import { assertIsoTimestamp } from "./persistence-common.mjs";
+import {
+  socialContactEvidenceForLivedHistory,
+  livedRegulationForLivedHistory,
+} from "./lived-now-regulation.mjs";
+import { threadRegulatorProfile } from "../../../core/src/intrinsic-regulation.mjs";
+import { nextLivedBoundary } from "./lived-now-boundary.mjs";
+
+
+const RECONSIDERATION_BANDS=Object.freeze([0.4,0.6]);
+
+// Same proven physical venue across enacted changes; never infer a visit
+// start from a plan. Unbounded history is uncertainty, not an invitation.
+export function socialVenueVisitSince(lived,situation,venue){
+  let cursor=situation;
+  for(let i=0;i<16;i++){
+    const previous=lived.getPreviousSituation(cursor.threadId,cursor.establishedAt);
+    if(previous===null)return cursor.establishedAt;
+    if(previous.location?.kind!=="place"||previous.wakefulness==="asleep"
+      ||lived.getWorldPlace(previous.threadId,previous.location.placeRef,{
+        required:false,
+      })?.physicalVenue?.ref!==venue)return cursor.establishedAt;
+    cursor=previous;
+  }
+  return null;
+}
+
+function eligibleVenueCompany(lived,situation,venue,at){
+  return lived.listCurrentVenueSituations({
+    venueRef:venue,at,limit:8,excludeThreadId:situation.threadId,
+  }).some(other=>other.threadId!==situation.threadId
+    &&other.wakefulness!=="asleep"
+    &&atVenue(lived,other,venue)
+    &&(lived.inspectLivedBoundary?.(other.threadId)?.failedAttempts??0)===0);
+}
+
+// Predict a Body *threshold*, never the social choice or a feeling.
+// The linear schedule is the inverse of the existing social-contact drive,
+// using exactly the regulator's grounded observation and inherited sensitivity.
+export function enqueueNextSocialNeedBand({
+  livedNowStore,experienceStore,thread,situation,nextBoundaryAt,
+  visitSince,at=situation.establishedAt,
+}){
+  if(nextBoundaryAt===null||visitSince===null)return null;
+  const contact=socialContactEvidenceForLivedHistory({
+    threadId:situation.threadId,currentSituation:situation,
+    livedNowStore,experienceStore,asOf:at,
+  });
+  if(contact===null)return null; // Time alone is not proof of social deprivation.
+  const sensitivity=threadRegulatorProfile(
+    thread.genome?.runtimeBaselines??{},
+  ).sensitivity.social;
+  for(const band of RECONSIDERATION_BANDS){
+    const targetHours=band*24/(0.8*sensitivity);
+    if(contact.observedUnmetHours>=targetHours)continue;
+    const due=new Date(Math.ceil(Date.parse(at)
+      +(targetHours-contact.observedUnmetHours)*3600_000)+1).toISOString();
+    if(Date.parse(due)>=Date.parse(nextBoundaryAt))continue;
+    const result=experienceStore.enqueueSocialOpportunity({
+      threadId:situation.threadId,situationId:situation.situationId,
+      dueAt:due,trigger:"need_band",needBand:band,visitSince,
+    });
+    if(result.inserted)return Object.freeze({dueAt:due,band});
+  }
+  return null;
+}
+
+// Called only when LivedNow enacts a World-owned situation. This adds neither
+// a new simulation clock nor a population scan.
+export function enqueueEnactedSocialReconsideration({
+  situation,previous,thread,livedNowStore,experienceStore,nextBoundaryAt,
+}){
+  if(situation.location?.kind!=="place"||situation.wakefulness==="asleep"
+    ||!thread)return [];
+  const venue=livedNowStore.getWorldPlace(
+    situation.threadId,situation.location.placeRef,{required:false},
+  )?.physicalVenue?.ref??null;
+  if(venue===null||!eligibleVenueCompany(
+    livedNowStore,situation,venue,situation.establishedAt,
+  ))return [];
+  const visitSince=socialVenueVisitSince(livedNowStore,situation,venue);
+  if(visitSince===null)return [];
+  const scheduled=[];
+  const former=previous?.location?.kind==="place"
+    ?livedNowStore.getWorldPlace(
+      previous.threadId,previous.location.placeRef,{required:false},
+    )?.physicalVenue?.ref:null;
+  if(former===venue&&previous.wakefulness!=="asleep"
+    &&previous.activity!==situation.activity){
+    const result=experienceStore.enqueueSocialOpportunity({
+      threadId:situation.threadId,situationId:situation.situationId,
+      dueAt:situation.establishedAt,trigger:"activity_change",visitSince,
+    });
+    if(result.inserted)scheduled.push(situation.establishedAt);
+  }
+  const predicted=enqueueNextSocialNeedBand({
+    livedNowStore,experienceStore,thread,situation,nextBoundaryAt,visitSince,
+  });
+  if(predicted!==null)scheduled.push(predicted.dueAt);
+  return scheduled;
+}
+
+export function socialNeedBandReached({
+  livedNowStore,experienceStore,thread,situation,at,band,
+}){
+  const regulation=livedRegulationForLivedHistory({
+    thread,livedNowStore,currentSituation:situation,experienceStore,asOf:at,
+  });
+  return (regulation?.drives.find(d=>d.family==="social_contact")
+    ?.pressure??0)>=band;
+}
 
 // Situation identity may change while a person remains at the same venue.
 // Inspect a bounded lived history, never advance anyone's life to make a choice.
