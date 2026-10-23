@@ -58,7 +58,9 @@ const birthForm = $("#thread-birth-form");
 const birthLocation = $("#thread-birth-location");
 const birthMap = $("#thread-birth-map");
 const birthMapParts = mountWorldMap(birthMap, { selection:true });
-const birthPipelineMarkers = birthMapParts.markers;
+const birthCityMarkers=document.createElementNS(SVG_NS,"g");
+const birthPipelineMarkers=document.createElementNS(SVG_NS,"g");
+birthMapParts.markers.append(birthCityMarkers,birthPipelineMarkers);
 const birthMapMarker = birthMapParts.selectionMarker;
 const birthMapSelection = $("#thread-birth-map-selection");
 const birthSearchResults = $("#thread-birth-search-results");
@@ -77,7 +79,6 @@ let pendingBirthSnapshot = [];
 let pendingBirthTimer = null;
 let birthCenterInitialized = false;
 let birthLoading = false;
-const recentInWorldBirths = new Map();
 let active = false;
 let populationMode = "threads";
 let loading = false;
@@ -607,15 +608,15 @@ function activeBirthStageCounts() {
 
 function birthCenterSummaryText() {
   const counts = activeBirthStageCounts();
-  const total = pendingBirthSnapshot.length;
-  return `${total} active birth${total === 1 ? "" : "s"} · ${counts.genesis} genesis → ${counts.developing} developing → ${counts.emerging} emerging`;
+  const active=counts.genesis+counts.developing+counts.emerging;
+  return `${active} active · ${pendingBirthSnapshot.length} births in the last 3 days · ${counts.genesis} genesis → ${counts.developing} developing → ${counts.emerging} emerging`;
 }
 
 function renderBirthCenterTopSummary() {
   const counts = activeBirthStageCounts();
   $("#metric-label-records").textContent = "Pending";
-  $("#metric-context-records").textContent = "durable births";
-  $("#metric-records").textContent = pendingBirthSnapshot.length;
+  $("#metric-context-records").textContent = "active births";
+  $("#metric-records").textContent = counts.genesis+counts.developing+counts.emerging;
   $("#metric-label-failures").textContent = "Genesis";
   $("#metric-context-failures").textContent = "authoring";
   $("#metric-failures").textContent = counts.genesis;
@@ -698,6 +699,7 @@ function mapCoordinates(event) {
 
 function birthStage(birth) {
   if (birth?.stage === "failed" || birth?.status === "failed") return "failed";
+  if (birth?.stage === "stillborn" || birth?.status === "stillborn") return "stillborn";
   if (["genesis","developing","emerging","in-world"].includes(birth?.stage)) return birth.stage;
   return ({
     queued:"genesis",
@@ -731,12 +733,8 @@ function birthplaceForBirth(birth) {
 
 function renderBirthPipelineMarkers() {
   birthPipelineMarkers.replaceChildren();
-  const now = Date.now();
-  for (const [key, birth] of recentInWorldBirths) {
-    if (birth.until <= now) recentInWorldBirths.delete(key);
-  }
   if (!Array.isArray(birthplaces)) return;
-  const visible = [...pendingBirthSnapshot, ...recentInWorldBirths.values()];
+  const visible = pendingBirthSnapshot;
   const groups = new Map();
   for (const birth of visible) {
     const place = birthplaceForBirth(birth);
@@ -756,6 +754,7 @@ function renderBirthPipelineMarkers() {
       circle.setAttribute("cy", (point.y + Math.sin(angle) * spread).toFixed(1));
       circle.setAttribute("r", ({ genesis:5, developing:6.5, emerging:8, "in-world":9 })[stage] ?? 5);
       circle.classList.add("thread-birth-stage-marker", `stage-${stage}`);
+      if(["in-world","stillborn","failed"].includes(stage))circle.classList.add("completed");
       circle.style.animationDelay = `${-(index % 5) * 180}ms`;
       const title = document.createElementNS(SVG_NS, "title");
       const known = birth.threadId ? rememberPendingBirth(birth) : null;
@@ -765,6 +764,31 @@ function renderBirthPipelineMarkers() {
       circle.append(title);
       birthPipelineMarkers.append(circle);
     });
+  }
+}
+
+function renderBirthCityMarkers() {
+  birthCityMarkers.replaceChildren();
+  for(const place of birthplaces??[]){
+    const point=worldMapPoint(place.lat,place.long);
+    const marker=document.createElementNS(SVG_NS,"circle");
+    marker.classList.add("thread-birth-city-marker");
+    if(place.tier==="anchor")marker.classList.add("anchor");
+    marker.setAttribute("cx",point.x.toFixed(1));
+    marker.setAttribute("cy",point.y.toFixed(1));
+    marker.setAttribute("r",place.tier==="anchor"?"4":"2.6");
+    const title=document.createElementNS(SVG_NS,"title");
+    title.textContent=place.city+", "+place.country+" · Select birthplace";
+    marker.append(title);
+    marker.addEventListener("click",(event)=>{
+      event.stopPropagation();
+      const displayName=place.city+", "+place.country;
+      setBirthLocation(displayName,{
+        country:place.country,city:place.city,displayName,
+        lat:place.lat,long:place.long,
+      });
+    });
+    birthCityMarkers.append(marker);
   }
 }
 
@@ -854,6 +878,7 @@ async function loadBirthplaces() {
     throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
   }
   birthplaces = payload.places;
+  renderBirthCityMarkers();
   renderBirthPipelineMarkers();
   return birthplaces;
 }
@@ -1044,19 +1069,7 @@ function pendingBirthKey(birth) {
   return birth?.requestId ?? birth?.threadId ?? null;
 }
 
-function rememberCompletedBirths(nextBirths) {
-  const nextKeys = new Set(nextBirths.map(pendingBirthKey).filter(Boolean));
-  const now = Date.now();
-  for (const previous of pendingBirthSnapshot) {
-    const key = pendingBirthKey(previous);
-    if (key !== null && !nextKeys.has(key) && previous.threadId && ["developing","emerging"].includes(birthStage(previous))) {
-      recentInWorldBirths.set(key, { ...previous, stage:"in-world", until:now + 20_000 });
-    }
-  }
-}
-
 function renderPendingBirths(births) {
-  rememberCompletedBirths(births);
   for (const birth of births) rememberPendingBirth(birth);
   pendingBirthSnapshot = births;
   birthPending.replaceChildren();
@@ -1064,7 +1077,7 @@ function renderPendingBirths(births) {
   if (births.length === 0) {
     const empty = document.createElement("span");
     empty.className = "thread-birth-pending-empty";
-    empty.textContent = "No unfinished births.";
+    empty.textContent = "No births recorded in the last three days.";
     birthPending.append(empty);
   } else {
     for (const birth of births) {
@@ -1081,10 +1094,10 @@ function renderPendingBirths(births) {
       const meta = document.createElement("span");
       meta.textContent = [
         birthplace && birth.name ? [flag, birthplace].filter(Boolean).join(" ") : null,
-        birth.sex ? human(birth.sex) : "Random sex",
+        birth.sex ? human(birth.sex) : "Sex not yet established",
         pendingStatusText(birth),
         "started " + elapsedText(birth.createdAt),
-        "last update " + elapsedText(birth.updatedAt),
+        (["in-world","stillborn","failed"].includes(birthStage(birth))?"last recorded ":"last update ")+elapsedText(birth.updatedAt),
       ].filter(Boolean).join(" · ");
       copy.append(heading, meta);
       if (birth.stale === true) {
@@ -1113,7 +1126,8 @@ function renderPendingBirths(births) {
       statuses.className = "thread-birth-pending-status";
       const stage = birthStage(birth);
       const stageBadge = badge(pendingStatusText(birth));
-      stageBadge.classList.add("thread-birth-stage-badge", `stage-${stage}`, "thread-pending-throb");
+      stageBadge.classList.add("thread-birth-stage-badge", `stage-${stage}`);
+      if (!["in-world","stillborn","failed"].includes(stage)) stageBadge.classList.add("thread-pending-throb");
       statuses.append(stageBadge);
       if (birth.stale === true) statuses.append(badge("stale", "failed"));
       if(birth.requestId){
@@ -1153,7 +1167,7 @@ async function loadPendingBirths({ quiet = false } = {}) {
     if (!response.ok || payload?.ok !== true || !Array.isArray(payload.births)) {
       throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
     }
-    renderPendingBirths(payload.births);
+    renderPendingBirths(Array.isArray(payload.recentBirths)?payload.recentBirths:payload.births);
   } catch (error) {
     if (!quiet) {
       birthPending.textContent = `Pending births unavailable: ${error instanceof Error ? error.message : String(error)}`;
@@ -1169,7 +1183,7 @@ async function loadPendingBirths({ quiet = false } = {}) {
 }
 
 function pendingPollDelay() {
-  if (pendingBirthSnapshot.some((birth) => birth.stale !== true)) return 2000;
+  if (pendingBirthSnapshot.some((birth) => ["genesis","developing","emerging"].includes(birthStage(birth)) && birth.stale !== true)) return 2000;
   if (pendingBirthSnapshot.length > 0) return 10000;
   return 30000;
 }
