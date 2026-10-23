@@ -479,6 +479,7 @@ export function formatWorldSocialReport(evidence,evidencePath){
 export async function runWorldSocialProbe({
   targetEnvironment,threadId=null,environment=process.env,
   emit=(entry)=>process.stdout.write(JSON.stringify(entry)+"\n"),
+  progress=()=>{},
 }={}){
   if(threadId!==null&&!/^thr_[a-zA-Z0-9_-]+$/u.test(threadId)){
     throw new TypeError("social probe needs --thread thr_...");
@@ -491,15 +492,17 @@ export async function runWorldSocialProbe({
   const head=validatorGitSha();
   const config=topology(target);
   // An identified Thread needs one World read, not a directory/population scan.
+  if(threadId===null)progress("discovering living Threads");
   const cards=threadId===null
     ?(await publicThreads(config.presentationBaseUrl,config.viewerOrigin))
       .filter(item=>item?.threadId&&!["genesis_candidate","retired"].includes(item.lifecycleStatus))
     :[{threadId}];
   const scan=cards.slice(0,SCAN_LIMIT);
+  progress("reading World Observatories · 0/"+scan.length);
   const observatories=new Map();
   const unavailable=[];
   const failureSamples=[];
-  let deployedSha=null;
+  let deployedSha=null,inspected=0;
   for(const card of scan){
     try{
       const response=await privateGet(
@@ -522,6 +525,11 @@ export async function runWorldSocialProbe({
         failureSamples.push(String(error?.message??error).slice(0,200));
       }
     }
+    inspected++;
+    if(inspected===scan.length||inspected%5===0){
+      progress("reading World Observatories · "+inspected+"/"+scan.length
+        +" · "+observatories.size+" available");
+    }
   }
   if(deployedSha===null){
     throw new Error(
@@ -530,6 +538,7 @@ export async function runWorldSocialProbe({
     );
   }
 
+  if(scan.length>1)progress("summarizing social and situated-life evidence");
   const checkedAt=new Date().toISOString();
   const life=[...observatories].map(([threadId,person])=>
     groundedLifeSummary(threadId,person,checkedAt));
@@ -626,6 +635,10 @@ export async function runWorldSocialProbe({
     coPresenceChecked:threadId===null,deployedGitSha:deployedSha,
     runtimeSourceMatches:runtimeMatches,
     scannedThreadCount:scan.length,unavailableThreadCount:unavailable.length,
+    ...(threadId===null?{}:{
+      currentWorldLocality:life[0]?.currentWorldLocality??null,
+      hasCurrentSituation:life[0]?.hasCurrentSituation??false,
+    }),
     attestedVenueThreadCount:attested.length,
     currentAttestedVenueVisitCount:present.length,
     recentlyVisitedPublicVenueThreadCount:life.filter(entry=>
@@ -660,6 +673,8 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
     const {evidence,evidencePath}=await runWorldSocialProbe({
       targetEnvironment,threadId,
       emit:event=>{machineEvent=event;},
+      // Progress belongs on stderr so --json stays exactly one JSON line.
+      progress:detail=>process.stderr.write("PROGRESS world-social:probe · "+detail+"\n"),
     });
     process.stdout.write((json?JSON.stringify(machineEvent)
       :formatWorldSocialReport(evidence,evidencePath))+"\n");
