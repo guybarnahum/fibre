@@ -66,6 +66,10 @@ export function evaluateSalience({ opportunity, situatedPercept, regulationFrame
     observedEventInvolves(event, subjectRefs))) {
     anchors.push("recent_observable_history");
   }
+  if((situatedPercept.observed??[]).some(person=>
+    subjectRefs.has(person.threadId)&&person.familiarity?.noticedBeforeCount>0)){
+    anchors.push("recognized_person");
+  }
 
   const exploration = regulationFrame?.drives.find((drive) =>
     drive.family === "exploration" && drive.pressure > 0);

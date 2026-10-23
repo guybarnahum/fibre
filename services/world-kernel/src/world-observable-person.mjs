@@ -29,6 +29,8 @@ export function personKnownToObserver({
         ||item.relatedParty.kind===undefined))??false;
   return relation||(experienceStore?.hasMetEncounter?.(
     observerThreadId,threadId,{before:at},
+  )??false)||(experienceStore?.hasNoticedSelfIntroduction?.(
+    observerThreadId,threadId,{before:at},
   )??false);
 }
 
