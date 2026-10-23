@@ -296,7 +296,7 @@ export class LivedExperienceStore {
       if(trigger!=="arrival"){
         const used=this.#database.prepare(`
           SELECT COUNT(*) AS n FROM world_social_opportunities
-          WHERE thread_id=? AND visit_since=? AND trigger!='arrival'
+          WHERE thread_id=? AND visit_since=? AND trigger_kind!='arrival'
         `).get(threadId,visitSince).n;
         if(used>=3)return Object.freeze({inserted:false,capped:true,dueAt});
       }
@@ -305,7 +305,7 @@ export class LivedExperienceStore {
       const inserted=this.#database.prepare(`
         INSERT OR IGNORE INTO world_social_opportunities(
           situation_id,anchor_situation_id,thread_id,due_at,
-          trigger,need_band,visit_since
+          trigger_kind,need_band,visit_since
         ) VALUES(?,?,?,?,?,?,?)
       `).run(key,trigger==="arrival"?null:situationId,threadId,dueAt,
         trigger,needBand,visitSince).changes===1;
@@ -318,12 +318,12 @@ export class LivedExperienceStore {
     assertId("social choice counterpart",counterpartyThreadId);
     assertIsoTimestamp("social shared visit",visitSince);
     return this.#database.prepare(`
-      SELECT due_at,decision_json,trigger FROM (
-        SELECT due_at,decision_json,trigger
+      SELECT due_at,decision_json FROM (
+        SELECT due_at,decision_json
         FROM world_social_opportunities
         WHERE thread_id=? AND due_at>=? AND completed_at IS NOT NULL
         UNION ALL
-        SELECT due_at,decision_json,'observed' AS trigger
+        SELECT due_at,decision_json
         FROM world_observed_social_opportunities
         WHERE thread_id=? AND due_at>=? AND completed_at IS NOT NULL
       ) WHERE decision_json IS NOT NULL
@@ -343,7 +343,7 @@ export class LivedExperienceStore {
   reconsiderationCountForPair({threadId,counterpartyThreadId,visitSince}){
     return this.#database.prepare(`
       SELECT COUNT(*) AS n FROM world_social_opportunities
-      WHERE thread_id=? AND visit_since=? AND trigger!='arrival'
+      WHERE thread_id=? AND visit_since=? AND trigger_kind!='arrival'
         AND completed_at IS NOT NULL
         AND json_extract(decision_json,'$.counterpartyThreadId')=?
     `).get(threadId,visitSince,counterpartyThreadId).n;
@@ -428,12 +428,12 @@ export class LivedExperienceStore {
       SELECT o.* FROM (
         SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,
           COALESCE(anchor_situation_id,situation_id) AS situation_id,
-          situation_id AS opportunity_id,trigger,need_band,visit_since,
+          situation_id AS opportunity_id,trigger_kind,need_band,visit_since,
           NULL AS counterparty_thread_id,NULL AS venue_ref,due_at
         FROM world_social_opportunities WHERE started_at IS NULL AND due_at<=?
         UNION ALL
         SELECT 'observed' AS kind,encounter_ref,thread_id,situation_id,
-          NULL AS opportunity_id,'observed' AS trigger,NULL AS need_band,
+          NULL AS opportunity_id,'observed' AS trigger_kind,NULL AS need_band,
           NULL AS visit_since,counterparty_thread_id,venue_ref,due_at
         FROM world_observed_social_opportunities
         WHERE started_at IS NULL AND due_at<=?
@@ -443,7 +443,7 @@ export class LivedExperienceStore {
     `).all(...(hasDebt?[at,at,at,limit]:[at,at,limit])).map(row=>Object.freeze({
       kind:row.kind,sourceEncounterRef:row.encounter_ref,
       threadId:row.thread_id,situationId:row.situation_id,
-      opportunityId:row.opportunity_id,trigger:row.trigger,
+      opportunityId:row.opportunity_id,trigger:row.trigger_kind,
       needBand:row.need_band,visitSince:row.visit_since,
       counterpartyThreadId:row.counterparty_thread_id,
       venueRef:row.venue_ref,dueAt:row.due_at,
@@ -457,13 +457,13 @@ export class LivedExperienceStore {
         SELECT * FROM (
           SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,
             COALESCE(anchor_situation_id,situation_id) AS situation_id,
-            situation_id AS opportunity_id,trigger,need_band,visit_since,
+            situation_id AS opportunity_id,trigger_kind,need_band,visit_since,
             NULL AS counterparty_thread_id,NULL AS venue_ref,due_at
           FROM world_social_opportunities
           WHERE started_at IS NULL AND due_at<=?
           UNION ALL
           SELECT 'observed' AS kind,encounter_ref,thread_id,situation_id,
-            NULL AS opportunity_id,'observed' AS trigger,NULL AS need_band,
+            NULL AS opportunity_id,'observed' AS trigger_kind,NULL AS need_band,
             NULL AS visit_since,counterparty_thread_id,venue_ref,due_at
           FROM world_observed_social_opportunities
           WHERE started_at IS NULL AND due_at<=?
@@ -490,7 +490,7 @@ export class LivedExperienceStore {
       return Object.freeze({
         kind:row.kind,sourceEncounterRef:row.encounter_ref,
         threadId:row.thread_id,situationId:row.situation_id,
-        opportunityId:row.opportunity_id,trigger:row.trigger,
+        opportunityId:row.opportunity_id,trigger:row.trigger_kind,
         needBand:row.need_band,visitSince:row.visit_since,
         counterpartyThreadId:row.counterparty_thread_id,
         venueRef:row.venue_ref,dueAt:row.due_at,
@@ -547,18 +547,18 @@ export class LivedExperienceStore {
         SELECT 'arrival' AS kind,NULL AS encounter_ref,
           COALESCE(anchor_situation_id,situation_id) AS situation_id,
           due_at,started_at,completed_at,outcome,decision_json,
-          trigger,need_band,visit_since
+          trigger_kind,need_band,visit_since
         FROM world_social_opportunities WHERE thread_id=?
         UNION ALL
         SELECT 'observed' AS kind,encounter_ref,
           situation_id,due_at,started_at,completed_at,outcome,decision_json,
-          'observed' AS trigger,NULL AS need_band,NULL AS visit_since
+          'observed' AS trigger_kind,NULL AS need_band,NULL AS visit_since
         FROM world_observed_social_opportunities WHERE thread_id=?
       ) ORDER BY due_at DESC LIMIT ?
     `).all(threadId,threadId,limit).map(row=>Object.freeze({
       kind:row.kind,sourceEncounterRef:row.encounter_ref,
       situationId:row.situation_id,dueAt:row.due_at,
-      trigger:row.trigger,needBand:row.need_band,
+      trigger:row.trigger_kind,needBand:row.need_band,
       visitSince:row.visit_since,startedAt:row.started_at,
       outcome:row.outcome??(row.started_at===null?"pending":"interrupted"),
       decision:row.decision_json===null?null:JSON.parse(row.decision_json),

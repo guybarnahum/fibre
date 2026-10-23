@@ -535,7 +535,7 @@ export function createLivedExperienceTables(database) {
     WHERE source_kind='social_act'`);
   for(const [field,declaration] of [
     ["anchor_situation_id","TEXT"],
-    ["trigger","TEXT NOT NULL DEFAULT 'arrival'"],
+    ["trigger_kind","TEXT NOT NULL DEFAULT 'arrival'"],
     ["need_band","REAL"],
     ["visit_since","TEXT"],
   ]){
@@ -545,8 +545,8 @@ export function createLivedExperienceTables(database) {
     }
   }
   database.exec(`CREATE INDEX IF NOT EXISTS idx_world_social_reconsideration_visit
-    ON world_social_opportunities(thread_id,visit_since,trigger)
-    WHERE trigger!='arrival'`);
+    ON world_social_opportunities(thread_id,visit_since,trigger_kind)
+    WHERE trigger_kind!='arrival'`);
   if(needsStoryTimeline){
     database.exec(`
       INSERT INTO thread_encounter_story_timeline(thread_id,encounter_ref,occurred_at)
