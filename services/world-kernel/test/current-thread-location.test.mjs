@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { genesisContextLocations,isModernGenesisWorldPlace,projectCurrentThreadLocation,projectOperatorCurrentPlace } from "../src/current-thread-location.mjs";
+import { authoredGenesisPlaceLocality,genesisContextLocations,isModernGenesisWorldPlace,projectCurrentThreadLocation,projectOperatorCurrentPlace } from "../src/current-thread-location.mjs";
 
 const entry = Object.freeze({
   threadId:"thr_current_location",
@@ -253,6 +253,60 @@ test("current Genesis city contexts inherit only a same-world attested sibling l
   assert.deepEqual(genesisContextLocations(
     [episode("united-kingdom_london","home")],source,{privatePerspective:true}),
     [],"an unrelated authored World inherited Addis Ababa");
+});
+
+test("an unanchored enacted Addis Genesis home has its authored current city in God-view",()=>{
+  const episode={
+    threadId:"thr_yonas",episodeId:"pep_current_home",revision:1,
+    provenance:"genesis_created",episodeKind:"formative_presence",
+    place:{placeId:"place_ethiopia_addis-ababa_5aa977ea14eb_home",
+      displayName:"place_ethiopia_addis-ababa_5aa977ea14eb_home",
+      countryCode:null,region:null,locality:null,precision:"unspecified"},
+  };
+  const situation={threadId:episode.threadId,
+    establishedAt:"2026-10-23T19:12:29.685Z",
+    location:{kind:"place",placeRef:"per:pep_current_home:1"}};
+  assert.equal(authoredGenesisPlaceLocality(episode)?.city,"Addis Ababa");
+  assert.equal(projectCurrentThreadLocation({
+    currentSituation:situation,placeEpisodes:[episode],
+  }),null,"private authored locality was mistaken for public disclosure");
+  const operator=projectOperatorCurrentPlace({
+    currentSituation:situation,placeEpisodes:[episode],
+  });
+  assert.equal(operator?.locality,"Addis Ababa",
+    "Yonas remains Unlocated despite an authored and enacted Genesis home");
+  assert.equal(operator?.countryCode,"ET");
+  assert.equal(operator?.placeRef,situation.location.placeRef);
+  assert.equal(operator?.mapPrecision,"city");
+  assert.equal(operator?.streetAddress,null);
+  assert.equal(authoredGenesisPlaceLocality({
+    ...episode,provenance:"thread_history",
+  }),null,"ordinary later life forged a Genesis city");
+  assert.equal(authoredGenesisPlaceLocality({
+    ...episode,place:{...episode.place,placeId:"place_foo_nowhere_5aa977ea14eb_home"},
+  }),null,"unknown authored locality became invented geography");
+});
+
+test("Genesis learning context carries the same authored city without inventing a venue",()=>{
+  const learning={
+    ref:"wpl_yonas_learning",
+    authority:"live-world-place-admission-v1",
+    physicalVenue:null,
+    sourceWorldRef:"world_modern_ethiopia_addis-ababa_default_5aa977ea14eb",
+    sourcePlaceId:"place_ethiopia_addis-ababa_5aa977ea14eb_learning",
+    displayName:"An informal learning context",placeKind:"library_or_learning",
+  };
+  const situation={threadId:"thr_yonas",establishedAt:"2026-10-23T22:00:00.000Z",
+    location:{kind:"place",placeRef:learning.ref}};
+  const operator=projectOperatorCurrentPlace({
+    currentSituation:situation,worldPlaces:[learning],
+  });
+  assert.equal(operator?.locality,"Addis Ababa");
+  assert.equal(operator?.placeRef,learning.ref);
+  assert.equal(operator?.streetAddress,null);
+  assert.equal(authoredGenesisPlaceLocality({
+    ...learning,physicalVenue:{ref:"venue_unverified"},
+  }),null,"physical venue binding was mistaken for a private Genesis context");
 });
 
 test("conflicting source attestations do not manufacture a current city",()=>{
