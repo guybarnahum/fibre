@@ -84,6 +84,7 @@ function relations(threadId) {
 
 function fixture({
   initiationFor = () => "invite_conversation",
+  minaName=mina.identity.name,
   stanceFor = () => "accept",
   compatible = true,
   rude = false,
@@ -269,6 +270,9 @@ function fixture({
         const decision=typeof selected==="string"?selected:selected.act;
         const introducesSelf=typeof selected==="object"
           &&selected?.introducesSelf===true;
+        const customExpression=typeof selected==="object"
+          &&Object.hasOwn(selected,"expression")
+          ?selected.expression:undefined;
         if(moveAfterInitiation){
           const before=situations.get(noor.threadId);
           situations.set(noor.threadId,{
@@ -285,7 +289,8 @@ function fixture({
             result:{
               act:decision,
               ...(introducesSelf?{introducesSelf:true}:{}),
-              expression:introducesSelf?"Hello, I'm "+call.input.thread.name+"."
+              expression:customExpression!==undefined?customExpression
+                :introducesSelf?"Hello, I'm "+call.input.thread.name+"."
                 :decision==="acknowledge"?"offers a brief nod."
                 :decision==="greet"?"Hello."
                   :decision==="remark"?"It's peaceful here."
@@ -496,6 +501,7 @@ function fixture({
       getThread(threadId) {
         if (threadId === mina.threadId) {
           const person=structuredClone(mina);
+          person.identity.name=minaName;
           if(inheritedSocialSensitivity!==null){
             person.genome={
               ...person.genome,
@@ -828,6 +834,39 @@ test("a self-authored spoken introduction is marked only on its actual Story",as
   assert.equal(
     attemptFor(earlier).encounterStory.story.beats[0].disclosesSpeakerName,
     undefined,"an ordinary greeting was mistaken for an introduction");
+});
+
+test("first-name introductions and name-free greetings finish without leaking surnames",async()=>{
+  const partial=fixture({
+    boundedVenueDiscovery:true,withoutLifeRelations:true,
+    minaName:"Mina Park",
+    initiationFor:()=>({act:"greet",introducesSelf:true,
+      expression:"Hi, I'm Mina."}),
+  });
+  const first=attemptFor(await partial.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,counterpartyThreadId:noor.threadId,
+  }));
+  assert.equal(first.outcome,"acted",
+    "a natural first-name introduction interrupted a greeting");
+  assert.equal(first.encounterStory.story.beats[0].disclosedName,"Mina",
+    "World disclosed more than the speaker actually said");
+  assert.equal(first.encounterStory.story.beats[0].disclosesSpeakerName,true);
+
+  const mismatch=fixture({
+    boundedVenueDiscovery:true,withoutLifeRelations:true,
+    minaName:"Mina Park",
+    initiationFor:()=>({act:"greet",introducesSelf:true,
+      expression:"Hello there."}),
+  });
+  const second=attemptFor(await mismatch.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,counterpartyThreadId:noor.threadId,
+  }));
+  assert.equal(second.outcome,"acted",
+    "a mistaken introduction flag aborted an ordinary greeting");
+  assert.equal(second.encounterStory.story.beats[0].disclosedName,undefined,
+    "a name not spoken became World knowledge");
+  assert.equal(second.encounterStory.story.beats[0].disclosesSpeakerName,undefined,
+    "a mistaken introduction flag remained admitted");
 });
 
 test("the recipient independently chooses whether and how to answer a greeting",async()=>{
