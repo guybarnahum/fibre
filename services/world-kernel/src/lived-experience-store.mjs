@@ -279,15 +279,74 @@ export class LivedExperienceStore {
     `).run(encounterRef,at,situationId);
   }
 
-  enqueueSocialOpportunity({threadId,situationId,dueAt}){
+  enqueueSocialOpportunity({
+    threadId,situationId,dueAt,trigger="arrival",needBand=null,visitSince=null,
+  }){
     assertId("social opportunity Thread",threadId);
     assertId("social opportunity situation",situationId);
     assertIsoTimestamp("social opportunity due",dueAt);
-    const inserted=this.#database.prepare(`
-      INSERT OR IGNORE INTO world_social_opportunities(thread_id,situation_id,due_at)
-      VALUES(?,?,?)
-    `).run(threadId,situationId,dueAt).changes===1;
-    return Object.freeze({inserted,dueAt});
+    if(!["arrival","activity_change","need_band"].includes(trigger)){
+      throw new TypeError("social opportunity trigger is invalid");
+    }
+    if(trigger!=="arrival")assertIsoTimestamp("social visit start",visitSince);
+    if(trigger==="need_band"&&![0.4,0.6].includes(needBand)){
+      throw new TypeError("social need band is invalid");
+    }
+    return this.#database.transaction(()=>{
+      if(trigger!=="arrival"){
+        const used=this.#database.prepare(`
+          SELECT COUNT(*) AS n FROM world_social_opportunities
+          WHERE thread_id=? AND visit_since=? AND trigger!='arrival'
+        `).get(threadId,visitSince).n;
+        if(used>=3)return Object.freeze({inserted:false,capped:true,dueAt});
+      }
+      const key=trigger==="arrival"?situationId
+        :`social_${sha256(canonicalJson({threadId,situationId,trigger,needBand}))}`;
+      const inserted=this.#database.prepare(`
+        INSERT OR IGNORE INTO world_social_opportunities(
+          situation_id,anchor_situation_id,thread_id,due_at,
+          trigger,need_band,visit_since
+        ) VALUES(?,?,?,?,?,?,?)
+      `).run(key,trigger==="arrival"?null:situationId,threadId,dueAt,
+        trigger,needBand,visitSince).changes===1;
+      return Object.freeze({inserted,capped:false,dueAt});
+    });
+  }
+
+  socialChoicesThisVisit({threadId,counterpartyThreadId,visitSince,limit=3}){
+    assertId("social choice Thread",threadId);
+    assertId("social choice counterpart",counterpartyThreadId);
+    assertIsoTimestamp("social shared visit",visitSince);
+    return this.#database.prepare(`
+      SELECT due_at,decision_json,trigger FROM (
+        SELECT due_at,decision_json,trigger
+        FROM world_social_opportunities
+        WHERE thread_id=? AND due_at>=? AND completed_at IS NOT NULL
+        UNION ALL
+        SELECT due_at,decision_json,'observed' AS trigger
+        FROM world_observed_social_opportunities
+        WHERE thread_id=? AND due_at>=? AND completed_at IS NOT NULL
+      ) WHERE decision_json IS NOT NULL
+        AND json_extract(decision_json,'$.counterpartyThreadId')=?
+      ORDER BY due_at DESC LIMIT ?
+    `).all(threadId,visitSince,threadId,visitSince,counterpartyThreadId,limit)
+      .reverse().map(row=>{
+        const witness=JSON.parse(row.decision_json);
+        return Object.freeze({
+          at:row.due_at,act:witness.initiation?.act??null,
+          expression:witness.initiation?.expression??null,
+          reportedReason:witness.initiation?.reportedReason??null,
+        });
+      });
+  }
+
+  reconsiderationCountForPair({threadId,counterpartyThreadId,visitSince}){
+    return this.#database.prepare(`
+      SELECT COUNT(*) AS n FROM world_social_opportunities
+      WHERE thread_id=? AND visit_since=? AND trigger!='arrival'
+        AND completed_at IS NOT NULL
+        AND json_extract(decision_json,'$.counterpartyThreadId')=?
+    `).get(threadId,visitSince,counterpartyThreadId).n;
   }
 
   enqueueObservedSocialOpportunity({
@@ -367,12 +426,15 @@ export class LivedExperienceStore {
     // Arrival candidates must additionally be checked against their venue.
     return this.#database.prepare(`
       SELECT o.* FROM (
-        SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,situation_id,
+        SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,
+          COALESCE(anchor_situation_id,situation_id) AS situation_id,
+          situation_id AS opportunity_id,trigger,need_band,visit_since,
           NULL AS counterparty_thread_id,NULL AS venue_ref,due_at
         FROM world_social_opportunities WHERE started_at IS NULL AND due_at<=?
         UNION ALL
         SELECT 'observed' AS kind,encounter_ref,thread_id,situation_id,
-          counterparty_thread_id,venue_ref,due_at
+          NULL AS opportunity_id,'observed' AS trigger,NULL AS need_band,
+          NULL AS visit_since,counterparty_thread_id,venue_ref,due_at
         FROM world_observed_social_opportunities
         WHERE started_at IS NULL AND due_at<=?
       ) o
@@ -381,6 +443,8 @@ export class LivedExperienceStore {
     `).all(...(hasDebt?[at,at,at,limit]:[at,at,limit])).map(row=>Object.freeze({
       kind:row.kind,sourceEncounterRef:row.encounter_ref,
       threadId:row.thread_id,situationId:row.situation_id,
+      opportunityId:row.opportunity_id,trigger:row.trigger,
+      needBand:row.need_band,visitSince:row.visit_since,
       counterpartyThreadId:row.counterparty_thread_id,
       venueRef:row.venue_ref,dueAt:row.due_at,
     }));
@@ -391,22 +455,25 @@ export class LivedExperienceStore {
     return this.#database.transaction(()=>{
       const row=this.#database.prepare(`
         SELECT * FROM (
-          SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,situation_id,
+          SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,
+            COALESCE(anchor_situation_id,situation_id) AS situation_id,
+            situation_id AS opportunity_id,trigger,need_band,visit_since,
             NULL AS counterparty_thread_id,NULL AS venue_ref,due_at
           FROM world_social_opportunities
           WHERE started_at IS NULL AND due_at<=?
           UNION ALL
           SELECT 'observed' AS kind,encounter_ref,thread_id,situation_id,
-            counterparty_thread_id,venue_ref,due_at
+            NULL AS opportunity_id,'observed' AS trigger,NULL AS need_band,
+            NULL AS visit_since,counterparty_thread_id,venue_ref,due_at
           FROM world_observed_social_opportunities
           WHERE started_at IS NULL AND due_at<=?
         ) o
         WHERE (? IS NULL OR (o.kind=? AND o.thread_id=?
-          AND o.situation_id=?
+          AND COALESCE(o.opportunity_id,o.situation_id)=?
           AND (? IS NULL OR o.encounter_ref=?)))
         ORDER BY o.due_at,o.kind,o.situation_id LIMIT 1
       `).get(at,at,selected?.kind??null,selected?.kind??null,
-        selected?.threadId??null,selected?.situationId??null,
+        selected?.threadId??null,selected?.opportunityId??selected?.situationId??null,
         selected?.sourceEncounterRef??null,selected?.sourceEncounterRef??null);
       if(row===undefined)return null;
       const observed=row.kind==="observed";
@@ -418,11 +485,13 @@ export class LivedExperienceStore {
         :this.#database.prepare(`
           UPDATE world_social_opportunities SET started_at=?
           WHERE situation_id=? AND started_at IS NULL
-        `).run(at,row.situation_id).changes;
+        `).run(at,row.opportunity_id).changes;
       if(changed!==1)return null;
       return Object.freeze({
         kind:row.kind,sourceEncounterRef:row.encounter_ref,
         threadId:row.thread_id,situationId:row.situation_id,
+        opportunityId:row.opportunity_id,trigger:row.trigger,
+        needBand:row.need_band,visitSince:row.visit_since,
         counterpartyThreadId:row.counterparty_thread_id,
         venueRef:row.venue_ref,dueAt:row.due_at,
       });
@@ -431,6 +500,7 @@ export class LivedExperienceStore {
 
   completeSocialOpportunity({
     situationId,at,outcome,sourceEncounterRef=null,threadId=null,decision=null,
+    opportunityId=null,
   }){
     assertId("social opportunity situation",situationId);
     const observed=sourceEncounterRef!==null;
@@ -439,13 +509,14 @@ export class LivedExperienceStore {
       assertId("observed social Thread",threadId);
     }
     assertIsoTimestamp("social opportunity completion",at);
-    if(!["no_co_presence","missed_window","expired","life_unresolved","background","not_initiated","acted","not_met","met","scene_changed"].includes(outcome)){
+    if(!["no_co_presence","missed_window","expired","life_unresolved","background","not_initiated","acted","not_met","met","scene_changed",
+      "need_unreached","pair_limit"].includes(outcome)){
       throw new TypeError("social opportunity outcome is invalid");
     }
     const table=observed
       ?"world_observed_social_opportunities":"world_social_opportunities";
     const where=observed?"encounter_ref=? AND thread_id=?":"situation_id=?";
-    const args=observed?[sourceEncounterRef,threadId]:[situationId];
+    const args=observed?[sourceEncounterRef,threadId]:[opportunityId??situationId];
     if(decision!==null&&(typeof decision!=="object"||Array.isArray(decision))){
       throw new TypeError("social decision witness must be structured evidence");
     }
@@ -474,17 +545,21 @@ export class LivedExperienceStore {
     return this.#database.prepare(`
       SELECT * FROM (
         SELECT 'arrival' AS kind,NULL AS encounter_ref,
-          situation_id,due_at,started_at,completed_at,outcome,decision_json
+          COALESCE(anchor_situation_id,situation_id) AS situation_id,
+          due_at,started_at,completed_at,outcome,decision_json,
+          trigger,need_band,visit_since
         FROM world_social_opportunities WHERE thread_id=?
         UNION ALL
         SELECT 'observed' AS kind,encounter_ref,
-          situation_id,due_at,started_at,completed_at,outcome,decision_json
+          situation_id,due_at,started_at,completed_at,outcome,decision_json,
+          'observed' AS trigger,NULL AS need_band,NULL AS visit_since
         FROM world_observed_social_opportunities WHERE thread_id=?
       ) ORDER BY due_at DESC LIMIT ?
     `).all(threadId,threadId,limit).map(row=>Object.freeze({
       kind:row.kind,sourceEncounterRef:row.encounter_ref,
       situationId:row.situation_id,dueAt:row.due_at,
-      startedAt:row.started_at,
+      trigger:row.trigger,needBand:row.need_band,
+      visitSince:row.visit_since,startedAt:row.started_at,
       outcome:row.outcome??(row.started_at===null?"pending":"interrupted"),
       decision:row.decision_json===null?null:JSON.parse(row.decision_json),
       completedAt:row.completed_at,

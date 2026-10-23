@@ -533,6 +533,20 @@ export function createLivedExperienceTables(database) {
   database.exec(`CREATE INDEX IF NOT EXISTS idx_world_social_act_reciprocity
     ON world_observed_social_opportunities(venue_ref,due_at,source_kind)
     WHERE source_kind='social_act'`);
+  for(const [field,declaration] of [
+    ["anchor_situation_id","TEXT"],
+    ["trigger","TEXT NOT NULL DEFAULT 'arrival'"],
+    ["need_band","REAL"],
+    ["visit_since","TEXT"],
+  ]){
+    if(!database.prepare("PRAGMA table_info(world_social_opportunities)")
+      .all().some(column=>column.name===field)){
+      database.exec(`ALTER TABLE world_social_opportunities ADD COLUMN ${field} ${declaration}`);
+    }
+  }
+  database.exec(`CREATE INDEX IF NOT EXISTS idx_world_social_reconsideration_visit
+    ON world_social_opportunities(thread_id,visit_since,trigger)
+    WHERE trigger!='arrival'`);
   if(needsStoryTimeline){
     database.exec(`
       INSERT INTO thread_encounter_story_timeline(thread_id,encounter_ref,occurred_at)
