@@ -129,8 +129,10 @@ export async function formSocialEncounterRequest({
   });
 
   assertPlainObject("social encounter request output", cognition.result);
-  assertExactKeys("social act output",cognition.result,
-    ["act","expression","experienceText","reason"]);
+  assertExactKeys("social act output",cognition.result,[
+    "act","expression","experienceText","reason",
+    ...(cognition.result.introducesSelf===undefined?[]:["introducesSelf"]),
+  ]);
   if(!SOCIAL_ACTS.includes(cognition.result.act)){
     throw new TypeError("social act is invalid");
   }
