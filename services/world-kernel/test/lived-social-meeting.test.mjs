@@ -236,6 +236,9 @@ function fixture({
     async invoke(call) {
       modelCalls += 1;
       if (call.input?.concern?.kind === "social_initiation") {
+        assert.deepEqual(call.responseSchema?.properties?.result?.properties?.act?.enum,
+          ["none","acknowledge","greet","remark","invite_conversation"],
+          "the social mind lost its ordinary range of actions");
         initiationNames.push(call.input.thread.name);
         assert.equal(Object.hasOwn(call.input.thread, "stableTendencies"), false,
           "social initiation must not receive raw genome/persona traits");
