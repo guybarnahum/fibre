@@ -268,6 +268,7 @@ export function createSocialMeetingService({
       kind:gesture?"action":"utterance",
       text:gesture?description+" "+initiation.expression
         :description+' says: "'+initiation.expression+'"',
+      ...(initiation.introducesSelf?{disclosesSpeakerName:true}:{}),
     }]};
     const encounterStory=experienceStore.recordEncounterStory({
       occurredAt:at,
@@ -378,7 +379,13 @@ export function createSocialMeetingService({
       modelAdapter,
       liveEncounterRegistry,
     });
-    const story=liveResult.story;
+    const story=initiation.introducesSelf?{
+      ...liveResult.story,
+      beats:liveResult.story.beats.map(beat=>
+        beat.actorThreadId===initiator.thread.threadId
+        &&beat.kind==="utterance"&&beat.text===request.text
+          ?{...beat,disclosesSpeakerName:true}:beat),
+    }:liveResult.story;
 
     const threadPresence = allContexts.map((context) => ({
       threadId:context.thread.threadId,

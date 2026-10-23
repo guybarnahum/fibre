@@ -404,6 +404,7 @@ export function createWorldSocialOpportunity({
                   },
                   initiation:initiation==null?null:{
                     act:initiation.act,expression:initiation.expression,
+                    introducesSelf:initiation.introducesSelf??false,
                     reportedReason:initiation.reason,
                     decisionContext:initiation.decisionContext??null,
                     selectedEvidenceRefs:[...(initiation.cognition?.selectedEvidenceRefs??[])],

@@ -129,6 +129,11 @@ function normalizeStory(candidate, participantIds) {
         }
       }
       assertNonEmpty("encounter story beat.text", beat.text);
+      const disclosesSpeakerName=beat.disclosesSpeakerName??false;
+      if(typeof disclosesSpeakerName!=="boolean"
+        ||(disclosesSpeakerName&&beat.kind!=="utterance")){
+        throw new TypeError("self-introduction requires an actual spoken beat");
+      }
       const completion=beat.completion??null;
       if(completion!==null){
         if(beat.kind!=="utterance"||completion!=="interrupted"){
@@ -139,6 +144,7 @@ function normalizeStory(candidate, participantIds) {
         actorThreadId:beat.actorThreadId ?? null,
         kind:beat.kind,
         text:beat.text,
+        ...(disclosesSpeakerName?{disclosesSpeakerName:true}:{}),
         ...(completion===null?{}:{completion}),
       };
     }),
