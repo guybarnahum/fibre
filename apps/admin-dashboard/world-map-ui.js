@@ -384,7 +384,9 @@ export function groupThreadsByCurrentLocation(threads) {
       country,
       countryCode:location.countryCode ?? null,
       city:locality,
-      displayName:location.displayName ?? locality,
+      // Map markers and popovers identify a locality, not a Thread's
+      // authored World-place description (which can be several paragraphs).
+      displayName:[locality,country].filter(Boolean).join(", "),
       lat:location.lat,
       long:location.long,
     });
