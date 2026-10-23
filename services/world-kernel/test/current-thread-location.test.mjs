@@ -307,6 +307,26 @@ test("Genesis learning context carries the same authored city without inventing 
   assert.equal(operator?.locality,"Addis Ababa");
   assert.equal(operator?.placeRef,learning.ref);
   assert.equal(operator?.streetAddress,null);
+  const home={
+    threadId:"thr_yonas",episodeId:"pep_yonas_home",revision:1,
+    provenance:"genesis_created",episodeKind:"formative_presence",
+    place:{placeId:"place_ethiopia_addis-ababa_5aa977ea14eb_home",
+      displayName:"Home",locality:null,countryCode:null,region:null,precision:"unspecified"},
+    startAt:"2026-01-01T00:00:00.000Z",endAt:null,
+    sourceReferences:["evt_birth"],visibility:"private",
+    recordedAt:"2026-10-23T19:00:00.000Z",
+  };
+  const transit=projectOperatorCurrentPlace({
+    currentSituation:{threadId:"thr_yonas",
+      establishedAt:"2026-10-23T22:15:00.000Z",
+      location:{kind:"transit",fromPlaceRef:"per:pep_yonas_home:1",
+        toPlaceRef:learning.ref,progress:0.5}},
+    placeEpisodes:[home],worldPlaces:[learning],
+  });
+  assert.equal(transit?.kind,"transit");
+  assert.equal(transit?.locality,"Addis Ababa",
+    "an enacted local journey lost its authored current city");
+  assert.equal(transit?.streetAddress,null);
   assert.equal(authoredGenesisPlaceLocality({
     ...learning,physicalVenue:{ref:"venue_unverified"},
   }),null,"physical venue binding was mistaken for a private Genesis context");
