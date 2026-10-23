@@ -93,7 +93,7 @@ test("four act-triggered reply opportunities bound one shared visit, not future 
 });
 
 
-function groundedReconsiderationFixture({onInvoke=null}={}){
+function groundedReconsiderationFixture({onInvoke=null,speakerName=null}={}){
   const directory=mkdtempSync(join(tmpdir(),"fibre-reconsideration-"));
   const path=join(directory,"world.sqlite");
   const storage={
@@ -108,6 +108,8 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
   for(const threadId of people){
     const thread=structuredClone(seed);
     thread.threadId=threadId;
+    if(threadId===people[1]&&speakerName!==null)
+      thread.identity.name=speakerName;
     thread.provenance.lastEventId="evt_"+threadId;
     world.seedThread(thread);
   }
@@ -357,6 +359,74 @@ test("a spoken self-introduction teaches a name only to its attentive witnesses"
     }).name,null,
     "an ordinary greeting was mistaken for a self-introduction");
   }finally{noIntroduction.close();}
+});
+
+test("only the actually heard first name becomes observer knowledge",()=>{
+  const f=groundedReconsiderationFixture({speakerName:"Surafel Gebremariam"});
+  try{
+    const [reader,speaker,bystander]=f.people;
+    const at="2026-10-23T10:00:00.000Z";
+    const a=f.enact(reader,at,"Reading.");
+    const b=f.enact(speaker,at,"Looking up.");
+    const c=f.enact(bystander,at,"Reading nearby.");
+    const story={storyVersion:"encounter-story-v0.1",beats:[{
+      actorThreadId:speaker,kind:"utterance",
+      text:'A person says: "Hi, I am Surafel."',
+      disclosesSpeakerName:true,
+    }]};
+    const recorded=f.experience.recordEncounterStory({
+      occurredAt:at,threadPresence:[a,b,c].map(s=>({
+        threadId:s.threadId,situationId:s.situationId,
+      })),story,visualization:createEncounterVisualization({
+        occurredAt:at,story,scene:"At the library.",
+        sourceReferences:[a.situationId,b.situationId,c.situationId],
+        depictedThreadRefs:[],
+      }),
+    });
+    assert.equal(recorded.story.beats[0].disclosedName,"Surafel",
+      "Story admitted an unheard surname");
+    f.experience.recordThreadEncounterAttention({
+      threadId:reader,encounterRef:recorded.encounterId,
+      situationId:a.situationId,occurredAt:at,
+      outcome:"noticed",experienceText:"I heard Surafel give a first name.",
+    });
+    f.experience.recordThreadEncounterAttention({
+      threadId:bystander,encounterRef:recorded.encounterId,
+      situationId:c.situationId,occurredAt:at,
+      outcome:"not_noticed",experienceText:null,
+    });
+    const perceive=threadId=>observablePerson({
+      threadId:speaker,situation:b,observerThreadId:threadId,
+      name:"Surafel Gebremariam",at:"2026-10-24T10:00:00.000Z",
+      situatedLifeStore:{listCurrentLifeRelations:()=>[]},
+      experienceStore:f.experience,
+    });
+    assert.equal(perceive(reader).name,"Surafel",
+      "hearing a first name granted the full canonical identity");
+    assert.doesNotMatch(perceive(reader).observableDescription,/Gebremariam/u,
+      "the unspoken surname leaked through public description");
+    assert.equal(perceive(bystander).name,null,
+      "unnoticed introduction taught the bystander a name");
+
+    const noNameStory={storyVersion:"encounter-story-v0.1",beats:[{
+      actorThreadId:speaker,kind:"utterance",text:"Hello there.",
+      disclosesSpeakerName:true,
+    }]};
+    const noName=f.experience.recordEncounterStory({
+      occurredAt:"2026-10-23T11:00:00.000Z",
+      threadPresence:[a,b].map(s=>({
+        threadId:s.threadId,situationId:s.situationId,
+      })),story:noNameStory,visualization:createEncounterVisualization({
+        occurredAt:"2026-10-23T11:00:00.000Z",
+        story:noNameStory,scene:"At the library.",
+        sourceReferences:[a.situationId,b.situationId],depictedThreadRefs:[],
+      }),
+    });
+    assert.equal(noName.story.beats[0].disclosesSpeakerName,undefined,
+      "unsupported introduction flag survived World admission");
+    assert.equal(noName.story.beats[0].disclosedName,undefined,
+      "a name not spoken was recorded by World");
+  }finally{f.close();}
 });
 
 test("an admitted conversation founds and revises symmetric factual acquaintance",()=>{
