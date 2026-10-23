@@ -259,11 +259,14 @@ function fixture({
           "Situated Percept must not expose counterparty interior state");
         assert.equal(Object.hasOwn(percept.observed[0], "genome"), false,
           "Situated Percept must not expose counterparty genome");
-        const decision = initiationFor(
+        const selected = initiationFor(
           call.input.thread.name,
           call.input.developedSelfEvidence,
           call.input.concern.externalContext,
         );
+        const decision=typeof selected==="string"?selected:selected.act;
+        const introducesSelf=typeof selected==="object"
+          &&selected?.introducesSelf===true;
         if(moveAfterInitiation){
           const before=situations.get(noor.threadId);
           situations.set(noor.threadId,{
@@ -279,7 +282,9 @@ function fixture({
           output:{
             result:{
               act:decision,
-              expression:decision==="acknowledge"?"offers a brief nod."
+              ...(introducesSelf?{introducesSelf:true}:{}),
+              expression:introducesSelf?"Hello, I'm "+call.input.thread.name+"."
+                :decision==="acknowledge"?"offers a brief nod."
                 :decision==="greet"?"Hello."
                   :decision==="remark"?"It's peaceful here."
                     :decision==="invite_conversation"
@@ -794,6 +799,30 @@ test("a chosen small act becomes one World Story and an independent noticed oppo
     assert.doesNotMatch(JSON.stringify(attempt.encounterStory.story),
       /\b(?:Mina|Noor)\b/u,"strangers' names leaked into World history");
   }
+});
+
+test("a self-authored spoken introduction is marked only on its actual Story",async()=>{
+  const f=fixture({
+    boundedVenueDiscovery:true,withoutLifeRelations:true,
+    initiationFor:()=>({act:"greet",introducesSelf:true}),
+  });
+  const result=await f.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,counterpartyThreadId:noor.threadId,
+  });
+  assert.equal(attemptFor(result).outcome,"acted");
+  const beat=attemptFor(result).encounterStory.story.beats[0];
+  assert.equal(beat.disclosesSpeakerName,true,
+    "an audible self-introduction did not become a World Story fact");
+  assert.match(beat.text,/Mina Park/,
+    "an introduction flag was admitted without actually naming the speaker");
+  const ordinary=fixture({boundedVenueDiscovery:true,
+    withoutLifeRelations:true,initiationFor:()=> "greet"});
+  const earlier=await ordinary.meeting.meet({
+    initiatorThreadId:mina.threadId,at:AT,counterpartyThreadId:noor.threadId,
+  });
+  assert.equal(
+    attemptFor(earlier).encounterStory.story.beats[0].disclosesSpeakerName,
+    undefined,"an ordinary greeting was mistaken for an introduction");
 });
 
 test("the recipient independently chooses whether and how to answer a greeting",async()=>{
