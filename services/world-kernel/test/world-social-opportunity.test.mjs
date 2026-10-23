@@ -8,6 +8,12 @@ import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sql
 import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
+import { openAutobiographicalMemoryStore } from "../src/autobiographical-memory-store.mjs";
+import { openIdentityStore } from "../src/identity-store.mjs";
+import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
+import { autobiographicalMemoryId,AUTOBIOGRAPHICAL_MEMORY_POLICY } from "../src/autobiographical-memory-domain.mjs";
+import { lifeRelationId } from "../src/situated-life-domain.mjs";
+import { runInteriorCognition } from "../src/interior-cognition.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { normalizeCurrentSituation } from "../src/lived-now.mjs";
 import { enactedActorOccurrence,coPresentAtActorArrival } from "../src/world-occurrence.mjs";
@@ -399,6 +405,118 @@ test("an admitted conversation founds and revises symmetric factual acquaintance
         "a later meeting created a second acquaintance record");
     }
   }finally{situated.close();f.close();}
+});
+
+test("social cognition prefers the encountered person's factual relation and retained Memory",async()=>{
+  const f=groundedReconsiderationFixture();
+  const life=openSituatedLifeStore(f.storage);
+  const memories=openAutobiographicalMemoryStore(f.storage);
+  const identity=openIdentityStore(f.storage);
+  const semantic=openSemanticStateStore(f.storage);
+  try{
+    const [reader,neighbor,bystander]=f.people;
+    const at="2026-10-22T10:00:00.000Z";
+    const later="2026-10-23T12:00:00.000Z";
+    const initial=f.enact(reader,at,"Reading.");
+    const other=f.enact(neighbor,at,"Reading.");
+    const story={storyVersion:"encounter-story-v0.1",beats:[{
+      actorThreadId:neighbor,kind:"utterance",text:"Good morning.",
+    }]};
+    const encounter=f.experience.recordEncounterStory({
+      occurredAt:at,threadPresence:[
+        {threadId:reader,situationId:initial.situationId},
+        {threadId:neighbor,situationId:other.situationId},
+      ],story,visualization:createEncounterVisualization({
+        occurredAt:at,story,scene:"At the library.",
+        sourceReferences:[initial.situationId,other.situationId],
+        depictedThreadRefs:[],
+      }),
+    });
+    const experience=f.experience.recordThreadEncounterAttention({
+      threadId:reader,encounterRef:encounter.encounterId,
+      situationId:initial.situationId,occurredAt:at,
+      outcome:"noticed",experienceText:"I remembered the friendly voice.",
+    }).experience;
+    recordWorldAcquaintance({
+      situatedLifeStore:life,worldReader:f.world,encounterStory:encounter,
+      initiatorThreadId:reader,counterpartyThreadId:neighbor,
+      at,venue:f.place.physicalVenue,
+    });
+    const genesis=f.world.listEvents(reader)[0];
+    const writeMemory=(eventRef,slot,meaning,salience,occurredAt)=>{
+      const subject={originEventRef:eventRef,slot};
+      return memories.recordMemory({
+        memoryId:autobiographicalMemoryId({
+          threadId:reader,originReference:eventRef,slot,
+        }),
+        revision:1,threadId:reader,subject,
+        subjectPeriod:{startAt:occurredAt,endAt:occurredAt},
+        eventRefs:[eventRef],rememberedMeaning:meaning,
+        asOf:"2026-10-22T11:00:00.000Z",
+        confidence:0.8,uncertainty:[],salience,
+        accessibility:"accessible",retentionState:"fragmentary",
+        authorship:{kind:"fibre_policy_derived",entityId:"fibre.world-kernel",
+          policy:{...AUTOBIOGRAPHICAL_MEMORY_POLICY}},
+        supportingEvidenceRefs:[],contradictingEvidenceRefs:[],
+        visibility:"private",status:"current",
+        recordedAt:"2026-10-22T11:00:00.000Z",
+      });
+    };
+    const personal=writeMemory(experience.experienceId,"person-memory",
+      "I recall how that person listened and smiled.",0.1,at);
+    for(let i=0;i<6;i++)writeMemory(genesis.eventId,"older-topic-"+i,
+      "My earlier interests and work plans "+i+".",0.9,genesis.occurredAt);
+    for(let i=0;i<7;i++){
+      const person=structuredClone(seed);
+      person.threadId="thr_unrelated_"+i;
+      person.provenance.lastEventId="evt_unrelated_"+i;
+      f.world.seedThread(person);
+      life.recordLifeRelation({
+        relationId:lifeRelationId({threadId:reader,
+          relatedThreadId:person.threadId,relationKind:"source_person"}),
+        revision:1,threadId:reader,
+        relatedParty:{partyId:person.threadId,kind:"thread",
+          displayName:"Other acquaintance "+i},
+        relationKind:"source_person",geneticContributionRole:"none",
+        relationshipFacts:["An unrelated person known from earlier life."],
+        sourceReferences:[genesis.eventId],
+        validFrom:at,validTo:null,visibility:"private",
+        provenance:"world_recorded",recordedAt:at,status:"current",
+      });
+    }
+    const focusedRelation=life.listCurrentLifeRelations(reader)
+      .find(relation=>relation.relatedParty.partyId===neighbor);
+    const selected=[];
+    const modelAdapter={async invoke({input}){
+      selected.push(input.developedSelfEvidence);
+      return {output:{result:{answer:"none"},evidenceRefs:[],
+        conflictingMotives:[],uncertainty:null},
+        provenance:{provider:"fixture",modelId:"person-focus"}};
+    }};
+    const call=focusPartyId=>runInteriorCognition({
+      threadId:reader,at:later,
+      concern:{kind:"social_initiation",
+        question:"How might I engage the observed person?",focusPartyId},
+      adapter:{id:"social-focus-proof",instruction:"Select without forcing an act.",
+        resultSchema:{type:"object",additionalProperties:false,
+          properties:{answer:{type:"string"}},required:["answer"]}},
+      sourceStores:{worldStore:f.world,identityStore:identity,
+        memoryStore:memories,situatedLifeStore:life,
+        semanticStateStore:semantic,experienceStore:f.experience},
+      modelAdapter,
+    });
+    await call(bystander);
+    await call(neighbor);
+    const refs=evidence=>evidence.map(item=>item.ref);
+    assert.ok(!refs(selected[0]).includes(personal.memoryId),
+      "stranger focus unexpectedly prioritized the other person's Memory");
+    assert.ok(refs(selected[1]).includes(personal.memoryId),
+      "the encountered person's actual remembered meaning was not selected");
+    assert.ok(refs(selected[1]).includes(focusedRelation.relationId),
+      "the encountered person's relationship was crowded out by unrelated ties");
+  }finally{
+    semantic.close();identity.close();memories.close();life.close();f.close();
+  }
 });
 
 test("a shared visit owns one Body-band obligation across activity changes",async()=>{
