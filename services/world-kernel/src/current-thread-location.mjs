@@ -203,22 +203,27 @@ export function projectOperatorCurrentPlace({
         mapPrecision:finiteCoordinates(shared)?"city":null,
       });
     }
-    const activeRef=currentSituation?.location?.kind==="place"
-      ?currentSituation.location.placeRef:null;
-    const activeEpisode=placeEpisodes.find(episode=>
-      placeEpisodeRevisionRef(episode)===activeRef);
-    const activeWorld=worldPlaces.find(place=>place.ref===activeRef);
-    const authored=authoredGenesisPlaceLocality(activeEpisode)
-      ??authoredGenesisPlaceLocality(activeWorld);
-    const contextLocations=authored===null?privateContextLocations:[
-      ...privateContextLocations,{placeRef:activeRef,geography:authored},
-    ];
+    const current=currentSituation?.location;
+    const activeRef=current?.kind==="place"?current.placeRef:null;
+    const refs=current?.kind==="place"?[current.placeRef]
+      :current?.kind==="transit"?[current.fromPlaceRef,current.toPlaceRef]:[];
+    const contexts=refs.flatMap(ref=>{
+      const episode=placeEpisodes.find(item=>placeEpisodeRevisionRef(item)===ref);
+      const world=worldPlaces.find(item=>item.ref===ref);
+      const geography=authoredGenesisPlaceLocality(episode)
+        ??authoredGenesisPlaceLocality(world);
+      return geography===null?[]:[{placeRef:ref,geography}];
+    });
+    const contextLocations=[...privateContextLocations,...contexts];
     if(contextLocations.length===0)return null;
     const situated=projectCurrentThreadLocation({
       currentSituation,placeEpisodes,worldPlaces,
       contextLocations,
     });
     if(situated===null)return null;
+    const activeEpisode=placeEpisodes.find(item=>
+      placeEpisodeRevisionRef(item)===activeRef);
+    const activeWorld=worldPlaces.find(item=>item.ref===activeRef);
     return Object.freeze({
       ...situated,
       specificPlace:activeEpisode?.place?.displayName
