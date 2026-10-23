@@ -249,13 +249,19 @@ test("recognition belongs to the person who noticed a shared Story yesterday",()
     });
     assert.equal(longSameVisit.observed[0].familiarity,null,
       "a long continuous first visit became false prior familiarity");
+    // End the first shared venue visit before the next-day recognition.
+    f.enact(reader,"2026-10-22T18:00:00.000Z","Leaving the library.",
+      [],{kind:"place",placeRef:f.origin.ref});
+    f.enact(neighbor,"2026-10-22T18:00:00.000Z","Leaving the library.",
+      [],{kind:"place",placeRef:f.origin.ref});
     const a2=f.enact(reader,day2,"Reading.");
+    const b2=f.enact(neighbor,day2,"Reading.");
     const c2=f.enact(bystander,day2,"Reading.");
     const situatedLifeStore={listCurrentPlaceEpisodes:()=>[],
       listCurrentLifeRelations:()=>[]};
     const percept=situation=>projectSituatedPercept({
       observerThreadId:situation.threadId,situation,at:day2,
-      observedThreads:[{threadId:neighbor,name:"Unknown Reader",situation:b}],
+      observedThreads:[{threadId:neighbor,name:"Unknown Reader",situation:b2}],
       situatedLifeStore,livedNowStore:f.lived,experienceStore:f.experience,
     });
     const recognized=percept(a2),unaware=percept(c2);
@@ -629,8 +635,13 @@ test("social cognition prefers the encountered person's factual relation and ret
         conflictingMotives:[],uncertainty:null},
         provenance:{provider:"fixture",modelId:"person-focus"}};
     }};
+    f.enact(reader,"2026-10-22T12:00:00.000Z","Leaving the library.",
+      [],{kind:"place",placeRef:f.origin.ref});
+    f.enact(neighbor,"2026-10-22T12:00:00.000Z","Leaving the library.",
+      [],{kind:"place",placeRef:f.origin.ref});
     const presentA=f.enact(reader,later,"Reading.");
     const presentB=f.enact(bystander,later,"Reading.");
+    const presentNeighbor=f.enact(neighbor,later,"Reading.");
     const situated=(subject,counterpartId,counterpartSituation)=>
       projectSituatedPercept({
         observerThreadId:subject.threadId,situation:subject,at:later,
@@ -665,8 +676,8 @@ test("social cognition prefers the encountered person's factual relation and ret
       reader,neighbor,{before:later}),[experience.experienceId],
     "a participant's observed speech did not link to the Thread's own Experience");
     const stranger=await call(presentA,bystander,presentB);
-    const acquainted=await call(presentA,neighbor,other);
-    const otherPerson=await call(presentB,neighbor,other);
+    const acquainted=await call(presentA,neighbor,presentNeighbor);
+    const otherPerson=await call(presentB,neighbor,presentNeighbor);
     const refs=record=>record.provenance.selectedEvidenceRefs;
     assert.ok(!refs(stranger).includes(personal.memoryId),
       "stranger focus unexpectedly prioritized the other person's Memory");
