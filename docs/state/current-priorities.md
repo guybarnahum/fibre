@@ -9,6 +9,20 @@ canonical: true
 
 **North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
 
+**October 23 recognition and acquaintance — source-only, not deployed:**
+Bounded observer-owned noticed Story history can now make a previously
+seen person recognizable at the next social opportunity, without
+granting a name or forcing contact. An explicitly spoken, noticed
+self-introduction teaches the speaker's name; a real consented
+conversation can establish and later revise reciprocal factual
+`social_contact` life relations. Interior Cognition prioritizes
+the encountered party's own relation and Memories linked by actual
+Experience/Story evidence. This is proposed in ADR-0029 and requires
+Guy's local validation and later staging observation. **Do not deploy
+this slice before reviewing staging evidence for Slices 2–3.**
+No claim is made of friendship, more meetings, automatic outreach or
+Memory-driven autonomous behavior change.
+
 **October 23 graded social acts — local validation passed, staging acceptance pending:**
 An independently salient co-present person can now be met with no outward
 act, a nod, greeting, remark or explicit invitation. Small acts become

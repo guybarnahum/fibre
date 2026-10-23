@@ -341,6 +341,54 @@ of names through speech, event-driven reconsideration during continuous
 co-presence beyond these acts, and proof that Memory changes a subsequent
 unforced social choice.
 
+## Familiarity, introductions, and person-owned social history (October 23 source)
+
+When a Thread sees a real co-present person, Situated Percept may include
+`familiarity` from **this observer's own** noticed Encounter Stories
+containing that person, even beyond the six-hour immediate Experience
+window. A single indexed query reads at most twelve relevant records,
+including a bounded noticed count, last time, available World-attested
+place names and up to two of the observer's own Experience texts. The
+count is bounded inspection evidence, not a lifetime encounter total.
+Merely sharing a venue or another observer's `noticed` attention cannot
+create familiarity. The deterministic `recognized_person` salience
+anchor earns voluntary consideration, not contact.
+
+Only explicit spoken `introducesSelf: true` with the speaker's own name
+actually present in the utterance causes a `disclosesSpeakerName` World
+Story beat. A person learns that name only when their own attention
+`noticed` the admitted introduction. Existing life-relation and
+accepted-spoken-encounter name knowledge also remain valid. Unknown
+names stay redacted. This is an observer-relative fact, never a global
+rename, facial recognition guess or inferred introduction from prose.
+
+An actually admitted, consented conversation establishes one factual
+`social_contact` relation in **each** direction; another meeting adds
+a revision. Private liking and relationship meaning stay in Experience,
+Memory and semantic life, not the World-fact relationship record.
+`social_contact` makes a person a possible later-contact candidate;
+the existing contact engine still waits for a completed private
+consolidation with afterthoughts and makes a separate autonomous
+decision. No new contact scheduling or model invocation is added.
+
+Social initiation and social response supply a Fibre-owned
+`focusPartyId` from the counterpart in the Situated Percept. Existing
+Interior Cognition selection first prefers that party's own relations,
+then Memories whose event refs resolve through the observer's own
+Experience → Encounter Story → that party's presence. The same six
+relations / four Memories budgets and default tie-breakers remain.
+One indexed, bounded retrieval of up to 64 shared Experience IDs
+supports person-keyed Memory selection. A stranger uses default
+ranking. This is context-only until a later voluntary choice shows
+an attributable difference; neither counting a person as familiar
+nor retrieving their Memory proves friendship or changed behavior.
+
+**Status:** source-only; Guy has not locally validated this slice and
+will not deploy until natural staging evidence for earlier social
+slices has been reviewed. The limitations above are computational
+bounds, not permanent personhood restrictions. Owner decision is
+[proposed ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md).
+
 ## Reconsideration after an enacted change (October 23 source)
 
 A prior voluntary `none` does not become a permanent stance toward

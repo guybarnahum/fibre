@@ -205,6 +205,34 @@ admitted facts and deliberate handling of unresolved speculative decisions.
 The civil-minute boundary is only sparse compute scheduling, never a World
 event time rule, quota or recurring simulation tick.
 
+## Spoken introductions and World-founded acquaintance (October 23 source)
+
+An introduction is neither an ordinary name-bearing description nor a
+machine-inferred interpretation of free-form language. The speaker's
+independent initiation decision may mark an actual utterance
+`disclosesSpeakerName: true` only if its words contain the speaker's
+own name. The World Encounter Story retains that exterior beat;
+each observer's independent noticed/not-noticed attention determines
+whether the name becomes observer-known later.
+
+When a consented live conversation actually yields its admitted World
+Story, its two participants each receive a stable, revisable
+`social_contact` life relation. It cites the participant-owned Story
+and accepted interaction; its content is limited to objective place/date,
+count and last-meeting facts. A second consented meeting revises those
+World facts, never creates a different acquaintance identity. Declines,
+deferred invitations, nods and greetings alone create no relation.
+Subjective attraction, dislike or interpersonal meaning remain private
+Experience and Memory rather than relation facts.
+
+The existing later-contact process can now select this counterpart as
+contactable, but it still requires an already consolidated private
+afterthought and a separate Thread-owned outreach decision. The added
+World reads are bounded participant-owned Story/attention and Experience
+joins; no extra cognitive invocation or general venue scan.
+**Source-only**, not staging-observed autonomous relationships. See
+[proposed ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md).
+
 ## Actor-arrival bystander attention — October 19 source cut
 
 An authentic World-enacted arrival overlapping an already-present waking
