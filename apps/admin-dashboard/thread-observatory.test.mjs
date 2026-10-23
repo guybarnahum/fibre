@@ -864,6 +864,8 @@ test("long Genesis setting prose never replaces current-place identity or a real
   livedNow.worldPlaces[0].physicalVenue={displayName:"Bole Community Library"};
   assert.equal(threadSituationPlace(currentSituation,livedNow).name,"Bole Community Library",
     "attested venue lost its own name to a generic Genesis label");
+  assert.equal(observatoryCurrentPlace(livedNow),"Bole Community Library · Addis Ababa, Ethiopia",
+    "current place obscured an independently attested venue identity");
 });
 
 test("Observatory describes modern Genesis home and keeps current city in debug output",()=>{
