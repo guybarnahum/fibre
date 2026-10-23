@@ -448,6 +448,13 @@ async function formPlan({
     startAt,
   });
   const sourceEventRef=latestEventRefAt(worldStore,threadId,startAt);
+  // The last execution failure is World evidence, not Thread memory.
+  // Reuse it only while the failed frontier still belongs to the current scene.
+  const frontier=materializedAt===null
+    ?livedNowStore.inspectLivedBoundary?.(threadId):null;
+  const lastRecoveryFailure=frontier?.blockedReason
+    &&frontier.situationId===livedNowStore.getCurrentSituation(threadId)?.situationId
+    ?frontier.blockedReason:null;
   const propose=async(planningRejection)=>{
     const plan=await formPersonalLivedPlan({
       threadId,
@@ -469,6 +476,7 @@ async function formPlan({
       ...(interoception===null?{}:{interoception}),
       ...(materializedAt===null?{}:{materializedAt}),
       ...(planningRejection===null?{}:{planningRejection}),
+      ...(lastRecoveryFailure===null?{}:{lastRecoveryFailure}),
       ...(unobservedSince===null?{}:{unobservedSince}),
     });
     return livedNowStore.recordPlan(plan);

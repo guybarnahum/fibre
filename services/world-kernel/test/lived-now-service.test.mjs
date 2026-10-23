@@ -784,6 +784,92 @@ test("a month without World wakes leaves an honest gap and resumes from the last
     }
   }));
 
+
+test("a blocked life carries its failed journey into an independently renewed plan",async()=>
+  withDatabase(async databasePath=>{
+    const life=seedLife(databasePath);
+    const storage=localWorldStateStorage(databasePath);
+    const lived=openLivedNowStore(storage);
+    lived.recordPlan(personalPlan(life));
+    const world=openWorldStore(storage);
+    const identity=openIdentityStore(storage);
+    const semantic=openSemanticStateStore(storage);
+    const memory=openAutobiographicalMemoryStore(storage);
+    const situated=openSituatedLifeStore(storage);
+    const rejected="Flight Plan place change requires elapsed transit time";
+    let planned=0;
+    try{
+      const service=createLivedNowService({
+        livedNowStore:lived,worldStore:world,identityStore:identity,
+        semanticStateStore:semantic,memoryStore:memory,situatedLifeStore:situated,
+        modelAdapter:{async invoke(request){
+          if(request.input?.interoception)return {
+            output:{states:[]},
+            provenance:{provider:"fixture",modelId:"blocked-life-regulation"},
+          };
+          planned++;
+          const context=request.input.concern.externalContext;
+          assert.equal(context.lastRecoveryFailure,rejected,
+            "the next decision lost its actual prior failure");
+          assert.equal(context.unobservedSince,"2026-09-10T05:10:00Z",
+            "recovery invented unobserved life");
+          const middle=new Date(Date.parse(context.horizon.startAt)+2*60*60_000).toISOString();
+          const samePlace=context.startingPlaceRef;
+          const stop=(startAt,endAt,activity)=>({
+            startAt,endAt,physicalPlaceRef:samePlace,
+            presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
+            activity,purpose:"Choose how to continue at home.",travelFromPrevious:"",
+          });
+          return {
+            output:{result:{stops:[
+              stop(context.horizon.startAt,middle,"Rest at home."),
+              stop(middle,context.horizon.endAt,"Study at the dining table."),
+            ]},evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+            provenance:{provider:"fixture",modelId:"blocked-life-renewal",
+              providerRequestId:request.clientRequestId},
+          };
+        }},
+        onSituationResolved(current){
+          lived.scheduleNextLivedBoundary({
+            threadId:current.threadId,situationId:current.situationId,
+            dueAt:nextLivedBoundary(lived,current),
+          });
+        },
+      });
+      const first=await service.ensure({
+        threadId:life.thread.threadId,at:"2026-09-10T05:10:00Z",
+      });
+      let due=lived.inspectLivedBoundary(life.thread.threadId)?.dueAt;
+      for(let i=0;i<4;i++){
+        lived.failLivedBoundary({
+          threadId:life.thread.threadId,situationId:first.situationId,
+          dueAt:due,at:due,message:rejected,
+        });
+        due=lived.inspectLivedBoundary(life.thread.threadId)?.dueAt;
+      }
+      const blocked=lived.inspectLivedBoundary(life.thread.threadId);
+      assert.equal(blocked.failedAttempts,4,"test life did not enter delayed recovery");
+      assert.equal(blocked.blockedReason,rejected,"World lost the failure reason");
+      const now="2026-10-21T05:10:00Z";
+      const present=await service.ensure({threadId:life.thread.threadId,at:now});
+      const recovery=lived.inspectLivedBoundary(life.thread.threadId);
+      const plan=lived.latestPlan(life.thread.threadId,"personal",{at:now});
+      assert.equal(planned,1,"blocked recovery made repeated planning calls");
+      assert.equal(present.location.placeRef,life.homeRef,
+        "World invented a journey rather than honoring the Thread's stay");
+      assert.deepEqual(plan.stops.map(stop=>stop.physicalPlaceRef),
+        [life.homeRef,life.homeRef],"changing home activity became physical travel");
+      assert.equal(recovery.blockedReason,null,"successful life stayed blocked");
+      assert.equal(recovery.failedAttempts,0,"successful life retained failed attempts");
+      assert.ok(recovery.dueAt,"recovered life has no next earned wake");
+      assert.equal(lived.listPlans(life.thread.threadId,{kind:"personal"})
+        .filter(value=>value.materialization?.mode==="retrospective").length,0,
+      "World fabricated a month of historical plans");
+    }finally{
+      situated.close();memory.close();semantic.close();identity.close();world.close();lived.close();
+    }
+  }));
+
 test("a slightly delayed horizon alarm renews forward life without inventing retrospective intentions",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);

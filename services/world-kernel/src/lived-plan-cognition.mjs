@@ -68,7 +68,9 @@ When interoception is supplied, it is bounded subsemantic organismic state groun
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
 Public City Guide suggestions, when offered, are editorial *possibilities* in the Thread's grounded locality. A listing does not mean anyone is there or has invited the Thread, and makes no promise of satisfaction. This Thread may consider one, rely on familiar remembered places, or ignore the guide. Never treat a listing as a visit or a promise of contact.
 Use offered physical-place refs for known destinations. Never invent a World reference such as wpl_ or per:. For a NEW forward-looking destination absent from the list, physicalPlaceRef may instead name it naturally, such as "Porto, Portugal" for a city or "A neighborhood café, Porto, Portugal" for a specific place. World will replace that temporary name with its place reference before admission. Retrospective horizons must use ONLY offered physical-place refs: discovering a new place now does not establish that it existed in the Thread's historical knowledge. Unknown geography is allowed in forward planning; do not invent exact addresses, shared venues or people present. Propose at most two new places per forward plan. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
+A change of activity within one physical location (such as studying at the dining table instead of resting elsewhere at home) is not a journey. Keep the same physicalPlaceRef for activities within that location; a distinct World place ref is a distinct destination unless World has established otherwise.
 If unobservedSince is supplied, World lost observation of this life after that instant and is resuming now. Treat intervening time as unknown, not as lived experiences or evidence of choices. Decide what matters next without manufacturing memories or visits.
+If lastRecoveryFailure is supplied, a prior attempt to continue this life failed for that reason. It is operational feedback, not a lived experience or a mandate. Avoid repeating an impossible physical transition; you may stay at your current place and pursue different activities there, or plan an actual journey with enough time.
 If planningRejection is supplied, World rejected a previous proposed Flight Plan as physically infeasible. Reconsider the timing and journeys yourself using that reason; the rejected proposal never became lived history. Do not conceal movement by renaming places.
 When startingPlaceRef is supplied, the first stop must remain at that physical place. When physicalPlaceRef changes, leave a positive time gap between the end of the previous stop and the start of the next, even for local places. That gap is the actual journey, not an instantaneous scene change. Allow longer travel for distant cities; World will reject impossible arrival times. Do not fabricate travel when staying in the same place.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
@@ -428,6 +430,7 @@ export async function formPersonalLivedPlan({
   resolveDestinationGeography = null,
   planningRejection = null,
   unobservedSince = null,
+  lastRecoveryFailure = null,
 }) {
   assertId("personal plan threadId", threadId);
   assertIsoTimestamp("personal plan authoredAt", authoredAt);
@@ -443,6 +446,7 @@ export async function formPersonalLivedPlan({
   }
   if(planningRejection!==null)assertNonEmpty("personal plan planningRejection",planningRejection);
   if(unobservedSince!==null)assertIsoTimestamp("personal plan unobservedSince",unobservedSince);
+  if(lastRecoveryFailure!==null)assertNonEmpty("personal plan lastRecoveryFailure",lastRecoveryFailure);
   const places = resolvePlaces(threadId, availablePlaceRefs, sourceStores);
   if(!Array.isArray(cityGuidePlaces)||cityGuidePlaces.length>6
     ||cityGuidePlaces.some(place=>!places.some(available=>available.ref===place.ref))){
@@ -492,6 +496,7 @@ export async function formPersonalLivedPlan({
         ...(planningInteroception === null ? {} : { interoception:planningInteroception }),
         availablePlaces:places,
         ...(planningRejection===null?{}:{planningRejection}),
+        ...(lastRecoveryFailure===null?{}:{lastRecoveryFailure}),
         ...(unobservedSince===null?{}:{unobservedSince}),
         ...(materializedAt===null?{}:{retrospective:true}),
         ...(cityGuidePlaces.length===0?{}:{

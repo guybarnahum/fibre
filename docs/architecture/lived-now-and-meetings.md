@@ -215,6 +215,19 @@ pass the original World validation and admission. Fibre does not insert travel
 minutes, change destinations, fabricate presence, or admit the rejected plan.
 Successful planning still takes one model call; an observed travel failure
 can take two. Other errors and any second rejection propagate unchanged.
+
+**Blocked-life continuation:** a later forward renewal sees the previous
+World-recorded blocked reason only when that wake still belongs to the
+last enacted situation. This is execution feedback, not Thread memory,
+a fabricated experience, or an operator-authored itinerary. The ordinary
+planner distinguishes moving between rooms or activities at one physical
+place from travel to a different World place. It may choose to stay or to
+plan a feasible journey; World still rejects impossible transitions. A
+successful later admission resets the existing blocked frontier, without
+a new polling loop, extra model call, or rewriting the old Flight Plan.
+Legacy activity descriptions admitted as distinct Genesis learning-place
+identities remain distinct until their physical authority is separately
+corrected; this change never silently merges their place references.
 This is bounded domain-level reconsideration, not general provider retry or
 proof of fleet-wide recoverability.
 
