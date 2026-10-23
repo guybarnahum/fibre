@@ -345,8 +345,12 @@ unforced social choice.
 
 When a Thread sees a real co-present person, Situated Percept may include
 `familiarity` from **this observer's own** noticed Encounter Stories
-containing that person, even beyond the six-hour immediate Experience
-window. A single indexed query reads at most twelve relevant records,
+containing that person, but never the current encounter or the current
+continuous shared visit. The query's strict upper bound is the earlier of
+six hours before consideration and the proven start of this shared visit.
+Immediate noticed episodes remain in `recentPersonalExperiences`, not
+duplicated as established familiarity. A single indexed query reads at most
+twelve relevant records,
 including a bounded noticed count, last time, available World-attested
 place names and up to two of the observer's own Experience texts. The
 count is bounded inspection evidence, not a lifetime encounter total.
@@ -354,13 +358,18 @@ Merely sharing a venue or another observer's `noticed` attention cannot
 create familiarity. The deterministic `recognized_person` salience
 anchor earns voluntary consideration, not contact.
 
-Only explicit spoken `introducesSelf: true` with the speaker's own name
-actually present in the utterance causes a `disclosesSpeakerName` World
-Story beat. A person learns that name only when their own attention
-`noticed` the admitted introduction. Existing life-relation and
-accepted-spoken-encounter name knowledge also remain valid. Unknown
-names stay redacted. This is an observer-relative fact, never a global
-rename, facial recognition guess or inferred introduction from prose.
+An explicitly selected `introducesSelf: true` on a spoken act may disclose
+the speaker's full name **or a name token actually spoken**. The World Story
+beat records `disclosesSpeakerName` and the specific `disclosedName`
+(e.g. "Surafel", not an unheard surname). Only observers whose own
+attention `noticed` the admitted Story can learn that disclosed fragment.
+A claimed introduction without any spoken name token is simply an ordinary
+act; it does not interrupt the meeting. Existing life-relation and
+accepted-spoken-encounter full-name knowledge remain separate rules, as
+before this correction. Unknown name parts stay redacted in an
+introduction-only projection. This is observer-relative knowledge, never a
+global rename, inferred introduction from unmarked prose, or grant of
+the speaker's complete civil identity.
 
 An actually admitted, consented conversation establishes one factual
 `social_contact` relation in **each** direction; another meeting adds

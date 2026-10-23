@@ -16,7 +16,8 @@ None of these facts creates friendship, affection, trust, or a duty to speak.
 
 **Recognition** is a bounded indexed read of the observing person's own
 `noticed` Encounter Stories containing both people (up to 12 episodes,
-count explicitly bounded). Up to two meaning-bearing first-person Experience
+count explicitly bounded), strictly earlier than both the six-hour recent
+Experience window and the current continuous shared venue visit. Up to two meaning-bearing first-person Experience
 texts and attested past place names enter Situated Percept. Unnoticed
 co-presence contributes nothing. `recognized_person` earns salience
 (behaviourally causal for consideration), never forced speech. The
@@ -24,9 +25,11 @@ six-hour immediate-events window remains distinct.
 
 **Introductions** require a voluntarily selected
 `introducesSelf: true` on a spoken `greet`, `remark` or
-`invite_conversation`. The actual expression must contain the speaker's
-own canonical name. World admits `disclosesSpeakerName: true` only on
-the corresponding utterance beat. Name knowledge requires an existing
+`invite_conversation`. The actual expression may contain the speaker's
+full name or a canonical name token; World records `disclosedName`
+for only the part actually spoken, alongside `disclosesSpeakerName: true`
+on the corresponding utterance beat. A mistaken introduction claim with
+no spoken name remains a valid ordinary act, not an interrupted meeting. Name knowledge requires an existing
 life relation, an accepted spoken conversation or the observer's own
 `noticed` attention to that admitted introduction. Neither unobserved
 speech nor another participant's private awareness teaches names.
