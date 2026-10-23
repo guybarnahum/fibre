@@ -8,6 +8,7 @@ import {
 import { migrateDatabase, translateStorageError } from "./persistence-sqlite.mjs";
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import { spokenNameDisclosure } from "./spoken-name.mjs";
 
 function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
@@ -145,6 +146,8 @@ function normalizeStory(candidate, participantIds) {
         kind:beat.kind,
         text:beat.text,
         ...(disclosesSpeakerName?{disclosesSpeakerName:true}:{}),
+        ...(disclosesSpeakerName&&typeof beat.disclosedName==="string"
+          ?{disclosedName:beat.disclosedName}:{}),
         ...(completion===null?{}:{completion}),
       };
     }),
@@ -958,9 +961,13 @@ export class LivedExperienceStore {
       `).get(beat.actorThreadId);
       const name=speaker===undefined?null:JSON.parse(speaker.state_json)
         .identity?.name;
-      if(typeof name!=="string"||!name.trim()
-        ||!beat.text.toLocaleLowerCase().includes(name.trim().toLocaleLowerCase())){
-        throw new TypeError("World self-introduction must contain the actual speaker name");
+      // World only admits the name part present in spoken, attributed words.
+      const heard=spokenNameDisclosure(beat.text,name);
+      if(heard===null){
+        delete beat.disclosesSpeakerName;
+        delete beat.disclosedName;
+      }else{
+        beat.disclosedName=heard;
       }
     }
     const visualization = normalizeVisualization(candidate.visualization, participantIds);
@@ -2231,12 +2238,13 @@ export class LivedExperienceStore {
       .map(row=>row.experience_id);
   }
 
-  hasNoticedSelfIntroduction(observerThreadId,otherThreadId,{before}={}){
+  heardSelfIntroductionName(observerThreadId,otherThreadId,{before}={}){
     assertId("heard introduction observer",observerThreadId);
     assertId("heard introduction speaker",otherThreadId);
     assertIsoTimestamp("heard introduction before",before);
     return this.#database.prepare(`
-      SELECT 1 FROM thread_encounter_story_timeline t
+      SELECT json_extract(beat.value,'$.disclosedName') AS name
+      FROM thread_encounter_story_timeline t
       JOIN encounter_story_thread_presence speaker
         ON speaker.encounter_ref=t.encounter_ref AND speaker.thread_id=?
       JOIN thread_encounter_attention attention
@@ -2250,8 +2258,10 @@ export class LivedExperienceStore {
         AND json_extract(beat.value,'$.actorThreadId')=?
         AND json_extract(beat.value,'$.kind')='utterance'
         AND json_extract(beat.value,'$.disclosesSpeakerName')=1
+        AND json_type(beat.value,'$.disclosedName')='text'
+      ORDER BY t.occurred_at DESC,t.encounter_ref DESC
       LIMIT 1
-    `).get(otherThreadId,observerThreadId,before,otherThreadId)!==undefined;
+    `).get(otherThreadId,observerThreadId,before,otherThreadId)?.name??null;
   }
 
   listEncounterStories(threadId,{limit=null}={}) {
