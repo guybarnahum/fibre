@@ -2158,6 +2158,55 @@ export class LivedExperienceStore {
     return [...stories.values()];
   }
 
+  // Indexed, observer-owned noticed history of one actual co-present person.
+  // The bounded read never substitutes another participant's private attention.
+  listNoticedSharedHistory(observerThreadId,otherThreadId,{before,limit=12}={}){
+    assertId("familiarity observer",observerThreadId);
+    assertId("familiarity counterpart",otherThreadId);
+    assertIsoTimestamp("familiarity before",before);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>24)
+      throw new TypeError("familiarity history must be bounded");
+    return this.#database.prepare(`
+      SELECT a.encounter_ref,a.occurred_at,a.situation_id,
+        x.experience_text
+      FROM thread_encounter_story_timeline t
+      JOIN encounter_story_thread_presence other
+        ON other.encounter_ref=t.encounter_ref AND other.thread_id=?
+      JOIN thread_encounter_attention a
+        ON a.encounter_ref=t.encounter_ref AND a.thread_id=t.thread_id
+      JOIN thread_encounter_experiences x
+        ON x.encounter_ref=a.encounter_ref AND x.thread_id=a.thread_id
+      WHERE t.thread_id=? AND t.occurred_at<? AND a.outcome='noticed'
+      ORDER BY t.occurred_at DESC,t.encounter_ref DESC LIMIT ?
+    `).all(otherThreadId,observerThreadId,before,limit).map(row=>Object.freeze({
+      encounterRef:row.encounter_ref,occurredAt:row.occurred_at,
+      situationId:row.situation_id,experienceText:row.experience_text,
+    }));
+  }
+
+  hasNoticedSelfIntroduction(observerThreadId,otherThreadId,{before}={}){
+    assertId("heard introduction observer",observerThreadId);
+    assertId("heard introduction speaker",otherThreadId);
+    assertIsoTimestamp("heard introduction before",before);
+    return this.#database.prepare(`
+      SELECT 1 FROM thread_encounter_story_timeline t
+      JOIN encounter_story_thread_presence speaker
+        ON speaker.encounter_ref=t.encounter_ref AND speaker.thread_id=?
+      JOIN thread_encounter_attention attention
+        ON attention.thread_id=t.thread_id
+          AND attention.encounter_ref=t.encounter_ref
+          AND attention.outcome='noticed'
+      JOIN encounter_story_records story
+        ON story.encounter_id=t.encounter_ref
+      JOIN json_each(story.story_json,'$.beats') beat
+      WHERE t.thread_id=? AND t.occurred_at<?
+        AND json_extract(beat.value,'$.actorThreadId')=?
+        AND json_extract(beat.value,'$.kind')='utterance'
+        AND json_extract(beat.value,'$.disclosesSpeakerName')=1
+      LIMIT 1
+    `).get(otherThreadId,observerThreadId,before,otherThreadId)!==undefined;
+  }
+
   listEncounterStories(threadId,{limit=null}={}) {
     assertId("threadId", threadId);
     if(limit!==null&&(!Number.isSafeInteger(limit)||limit<1||limit>100)){
