@@ -85,15 +85,19 @@ export function recordedLifeMoments({
       if(!item?.completedAt||!Number.isFinite(Date.parse(item.completedAt)))return [];
       return [Object.freeze({
         kind:"social_choice",
-        id:item.kind+":"+item.situationId+":"+(item.sourceEncounterRef??"arrival"),
+        id:item.kind+":"+item.situationId+":"+
+          (item.sourceEncounterRef??(item.trigger??"arrival")+":"+(item.needBand??"")),
         at:item.completedAt,
-        title:item.outcome==="acted"?"Made a small social gesture"
+        title:item.trigger==="activity_change"?"Reconsidered after an activity change"
+          :item.trigger==="need_band"?"Social need was reconsidered"
+          :item.outcome==="acted"?"Made a small social gesture"
           :item.outcome==="met"?"A conversation began"
           :item.outcome==="not_initiated"?"Chose not to approach"
           :item.outcome==="background"?"Social opportunity stayed in the background"
           :item.outcome==="not_met"?"Conversation was not accepted"
           :"Social consideration · "+item.outcome,
         outcome:item.outcome,situationId:item.situationId,
+        trigger:item.trigger??"arrival",needBand:item.needBand??null,
         decision:item.decision??null,
         sourceEncounterRef:item.sourceEncounterRef??null,
       })];

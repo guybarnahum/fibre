@@ -351,7 +351,9 @@ export function formatWorldSocialReport(evidence,evidencePath){
       ?" · considered "+(delay/1000).toFixed(3)+"s after opportunity"
       :"";
     lines.push("  · "+(opportunity.outcome??"pending").replaceAll("_"," ")+
-      " · "+opportunity.threadId+" · "+(opportunity.kind??"unknown")+
+      " · "+opportunity.threadId+" · "+(opportunity.trigger??opportunity.kind??"unknown")+
+      (opportunity.needBand===null||opportunity.needBand===undefined
+        ?"":" · Body band "+opportunity.needBand)+
       (opportunity.dueAt?" · due "+time(opportunity.dueAt):"")+
       (opportunity.startedAt?" · started "+time(opportunity.startedAt):"")+
       timing+
