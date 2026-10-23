@@ -273,14 +273,15 @@ export function createSocialMeetingService({
         currentLeft.situation.location.placeRef,{required:false}):null;
     const venue=place?.physicalVenue?.ref??null;
     const gesture=initiation.act==="acknowledge";
-    const description=gesture?observablePerson({
+    const description=observablePerson({
       threadId:currentLeft.thread.threadId,situation:currentLeft.situation,
       name:currentLeft.thread.identity?.name??null,embodimentStore,
-    }).observableDescription:null;
+    }).observableDescription.replace(/; Currently:.*$/u,"");
     const story={storyVersion:"encounter-story-v0.1",beats:[{
       actorThreadId:currentLeft.thread.threadId,
       kind:gesture?"action":"utterance",
-      text:gesture?description+" "+initiation.expression:initiation.expression,
+      text:gesture?description+" "+initiation.expression
+        :description+' says: "'+initiation.expression+'"',
     }]};
     const encounterStory=experienceStore.recordEncounterStory({
       occurredAt:at,

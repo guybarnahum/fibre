@@ -9,7 +9,7 @@ canonical: true
 
 **North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
 
-**October 23 graded social acts, source-only — validation and staging open:**
+**October 23 graded social acts — local validation passed, staging acceptance pending:**
 An independently salient co-present person can now be met with no outward
 act, a nod, greeting, remark or explicit invitation. Small acts become
 objective World Stories with separate attention and optional, one-shot
@@ -22,6 +22,15 @@ fabricated encounter or Body reward was added. This source change is
 **not** evidence of real staging small acts, increased meeting counts,
 learned names, changed relationships or social-need satisfaction. See
 [Graded acts](../architecture/situated-perception-and-salience.md#graded-social-acts-and-reciprocal-attention-october-23-source).
+
+**October 23 renewal-boundary source finding:** A 1 ms gap between
+situation records can be the deliberate inclusive Flight Plan horizon
+followed by the next-millisecond renewal (`nextLivedBoundary`).
+Only enacted transit→place and place→transit movements project an
+actor arrival/departure; the same-place renewal itself earns no arrival
+perception or arrival-based social opportunity. The two observed
+Abrehot Library records require plan/provenance comparison to establish
+their specific cause; the timestamps alone prove no duplicate visit.
 
 **October 22 mutual arrival noticing, source-only:** Objective World arrival
 now offers personal attention to the arriving Thread as well as already-present
