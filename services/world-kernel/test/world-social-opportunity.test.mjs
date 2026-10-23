@@ -81,7 +81,7 @@ test("four act-triggered reply opportunities bound one shared visit, not future 
 });
 
 
-function groundedReconsiderationFixture(){
+function groundedReconsiderationFixture({onInvoke=null}={}){
   const directory=mkdtempSync(join(tmpdir(),"fibre-reconsideration-"));
   const path=join(directory,"world.sqlite");
   const storage={
@@ -106,13 +106,13 @@ function groundedReconsiderationFixture(){
     affordances:["Reading","Conversation"],
   });
   const db=new DatabaseSync(path,{enableForeignKeyConstraints:true});
-  function enact(threadId,at,activity){
+  function enact(threadId,at,activity,participantRefs=[]){
     const situation=normalizeCurrentSituation({
       situationId:"sit_"+threadId+"_"+at.replace(/[^0-9]/gu,""),
       threadId,establishedAt:at,phase:"at_place",
       location:{kind:"place",placeRef:place.ref},
       mediatedContext:null,activity,wakefulness:"awake",
-      reason:"An independent reading visit.",participantRefs:[],
+      reason:"An independent reading visit.",participantRefs,
       evidenceRefs:["evt_"+threadId],sourcePlanRefs:["plan_"+threadId],
       resolution:{
         kind:"personal_plan",conflict:false,observedDivergence:false,
@@ -140,7 +140,10 @@ function groundedReconsiderationFixture(){
     memoryStore:{listCurrentMemories:()=>[]},
     experienceStore:experience,boundedVenueDiscovery:true,
     modelAdapter:{
-      async invoke(){throw Error("unearned social decision spent cognition");},
+      async invoke(request){
+        if(onInvoke===null)throw Error("unearned social decision spent cognition");
+        return onInvoke(request);
+      },
       async *streamExpression(){throw Error("unearned speech");},
     },
   });
@@ -237,6 +240,98 @@ test("a predicted social-need band is not a poll and can be invalidated by conta
       "a cancelled Body need still forced social cognition");
     assert.equal(f.experience.inspectSocialOpportunities(reader)[0].outcome,
       "need_unreached","World lost the truth of the predicted but unrealized need");
+  }finally{f.close();}
+});
+
+
+test("a later voluntary choice recalls the Thread's own earlier silence",async()=>{
+  let decisions=0;
+  const f=groundedReconsiderationFixture({onInvoke:request=>{
+    assert.equal(request.input?.concern?.kind,"social_initiation",
+      "reconsideration did not reach ordinary social judgment");
+    const prior=request.input.concern.externalContext.priorSocialChoicesThisVisit;
+    assert.deepEqual(prior,[{
+      at:"2026-10-23T09:00:00.000Z",act:"none",expression:null,
+      reportedReason:"I wanted to finish my book first.",
+    }],"the Thread's earlier choice disappeared from its social context");
+    decisions++;
+    return {
+      output:{result:{
+        act:"none",expression:null,experienceText:null,
+        reason:"I still prefer to read.",
+      },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+      provenance:{provider:"fixture",modelId:"reconsideration-choice"},
+    };
+  }});
+  try{
+    const [reader,neighbor]=f.people;
+    f.enact(neighbor,"2026-10-23T08:00:00.000Z","Reading.");
+    const visit="2026-10-23T09:00:00.000Z";
+    const old=f.enact(reader,visit,"Reading.",[neighbor]);
+    f.enact(reader,"2026-10-23T10:00:00.000Z","Looking up.",[neighbor]);
+    f.experience.enqueueSocialOpportunity({
+      threadId:reader,situationId:old.situationId,dueAt:visit,
+    });
+    const claimed=f.experience.claimDueSocialOpportunity({at:visit});
+    assert.ok(claimed,"the previous autonomous choice had no durable opportunity");
+    f.experience.completeSocialOpportunity({
+      situationId:old.situationId,at:visit,outcome:"not_initiated",
+      decision:{
+        counterpartyThreadId:neighbor,
+        initiation:{act:"none",expression:null,
+          reportedReason:"I wanted to finish my book first."},
+      },
+    });
+    const result=await f.meeting.meet({
+      initiatorThreadId:reader,
+      at:"2026-10-23T10:00:00.000Z",
+      counterpartyThreadId:neighbor,
+      reconsiderationVisitSince:visit,
+    });
+    assert.equal(result.attempts[0].outcome,"not_initiated",
+      "remembering a prior refusal forced a response");
+    assert.equal(decisions,1,"one consideration spent multiple model calls");
+  }finally{f.close();}
+});
+
+test("reconsideration bounds cognition by visit and by chosen counterpart",async()=>{
+  const f=groundedReconsiderationFixture();
+  try{
+    const [reader,neighbor]=f.people;
+    f.enact(neighbor,"2026-10-23T08:00:00.000Z","Reading.");
+    let previous=f.enact(reader,"2026-10-23T09:00:00.000Z","Reading.");
+    const results=[];
+    for(const [i,time] of [
+      "2026-10-23T10:00:00.000Z",
+      "2026-10-23T10:15:00.000Z",
+      "2026-10-23T10:30:00.000Z",
+      "2026-10-23T10:45:00.000Z",
+    ].entries()){
+      const next=f.enact(reader,time,"Activity "+i);
+      results.push(...enqueueEnactedSocialReconsideration({
+        situation:next,previous,thread:f.world.getThread(reader),
+        livedNowStore:f.lived,experienceStore:f.experience,
+        nextBoundaryAt:"2026-10-23T11:00:00.000Z",
+      }));
+      previous=next;
+    }
+    assert.equal(results.length,3,
+      "unbounded activity changes created too many choices in one visit");
+    const social=createWorldSocialOpportunity({
+      experienceStore:f.experience,livedNowStore:f.lived,
+      meetingService:f.meeting,worldReader:f.world,
+      now:()=>previous.establishedAt,
+    });
+    const choices=[];
+    for(let i=0;i<3;i++){
+      const result=await social.runOnce();
+      choices.push(result.results[0]?.outcome);
+    }
+    assert.deepEqual(choices,["background","background","pair_limit"],
+      "the same counterpart exceeded the bounded reconsideration limit");
+    assert.equal(f.experience.listDueSocialOpportunities({
+      at:previous.establishedAt,
+    }).length,0,"completed reconsideration left a hot retry loop");
   }finally{f.close();}
 });
 
