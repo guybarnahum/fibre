@@ -10,7 +10,11 @@ import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { openLivedNowStore } from "../src/lived-now-store.mjs";
 import { normalizeCurrentSituation } from "../src/lived-now.mjs";
 import { canonicalJson,sha256 } from "../src/persistence-common.mjs";
-import { createWorldSocialOpportunity } from "../src/world-social-opportunity.mjs";
+import {
+  createWorldSocialOpportunity,
+  enqueueEnactedSocialReconsideration,
+  socialNeedBandReached,
+} from "../src/world-social-opportunity.mjs";
 import { createWorldArrivalPerception } from "../src/world-arrival-perception.mjs";
 import { createWorldReconciliationProcess } from "../src/world-reconciliation-process.mjs";
 import { createSocialMeetingService } from "../src/lived-social-meeting.mjs";
@@ -74,6 +78,166 @@ test("four act-triggered reply opportunities bound one shared visit, not future 
     experience.close();world.close();
     rmSync(directory,{recursive:true,force:true});
   }
+});
+
+
+function groundedReconsiderationFixture(){
+  const directory=mkdtempSync(join(tmpdir(),"fibre-reconsideration-"));
+  const path=join(directory,"world.sqlite");
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({scopes:{world:path}}),
+    stateScopeId:"world",
+  };
+  const world=openWorldStore(storage),lived=openLivedNowStore(storage);
+  const experience=openLivedExperienceStore(storage);
+  const people=["thr_reconsider_reader","thr_reconsider_neighbor"];
+  for(const threadId of people){
+    const thread=structuredClone(seed);
+    thread.threadId=threadId;
+    thread.provenance.lastEventId="evt_"+threadId;
+    world.seedThread(thread);
+  }
+  const place=lived.admitPublicPlace({
+    venueIdentity:"fixture:reconsider-library",
+    displayName:"Observed library",streetAddress:"10 Library Street",
+    locality:"Tucson",country:"United States",countryCode:"US",
+    lat:32.22,long:-110.97,timeZone:"America/Phoenix",
+    evidenceRef:"https://example.org/reconsider-library",
+    affordances:["Reading","Conversation"],
+  });
+  const db=new DatabaseSync(path,{enableForeignKeyConstraints:true});
+  function enact(threadId,at,activity){
+    const situation=normalizeCurrentSituation({
+      situationId:"sit_"+threadId+"_"+at.replace(/[^0-9]/gu,""),
+      threadId,establishedAt:at,phase:"at_place",
+      location:{kind:"place",placeRef:place.ref},
+      mediatedContext:null,activity,wakefulness:"awake",
+      reason:"An independent reading visit.",participantRefs:[],
+      evidenceRefs:["evt_"+threadId],sourcePlanRefs:["plan_"+threadId],
+      resolution:{
+        kind:"personal_plan",conflict:false,observedDivergence:false,
+        governingPlanRef:"plan_"+threadId,constrainedPlanRef:null,
+        summary:"An independently enacted visit.",
+      },provenance:"world_enacted",
+    });
+    const json=canonicalJson(situation);
+    db.prepare(`INSERT INTO current_situation_records
+      (situation_id,thread_id,established_at,record_json,record_digest)
+      VALUES (?,?,?,?,?)`).run(situation.situationId,threadId,at,json,
+      "sha256:"+sha256(json));
+    return situation;
+  }
+  const meeting=createSocialMeetingService({
+    worldReader:world,livedNow:{async ensure(){
+      throw Error("social reconsideration must not enact any life");
+    }},
+    livedNowStore:lived,
+    identityStore:{getCurrentIdentityView:()=>({assertions:[]})},
+    situatedLifeStore:{
+      listCurrentLifeRelations:()=>[],listCurrentPlaceEpisodes:()=>[],
+    },
+    semanticStateStore:{listCurrentState:()=>[]},
+    memoryStore:{listCurrentMemories:()=>[]},
+    experienceStore:experience,boundedVenueDiscovery:true,
+    modelAdapter:{
+      async invoke(){throw Error("unearned social decision spent cognition");},
+      async *streamExpression(){throw Error("unearned speech");},
+    },
+  });
+  function close(){
+    db.close();experience.close();lived.close();world.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+  return {world,lived,experience,people,place,enact,meeting,close};
+}
+
+test("an activity change earns one independent social chance, not a timer",async()=>{
+  const f=groundedReconsiderationFixture();
+  try{
+    const [reader,neighbor]=f.people;
+    f.enact(neighbor,"2026-10-23T08:00:00.000Z","Reading quietly.");
+    const previous=f.enact(reader,"2026-10-23T09:00:00.000Z",
+      "Settling in with a book.");
+    const next=f.enact(reader,"2026-10-23T10:00:00.000Z",
+      "Finished the book and paused.");
+    const args={
+      situation:next,previous,thread:f.world.getThread(reader),
+      livedNowStore:f.lived,experienceStore:f.experience,
+      nextBoundaryAt:"2026-10-23T11:00:00.000Z",
+    };
+    assert.equal(enqueueEnactedSocialReconsideration(args).length,1,
+      "changing activity among others did not earn a chance");
+    assert.deepEqual(enqueueEnactedSocialReconsideration(args),[],
+      "replaying one activity change created duplicate choice");
+    assert.equal(f.experience.inspectSocialOpportunities(reader)
+      .filter(x=>x.trigger==="activity_change").length,1,
+    "activity change did not retain its single durable obligation");
+    const process=createWorldSocialOpportunity({
+      experienceStore:f.experience,livedNowStore:f.lived,
+      meetingService:f.meeting,worldReader:f.world,
+      now:()=>next.establishedAt,
+    });
+    const decision=await process.runOnce();
+    assert.equal(decision.results[0].outcome,"background",
+      "quiet co-presence forced a social decision");
+    assert.equal(f.experience.inspectSocialOpportunities(reader)[0].decision
+      ?.salience?.outcome,"background",
+    "World discarded the Thread's unsalient choice context");
+    const same=f.enact(reader,"2026-10-23T10:30:00.000Z",
+      next.activity);
+    assert.deepEqual(enqueueEnactedSocialReconsideration({
+      ...args,situation:same,previous:next,nextBoundaryAt:"2026-10-23T11:00:00.000Z",
+    }),[],"unchanged activity manufactured another social choice");
+  }finally{f.close();}
+});
+
+test("a predicted social-need band is not a poll and can be invalidated by contact",async()=>{
+  const f=groundedReconsiderationFixture();
+  try{
+    const [reader,neighbor]=f.people;
+    const start="2026-10-23T05:00:00.000Z";
+    f.enact(neighbor,start,"Reading.");
+    f.enact(reader,start,"Reading.");
+    const middle=f.enact(reader,"2026-10-23T11:00:00.000Z","Reading.");
+    const present=f.enact(reader,"2026-10-23T17:00:00.000Z","Reading.");
+    const waits=enqueueEnactedSocialReconsideration({
+      situation:present,previous:middle,
+      thread:f.world.getThread(reader),livedNowStore:f.lived,
+      experienceStore:f.experience,
+      nextBoundaryAt:"2026-10-24T01:00:00.000Z",
+    });
+    assert.deepEqual(waits,["2026-10-23T23:00:00.001Z"],
+      "World did not predict the next grounded Body crossing");
+    assert.equal(f.experience.listDueSocialOpportunities({
+      at:"2026-10-23T22:59:59.000Z",
+    }).length,0,"a future Body event became periodic social polling");
+    const pressure={
+      livedNowStore:f.lived,experienceStore:f.experience,
+      thread:f.world.getThread(reader),situation:present,
+      at:waits[0],band:0.6,
+    };
+    assert.equal(socialNeedBandReached(pressure),true,
+      "the predicted crossing did not reach the actual Body regulator");
+    f.experience.recordSocialInteraction({
+      occurredAt:"2026-10-23T21:00:00.000Z",
+      initiatorThreadId:reader,recipientThreadId:neighbor,
+      initiatorSituationId:present.situationId,
+      recipientSituationId:"sit_"+neighbor+"_"+start.replace(/[^0-9]/gu,""),
+      requestText:"Would you like to chat?",responseDecision:"accept",
+      responseExpression:"Yes.",suggestedAt:null,
+    });
+    assert.equal(socialNeedBandReached(pressure),false,
+      "real contact did not reduce grounded social pressure");
+    const process=createWorldSocialOpportunity({
+      experienceStore:f.experience,livedNowStore:f.lived,
+      meetingService:f.meeting,worldReader:f.world,now:()=>waits[0],
+    });
+    const result=await process.runOnce();
+    assert.equal(result.results[0].outcome,"need_unreached",
+      "a cancelled Body need still forced social cognition");
+    assert.equal(f.experience.inspectSocialOpportunities(reader)[0].outcome,
+      "need_unreached","World lost the truth of the predicted but unrealized need");
+  }finally{f.close();}
 });
 
 test("an enacted arrival permits immediate voluntary consideration without forcing speech",async()=>{
