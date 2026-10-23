@@ -293,15 +293,25 @@ export class LivedExperienceStore {
       throw new TypeError("social need band is invalid");
     }
     return this.#database.transaction(()=>{
+      // A Body crossing belongs to a continuous lived visit, not to each
+      // situation enacted inside that visit. Completed rows remain evidence
+      // and cannot be replayed by subsequent activity changes or renewals.
+      const key=trigger==="arrival"?situationId
+        :`social_${sha256(canonicalJson(trigger==="need_band"
+          ?{threadId,visitSince,trigger,needBand}
+          :{threadId,situationId,trigger,needBand}))}`;
       if(trigger!=="arrival"){
+        if(trigger==="need_band"&&this.#database.prepare(`
+          SELECT 1 FROM world_social_opportunities WHERE situation_id=?
+        `).get(key)!==undefined){
+          return Object.freeze({inserted:false,alreadyScheduled:true,dueAt});
+        }
         const used=this.#database.prepare(`
           SELECT COUNT(*) AS n FROM world_social_opportunities
           WHERE thread_id=? AND visit_since=? AND trigger_kind!='arrival'
         `).get(threadId,visitSince).n;
         if(used>=3)return Object.freeze({inserted:false,capped:true,dueAt});
       }
-      const key=trigger==="arrival"?situationId
-        :`social_${sha256(canonicalJson({threadId,situationId,trigger,needBand}))}`;
       const inserted=this.#database.prepare(`
         INSERT OR IGNORE INTO world_social_opportunities(
           situation_id,anchor_situation_id,thread_id,due_at,
