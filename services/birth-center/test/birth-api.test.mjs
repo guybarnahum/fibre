@@ -43,6 +43,7 @@ test("birth API exposes durable pending births without changing initiation", asy
       },
     },
     pendingBirths:async () => pending,
+    recentBirths:async () => [{requestId:"recent_birth",status:"published"}],
     stillbornBirths:async () => stillborn,
     birthplaces:[{ place:"Georgia/Tbilisi", lat:41.69, long:44.83 }],
     requestStore,
