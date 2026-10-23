@@ -196,6 +196,13 @@ function normalizeConcern(concern) {
     if(!["social_initiation","social_response"].includes(concern.kind)){
       throw new TypeError("person focus requires a social concern");
     }
+    const observed=externalContext?.situatedPercept?.observed;
+    if(!Array.isArray(observed)||observed.length!==1
+      ||observed[0]?.threadId!==focusPartyId
+      ||(concern.kind==="social_response"
+        &&externalContext.socialRequest?.initiatorThreadId!==focusPartyId)){
+      throw new TypeError("social person focus must be the actually perceived counterpart");
+    }
   }
   return Object.freeze({
     kind:concern.kind.trim(),
