@@ -132,7 +132,7 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
       throw Error("social reconsideration must not enact any life");
     }},
     livedNowStore:lived,
-    identityStore:{getCurrentIdentityView:()=>({assertions:[]})},
+    identityStore:{getCurrentIdentityView:threadId=>({threadId,assertions:[]})},
     situatedLifeStore:{
       listCurrentLifeRelations:()=>[],listCurrentPlaceEpisodes:()=>[],
     },

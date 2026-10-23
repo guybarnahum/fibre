@@ -50,9 +50,14 @@ export function enqueueNextSocialNeedBand({
   const sensitivity=threadRegulatorProfile(
     thread.genome?.runtimeBaselines??{},
   ).sensitivity.social;
+  // Match the Body's six-decimal pressure before scheduling. Otherwise
+  // floating-point error can requeue a band already crossed.
+  const pressure=Math.round(
+    Math.min(1,contact.observedUnmetHours/24)*0.8*sensitivity*1_000_000,
+  )/1_000_000;
   for(const band of RECONSIDERATION_BANDS){
+    if(pressure>=band)continue;
     const targetHours=band*24/(0.8*sensitivity);
-    if(contact.observedUnmetHours>=targetHours)continue;
     const due=new Date(Math.ceil(Date.parse(at)
       +(targetHours-contact.observedUnmetHours)*3600_000)+1).toISOString();
     if(Date.parse(due)>=Date.parse(nextBoundaryAt))continue;
