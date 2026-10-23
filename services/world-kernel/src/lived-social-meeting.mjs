@@ -20,6 +20,7 @@ import { livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
 import { projectInteroception } from "./interoceptive-cognition.mjs";
 import { observablePerson } from "./world-observable-person.mjs";
 import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
+import { lifeRelationId } from "./situated-life-domain.mjs";
 
 const MEMORY_LIMIT = 6;
 
@@ -74,6 +75,67 @@ function observedThread(context) {
     name:context.thread.identity?.name ?? null,
     situation:context.situation,
   });
+}
+
+// A consented, actually recorded conversation can establish an acquaintance.
+ // The LLM neither supplies a relation nor writes a subjective judgment here.
+export function recordWorldAcquaintance({
+  situatedLifeStore,worldReader,encounterStory,interaction=null,
+  initiatorThreadId,counterpartyThreadId,at,venue=null,
+}){
+  if(!situatedLifeStore?.recordLifeRelation
+    ||!situatedLifeStore?.lifeRelationHistory){
+    throw new TypeError("World acquaintance requires situated life relation authority");
+  }
+  const participants=[initiatorThreadId,counterpartyThreadId];
+  if(!participants.every(threadId=>encounterStory.threadPresence.some(
+    item=>item.threadId===threadId))){
+    throw new TypeError("acquaintance requires both participants in admitted Story");
+  }
+  for(const [threadId,otherId] of [
+    [initiatorThreadId,counterpartyThreadId],
+    [counterpartyThreadId,initiatorThreadId],
+  ]){
+    const relationId=lifeRelationId({
+      threadId,relatedThreadId:otherId,relationKind:"social_contact",
+    });
+    const history=situatedLifeStore.lifeRelationHistory(
+      threadId,relationId,{required:false},
+    );
+    const previous=history.at(-1)??null;
+    if(previous?.sourceReferences.includes(encounterStory.encounterId))continue;
+    const related=worldReader.getThread(otherId,{required:false});
+    if(related===null)throw new TypeError("acquaintance counterpart was not found");
+    const revision=(previous?.revision??0)+1;
+    const sourceReferences=[...new Set([
+      ...(previous?.sourceReferences??[]),
+      encounterStory.encounterId,
+      ...(interaction?.interactionId?[interaction.interactionId]:[]),
+    ])];
+    const factualRoleRefs=[...new Set([
+      ...(previous?.factualRoleRefs??[]),encounterStory.encounterId,
+      ...(venue===null?[]:[venue.ref]),
+    ])];
+    situatedLifeStore.recordLifeRelation({
+      relationId,revision,
+      ...(previous===null?{}:{supersedesRevision:previous.revision}),
+      threadId,
+      relatedParty:{partyId:otherId,kind:"thread",
+        displayName:related.identity?.name??otherId},
+      relationKind:"social_contact",geneticContributionRole:"none",
+      factualRoleRefs,
+      relationshipFacts:[
+        "Met in conversation at "+(venue?.displayName??"a shared setting")+
+          " on "+at.slice(0,10)+".",
+        "Recorded conversations: "+revision+".",
+        "Last met: "+at+".",
+      ],
+      sourceReferences,
+      validFrom:previous?.validFrom??at,validTo:null,
+      visibility:"private",status:"current",
+      provenance:"world_recorded",recordedAt:at,
+    });
+  }
 }
 
 export function createSocialMeetingService({
@@ -335,6 +397,7 @@ export function createSocialMeetingService({
     initiation,
     request,
     stance,
+    interaction,
   }) {
     const latestInitiator=contextFor({
       threadId:initiator.thread.threadId,
@@ -405,6 +468,18 @@ export function createSocialMeetingService({
         sourceReferences:threadPresence.map((presence) => presence.situationId),
         depictedThreadRefs,
       }),
+    });
+
+    const place=latestInitiator.situation.location?.kind==="place"
+      ?livedNowStore.getWorldPlace?.(
+        initiator.thread.threadId,latestInitiator.situation.location.placeRef,
+        {required:false},
+      )??null:null;
+    recordWorldAcquaintance({
+      situatedLifeStore,worldReader,encounterStory,interaction,
+      initiatorThreadId:initiator.thread.threadId,
+      counterpartyThreadId:counterparty.thread.threadId,at,
+      venue:place?.physicalVenue??null,
     });
 
     const aftermath = {};
@@ -669,7 +744,7 @@ export function createSocialMeetingService({
           modelAdapter,
         });
 
-        experienceStore.recordSocialInteraction({
+        const interaction=experienceStore.recordSocialInteraction({
           occurredAt:input.at,
           initiatorThreadId:initiator.thread.threadId,
           recipientThreadId:counterparty.thread.threadId,
@@ -701,6 +776,7 @@ export function createSocialMeetingService({
           initiation,
           request,
           stance,
+          interaction,
         }));
       }
 
@@ -719,6 +795,7 @@ export function createSocialMeetingService({
             initiation:pending.initiation,
             request:pending.request,
             stance:pending.stance,
+            interaction:pending.interaction,
           }),
         );
       }
