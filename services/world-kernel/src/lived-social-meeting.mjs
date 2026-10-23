@@ -111,6 +111,8 @@ export function createSocialMeetingService({
   requireMethod("experienceStore", experienceStore, "listEncounterStories");
   requireMethod("experienceStore", experienceStore, "recordSocialInteraction");
   requireMethod("experienceStore", experienceStore, "enqueueObservedSocialOpportunity");
+  requireMethod("experienceStore", experienceStore, "socialChoicesThisVisit");
+  requireMethod("experienceStore", experienceStore, "reconsiderationCountForPair");
   requireMethod("experienceStore", experienceStore, "listSocialInteractions");
   requireMethod("experienceStore", experienceStore, "getThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
@@ -503,9 +505,14 @@ export function createSocialMeetingService({
     async meet(input) {
       assertPlainObject("social meeting input", input);
       const counterpartyThreadId=input.counterpartyThreadId??null;
-      assertExactKeys("social meeting input", input, counterpartyThreadId===null
-        ?["initiatorThreadId","at"]
-        :["initiatorThreadId","at","counterpartyThreadId"]);
+      const visitSince=input.reconsiderationVisitSince??null;
+      assertExactKeys("social meeting input", input,
+        visitSince!==null
+          ?["initiatorThreadId","at","counterpartyThreadId","reconsiderationVisitSince"]
+          :counterpartyThreadId===null
+            ?["initiatorThreadId","at"]
+            :["initiatorThreadId","at","counterpartyThreadId"]);
+      if(visitSince!==null)assertIsoTimestamp("social revisit start",visitSince);
       assertId("social meeting initiatorThreadId", input.initiatorThreadId);
       assertIsoTimestamp("social meeting at", input.at);
       if(counterpartyThreadId!==null){
@@ -589,6 +596,12 @@ export function createSocialMeetingService({
           recentPersonalExperiences:recentPersonalExperiences(
             initiator.thread.threadId,situatedPercept,experienceStore,
           ),
+          priorSocialChoicesThisVisit:visitSince===null?[]
+            :experienceStore.socialChoicesThisVisit({
+              threadId:initiator.thread.threadId,
+              counterpartyThreadId:counterparty.thread.threadId,
+              visitSince,
+            }),
           plan:livedNowStore.latestPlan(initiator.thread.threadId, "personal", { at:input.at }),
           situatedPercept,
           interoception:regulationFrame===null?null:projectInteroception(regulationFrame),

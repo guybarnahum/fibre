@@ -48,7 +48,10 @@ of choosing and doing it, not a permanent Memory or knowledge of another's feeli
 Place affordances are grounded possibilities, not rules or obligations.
 Body interoception may shape interest but does not assert loneliness, consent, or a duty to engage.
 RecentPersonalExperiences are this person's own admitted interpretations; they may influence
-but do not command this choice. Do not invent private motives, relationships or company.`,
+but do not command this choice. PriorSocialChoicesThisVisit records this person's own
+earlier voluntary acts or silence toward the same person in this shared visit.
+They are lived history, not an obligation to repeat or reverse any choice.
+Do not invent private motives, relationships or company.`,
   resultSchema:{
     type:"object",additionalProperties:false,
     required:["act","expression","experienceText","reason"],
@@ -87,6 +90,7 @@ export async function formSocialEncounterRequest({
   situatedPercept,
   interoception=null,
   recentPersonalExperiences=[],
+  priorSocialChoicesThisVisit=[],
   sourceStores,
   modelAdapter,
 }) {
@@ -109,6 +113,7 @@ export async function formSocialEncounterRequest({
       externalContext:{
         situatedPercept:structuredClone(situatedPercept),
         recentPersonalExperiences:structuredClone(recentPersonalExperiences),
+        priorSocialChoicesThisVisit:structuredClone(priorSocialChoicesThisVisit),
         ...(interoception===null?{}:{interoception:structuredClone(interoception)}),
         remainingFlightPlan:plan === null ? null : structuredClone(plan),
       },
@@ -144,6 +149,8 @@ export async function formSocialEncounterRequest({
       observedThreadId:situatedPercept.observed[0]?.threadId??null,
       recentPersonalExperienceRefs:Object.freeze(recentPersonalExperiences
         .map(experience=>experience.experienceId).filter(Boolean)),
+      priorSocialChoicesThisVisit:Object.freeze(
+        structuredClone(priorSocialChoicesThisVisit)),
     }),
     cognition:Object.freeze({
       provider:cognition.provenance.provider,
