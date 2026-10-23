@@ -372,6 +372,33 @@ test("an admitted conversation founds and revises symmetric factual acquaintance
       });
       return encounterStory;
     };
+    const declined=f.experience.recordSocialInteraction({
+      occurredAt:at,initiatorThreadId:reader,recipientThreadId:neighbor,
+      initiatorSituationId:a.situationId,recipientSituationId:b.situationId,
+      requestText:"Can we talk?",responseDecision:"decline",
+      responseExpression:"No.",suggestedAt:null,
+    });
+    const invalidStory={storyVersion:"encounter-story-v0.1",beats:[
+      {kind:"utterance",actorThreadId:reader,text:"Can we talk?"},
+    ]};
+    const admitted=f.experience.recordEncounterStory({
+      occurredAt:at,threadPresence:[
+        {threadId:reader,situationId:a.situationId},
+        {threadId:neighbor,situationId:b.situationId},
+      ],story:invalidStory,visualization:createEncounterVisualization({
+        occurredAt:at,story:invalidStory,scene:"At the library.",
+        sourceReferences:[a.situationId,b.situationId],depictedThreadRefs:[],
+      }),
+    });
+    assert.throws(()=>recordWorldAcquaintance({
+      situatedLifeStore:situated,worldReader:f.world,
+      encounterStory:admitted,interaction:declined,
+      initiatorThreadId:reader,counterpartyThreadId:neighbor,
+      at,venue:f.place.physicalVenue,
+    }),/accepted and spoken/,
+    "a declined request was allowed to found an acquaintance");
+    assert.equal(situated.listCurrentLifeRelations(reader).length,0,
+      "declined contact produced a relation despite the World check");
     const first=record(at,a,b);
     for(const [threadId,other] of [[reader,neighbor],[neighbor,reader]]){
       const relations=situated.listCurrentLifeRelations(threadId)
