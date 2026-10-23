@@ -217,14 +217,15 @@ export function planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,p
   if(worldPlace?.authority==="world-place-v1"&&worldPlace.locality&&worldPlace.countryCode){
     return {locality:worldPlace.locality,countryCode:worldPlace.countryCode};
   }
+  const authored=authoredGenesisPlaceLocality(episode);
+  if(authored!==null)return {locality:authored.city,countryCode:authored.countryCode};
   if(!(isModernGenesisPlace(episode)||isModernGenesisWorldPlace(worldPlace))
     ||typeof livedNowStore.listLocatedGenesisContexts!=="function")return null;
   const context=genesisContextLocations(
     episode?[episode]:[],livedNowStore.listLocatedGenesisContexts([threadId]),
     {privatePerspective:true,worldPlaces:worldPlace?[worldPlace]:[],threadId},
-  ).find(item=>item.placeRef===placeRef)?.geography
-    ??authoredGenesisPlaceLocality(episode);
-  return context==null?null
+  ).find(item=>item.placeRef===placeRef)?.geography??null;
+  return context===null?null
     :{locality:context.city,countryCode:context.countryCode};
 }
 
