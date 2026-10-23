@@ -150,7 +150,7 @@ function groundedReconsiderationFixture({onInvoke=null}={}){
         purpose:"Quietly read and notice what changes around me.",
         companionRefs:[],travelFromPrevious:null,
       }],
-      sourceReferences:[place.ref],
+      sourceReferences:[world.listEvents(threadId)[0].eventId,place.ref],
       cognition:{provider:"fixture",modelId:"fixture-plan",providerRequestId:null},
     });
   }
