@@ -424,6 +424,7 @@ export function createWorldSocialOpportunity({
           if(opportunity.trigger==="need_band"&&worldReader?.getThread){
             const current=livedNowStore.getCurrentSituation(opportunity.threadId);
             if(current!==null&&opportunity.visitSince!==null
+              &&Date.parse(current.establishedAt)<=Date.parse(opportunity.dueAt)
               &&current.location?.kind==="place"){
               const venue=livedNowStore.getWorldPlace(
                 current.threadId,current.location.placeRef,{required:false},
@@ -431,13 +432,14 @@ export function createWorldSocialOpportunity({
               const since=venue===null?null
                 :socialVenueVisitSince(livedNowStore,current,venue);
               const horizon=nextLivedBoundary(livedNowStore,current);
-              if(since===opportunity.visitSince&&horizon!==null)
+              if(since===opportunity.visitSince&&horizon!==null){
                 enqueueNextSocialNeedBand({
-                livedNowStore,experienceStore,
-                thread:worldReader.getThread(opportunity.threadId,{required:false}),
-                situation:current,nextBoundaryAt:horizon,
-                visitSince:opportunity.visitSince,at:opportunity.dueAt,
-              });
+                  livedNowStore,experienceStore,
+                  thread:worldReader.getThread(opportunity.threadId,{required:false}),
+                  situation:current,nextBoundaryAt:horizon,
+                  visitSince:opportunity.visitSince,at:opportunity.dueAt,
+                });
+              }
             }
           }
           // started_at is the claimed decision instant; completed_at is the

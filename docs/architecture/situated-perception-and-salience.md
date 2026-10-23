@@ -354,10 +354,21 @@ without prescribing a changed answer, but only for two real changes:
   grounds the Body's `social_contact` drive, Fibre analytically predicts
   when its existing pressure would cross 0.4 or 0.6, using the inherited
   social sensitivity and the current observed-contact evidence. The
-  prediction must precede the Thread's next lived boundary. At the
-  instant due, it is re-evaluated through the ordinary regulator; an
-  intervening accepted contact may make the prediction obsolete.
+  prediction must precede the Thread's next lived boundary. One band is
+  recorded **once per continuous venue visit**, keyed by Thread, visit
+  start and threshold rather than by the situation at the moment of
+  prediction. Repeated activity changes cannot re-arm it, even after
+  completion. The next higher band is considered after the earlier
+  obligation fires. At the instant due, the existing regulator checks
+  the signal again; intervening accepted contact may invalidate it.
   Missing evidence never becomes clock-derived loneliness or a wake.
+
+A genuine arrival also offers this prediction to at most two already
+present, eligible witnesses. A solitary occupant gains no social timer,
+but when another person really arrives, previously grounded Body
+pressure can earn a future band crossing without forcing the occupant
+to refresh their own life. Departure before the crossing cancels the
+social possibility; no lost event is retrospectively replayed.
 
 Both events reuse the durable social-opportunity claim and existing
 freshness, company-continuity and life-debt rules. During consideration,
@@ -367,6 +378,8 @@ neither that preference nor a previous social decision grants a right
 to contact. Interior Cognition sees up to three of the Thread's *own*
 previous choices toward the same counterpart in this shared visit
 (`priorSocialChoicesThisVisit`), including silence and its explanation.
+This is also available to a person who independently notices and
+considers replying to a witnessed arrival or small social act.
 This is **context-only**, not automatic reversal or persistence of a
 stance. The normal salience gate and five-act choice remain decisive.
 

@@ -325,9 +325,10 @@ test("a noticed greeting recalls the recipient's earlier silence",async()=>{
     });
     const story=f.experience.recordEncounterStory({
       occurredAt:at,
-      threadPresence:[initial,current].slice(1).map(situation=>({
-        threadId:reader,situationId:situation.situationId,
-      })).concat([{threadId:neighbor,situationId:neighborAt.situationId}]),
+      threadPresence:[
+        {threadId:reader,situationId:current.situationId},
+        {threadId:neighbor,situationId:neighborAt.situationId},
+      ],
       story:{storyVersion:"encounter-story-v0.1",beats:[{
         actorThreadId:neighbor,kind:"utterance",text:'A person says: "Hello."',
       }]},
