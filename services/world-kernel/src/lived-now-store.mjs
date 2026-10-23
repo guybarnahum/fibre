@@ -486,7 +486,7 @@ export class LivedNowStore {
       // Historical Flight Plans remain immutable and readable.
       if(plan.kind==="personal"&&plan.materialization===undefined&&available<=0){
         throw invalidFlightPlanTravel(
-          `Flight Plan stops ${i} and ${i+1} switch places without transit: `
+          `Flight Plan place change requires elapsed transit time: stops ${i} and ${i+1}; `
           +`stop ${i} ends at ${from.endAt}, stop ${i+1} starts at ${to.startAt}. `
           +"Stay at one place for activities within it, or allow journey time.",
           LivedNowConflictError,
