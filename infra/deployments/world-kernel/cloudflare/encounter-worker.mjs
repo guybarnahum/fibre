@@ -16,6 +16,7 @@ import { createSocialMeetingService } from "#services/world-kernel/src/lived-soc
 import {
   createWorldSocialOpportunity,
   enqueueEnactedSocialReconsideration,
+  enqueueArrivalWitnessSocialNeedBands,
 } from "#services/world-kernel/src/world-social-opportunity.mjs";
 import { createSocialMeetingWriteApi } from "#services/world-kernel/src/lived-social-meeting-write-api.mjs";
 import { createLivedCommonsService } from "#services/world-kernel/src/lived-commons.mjs";
@@ -842,6 +843,13 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       });
       if(perception.inserted||social.inserted)await this.runtimeForRequest()
         .reconciliationRuntime.requestWakeAt(Date.parse(situation.establishedAt));
+      const witnessWakes=enqueueArrivalWitnessSocialNeedBands({
+        witnesses,at:situation.establishedAt,venueRef:venue,
+        livedNowStore:lived,experienceStore:store,worldReader:runtime.worldStore,
+      });
+      for(const dueAt of witnessWakes){
+        await runtime.reconciliationRuntime.requestWakeAt(Date.parse(dueAt));
+      }
     }
   }
 

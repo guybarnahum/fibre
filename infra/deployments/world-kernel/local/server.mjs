@@ -41,6 +41,7 @@ import { createSocialMeetingService } from "#services/world-kernel/src/lived-soc
 import {
   createWorldSocialOpportunity,
   enqueueEnactedSocialReconsideration,
+  enqueueArrivalWitnessSocialNeedBands,
 } from "#services/world-kernel/src/world-social-opportunity.mjs";
 import {
   combineWorldEnvironmentProcesses,
@@ -374,6 +375,13 @@ export async function startWorldKernelFromEnvironment(
         });
         if(perception.inserted||social.inserted)await reconciliationRuntime.requestWakeAt(
           Date.parse(situation.establishedAt));
+        const witnessWakes=enqueueArrivalWitnessSocialNeedBands({
+          witnesses,at:situation.establishedAt,venueRef:venue,
+          livedNowStore,experienceStore:livedExperienceStore,worldReader:store,
+        });
+        for(const dueAt of witnessWakes){
+          await reconciliationRuntime.requestWakeAt(Date.parse(dueAt));
+        }
       }
       const place=livedNowStore.getWorldPlace(
         situation.threadId,situation.location.placeRef,{required:false},
