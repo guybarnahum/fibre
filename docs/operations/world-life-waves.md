@@ -51,6 +51,22 @@ one birth at a time. Confirm publication and independently enacted current
 city before counting the new citizen. Do not alter existing Threads'
 birthplaces to make population counts look better.
 
+**CLI birth visibility:** `genesis:birth` emits named progress and ten-second
+elapsed-time heartbeats, including during pre-Genesis World/family authoring.
+After selecting the verified birthplace, the CLI registers its existing
+request ID with Birth Center before local World authoring, so Admin's
+Birth Center sees the preparation. It uses the same `modern_birth_requests`
+projection as Admin-initiated births, but **does not** submit a second birth.
+A failed pre-development model call remains visible as a failed *preparation*,
+not stillborn. Once Birth Center reserves actual Genesis development, that
+authoritative development record replaces the early preparation row.
+Genesis World authoring allows 180 seconds per OpenAI attempt by default
+(`FIBRE_GENESIS_WORLD_TIMEOUT_MS` overrides it); this does not guarantee
+provider success. A retry must reuse the same `FIBRE_GENESIS_REQUEST_ID`
+to retain the recorded request time and durable Genesis work.
+The Birth Center staging Worker must be deployed with this CLI handshake
+before trying it.
+
 ## Automatic continuity recovery
 
 World uses admitted Flight Plan deadlines as its normal event-driven clock.
