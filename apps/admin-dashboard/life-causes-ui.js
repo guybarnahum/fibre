@@ -97,7 +97,8 @@ export function renderLifeCausesPage(){
   const socialLines=(choice,role)=>choice===null
     ?[role+" was not evaluated at this decision boundary."]
     :[
-      role+" chose: "+choice.decision,
+      role+" chose: "+(choice.act??choice.decision)
+        +(choice.expression?" · "+choice.expression:""),
       choice.reportedReason?"Thread-reported reason: "+choice.reportedReason:null,
       choice.selectedEvidenceRefs?.length
         ?"Selected personal evidence: "+choice.selectedEvidenceRefs.join(", "):null,

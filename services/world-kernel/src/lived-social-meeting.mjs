@@ -4,7 +4,7 @@ import {
   meetingPresenceCompatible,
 } from "./lived-meeting-cognition.mjs";
 import { runThreadLiveSocialEncounter } from "./lived-social-live-encounter.mjs";
-import { appraiseEncounterAttention } from "./lived-encounter-attention.mjs";
+import { appraiseEncounterAttention,admitEncounterAttention } from "./lived-encounter-attention.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
@@ -18,6 +18,7 @@ import { projectSituatedPercept } from "./situated-percept.mjs";
 import { evaluateSalience } from "./salience-gate.mjs";
 import { livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
 import { projectInteroception } from "./interoceptive-cognition.mjs";
+import { observablePerson } from "./world-observable-person.mjs";
 
 const MEMORY_LIMIT = 6;
 
@@ -219,6 +220,117 @@ export function createSocialMeetingService({
     }
 
     return Object.freeze(discovered);
+  }
+
+  // A shared visit starts when the second person entered this uninterrupted
+  // venue stay. Beyond the bounded situation history we cannot prove the
+  // beginning, so decline to create further reply opportunities.
+  function sharedVisitSince(left,right,venue,at){
+    const start=context=>{
+      let cursor=context.situation;
+      for(let i=0;i<16;i++){
+        const prior=livedNowStore.getPreviousSituation(
+          context.thread.threadId,cursor.establishedAt,
+        );
+        if(prior===null)return cursor.establishedAt;
+        if(prior.location?.kind!=="place"||prior.wakefulness==="asleep"
+          ||livedNowStore.getWorldPlace(context.thread.threadId,
+            prior.location.placeRef,{required:false})?.physicalVenue?.ref!==venue){
+          return cursor.establishedAt;
+        }
+        cursor=prior;
+      }
+      return null;
+    };
+    const a=start(left),b=start(right);
+    if(a===null||b===null)return null;
+    return new Date(Math.max(Date.parse(a),Date.parse(b))).toISOString();
+  }
+
+  async function enactSmallSocialAct({initiator,counterparty,at,salience,initiation}){
+    const currentLeft=contextFor({
+      threadId:initiator.thread.threadId,worldReader,livedNowStore,
+      semanticStateStore,memoryStore,
+    });
+    const currentRight=contextFor({
+      threadId:counterparty.thread.threadId,worldReader,livedNowStore,
+      semanticStateStore,memoryStore,
+    });
+    if((boundedVenueDiscovery&&(dueLife(initiator.thread.threadId,at)
+      ||dueLife(counterparty.thread.threadId,at)))
+      ||currentLeft.situation.situationId!==initiator.situation.situationId
+      ||currentRight.situation.situationId!==counterparty.situation.situationId
+      ||!compatible(currentLeft,currentRight,livedNowStore)){
+      return Object.freeze({
+        counterpartyThreadId:counterparty.thread.threadId,
+        outcome:"scene_changed",salience,initiation,
+        request:null,stance:null,encounterStory:null,aftermath:null,
+      });
+    }
+    const place=currentLeft.situation.location?.kind==="place"
+      ?livedNowStore.getWorldPlace(currentLeft.thread.threadId,
+        currentLeft.situation.location.placeRef,{required:false}):null;
+    const venue=place?.physicalVenue?.ref??null;
+    const gesture=initiation.act==="acknowledge";
+    const description=gesture?observablePerson({
+      threadId:currentLeft.thread.threadId,situation:currentLeft.situation,
+      name:currentLeft.thread.identity?.name??null,embodimentStore,
+    }).observableDescription:null;
+    const story={storyVersion:"encounter-story-v0.1",beats:[{
+      actorThreadId:currentLeft.thread.threadId,
+      kind:gesture?"action":"utterance",
+      text:gesture?description+" "+initiation.expression:initiation.expression,
+    }]};
+    const encounterStory=experienceStore.recordEncounterStory({
+      occurredAt:at,
+      threadPresence:[currentLeft,currentRight].map(person=>({
+        threadId:person.thread.threadId,situationId:person.situation.situationId,
+      })).sort((a,b)=>a.threadId.localeCompare(b.threadId)),
+      story,
+      visualization:createEncounterVisualization({
+        occurredAt:at,story,
+        scene:"At "+(place?.physicalVenue?.displayName??"the shared place")+".",
+        sourceReferences:[
+          currentLeft.situation.situationId,currentRight.situation.situationId,
+          ...(venue===null?[]:[venue]),
+        ],
+        depictedThreadRefs:[],
+      }),
+    });
+    const own=experienceStore.recordThreadEncounterAttention({
+      threadId:currentLeft.thread.threadId,
+      encounterRef:encounterStory.encounterId,
+      situationId:currentLeft.situation.situationId,
+      occurredAt:at,outcome:"noticed",
+      experienceText:initiation.experienceText,
+    });
+    await queueThreadExperienceConsolidation({
+      experienceStore,experienceRecord:own.experience,queuedAt:at,
+      onQueued:onExperienceQueued,
+    });
+    const attention=await admitEncounterAttention({
+      thread:currentRight.thread,situation:currentRight.situation,encounterStory,
+      semanticStates:currentRight.semanticStates,
+      memories:currentRight.memories,
+      experienceStore,modelAdapter,onExperienceQueued,
+    });
+    if(attention.outcome==="noticed"&&venue!==null){
+      const since=sharedVisitSince(currentLeft,currentRight,venue,at);
+      if(since!==null){
+        experienceStore.enqueueObservedSocialOpportunity?.({
+          encounterRef:encounterStory.encounterId,
+          threadId:currentRight.thread.threadId,
+          situationId:currentRight.situation.situationId,
+          counterpartyThreadId:currentLeft.thread.threadId,
+          venueRef:venue,dueAt:at,sourceKind:"social_act",visitSince:since,
+        });
+      }
+    }
+    return Object.freeze({
+      counterpartyThreadId:counterparty.thread.threadId,
+      outcome:"acted",salience,initiation,
+      request:null,stance:null,encounterStory,aftermath:null,
+    });
   }
 
   async function formAcceptedEncounter({
@@ -484,7 +596,7 @@ export function createSocialMeetingService({
           modelAdapter,
         });
 
-        if (initiation.decision !== "initiate") {
+        if (initiation.act === "none") {
           attemptByActor.set(counterparty.thread.threadId, Object.freeze({
             counterpartyThreadId:counterparty.thread.threadId,
             outcome:"not_initiated",
@@ -498,9 +610,17 @@ export function createSocialMeetingService({
           continue;
         }
 
+        if(initiation.act!=="invite_conversation"){
+          attemptByActor.set(counterparty.thread.threadId,
+            await enactSmallSocialAct({
+              initiator,counterparty,at:input.at,salience,initiation,
+            }));
+          continue;
+        }
+
         const request = Object.freeze({
           initiatorThreadId:initiator.thread.threadId,
-          text:initiation.requestText,
+          text:initiation.expression,
         });
         const inviteePercept = projectSituatedPercept({
           observerThreadId:counterparty.thread.threadId,

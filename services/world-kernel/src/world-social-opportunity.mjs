@@ -218,7 +218,8 @@ export function createWorldSocialOpportunity({
                     bodyAtGate:salience.bodyAtGate??null,
                   },
                   initiation:initiation==null?null:{
-                    decision:initiation.decision,reportedReason:initiation.reason,
+                    act:initiation.act,expression:initiation.expression,
+                    reportedReason:initiation.reason,
                     decisionContext:initiation.decisionContext??null,
                     selectedEvidenceRefs:[...(initiation.cognition?.selectedEvidenceRefs??[])],
                     evidenceRefs:[...(initiation.cognition?.evidenceRefs??[])],

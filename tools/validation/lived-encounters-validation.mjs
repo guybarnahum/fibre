@@ -512,19 +512,19 @@ async function findSocialProofs({
         outcome:attempt.outcome,
         salience:salienceOutcome,
         salienceAnchors:attempt?.salience?.anchors ?? [],
-        initiationDecision:attempt?.initiation?.decision ?? null,
+        initiationDecision:attempt?.initiation?.act ?? null,
         responseDecision:attempt?.stance?.decision ?? null,
         cognitionProfile:attempt?.initiation?.cognition?.implementationProfile?.id ?? null,
       });
 
       if (refusal === null && attempt.outcome === "not_initiated"
-        && attempt?.initiation?.decision === "not_initiate") {
+        && attempt?.initiation?.act === "none") {
         refusal = Object.freeze({
           initiatorThreadId:initiator.threadId,
           counterpartyThreadId:attempt.counterpartyThreadId,
-          decision:"not_initiate",
+          decision:"none",
         });
-        emit({ event:"lived-encounters-voluntary-refusal-proven", decision:"not_initiate" });
+        emit({ event:"lived-encounters-voluntary-refusal-proven", decision:"none" });
       }
       if (refusal === null && attempt.outcome === "not_met"
         && ["decline","defer"].includes(attempt?.stance?.decision)) {

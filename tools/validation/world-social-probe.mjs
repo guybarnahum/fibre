@@ -479,7 +479,7 @@ export async function runWorldSocialProbe({
     .filter((group)=>group.threads.length>=2).slice(0,12);
   opportunities.sort((a,b)=>b.dueAt.localeCompare(a.dueAt));
   const choices=opportunities.filter((entry)=>
-    ["background","not_initiated","not_met","met","scene_changed"].includes(entry.outcome));
+    ["background","not_initiated","acted","not_met","met","scene_changed"].includes(entry.outcome));
   const proven=opportunities.find((entry)=>entry.story?.distinctExperienceConfirmed)??null;
   const runtimeMatches=runtimeSourceMatches(deployedSha,head);
   const worldBlocker=observatories.size===0?"observatory_unavailable"
