@@ -5,6 +5,7 @@ import {
   sha256,
 } from "./persistence-common.mjs";
 import { normalizeGenesisWorldSpec } from "./genesis-domain.mjs";
+import {genesisPlaceLabel} from "./genesis-place-presentation.mjs";
 import { normalizeGenesisHistoricalEnvelopePlan } from "./genesis-historical-envelope-authority.mjs";
 
 export const LIVE_WORLD_PLACE_POLICY = Object.freeze({
@@ -141,6 +142,23 @@ function recordFromRow(row) {
     throw new IntegrityError(`live World place ${row.place_ref} failed canonical/digest verification`);
   }
   return Object.freeze(record);
+}
+
+function presentedLivePlace(record,physicalVenue=null){
+  // Immutable stored descriptions remain authoritative even after relabeling.
+  return Object.freeze({
+    ...record,
+    displayName:physicalVenue?.displayName
+      ??genesisPlaceLabel(record.sourcePlaceId)??record.displayName,
+    description:record.displayName,
+    ...(physicalVenue===null?{}:{physicalVenue}),
+  });
+}
+
+export function genesisWorldPlacesForThread(database,threadId){
+  const worldRef=worldRefForThread(database,threadId);
+  return worldRef===null?Object.freeze([])
+    :Object.freeze(worldSpecFor(database,worldRef)?.places??[]);
 }
 
 export function ensureLiveWorldPlaces(database, threadId) {
@@ -293,7 +311,7 @@ export function listLiveWorldPlaces(database, threadId) {
   return Object.freeze(rows.map((row)=>{
     const record=recordFromRow(row);
     const physicalVenue=venues.get(record.ref);
-    return physicalVenue===undefined?record:Object.freeze({...record,physicalVenue});
+    return presentedLivePlace(record,physicalVenue??null);
   }));
 }
 
@@ -310,7 +328,7 @@ export function resolveLiveWorldPlace(database, threadId, reference) {
   if(row===undefined)return null;
   const record=recordFromRow(row);
   const physicalVenue=physicalVenueFor(database,threadId,reference);
-  return physicalVenue===null?record:Object.freeze({...record,physicalVenue});
+  return presentedLivePlace(record,physicalVenue);
 }
 
 export function liveWorldContext(database, threadId) {
