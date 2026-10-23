@@ -1735,6 +1735,29 @@ test("World rejects a rushed cross-city arrival and autonomous life completes a 
     }finally{lived.close();}
   }));
 
+test("Yonas discovers his authored Addis locality without a separate birth-city fallback",()=>{
+  const threadId="thr_yonas",episode={
+    threadId,episodeId:"plce_yonas_home",revision:1,
+    episodeKind:"formative_presence",provenance:"genesis_created",
+    place:{placeId:"place_ethiopia_addis-ababa_5aa977ea14eb_home",
+      displayName:"A personal home",countryCode:null,
+      locality:null,region:null,precision:"unspecified"},
+  };
+  const livedNowStore={
+    getPrivatePlace:()=>null,getPublicPlace:()=>null,
+    listLocatedGenesisContexts:()=>{throw Error("unnecessary sibling lookup");},
+  };
+  const here=planningLocalityForPlace({
+    livedNowStore,placeEpisodes:[episode],threadId,
+    placeRef:placeEpisodeRevisionRef(episode),
+  });
+  assert.deepEqual(here,{locality:"Addis Ababa",countryCode:"ET"},
+    "a Genesis-authored home lost the city needed for ordinary City Guide planning");
+  assert.equal(planningLocalityForPlace({
+    livedNowStore,placeEpisodes:[episode],threadId,placeRef:"per:unrelated:1",
+  }),null,"the authored locality leaked into an unrelated present");
+});
+
 test("a Thread can consider local public places from a hidden but attested Genesis sibling",()=>{
   const threadId="thr_local_choice";
   const place=(kind)=>({
