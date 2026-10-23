@@ -304,7 +304,7 @@ test("Cloudflare Birth Center keeps operator progress separate from provisional 
       { headers:{ "x-fibre-private-token":PRIVATE_TOKEN } },
     ));
     assert.equal(pending.status, 200);
-    assert.deepEqual(await pending.json(), { ok:true, births:[] });
+    assert.deepEqual(await pending.json(), { ok:true, births:[], recentBirths:[] });
 
     assert.equal(
       await runtime.publicationApi.fetch(new Request(
