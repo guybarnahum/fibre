@@ -73,8 +73,9 @@ function memoryAgeLabel(memory, birthDate) {
   return remainder === 0 ? `Age ${years}` : `Age ${years}y ${remainder}m`;
 }
 
-function readableGenesisPlace(name){
-  const match=/^place_modern_[0-9a-f]{12}_(home|school|transit|learning|commerce)$/u.exec(name??"");
+function readableGenesisPlace(name,sourcePlaceId=null){
+  const id=sourcePlaceId??name;
+  const match=/^place_(?:modern_[0-9a-f]{12}|[a-z0-9_-]+_[0-9a-f]{12})_(home|school|transit|learning|commerce)$/u.exec(id??"");
   return match?{
     home:"Home",school:"School",transit:"Transit setting",
     learning:"Learning place",commerce:"Shops / commerce",
@@ -88,7 +89,12 @@ export function threadSituationPlace(situation,livedNow=null){
     const shared=(livedNow?.worldPlaces??[]).find((place)=>place.ref===ref);
     const episode=(livedNow?.placeEpisodes??[]).find((place)=>
       `per:${place.episodeId}:${place.revision}`===ref);
-    return readableGenesisPlace(shared?.displayName??episode?.place?.displayName??ref);
+    if(shared?.physicalVenue?.displayName)return shared.physicalVenue.displayName;
+    return readableGenesisPlace(
+      shared?.displayName??episode?.place?.displayName??ref,
+      shared?.sourcePlaceId??(episode?.provenance==="genesis_created"
+        ?episode.place?.placeId:null),
+    );
   };
   if(location.kind==="place")return {
     kind:"place",placeRef:location.placeRef,
@@ -470,8 +476,15 @@ export function observatoryCurrentPlace(livedNow){
   }
   const city=threadLocationText(located);
   if(atPrivatePlace||operatorPlace){
-    const description=readableGenesisPlace(
-      (atPrivatePlace?privatePlace:operatorPlace)?.specificPlace?.trim(),
+    const currentRef=situation?.location?.kind==="place"
+      ?situation.location.placeRef:null;
+    const worldPlace=(livedNow?.worldPlaces??[]).find(place=>place.ref===currentRef);
+    const episode=(livedNow?.placeEpisodes??[]).find(place=>
+      `per:${place.episodeId}:${place.revision}`===currentRef);
+    const original=(atPrivatePlace?privatePlace:operatorPlace)?.specificPlace?.trim();
+    const description=atPrivatePlace?original:readableGenesisPlace(
+      original,worldPlace?.sourcePlaceId??(episode?.provenance==="genesis_created"
+        ?episode.place?.placeId:null),
     );
     return description&&description!==city?description+" · "+city:city;
   }
