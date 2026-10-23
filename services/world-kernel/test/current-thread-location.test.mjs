@@ -217,6 +217,44 @@ test("an attested modern Genesis transit anchors its distinct home in the same c
   }],locatedContexts),[],"a later lived place was treated as a Genesis sibling");
 });
 
+test("current Genesis city contexts inherit only a same-world attested sibling location",()=>{
+  const threadId="thr_yonas",digest="5aa977ea14eb";
+  const episode=(citySlug,kind)=>({
+    episodeId:"pep_"+kind,revision:1,threadId,
+    episodeKind:"formative_presence",provenance:"genesis_created",
+    place:{placeId:`place_${citySlug}_${digest}_${kind}`,
+      displayName:"Ordinary "+kind+" setting",countryCode:null,
+      locality:null,region:null,precision:"unspecified"},
+    startAt:"2026-01-01T00:00:00.000Z",endAt:null,
+    sourceReferences:["evt_birth"],visibility:"private",
+    recordedAt:"2026-10-23T19:00:00.000Z",
+  });
+  const citySlug="ethiopia_addis-ababa";
+  const transit=episode(citySlug,"transit"),home=episode(citySlug,"home");
+  const source=[{placeEpisode:transit,privatePlace:{
+    threadId,placeRef:"per:pep_transit:1",locality:"Addis Ababa",
+    country:"Ethiopia",countryCode:"ET",publicGranularity:"hidden",
+  }}];
+  const publicHints=genesisContextLocations([home],source);
+  assert.deepEqual(publicHints,[],
+    "private locality escaped through a newly generated Genesis place ID");
+  const owned=genesisContextLocations([home],source,{privatePerspective:true});
+  const currentSituation={threadId,establishedAt:"2026-10-23T19:00:00.000Z",
+    location:{kind:"place",placeRef:"per:pep_home:1"}};
+  const current=projectOperatorCurrentPlace({
+    currentSituation,placeEpisodes:[home],privateContextLocations:owned,
+  });
+  assert.equal(current?.locality,"Addis Ababa",
+    "current Genesis place format lost an attested city");
+  assert.equal(current?.countryCode,"ET");
+  assert.equal(current?.placeRef,"per:pep_home:1");
+  assert.equal(current?.streetAddress,null,
+    "inferred current city revealed a private address");
+  assert.deepEqual(genesisContextLocations(
+    [episode("united-kingdom_london","home")],source,{privatePerspective:true}),
+    [],"an unrelated authored World inherited Addis Ababa");
+});
+
 test("conflicting source attestations do not manufacture a current city",()=>{
   const mk=(episodeId,kind)=>({
     episodeId,revision:1,threadId:"thr_conflict",
