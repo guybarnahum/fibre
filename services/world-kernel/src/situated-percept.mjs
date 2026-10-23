@@ -4,6 +4,7 @@ import {
 } from "./persistence-common.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import { observablePerson } from "./world-observable-person.mjs";
+import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
 
 const MAX_RECENT_EVENTS = 8;
 const MAX_ENCOUNTER_BEATS = 4;
@@ -40,6 +41,35 @@ function currentPlace(threadId, situation, situatedLifeStore, livedNowStore) {
     authority:"shared_world",
     affordances:Object.freeze([...(worldPlace.affordances??[])]),
   });
+}
+
+// Recognition is history from before the current encounter, not immediate
+// attention masquerading as acquaintance. A continuous shared visit may last
+// longer than the six-hour immediate-Experience window.
+function familiarityCutoff(situation,counterpartSituation,at,livedNowStore){
+  const recentCutoff=Date.parse(at)-RECENT_EXPERIENCE_MS;
+  if(situation.location?.kind!=="place"
+    ||counterpartSituation.location?.kind!=="place"
+    ||typeof livedNowStore?.getWorldPlace!=="function"
+    ||typeof livedNowStore?.getPreviousSituation!=="function"){
+    return new Date(recentCutoff).toISOString();
+  }
+  const venue=livedNowStore.getWorldPlace(
+    situation.threadId,situation.location.placeRef,{required:false},
+  )?.physicalVenue?.ref??null;
+  const otherVenue=livedNowStore.getWorldPlace(
+    counterpartSituation.threadId,counterpartSituation.location.placeRef,
+    {required:false},
+  )?.physicalVenue?.ref??null;
+  if(venue===null||venue!==otherVenue){
+    return new Date(recentCutoff).toISOString();
+  }
+  const leftSince=socialVenueVisitSince(livedNowStore,situation,venue);
+  const rightSince=socialVenueVisitSince(livedNowStore,counterpartSituation,venue);
+  // Unknown visit continuity must never manufacture older familiarity.
+  const visitCutoff=leftSince===null||rightSince===null
+    ?recentCutoff:Math.max(Date.parse(leftSince),Date.parse(rightSince));
+  return new Date(Math.min(recentCutoff,visitCutoff)).toISOString();
 }
 
 function livedOpportunities(situation, observed) {
@@ -156,7 +186,10 @@ export function projectSituatedPercept({
       throw new TypeError("Situated Percept observed situation belongs to another Thread");
     }
     const noticed=experienceStore.listNoticedSharedHistory?.(
-      observerThreadId,candidate.threadId,{before:at,limit:12},
+      observerThreadId,candidate.threadId,{
+        before:familiarityCutoff(situation,candidate.situation,at,livedNowStore),
+        limit:12,
+      },
     )??[];
     const remembered=noticed.slice(0,2);
     const placeNames=[...new Set(remembered.map(item=>{

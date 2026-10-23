@@ -223,6 +223,30 @@ test("recognition belongs to the person who noticed a shared Story yesterday",()
       situationId:c.situationId,occurredAt:day1,
       outcome:"not_noticed",experienceText:null,
     });
+    const firstPercept=projectSituatedPercept({
+      observerThreadId:reader,situation:a,
+      at:"2026-10-22T08:00:05.000Z",
+      observedThreads:[{threadId:neighbor,name:"Unknown Reader",situation:b}],
+      situatedLifeStore:{listCurrentPlaceEpisodes:()=>[],
+        listCurrentLifeRelations:()=>[]},
+      livedNowStore:f.lived,experienceStore:f.experience,
+    });
+    assert.equal(firstPercept.observed[0].familiarity,null,
+      "first noticed arrival was mistaken for past acquaintance");
+    assert.ok(!evaluateSalience({
+      opportunity:firstPercept.opportunities[0],situatedPercept:firstPercept,
+    }).anchors.includes("recognized_person"),
+    "first encounter fabricated a recognized-person salience anchor");
+    const longSameVisit=projectSituatedPercept({
+      observerThreadId:reader,situation:a,
+      at:"2026-10-22T17:00:00.000Z",
+      observedThreads:[{threadId:neighbor,name:"Unknown Reader",situation:b}],
+      situatedLifeStore:{listCurrentPlaceEpisodes:()=>[],
+        listCurrentLifeRelations:()=>[]},
+      livedNowStore:f.lived,experienceStore:f.experience,
+    });
+    assert.equal(longSameVisit.observed[0].familiarity,null,
+      "a long continuous first visit became false prior familiarity");
     const a2=f.enact(reader,day2,"Reading.");
     const c2=f.enact(bystander,day2,"Reading.");
     const situatedLifeStore={listCurrentPlaceEpisodes:()=>[],
