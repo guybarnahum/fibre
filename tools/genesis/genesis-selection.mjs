@@ -304,6 +304,7 @@ async function defaultAuthorWorld({ selector, heritage, modelId, requestId, onPr
   });
   const basePrompt = [
     "Author bounded ordinary-life material for a Fibre Genesis World.",
+    "Keep the final JSON concise. Aim for roughly 6,000–8,000 output tokens when feasible, not as a quota: never pad to reach it and never omit required evidence to meet it. Use one or two concrete sentences per descriptive field, without repeating background across fields. Prefer four distinct, coherent family profiles where they suffice; add more only for materially different household origins. Supply exactly 24 distinct plausible names in each femaleGivenNames, maleGivenNames and familyNames list per profile; longer lists add no value. Preserve all required schema fields, familial plausibility, separate parental ancestry and valid language paths. The hard token budget is only a ceiling.",
     "The operator explicitly supplies place and may supply household heritage. Treat both as input, never as an inference about the operator.",
     "Keep two causal layers distinct: place defines the surrounding civic/physical world; heritage defines inherited household/community cultural context inside that place.",
     "Each family profile owns its personal language path. raisedLanguages is the language or languages actually used in that household or early upbringing; languages is the set the subject plausibly uses by the end of the Genesis chronology.",
