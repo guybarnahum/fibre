@@ -851,7 +851,16 @@ test("a blocked life carries its failed journey into an independently renewed pl
       assert.equal(blocked.failedAttempts,4,"test life did not enter delayed recovery");
       assert.equal(blocked.blockedReason,rejected,"World lost the failure reason");
       const now="2026-10-21T05:10:00Z";
-      const present=await service.ensure({threadId:life.thread.threadId,at:now});
+      const scheduled=createLivedBoundaryProcess({
+        livedNowStore:lived,livedNow:service,now:()=>now,
+      });
+      const result=await scheduled.runOnce();
+      assert.equal(result.attempted,1,"World failed to retry the blocked life");
+      assert.equal(result.results[0]?.outcome,"advanced",
+        "World failed to resume the blocked life");
+      const present=lived.getCurrentSituation(life.thread.threadId);
+      assert.equal(present.establishedAt,now,
+        "World replayed an old wake instead of resuming life now");
       const recovery=lived.inspectLivedBoundary(life.thread.threadId);
       const plan=lived.latestPlan(life.thread.threadId,"personal",{at:now});
       assert.equal(planned,1,"blocked recovery made repeated planning calls");

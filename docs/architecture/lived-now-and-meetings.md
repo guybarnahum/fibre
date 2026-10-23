@@ -228,6 +228,12 @@ a new polling loop, extra model call, or rewriting the old Flight Plan.
 Legacy activity descriptions admitted as distinct Genesis learning-place
 identities remain distinct until their physical authority is separately
 corrected; this change never silently merges their place references.
+If a delayed scheduled recovery discovers that the last enacted situation is
+over four days old, it delivers the ordinary LivedNow authority at actual
+wall-clock time rather than replaying obsolete intermediate boundaries.
+The intervening history remains unknown; the Thread chooses a new
+forward-looking plan without retrospective fabrication. Prompt feedback is
+only supplied for a genuine blocked frontier tied to that same situation.
 This is bounded domain-level reconsideration, not general provider retry or
 proof of fleet-wide recoverability.
 

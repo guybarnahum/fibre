@@ -76,9 +76,14 @@ export function createLivedBoundaryProcess({
           const plannedAt=(item.failedAttempts??0)>0&&present!=null
             ?nextLivedBoundary(livedNowStore,present):null;
           const boundaryAt=plannedAt??item.dueAt;
-          const enactAt=present?.establishedAt
-            &&Date.parse(present.establishedAt)>Date.parse(boundaryAt)
-            ?present.establishedAt:boundaryAt;
+          // After a prolonged outage the elapsed life is unobserved.
+          // Resume at the real present instead of composing weeks of old plans.
+          const unobservedGap=present?.establishedAt
+            &&Date.parse(at)-Date.parse(present.establishedAt)>4*24*60*60_000;
+          const enactAt=unobservedGap?at
+            :present?.establishedAt
+              &&Date.parse(present.establishedAt)>Date.parse(boundaryAt)
+              ?present.establishedAt:boundaryAt;
           const current=await livedNow.ensure({
             threadId:item.threadId,
             at:enactAt,
