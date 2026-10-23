@@ -198,7 +198,7 @@ test("a predicted social-need band is not a poll and can be invalidated by conta
     const start="2026-10-23T05:00:00.000Z";
     f.enact(neighbor,start,"Reading.");
     f.enact(reader,start,"Reading.");
-    const middle=f.enact(reader,"2026-10-23T11:00:00.000Z","Reading.");
+    const middle=f.enact(reader,"2026-10-23T12:00:00.000Z","Reading.");
     const present=f.enact(reader,"2026-10-23T17:00:00.000Z","Reading.");
     const waits=enqueueEnactedSocialReconsideration({
       situation:present,previous:middle,
