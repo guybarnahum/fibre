@@ -223,6 +223,7 @@ async function authorContext({ adapter, requestId, selector }) {
       "raisedLanguages are only languages used in the household or early upbringing. languages may additionally include one language plausibly acquired through school or sustained later exposure.",
       "Choose two plausible full names, one female and one male, appropriate to one coherent household context. Do not make the two names identical.",
       "Describe ordinary home, school, transit, learning, commerce, mobility and institutions concretely enough to ground a life without over-specific unverifiable claims.",
+      "For each homeDescription, schoolDescription, transitDescription, learningDescription and commerceDescription, use one or two concrete sentences (roughly 30–70 words when useful) about the setting and its ordinary physical/social possibilities. Keep city-wide schooling, institutions, culture and family background in broader World context fields. Avoid padding and repetition.",
       "Do not infer personality, ability, religion, politics, trauma or profession from location or ancestry.",
       "Return an IANA time zone.",
     ].join("\n"),
