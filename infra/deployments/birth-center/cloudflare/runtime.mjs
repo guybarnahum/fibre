@@ -149,6 +149,12 @@ function birthSubjectName(identity, sex) {
   return typeof value === "string" && value.trim() !== "" ? value.trim() : null;
 }
 function birthOperationalState(request, timing, { terminalFailure = false } = {}) {
+  if (request?.status === "failed" && request.locationSource === "cli" && !request.threadId) {
+    return Object.freeze({
+      stale:true,classification:"preparation_failed",
+      staleReason:"World/family authoring stopped before Genesis reservation. Retry with the same request ID.",
+    });
+  }
   if (terminalFailure) {
     return Object.freeze({
       stale:true,
