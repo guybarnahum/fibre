@@ -245,6 +245,90 @@ test("recognition belongs to the person who noticed a shared Story yesterday",()
   }finally{f.close();}
 });
 
+test("a spoken self-introduction teaches a name only to its attentive witnesses",()=>{
+  const f=groundedReconsiderationFixture();
+  try{
+    const [reader,speaker,bystander]=f.people;
+    const at="2026-10-23T10:00:00.000Z";
+    const a=f.enact(reader,at,"Reading.");
+    const y=f.enact(speaker,at,"Standing near a table.");
+    const b=f.enact(bystander,at,"Reading nearby.");
+    const speakerName=f.world.getThread(speaker).identity.name;
+    const story={storyVersion:"encounter-story-v0.1",beats:[{
+      actorThreadId:speaker,kind:"utterance",
+      text:'A person says: "Hello, I am '+speakerName+'."',
+      disclosesSpeakerName:true,
+    }]};
+    const recorded=f.experience.recordEncounterStory({
+      occurredAt:at,threadPresence:[a,y,b].map(s=>({
+        threadId:s.threadId,situationId:s.situationId,
+      })),
+      story,visualization:createEncounterVisualization({
+        occurredAt:at,story,scene:"At the library.",
+        sourceReferences:[a.situationId,y.situationId,b.situationId],
+        depictedThreadRefs:[],
+      }),
+    });
+    f.experience.recordThreadEncounterAttention({
+      threadId:reader,encounterRef:recorded.encounterId,
+      situationId:a.situationId,occurredAt:at,
+      outcome:"noticed",experienceText:"I heard the person introduce themselves.",
+    });
+    f.experience.recordThreadEncounterAttention({
+      threadId:bystander,encounterRef:recorded.encounterId,
+      situationId:b.situationId,occurredAt:at,
+      outcome:"not_noticed",experienceText:null,
+    });
+    const outsider=structuredClone(seed);
+    outsider.threadId="thr_reconsider_outside";
+    outsider.provenance.lastEventId="evt_reconsider_outside";
+    f.world.seedThread(outsider);
+    const relationStore={listCurrentLifeRelations:()=>[]};
+    const view=observerThreadId=>observablePerson({
+      threadId:speaker,situation:y,observerThreadId,
+      name:speakerName,at:"2026-10-24T10:00:00.000Z",
+      experienceStore:f.experience,situatedLifeStore:relationStore,
+    });
+    assert.equal(view(reader).name,speakerName,
+      "a noticed self-introduction did not teach the speaker's name");
+    assert.equal(view(bystander).name,null,
+      "unnoticed speech granted knowledge to a bystander");
+    assert.equal(view(outsider.threadId).name,null,
+      "a person outside the Story somehow learned a private introduction");
+  }finally{f.close();}
+  const noIntroduction=groundedReconsiderationFixture();
+  try{
+    const [reader,speaker]=noIntroduction.people;
+    const at="2026-10-23T10:00:00.000Z";
+    const a=noIntroduction.enact(reader,at,"Reading.");
+    const b=noIntroduction.enact(speaker,at,"Reading.");
+    const story={storyVersion:"encounter-story-v0.1",beats:[{
+      actorThreadId:speaker,kind:"utterance",text:"A person says hello.",
+    }]};
+    const admitted=noIntroduction.experience.recordEncounterStory({
+      occurredAt:at,threadPresence:[a,b].map(s=>({
+        threadId:s.threadId,situationId:s.situationId,
+      })),story,visualization:createEncounterVisualization({
+        occurredAt:at,story,scene:"At the library.",
+        sourceReferences:[a.situationId,b.situationId],depictedThreadRefs:[],
+      }),
+    });
+    noIntroduction.experience.recordThreadEncounterAttention({
+      threadId:reader,encounterRef:admitted.encounterId,
+      situationId:a.situationId,occurredAt:at,
+      outcome:"noticed",experienceText:"A short ordinary greeting.",
+    });
+    assert.equal(observablePerson({
+      threadId:speaker,situation:b,observerThreadId:reader,
+      name:noIntroduction.world.getThread(speaker).identity.name,
+      at:"2026-10-24T10:00:00.000Z",
+      experienceStore:noIntroduction.experience,
+      situatedLifeStore:{listCurrentLifeRelations:()=>[]},
+    }).name,null,
+    "an ordinary greeting was mistaken for a self-introduction");
+  }finally{noIntroduction.close();}
+});
+
 test("an admitted conversation founds and revises symmetric factual acquaintance",()=>{
   const f=groundedReconsiderationFixture();
   const situated=openSituatedLifeStore(f.storage);
