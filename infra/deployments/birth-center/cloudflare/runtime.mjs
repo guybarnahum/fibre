@@ -87,6 +87,9 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
   const births = runtime.birthRequestStore.recent({ limit:64 });
   const birthByRequest = new Map(births.map((request) => [request.requestId, request]));
   for (const request of births) {
+    // An external CLI pre-authoring attempt has no admitted identity to
+    // reconcile. Its timeout is visible to Admin, not a World alarm debt.
+    if (request.locationSource === "cli" && !request.threadId) continue;
     if (request.status === "published") continue;
     if (request.status === "failed" && !request.genesisId && !request.threadId) continue;
     if (runtime.birthRequestStore.isActive(request.status) || request.status === "failed") {
@@ -97,7 +100,9 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
     const birthRequest = birthByRequest.get(request.requestId);
-    if (birthRequest?.status === "published" || runtime.birthRequestStore.isActive(birthRequest?.status)) continue;
+    if (birthRequest?.status === "published"
+      || (birthRequest?.locationSource !== "cli"
+        && runtime.birthRequestStore.isActive(birthRequest?.status))) continue;
     consider(request);
   }
   return next;
