@@ -246,6 +246,8 @@ function fixture({
         assert.equal(Array.isArray(call.input.developedSelfEvidence), true,
           "social initiation should receive Fibre-selected developed-self evidence");
         const percept = call.input.concern.externalContext.situatedPercept;
+        assert.equal(call.input.concern.focusPartyId,percept.observed[0]?.threadId,
+          "social cognition focused on someone other than the observed person");
         assert.equal(percept.setting.place?.displayName, "The same neighborhood café",
           "social cognition should receive the actual setting");
         observedAtInitiation.push(structuredClone(percept.observed[0]));
