@@ -169,9 +169,9 @@ test("an enacted arrival permits immediate voluntary consideration without forci
     assert.equal(experience.listSocialInteractions(people[1]).length,0,
       "private non-initiation manufactured reciprocal history");
     const witnessed=experience.inspectSocialOpportunities(people[1])[0];
-    assert.equal(witnessed.decision.initiation.act,"not_initiate",
+    assert.equal(witnessed.decision.initiation.act,"none",
       "the Thread's non-action was not retained with its opportunity");
-    assert.equal(witnessed.decision.initiation.actContext.interoception.drives[0].pressure,0.6,
+    assert.equal(witnessed.decision.initiation.decisionContext.interoception.drives[0].pressure,0.6,
       "actual decision-time Body input disappeared from the completed opportunity");
     assert.deepEqual(witnessed.decision.salience.anchors,["social_contact_pressure"],
       "salience was incorrectly collapsed into a motive");
@@ -581,7 +581,7 @@ test("sustained shared presence reaches voluntary social consideration without f
       "an unchanged venue visit lost eligibility when its situation ID changed");
     assert.equal(attempts,1,"shared company triggered repeated social cognition");
     const record=store.inspectSocialOpportunities(arrival.threadId)[0];
-    assert.equal(record.decision.initiation.act,"not_initiate",
+    assert.equal(record.decision.initiation.act,"none",
       "the Thread's right not to initiate was erased");
     assert.equal(record.decision.encounterRef,null,
       "a non-initiation created fictitious conversation history");
