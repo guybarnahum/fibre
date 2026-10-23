@@ -688,6 +688,7 @@ export function createSocialMeetingService({
             semanticStateStore,
             memoryStore,
             situatedLifeStore,
+            experienceStore,
           },
           modelAdapter,
         });
@@ -740,6 +741,7 @@ export function createSocialMeetingService({
             semanticStateStore,
             memoryStore,
             situatedLifeStore,
+            experienceStore,
           },
           modelAdapter,
         });

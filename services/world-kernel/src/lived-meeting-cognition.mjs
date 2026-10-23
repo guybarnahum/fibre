@@ -113,6 +113,7 @@ export async function formSocialEncounterRequest({
     at,
     concern:{
       kind:"social_initiation",
+      focusPartyId:situatedPercept.observed[0].threadId,
       question:"How, if at all, do I engage this person right now?",
       externalContext:{
         situatedPercept:structuredClone(situatedPercept),
@@ -198,6 +199,9 @@ async function formSocialResponse({
     at,
     concern:{
       kind:"social_response",
+      ...(observedContext.situatedPercept?.observed?.some(person=>
+        person.threadId===socialRequest.initiatorThreadId)
+        ?{focusPartyId:socialRequest.initiatorThreadId}:{}),
       question:"How do I want to respond to this concrete social request now?",
       externalContext:{
         socialRequest:structuredClone(socialRequest),
