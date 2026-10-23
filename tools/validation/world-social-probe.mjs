@@ -393,7 +393,7 @@ export function formatWorldSocialReport(evidence,evidencePath){
     lines.push("  · "+short(shared.venueName)+" · "+shared.threads.length+
       " co-present Threads ("+shared.threads.map(p=>p.threadId).join(", ")+")");
   }
-  for(const opportunity of evidence.socialOpportunities.slice(0,16)){
+  for(const opportunity of evidence.socialOpportunities){
     const delay=Date.parse(opportunity.startedAt)-Date.parse(opportunity.dueAt);
     const timing=Number.isFinite(delay)
       ?" · considered "+(delay/1000).toFixed(3)+"s after opportunity"
@@ -402,13 +402,14 @@ export function formatWorldSocialReport(evidence,evidencePath){
     const expression=opportunity.decision?.initiation?.expression??null;
     const counterpart=opportunity.decision?.counterpartyThreadId
       ??opportunity.counterpartyThreadId??"unknown";
-    lines.push("  · "+time(opportunity.dueAt)+" · "+opportunity.threadId+" → "+counterpart+
+    lines.push("  · "+time(opportunity.dueAt)+
+      " · "+(opportunity.trigger??opportunity.kind??"unknown")+
+      " · "+opportunity.threadId+" → "+counterpart+
       " · "+(act??opportunity.outcome??"pending")+
       " / "+(opportunity.outcome??"pending").replaceAll("_"," ")+
       (typeof expression==="string"&&expression.trim()?" · “"+short(expression,72)+"”":"")+
       (opportunity.needBand===null||opportunity.needBand===undefined
         ?"":" · Body band "+opportunity.needBand)+
-      (opportunity.dueAt?" · due "+time(opportunity.dueAt):"")+
       (opportunity.startedAt?" · started "+time(opportunity.startedAt):"")+
       timing+
       (opportunity.completedAt?" · completed "+time(opportunity.completedAt):""));
