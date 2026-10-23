@@ -537,18 +537,25 @@ test("social cognition prefers the encountered person's factual relation and ret
     }};
     const presentA=f.enact(reader,later,"Reading.");
     const presentB=f.enact(bystander,later,"Reading.");
-    const situated=subject=>projectSituatedPercept({
-      observerThreadId:subject.threadId,situation:subject,at:later,
-      observedThreads:[{threadId:neighbor,name:f.world.getThread(neighbor).identity.name,
-        situation:other}],
-      situatedLifeStore:life,livedNowStore:f.lived,
-      experienceStore:f.experience,
-    });
-    const call=(subject,focusPartyId)=>runInteriorCognition({
+    const situated=(subject,counterpartId,counterpartSituation)=>
+      projectSituatedPercept({
+        observerThreadId:subject.threadId,situation:subject,at:later,
+        observedThreads:[{
+          threadId:counterpartId,
+          name:f.world.getThread(counterpartId).identity.name,
+          situation:counterpartSituation,
+        }],
+        situatedLifeStore:life,livedNowStore:f.lived,
+        experienceStore:f.experience,
+      });
+    const call=(subject,counterpartId,counterpartSituation)=>runInteriorCognition({
       threadId:subject.threadId,at:later,
       concern:{kind:"social_initiation",
-        question:"How might I engage the observed person?",focusPartyId,
-        externalContext:{situatedPercept:situated(subject)}},
+        question:"How might I engage the observed person?",
+        focusPartyId:counterpartId,
+        externalContext:{
+          situatedPercept:situated(subject,counterpartId,counterpartSituation),
+        }},
       adapter:{id:"social-focus-proof",instruction:"Select without forcing an act.",
         resultSchema:{type:"object",additionalProperties:false,
           properties:{answer:{type:"string"}},required:["answer"]}},
@@ -557,9 +564,9 @@ test("social cognition prefers the encountered person's factual relation and ret
         semanticStateStore:semantic,experienceStore:f.experience},
       modelAdapter,
     });
-    const stranger=await call(presentA,bystander);
-    const acquainted=await call(presentA,neighbor);
-    const otherPerson=await call(presentB,neighbor);
+    const stranger=await call(presentA,bystander,presentB);
+    const acquainted=await call(presentA,neighbor,other);
+    const otherPerson=await call(presentB,neighbor,other);
     const refs=record=>record.provenance.selectedEvidenceRefs;
     assert.ok(!refs(stranger).includes(personal.memoryId),
       "stranger focus unexpectedly prioritized the other person's Memory");
