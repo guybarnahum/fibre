@@ -83,7 +83,7 @@ function relations(threadId) {
 }
 
 function fixture({
-  initiationFor = () => "initiate",
+  initiationFor = () => "invite_conversation",
   stanceFor = () => "accept",
   compatible = true,
   rude = false,
@@ -223,6 +223,7 @@ function fixture({
   const bookWrites = [];
   const memories = [];
   const queued = [];
+  const observedSocialOpportunities = [];
   const ensured = [];
   const socialInteractions = structuredClone(recentSocialInteractions);
   let modelCalls = 0;
@@ -265,15 +266,20 @@ function fixture({
         return {
           output:{
             result:{
-              decision,
-              requestText:decision === "initiate"
-                ? rude && observedName === "Noor"
-                  ? "Noor, move your sketch. You’re taking up too much of the table."
-                  : `Hey ${observedName} — mind if I sit with you for a minute?`
-                : null,
-              reason:decision === "initiate"
-                ? "A small social overture fits what matters to me in this moment."
-                : "I do not want to begin a social exchange right now.",
+              act:decision,
+              expression:decision==="acknowledge"?"offers a brief nod."
+                :decision==="greet"?"Hello."
+                  :decision==="remark"?"It's peaceful here."
+                    :decision==="invite_conversation"
+                      ?rude && observedName==="Noor"
+                        ?"Noor, move your sketch. You’re taking up too much of the table."
+                        :`Hey ${observedName} — mind if I sit with you for a minute?`
+                      :null,
+              experienceText:decision==="none"?null
+                :"I made a small choice to acknowledge the person sharing this place.",
+              reason:decision==="none"
+                ?"I do not want to begin a social exchange right now."
+                :"An ordinary social gesture fits the life I am living.",
             },
             evidenceRefs:cited ? [cited.ref] : [],
             conflictingMotives:[],
@@ -597,6 +603,10 @@ function fixture({
         return structuredClone(stories.filter((story) =>
           story.threadPresence.some((presence) => presence.threadId === threadId)));
       },
+      enqueueObservedSocialOpportunity(candidate){
+        observedSocialOpportunities.push(structuredClone(candidate));
+        return {inserted:true,dueAt:candidate.dueAt};
+      },
       recordSocialInteraction(candidate) {
         const record = {
           interactionId:`social_fixture_${socialInteractions.length + 1}`,
@@ -683,6 +693,7 @@ function fixture({
     bookWrites,
     memories,
     queued,
+    observedSocialOpportunities,
     ensured,
     socialInteractions,
     initiationNames,
@@ -714,7 +725,7 @@ test("an automatic social decision cannot enact an unprocessed candidate departu
 });
 
 test("an eligible automatic social choice reads both already-enacted lives",async()=>{
-  const f=fixture({boundedVenueDiscovery:true,initiationFor:()=> "not_initiate"});
+  const f=fixture({boundedVenueDiscovery:true,initiationFor:()=> "none"});
   const result=await f.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
   assert.equal(f.ensured.length,0,
     "an automatic social decision rotated the World situation history");
@@ -722,6 +733,35 @@ test("an eligible automatic social choice reads both already-enacted lives",asyn
     "a valid shared scene disappeared when World stopped calling ensure");
   assert.equal(result.attempts[0].outcome,"not_initiated",
     "a read-only decision lost Thread-owned non-initiation");
+});
+
+
+test("a chosen small act becomes one World Story and an independent noticed opportunity",async()=>{
+  for(const [act,beatKind] of [
+    ["acknowledge","action"],["greet","utterance"],["remark","utterance"],
+  ]){
+    const f=fixture({boundedVenueDiscovery:true,withoutLifeRelations:true,
+      initiationFor:()=>act});
+    const result=await f.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+    const attempt=attemptFor(result);
+    assert.equal(attempt.outcome,"acted","social gesture was not enacted");
+    assert.equal(f.stories.length,1,"a small act created multiple World Stories");
+    assert.equal(attempt.encounterStory.story.beats.length,1,
+      "a small gesture was expanded into invented dialogue");
+    assert.equal(attempt.encounterStory.story.beats[0].kind,beatKind,
+      "World recorded the wrong kind of outward act");
+    assert.equal(f.socialInteractions.length,0,
+      "a gesture became a consented conversation");
+    assert.equal(f.attentions.filter(a=>a.encounterRef===
+      attempt.encounterStory.encounterId&&a.outcome==="noticed").length,2,
+    "the recipient did not appraise the same objective Story");
+    assert.equal(f.observedSocialOpportunities.length,1,
+      "a noticed act did not earn exactly one recipient choice");
+    assert.equal(f.observedSocialOpportunities[0].sourceKind,"social_act",
+      "reciprocity was not bound to the witnessed outward act");
+    assert.doesNotMatch(JSON.stringify(attempt.encounterStory.story),
+      /\\b(?:Mina|Noor)\\b/u,"strangers' names leaked into World history");
+  }
 });
 
 test("E2 accepted meeting is one Encounter Story with distinct Thread Experiences", async () => {
@@ -821,7 +861,7 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
   assert.equal(reusedGenesisPlace.initiationNames.length, 0,
     "false co-presence must not reach social cognition");
 
-  const noOverture = fixture({ initiationFor:() => "not_initiate" });
+  const noOverture = fixture({ initiationFor:() => "none" });
   const notInitiated = await noOverture.meeting.meet({
     initiatorThreadId:mina.threadId,
     at:AT,
@@ -829,7 +869,7 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
   const noOvertureAttempt = attemptFor(notInitiated);
   assert.equal(noOvertureAttempt.outcome, "not_initiated",
     "initiator may choose not to begin an encounter");
-  assert.equal(noOvertureAttempt.initiation.decision, "not_initiate",
+  assert.equal(noOvertureAttempt.initiation.act, "none",
     "initiator non-participation must stay explicit");
   assert.equal(noOverture.stories.length, 0, "no overture means no Encounter Story");
   assert.equal(noOverture.socialInteractions.length, 0,
@@ -843,7 +883,7 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
   const declinedAttempt = attemptFor(declinedResult);
 
   assert.equal(declinedAttempt.outcome, "not_met", "decline should stop the voluntary encounter");
-  assert.equal(declinedAttempt.request.text, declinedAttempt.initiation.requestText,
+  assert.equal(declinedAttempt.request.text, declinedAttempt.initiation.expression,
     "decline must answer the actual outward request");
   assert.equal(declinedAttempt.stance.decision, "decline", "Noor should retain agency");
   assert.equal(declined.stories.length, 0, "decline must not fabricate an Encounter Story");
@@ -909,12 +949,12 @@ test("contiguous stillness preserves exploration Body evidence without unearned 
   const ordinary = fixture({
     plannedCompanions:false,
     sustainedSameness:false,
-    initiationFor:() => "not_initiate",
+    initiationFor:() => "none",
   });
   const lowNovelty = fixture({
     plannedCompanions:false,
     sustainedSameness:true,
-    initiationFor:() => "not_initiate",
+    initiationFor:() => "none",
   });
 
   const ordinaryResult = await ordinary.meeting.meet({
@@ -947,8 +987,8 @@ test("contiguous stillness preserves exploration Body evidence without unearned 
 test("observable setting can bend social judgment for the same person", async () => {
   const decideFromSetting = (_name, _evidence, externalContext) =>
     externalContext.situatedPercept.setting.mode === "mediated"
-      ? "initiate"
-      : "not_initiate";
+      ? "invite_conversation"
+      : "none";
 
   const physical = fixture({
     initiationFor:decideFromSetting,
@@ -968,9 +1008,9 @@ test("observable setting can bend social judgment for the same person", async ()
     at:AT,
   }));
 
-  assert.equal(physicalAttempt.initiation.decision, "not_initiate",
+  assert.equal(physicalAttempt.initiation.act, "none",
     "physical setting should remain a real reason not to interrupt");
-  assert.equal(mediatedAttempt.initiation.decision, "initiate",
+  assert.equal(mediatedAttempt.initiation.act, "invite_conversation",
     "mediated social setting should be able to change the judgment");
   assert.deepEqual(physicalAttempt.initiation.cognition.selectedEvidenceRefs,
     mediatedAttempt.initiation.cognition.selectedEvidenceRefs,
@@ -1034,8 +1074,8 @@ test("recent reciprocal social history can bend later initiation without a momen
         item.kind === "social_request_response"
         && item.direction === "outgoing"
         && item.responseDecision === "decline")
-        ? "not_initiate"
-        : "initiate",
+        ? "none"
+        : "invite_conversation",
   });
 
   const attempt = attemptFor(await f.meeting.meet({
@@ -1043,7 +1083,7 @@ test("recent reciprocal social history can bend later initiation without a momen
     at:AT,
   }));
 
-  assert.equal(attempt.initiation.decision, "not_initiate",
+  assert.equal(attempt.initiation.act, "none",
     "recent real reciprocal history should be available to present social judgment");
   assert.equal(f.socialInteractions.length, 1,
     "choosing not to initiate again must not add a second shared interaction");
@@ -1053,7 +1093,7 @@ test("one lived scene can produce multiple independent actor encounters", async 
   const f = fixture({
     selaPresent:true,
     plannedCompanionRefs:[noor.threadId,sela.threadId],
-    initiationFor:() => "initiate",
+    initiationFor:() => "invite_conversation",
     stanceFor:() => "accept",
   });
 
@@ -1092,7 +1132,7 @@ test("E6b one social story discovers a silent co-present witness", async () => {
     rude:true,
     selaPresent:true,
     initiationFor:(_name,_evidence,external) =>
-      external.situatedPercept.observed[0]?.name === "Noor" ? "initiate" : "not_initiate",
+      external.situatedPercept.observed[0]?.name === "Noor" ? "invite_conversation" : "none",
   });
   const result = await f.meeting.meet({
     initiatorThreadId:mina.threadId,
@@ -1149,7 +1189,7 @@ test("inherited social deprivation changes attention without commanding an encou
     plannedCompanions:false,
     mediatedContext:null,
     observedSolitudeHours:12,
-    initiationFor:()=> "not_initiate",
+    initiationFor:()=> "none",
   };
   const lessSensitive=fixture({...opts,inheritedSocialSensitivity:0.85});
   const moreSensitive=fixture({
@@ -1158,7 +1198,7 @@ test("inherited social deprivation changes attention without commanding an encou
       assert.ok(context.interoception?.drives.some(d=>
         d.family==="social_contact"&&d.pressure>=0.4),
       "material Body need did not reach the Thread's private social judgment");
-      return "not_initiate";
+      return "none";
     },
   });
   const low=attemptFor(await lessSensitive.meeting.meet({
@@ -1173,7 +1213,7 @@ test("inherited social deprivation changes attention without commanding an encou
     "unremarkable co-presence wasted model cognition");
   assert.equal(high.salience.anchors.includes("social_contact_pressure"),true,
     "inherited social hunger did not make presence salient");
-  assert.equal(high.initiation.decision,"not_initiate",
+  assert.equal(high.initiation.act,"none",
     "social need overrode the Thread's private decision");
   assert.equal(moreSensitive.socialInteractions.length,0,
     "social pressure fabricated a reciprocal interaction");
@@ -1182,7 +1222,7 @@ test("inherited social deprivation changes attention without commanding an encou
 test("a noticed newcomer is considered specifically, without compelling contact",async()=>{
   const grounded=fixture({
     boundedVenueDiscovery:true,selaPresent:true,
-    initiationFor:()=>"not_initiate",
+    initiationFor:()=>"none",
   });
   const result=await grounded.meeting.meet({
     initiatorThreadId:mina.threadId,counterpartyThreadId:noor.threadId,at:AT,
@@ -1238,7 +1278,7 @@ test("one noticed arrival changes later social judgment through personal Experie
     assert.equal(recentPersonalExperiences[0].encounterRef,history[0].ref,
       "private lived history lost its objective cause");
     return recentPersonalExperiences[0].experienceText.includes("welcome")
-      ?"initiate":"not_initiate";
+      ?"invite_conversation":"none";
   };
   const curious=fixture({
     plannedCompanions:false,
@@ -1271,10 +1311,10 @@ test("one noticed arrival changes later social judgment through personal Experie
 test("the initiation model sees observed traits, not an unearned stranger's name",async()=>{
   const stranger=fixture({
     plannedCompanions:true,withoutLifeRelations:true,
-    initiationFor:()=>"not_initiate",
+    initiationFor:()=>"none",
   });
   const known=fixture({
-    plannedCompanions:true,initiationFor:()=>"not_initiate",
+    plannedCompanions:true,initiationFor:()=>"none",
   });
   await stranger.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
   await known.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
@@ -1290,7 +1330,7 @@ test("an arriving Thread considers its noticed witness before lower-ID bystander
   const f=fixture({
     boundedVenueDiscovery:true,selaPresent:true,
     plannedCompanions:false,noticedArrivalWitness:sela.threadId,
-    initiationFor:()=>"not_initiate",
+    initiationFor:()=>"none",
   });
   const result=await f.meeting.meet({
     initiatorThreadId:mina.threadId,at:AT,

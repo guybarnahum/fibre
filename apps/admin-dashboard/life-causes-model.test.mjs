@@ -56,7 +56,7 @@ test("a social decision witnesses Body and consent without equating co-presence 
         counterpartyThreadId:"thr_guest",
         salience:{outcome:"salient",anchors:["social_contact_pressure"],
           sourceReferences:["sit_reader"]},
-        initiation:{decision:"not_initiate",reportedReason:"I prefer my book.",
+        initiation:{act:"none",expression:null,reportedReason:"I prefer my book.",
           decisionContext:{interoception:{
             drives:[{family:"social_contact",pressure:0.6}],
             evidenceRefs:["sit_reader"],

@@ -23,6 +23,59 @@ const seed=JSON.parse(readFileSync(
 ));
 const AT="2026-10-13T19:00:00.000Z";
 
+
+test("four act-triggered reply opportunities bound one shared visit, not future visits",()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-social-reciprocity-"));
+  const storage={
+    infraDriver:createSqliteStateInfraDriver({
+      scopes:{world:join(directory,"world.sqlite")},
+    }),stateScopeId:"world",
+  };
+  const ids=["thr_reciprocal_a","thr_reciprocal_b"];
+  const world=openWorldStore(storage);
+  const experience=openLivedExperienceStore(storage);
+  try{
+    for(const threadId of ids){
+      const person=structuredClone(seed);
+      person.threadId=threadId;person.provenance.lastEventId="evt_"+threadId;
+      world.seedThread(person);
+    }
+    const sharedVisit="2026-10-23T09:00:00.000Z";
+    const venueRef="venue_reciprocity_library";
+    const makeAct=(index,visitSince)=>{
+      const occurredAt=new Date(Date.parse(visitSince)+index*60_000).toISOString();
+      const actor=ids[index%2],recipient=ids[(index+1)%2];
+      const story={storyVersion:"encounter-story-v0.1",beats:[
+        {actorThreadId:actor,kind:"utterance",text:"Hello there."},
+      ]};
+      const encounter=experience.recordEncounterStory({
+        occurredAt,
+        threadPresence:ids.map(threadId=>({
+          threadId,situationId:"sit_"+threadId,
+        })),
+        story,visualization:createEncounterVisualization({
+          occurredAt,story,scene:"At the shared library.",
+          sourceReferences:ids.map(id=>"sit_"+id),depictedThreadRefs:[],
+        }),
+      });
+      return experience.enqueueObservedSocialOpportunity({
+        sourceKind:"social_act",visitSince,venueRef,encounterRef:encounter.encounterId,
+        threadId:recipient,counterpartyThreadId:actor,
+        situationId:"sit_"+recipient,dueAt:occurredAt,
+      });
+    };
+    const first=Array.from({length:5},(_,i)=>makeAct(i,sharedVisit));
+    assert.deepEqual(first.map(x=>x.inserted),[true,true,true,true,false],
+      "the same pair could create an unbounded reply chain");
+    const future=makeAct(0,"2026-10-24T09:00:00.000Z");
+    assert.equal(future.inserted,true,
+      "a previous visit suppressed the next independent meeting chance");
+  }finally{
+    experience.close();world.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
+
 test("an enacted arrival permits immediate voluntary consideration without forcing speech",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-natural-social-"));
   const storage={
@@ -61,7 +114,7 @@ test("an enacted arrival permits immediate voluntary consideration without forci
             asOf:AT,drives:[{family:"social_contact",orientation:"approach",
               pressure:0.6,evidenceRefs:["sit_social_1"]}],
           }},
-        initiation:{decision:"not_initiate",reason:"I want quiet now.",
+        initiation:{act:"none",expression:null,reason:"I want quiet now.",
           decisionContext:{interoception:{
             asOf:AT,drives:[{family:"social_contact",pressure:0.6}],
             evidenceRefs:["sit_social_1"],
@@ -116,9 +169,9 @@ test("an enacted arrival permits immediate voluntary consideration without forci
     assert.equal(experience.listSocialInteractions(people[1]).length,0,
       "private non-initiation manufactured reciprocal history");
     const witnessed=experience.inspectSocialOpportunities(people[1])[0];
-    assert.equal(witnessed.decision.initiation.decision,"not_initiate",
+    assert.equal(witnessed.decision.initiation.act,"not_initiate",
       "the Thread's non-action was not retained with its opportunity");
-    assert.equal(witnessed.decision.initiation.decisionContext.interoception.drives[0].pressure,0.6,
+    assert.equal(witnessed.decision.initiation.actContext.interoception.drives[0].pressure,0.6,
       "actual decision-time Body input disappeared from the completed opportunity");
     assert.deepEqual(witnessed.decision.salience.anchors,["social_contact_pressure"],
       "salience was incorrectly collapsed into a motive");
@@ -518,7 +571,7 @@ test("sustained shared presence reaches voluntary social consideration without f
           counterpartyThreadId:reader.threadId,outcome:"not_initiated",
           salience:{outcome:"salient",anchors:["co_present_person"],
             sourceReferences:[reader.situationId],bodyAtGate:null},
-          initiation:{decision:"not_initiate",reason:"I prefer to keep reading.",
+          initiation:{act:"none",expression:null,reason:"I prefer to keep reading.",
             decisionContext:null,cognition:{selectedEvidenceRefs:[],evidenceRefs:[]}},
           stance:null,encounterStory:null,
         }]};
@@ -528,7 +581,7 @@ test("sustained shared presence reaches voluntary social consideration without f
       "an unchanged venue visit lost eligibility when its situation ID changed");
     assert.equal(attempts,1,"shared company triggered repeated social cognition");
     const record=store.inspectSocialOpportunities(arrival.threadId)[0];
-    assert.equal(record.decision.initiation.decision,"not_initiate",
+    assert.equal(record.decision.initiation.act,"not_initiate",
       "the Thread's right not to initiate was erased");
     assert.equal(record.decision.encounterRef,null,
       "a non-initiation created fictitious conversation history");

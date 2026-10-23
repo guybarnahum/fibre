@@ -671,8 +671,9 @@ test("retained lived Memory, not archived history, changes a later voluntary soc
               const recall=references.length>0;
               return {output:{
                 result:{
-                  decision:recall?"initiate":"not_initiate",
-                  requestText:recall?"Would you like to talk for a moment?":null,
+                  act:recall?"invite_conversation":"none",
+                  expression:recall?"Would you like to talk for a moment?":null,
+                  experienceText:recall?"I felt ready to approach.":null,
                   reason:recall?"The remembered encounter matters to me.":
                     "I do not feel like starting a conversation.",
                 },
@@ -699,7 +700,7 @@ test("retained lived Memory, not archived history, changes a later voluntary soc
       const outward=experienceStore.listSocialInteractions(observer.threadId);
       assert.equal(outward.length,retain?1:0,
         "memory retention had no consequence for shared social history");
-      return {decision:later.attempts[0].initiation.decision,
+      return {decision:later.attempts[0].initiation.act,
         memoryId:admitted[0]?.memoryId??null,
         outward:outward.length};
     }finally{
@@ -711,7 +712,7 @@ test("retained lived Memory, not archived history, changes a later voluntary soc
   const retained=await liveAfterConsolidation(true);
   const unretained=await liveAfterConsolidation(false);
   assert.deepEqual([retained.decision,unretained.decision],
-    ["initiate","not_initiate"],
+    ["invite_conversation","none"],
     "one objective experience led to identical later choices despite different retention");
   assert.equal(retained.outward,1,"remembered encounter produced no social act");
   assert.equal(unretained.outward,0,"unremembered encounter became invented contact");
