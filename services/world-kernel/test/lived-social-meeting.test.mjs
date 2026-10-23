@@ -316,6 +316,9 @@ function fixture({
         const external = call.input.concern.externalContext;
         assert.equal(external.socialRequest.initiatorThreadId, mina.threadId,
           "recipient should know who made the request");
+        assert.equal(call.input.concern.focusPartyId,
+          external.socialRequest.initiatorThreadId,
+          "response cognition focused on someone other than the requesting person");
         assert.equal(typeof external.socialRequest.text, "string",
           "recipient should receive the concrete ask");
         assert.equal(
