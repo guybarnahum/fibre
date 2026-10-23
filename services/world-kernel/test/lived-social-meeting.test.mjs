@@ -225,6 +225,7 @@ function fixture({
   const memories = [];
   const queued = [];
   const observedSocialOpportunities = [];
+  const acquaintanceRelations=[];
   const ensured = [];
   const socialInteractions = structuredClone(recentSocialInteractions);
   let modelCalls = 0;
@@ -583,7 +584,20 @@ function fixture({
       getCurrentIdentityView(threadId) { return { threadId, assertions:[] }; },
     },
     situatedLifeStore:{
-      listCurrentLifeRelations(threadId) { return withoutLifeRelations?[]:structuredClone(relations(threadId)); },
+      listCurrentLifeRelations(threadId) {
+        const genesis=withoutLifeRelations?[]:structuredClone(relations(threadId));
+        return [...genesis,...acquaintanceRelations.filter(x=>x.threadId===threadId)
+          .filter(x=>!acquaintanceRelations.some(later=>
+            later.relationId===x.relationId&&later.revision>x.revision))];
+      },
+      lifeRelationHistory(threadId,relationId){
+        return acquaintanceRelations.filter(x=>
+          x.threadId===threadId&&x.relationId===relationId);
+      },
+      recordLifeRelation(candidate){
+        acquaintanceRelations.push(structuredClone(candidate));
+        return structuredClone(candidate);
+      },
       listCurrentPlaceEpisodes(threadId) { return structuredClone(placeEpisodes.get(threadId)); },
     },
     semanticStateStore:{
@@ -706,6 +720,7 @@ function fixture({
     memories,
     queued,
     observedSocialOpportunities,
+    acquaintanceRelations,
     ensured,
     socialInteractions,
     initiationNames,
