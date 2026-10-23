@@ -140,7 +140,7 @@ function normalizeTimeZone(value) {
   return value;
 }
 
-function planningPlaceFromEpisode(reference, episode, privatelyKnownPlace = null) {
+function planningPlaceFromEpisode(reference, episode, privatelyKnownPlace = null, description = null) {
   const location = Object.fromEntries(
     Object.entries({
       countryCode:episode.place.countryCode,
@@ -150,8 +150,11 @@ function planningPlaceFromEpisode(reference, episode, privatelyKnownPlace = null
   );
   return Object.freeze({
     ref:reference,
-    displayName:episode.place.displayName,
+    displayName:episode.provenance==="genesis_created"
+      ?genesisPlaceLabel(episode.place.placeId)??episode.place.displayName
+      :episode.place.displayName,
     placeKind:episode.episodeKind,
+    ...(description===null?{}:{description}),
     ...(Object.keys(location).length === 0 ? {} : { location:Object.freeze(location) }),
     // Cognition receives the Thread's own admitted physical knowledge.
     // This is never part of a public CurrentPresent projection.
@@ -172,7 +175,7 @@ function planningPlaceFromWorld(reference, place) {
     ref:reference,
     displayName:place.displayName,
     placeKind:place.placeKind,
-    description:place.displayName,
+    description:place.description??place.displayName,
     ...(place.locality&&place.country?{
       location:{city:place.locality,country:place.country,
         ...(Number.isFinite(place.lat)&&Number.isFinite(place.long)
@@ -207,11 +210,20 @@ function resolvePlaces(threadId, references, sourceStores) {
       .map((episode) => [placeEpisodeRevisionRef(episode), episode]),
   );
 
+  let genesisDescriptions=null;
   return references.map((reference) => {
     const episode = situated.get(reference);
-    if (episode !== undefined) return planningPlaceFromEpisode(
-      reference,episode,livedNowStore.getPrivatePlace?.(threadId,reference)??null,
-    );
+    if (episode !== undefined) {
+      if(episode.provenance==="genesis_created"&&genesisDescriptions===null){
+        genesisDescriptions=new Map((livedNowStore.listGenesisWorldPlaces?.(threadId)??[])
+          .map(place=>[place.placeId,place.description]));
+      }
+      return planningPlaceFromEpisode(
+        reference,episode,livedNowStore.getPrivatePlace?.(threadId,reference)??null,
+        episode.provenance==="genesis_created"
+          ?genesisDescriptions.get(episode.place.placeId)??null:null,
+      );
+    }
     const worldPlace = livedNowStore.getWorldPlace(threadId, reference, { required:false });
     if (worldPlace !== null) return planningPlaceFromWorld(reference, worldPlace);
     throw new TypeError(`personal plan available place ${reference} lacks World/situated authority`);
