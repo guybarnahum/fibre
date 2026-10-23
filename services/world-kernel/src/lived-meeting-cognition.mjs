@@ -6,6 +6,7 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 import { runInteriorCognition } from "./interior-cognition.mjs";
+import { spokenNameDisclosure } from "./spoken-name.mjs";
 
 const DECISIONS = Object.freeze(["accept", "decline", "defer"]);
 const SOCIAL_ACTS = Object.freeze(["none","acknowledge","greet","remark","invite_conversation"]);
@@ -43,9 +44,11 @@ For none, there is no expression or immediate personal Experience.
 For acknowledge, express a brief gesture as an observer would see it.
 For greet and remark, supply the short words actually said.
 For invite_conversation, use a short spoken invitation clear enough to accept or decline.
-For greet, remark and invite_conversation, introducesSelf may be true only if the
-actual outward words plainly say this speaker's own name. Never disclose a name
-from another person's identity record or merely imply an introduction.
+For greet, remark and invite_conversation, introducesSelf may be true only if
+the actual words say the speaker's own full name or a part of it (for example,
+just a first name). Only the name part actually spoken may become known.
+Never disclose a name from another person's identity record or merely imply
+an introduction. Speech with no spoken name remains an ordinary social act.
 For an outward act, experienceText is this person's concise first-person immediate experience
 of choosing and doing it, not a permanent Memory or knowledge of another's feelings.
 Place affordances are grounded possibilities, not rules or obligations.
@@ -137,20 +140,14 @@ export async function formSocialEncounterRequest({
     throw new TypeError("social act is invalid");
   }
   assertNonEmpty("social act reason",cognition.result.reason);
-  const introducesSelf=cognition.result.introducesSelf??false;
-  if(typeof introducesSelf!=="boolean"
-    ||(introducesSelf&&!["greet","remark","invite_conversation"]
-      .includes(cognition.result.act))){
-    throw new TypeError("only a spoken social act can disclose the speaker's name");
-  }
-  if(introducesSelf){
-    const name=sourceStores.worldStore.getThread(threadId)?.identity?.name;
-    if(typeof name!=="string"||!name.trim()
-      ||!cognition.result.expression?.toLocaleLowerCase()
-        .includes(name.trim().toLocaleLowerCase())){
-      throw new TypeError("self-introduction must audibly disclose the speaker's actual name");
-    }
-  }
+  const requestedIntroduction=cognition.result.introducesSelf===true;
+  const spoken=["greet","remark","invite_conversation"].includes(cognition.result.act);
+  const disclosedName=requestedIntroduction&&spoken
+    ?spokenNameDisclosure(cognition.result.expression,
+      sourceStores.worldStore.getThread(threadId)?.identity?.name)
+    :null;
+  // A claimed introduction without an audible name is an ordinary act.
+  const introducesSelf=disclosedName!==null;
   if(cognition.result.act==="none"){
     if(cognition.result.expression!==null||cognition.result.experienceText!==null){
       throw new TypeError("no social act cannot create outward speech or Experience");
@@ -163,6 +160,7 @@ export async function formSocialEncounterRequest({
   return Object.freeze({
     act:cognition.result.act,
     introducesSelf,
+    disclosedName,
     expression:cognition.result.expression,
     experienceText:cognition.result.experienceText,
     reason:cognition.result.reason,
