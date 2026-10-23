@@ -84,7 +84,7 @@ function evidenceCandidate(ref, kind, text) {
   return Object.freeze({ ref, kind, text });
 }
 
-function selectEvidence(threadId, sourceStores, policy, at) {
+function selectEvidence(threadId, sourceStores, policy, at, focusPartyId=null) {
   const identityStore = requireMethod(sourceStores, "identityStore", "getCurrentIdentityView");
   const memoryStore = requireMethod(sourceStores, "memoryStore", "listCurrentMemories");
   const situatedLifeStore = requireMethod(sourceStores, "situatedLifeStore", "listCurrentLifeRelations");
@@ -94,6 +94,11 @@ function selectEvidence(threadId, sourceStores, policy, at) {
   if (identityView?.threadId !== threadId) throw new TypeError("Interior Cognition identity view Thread mismatch");
 
   const candidates = [];
+  const sharedExperienceRefs=focusPartyId===null?null:new Set(
+    sourceStores.experienceStore?.listSharedExperienceRefs?.(
+      threadId,focusPartyId,{before:at,limit:64},
+    )??[],
+  );
 
   for (const item of [...(semanticStateStore.listCurrentState(threadId) ?? [])]
     .map((item) => owned(threadId, "semantic state", item.stateId, item))
@@ -127,7 +132,14 @@ function selectEvidence(threadId, sourceStores, policy, at) {
       && item.accessibility !== "inaccessible"
       && item.retentionState !== "unavailable"
       && memoryText(item) !== null)
-    .sort(compareMemories)
+    .sort((left,right)=>{
+      if(sharedExperienceRefs!==null){
+        const focused=memory=>memory.eventRefs?.some(ref=>
+          sharedExperienceRefs.has(ref))??false;
+        if(focused(left)!==focused(right))return focused(left)?-1:1;
+      }
+      return compareMemories(left,right);
+    })
     .slice(0, policy.maximumMemories);
   for (const item of memories) {
     candidates.push(evidenceCandidate(item.memoryId, "memory", memoryText(item)));
@@ -137,7 +149,14 @@ function selectEvidence(threadId, sourceStores, policy, at) {
     .map((item) => owned(threadId, "life relation", item.relationId, item))
     .filter((item) => Array.isArray(item.relationshipFacts) && item.relationshipFacts.some((fact) =>
       typeof fact === "string" && fact.trim() !== ""))
-    .sort((left, right) => String(left.relationId).localeCompare(String(right.relationId)))
+    .sort((left, right) =>{
+      if(focusPartyId!==null){
+        const a=left.relatedParty?.partyId===focusPartyId;
+        const b=right.relatedParty?.partyId===focusPartyId;
+        if(a!==b)return a?-1:1;
+      }
+      return String(left.relationId).localeCompare(String(right.relationId));
+    })
     .slice(0, policy.maximumRelationships);
   for (const item of relationships) {
     const name = item.relatedParty?.displayName ?? "known person";
@@ -171,9 +190,17 @@ function normalizeConcern(concern) {
   assertNonEmpty("Interior Cognition concern.question", concern.question);
   const externalContext = concern.externalContext ?? {};
   assertJsonValue("Interior Cognition concern.externalContext", externalContext);
+  const focusPartyId=concern.focusPartyId??null;
+  if(focusPartyId!==null){
+    assertId("Interior Cognition focusPartyId",focusPartyId);
+    if(!["social_initiation","social_response"].includes(concern.kind)){
+      throw new TypeError("person focus requires a social concern");
+    }
+  }
   return Object.freeze({
     kind:concern.kind.trim(),
     question:concern.question.trim(),
+    ...(focusPartyId===null?{}:{focusPartyId}),
     externalContext:structuredClone(externalContext),
   });
 }
@@ -245,7 +272,9 @@ export async function runInteriorCognition({
   if (thread?.threadId !== threadId) throw new TypeError("Interior Cognition Thread source mismatch");
 
   const profile = INTERIOR_COGNITION_PROFILE;
-  const selected = selectEvidence(threadId, sourceStores, profile, at);
+  const selected = selectEvidence(
+    threadId,sourceStores,profile,at,normalizedConcern.focusPartyId??null,
+  );
   const evidenceRefs = selected.evidence.map((item) => item.ref);
   const currentState = Object.freeze({
     selfModel:thread.currentState?.selfModel ?? null,
