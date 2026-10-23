@@ -951,6 +951,18 @@ export class LivedExperienceStore {
       return { threadId:participant.threadId, situationId:participant.situationId };
     });
     const story = normalizeStory(candidate.story, participantIds);
+    for(const beat of story.beats){
+      if(!beat.disclosesSpeakerName)continue;
+      const speaker=this.#database.prepare(`
+        SELECT state_json FROM threads WHERE thread_id=?
+      `).get(beat.actorThreadId);
+      const name=speaker===undefined?null:JSON.parse(speaker.state_json)
+        .identity?.name;
+      if(typeof name!=="string"||!name.trim()
+        ||!beat.text.toLocaleLowerCase().includes(name.trim().toLocaleLowerCase())){
+        throw new TypeError("World self-introduction must contain the actual speaker name");
+      }
+    }
     const visualization = normalizeVisualization(candidate.visualization, participantIds);
     const normalized = { occurredAt:candidate.occurredAt, threadPresence, story, visualization };
     const encounterId = encounterStoryId(normalized);
