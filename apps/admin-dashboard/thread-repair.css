@@ -1251,3 +1251,5 @@
 .thread-birth-stage-legend .stage-stillborn::before{background:var(--muted);animation:none}
 .thread-birth-stage-badge.stage-failed{color:var(--danger);background:var(--danger-soft)}
 .thread-birth-stage-badge.stage-stillborn{color:var(--muted);background:var(--surface-subtle)}
+
+.thread-birth-stage-marker.selectable{cursor:pointer}
