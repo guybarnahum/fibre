@@ -40,8 +40,27 @@ function hasEmbodimentRevision(database, threadId, reference) {
   `).get(threadId, reference) !== undefined;
 }
 
+function hasEncounterStory(database,threadId,reference){
+  if(!tableExists(database,"encounter_story_thread_presence"))return false;
+  return database.prepare(`
+    SELECT 1 FROM encounter_story_thread_presence
+    WHERE thread_id=? AND encounter_ref=? LIMIT 1
+  `).get(threadId,reference)!==undefined;
+}
+
+function hasSocialInteraction(database,threadId,reference){
+  if(!tableExists(database,"social_interaction_records"))return false;
+  return database.prepare(`
+    SELECT 1 FROM social_interaction_records
+    WHERE interaction_id=?
+      AND (initiator_thread_id=? OR recipient_thread_id=?) LIMIT 1
+  `).get(reference,threadId,threadId)!==undefined;
+}
+
 const WITNESS_CHECKS = Object.freeze({
   thread_event: hasThreadEvent,
+  encounter_story: hasEncounterStory,
+  social_interaction: hasSocialInteraction,
   life_relation_revision: hasRelationRevision,
   place_episode_revision: hasPlaceRevision,
   embodiment_revision: hasEmbodimentRevision,
