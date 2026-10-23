@@ -92,6 +92,45 @@ test("pre-Genesis request rejection is complete, not pending reconciliation", ()
   assert.equal(nextBirthStatusCheckAt(runtime, () => NOW), null, "rejected request scheduled reconciliation");
 });
 
+
+test("CLI preparation is visible, then durable Genesis takes over once without a fabricated wake", () => {
+  const preflight=staleModern({
+    requestId:"fibre-population-20261023-london-001",threadId:null,genesisId:null,
+    status:"authoring",location:"United Kingdom/London",locationSource:"cli",
+    sex:null,createdAt:"2026-10-23T17:30:00.000Z",
+    updatedAt:"2026-10-23T17:30:00.000Z",
+  });
+  let development=[];
+  const runtime={
+    birthRequestStore:{recent:()=>[preflight],isActive:(status)=>status==="authoring"},
+    developmentRequestStore:{
+      recent:()=>development,
+      getDisposition:()=>null,
+    },
+  };
+  const awaiting=pendingBirths(runtime,{nowMs:()=>NOW})[0];
+  assert.equal(awaiting.source,"birth",
+    "unsubmitted CLI authoring vanished from Birth Center");
+  assert.equal(awaiting.stage,"genesis",
+    "pre-authoring was mislabeled as a developed candidate");
+  assert.equal(nextBirthStatusCheckAt(runtime,()=>NOW),null,
+    "pre-authoring created a perpetual World reconciliation alarm");
+  const reserved=developmentFor({
+    ...preflight,genesisId:"gen_london",threadId:"thr_london",
+    status:"reserved",
+  });
+  development=[reserved];
+  const records=pendingBirths(runtime,{nowMs:()=>NOW});
+  assert.equal(records.length,1,
+    "CLI preparation and durable Genesis appeared as duplicate births");
+  assert.equal(records[0].source,"development",
+    "operator preparation obscured durable Genesis authority");
+  assert.equal(records[0].threadId,"thr_london",
+    "development did not replace the pre-authoring identity gap");
+  assert.ok(nextBirthStatusCheckAt(runtime,()=>NOW)!==null,
+    "durable Genesis lost its eventual reconciliation opportunity");
+});
+
 test("pending births is local observation", () => {
   const request = staleModern();
   const runtime = {
