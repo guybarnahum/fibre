@@ -2190,6 +2190,27 @@ export class LivedExperienceStore {
     }));
   }
 
+  // One indexed read maps that other person's actual shared Stories to
+  // this Thread's owned Experiences. Memories can cite those Experience IDs.
+  listSharedExperienceRefs(threadId,otherThreadId,{before,limit=64}={}){
+    assertId("social memory Thread",threadId);
+    assertId("social memory person",otherThreadId);
+    assertIsoTimestamp("social memory before",before);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>128)
+      throw new TypeError("social memory linkage must be bounded");
+    return this.#database.prepare(`
+      SELECT x.experience_id
+      FROM thread_encounter_story_timeline t
+      JOIN encounter_story_thread_presence other
+        ON other.encounter_ref=t.encounter_ref AND other.thread_id=?
+      JOIN thread_encounter_experiences x
+        ON x.encounter_ref=t.encounter_ref AND x.thread_id=t.thread_id
+      WHERE t.thread_id=? AND t.occurred_at<=?
+      ORDER BY t.occurred_at DESC,t.encounter_ref DESC LIMIT ?
+    `).all(otherThreadId,threadId,before,limit)
+      .map(row=>row.experience_id);
+  }
+
   hasNoticedSelfIntroduction(observerThreadId,otherThreadId,{before}={}){
     assertId("heard introduction observer",observerThreadId);
     assertId("heard introduction speaker",otherThreadId);
