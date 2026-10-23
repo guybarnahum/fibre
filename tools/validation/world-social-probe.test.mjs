@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {formatWorldSocialReport,groundedLifeSummary,summarizeSocialContinuity} from "./world-social-probe.mjs";
+import {formatWorldSocialReport,groundedLifeSummary,summarizeSocialActivity,summarizeSocialContinuity} from "./world-social-probe.mjs";
 
 test("an admitted memory follows personal experience into later contact without claiming causation",()=>{
   const story={
@@ -241,4 +241,60 @@ test("the social probe retains an operator-grounded current city without mistaki
   assert.equal(groundedLifeSummary(threadId,changed,"2026-10-21T23:00:00.000Z")
     .currentWorldLocality,null,
     "an unrelated location was incorrectly called the Thread's current city");
+});
+
+test("social probe counts graded acts, reciprocal attention and need-band debt",()=>{
+  const due="2026-10-23T12:00:00.000Z";
+  const items=[
+    {threadId:"thr_a",kind:"arrival",trigger:"activity_change",
+      dueAt:due,startedAt:due,completedAt:due,outcome:"acted",
+      decision:{counterpartyThreadId:"thr_b",initiation:{act:"greet",
+        expression:"Hello.",decisionContext:{priorSocialChoicesThisVisit:[{act:"none"}]}}},
+      story:{encounterId:"enc_greeting",recipientThreadId:"thr_b",
+        participants:[{threadId:"thr_b",attention:"not_noticed"}]}},
+    {threadId:"thr_a",kind:"arrival",trigger:"need_band",needBand:0.4,
+      dueAt:due,startedAt:null,completedAt:null,outcome:"pending"},
+    {threadId:"thr_b",kind:"observed",trigger:"social_act",dueAt:due,
+      startedAt:due,completedAt:due,outcome:"not_initiated",
+      decision:{initiation:{act:"none",decisionContext:{priorSocialChoicesThisVisit:[]}}}},
+    {threadId:"thr_b",kind:"arrival",trigger:"need_band",needBand:0.6,
+      dueAt:due,startedAt:due,completedAt:due,outcome:"need_unreached"},
+  ];
+  const result=summarizeSocialActivity(items);
+  assert.deepEqual(result.opportunityTriggers,{activity_change:1,need_band:2,social_act:1},
+    "one kind of social opportunity disappeared from the report");
+  assert.equal(result.initiationActs.greet,1);
+  assert.equal(result.initiationActs.none,1);
+  assert.equal(result.recipientNotNoticed,1,"an unnoticed greeting was reported as noticed");
+  assert.deepEqual([result.needBands.pending,result.needBands.completed],[1,1],
+    "the probe lost pending versus settled Body crossings");
+  assert.equal(result.decisionsWithPriorChoices,1,
+    "prior personal choices were invisible to operators");
+  const report=formatWorldSocialReport({
+    environment:"staging",checkedAt:due,targetedThreadId:"thr_a",
+    scannedThreadCount:1,availableThreadCount:1,unavailableThreadIds:[],
+    deployedGitSha:"abc1234",runtimeSourceMatches:false,
+    groundedLife:{withVenues:[],withoutVenues:[]},
+    sharedCurrentVenues:[],socialOpportunities:items,
+    causalContinuity:{inspectedSharedStoryCount:0,distinctExperiencePairCount:0,
+      retainedMemoryChainCount:0,laterContactAfterRetentionCount:0,episodes:[]},
+  },"/tmp/social-life.json");
+  assert.match(report,/activity_change=1/);
+  assert.match(report,/recipient noticed=0 · not noticed=1/);
+  assert.match(report,/thr_a → thr_b/);
+  assert.match(report,/Hello\./);
+});
+
+test("future venue plans use admitted physical-place refs, not absent presenceMode",()=>{
+  const at="2026-10-23T09:00:00.000Z";
+  const life=groundedLifeSummary("thr_reader",{
+    thread:{identity:{name:"Reader"}},
+    livedNow:{currentSituation:null,
+      worldPlaces:[{ref:"wpl_library",physicalVenue:{ref:"venue_library"}}],
+      currentPersonalPlan:{stops:[{physicalPlaceRef:"wpl_library",
+        startAt:"2026-10-23T10:00:00.000Z",endAt:"2026-10-23T11:00:00.000Z"}]},
+    },
+  },at);
+  assert.equal(life.futureAttestedVenueStops.length,1,
+    "a valid planned public visit vanished from social inspection");
 });
