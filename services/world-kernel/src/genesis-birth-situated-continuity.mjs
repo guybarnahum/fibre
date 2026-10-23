@@ -1,5 +1,6 @@
 import { canonicalJson } from "./persistence-common.mjs";
 import { normalizeGenesisWorldSpec } from "./genesis-domain.mjs";
+import {genesisEpisodePlaceName} from "./genesis-place-presentation.mjs";
 import { genesisLifeEpisodeEventId } from "./genesis-life-episode.mjs";
 import { deriveGenesisLifeContinuity } from "./genesis-life-continuity-v1.mjs";
 import {
@@ -25,12 +26,6 @@ function displayNameForRoles(roleRefs) {
     .filter(Boolean)
     .map((part) => part[0].toUpperCase() + part.slice(1))
     .join(" ") || "Person";
-}
-
-function placeDisplayName(place) {
-  return Buffer.byteLength(place.description, "utf8") <= 160
-    ? place.description
-    : place.placeId;
 }
 
 function eventIdMap({ manifest, episodes }) {
@@ -138,7 +133,7 @@ export function deriveGenesisSituatedContinuityRecords({
       episodeKind: "formative_presence",
       place: {
         placeId: place.placeId,
-        displayName: placeDisplayName(worldPlace),
+        displayName: genesisEpisodePlaceName(worldPlace),
         countryCode: null,
         region: null,
         locality: null,
