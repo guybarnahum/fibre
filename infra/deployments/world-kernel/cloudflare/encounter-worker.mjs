@@ -13,7 +13,10 @@ import {
 } from "#services/world-kernel/src/world-environment-opportunity.mjs";
 import { createEnvironmentalEncounterWriteApi } from "#services/world-kernel/src/lived-environmental-encounter-write-api.mjs";
 import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
-import { createWorldSocialOpportunity } from "#services/world-kernel/src/world-social-opportunity.mjs";
+import {
+  createWorldSocialOpportunity,
+  enqueueEnactedSocialReconsideration,
+} from "#services/world-kernel/src/world-social-opportunity.mjs";
 import { createSocialMeetingWriteApi } from "#services/world-kernel/src/lived-social-meeting-write-api.mjs";
 import { createLivedCommonsService } from "#services/world-kernel/src/lived-commons.mjs";
 import { createLivedCommonsWriteApi } from "#services/world-kernel/src/lived-commons-write-api.mjs";
@@ -815,6 +818,15 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     const venue=lived.getWorldPlace(
       situation.threadId,situation.location.placeRef,{required:false},
     )?.physicalVenue?.ref??null;
+    const reconsiderationWakes=enqueueEnactedSocialReconsideration({
+      situation,previous,thread:runtime.worldStore.getThread(
+        situation.threadId,{required:false},
+      ),livedNowStore:lived,experienceStore:store,
+      nextBoundaryAt:nextLivedBoundary(lived,situation),
+    });
+    for(const dueAt of reconsiderationWakes){
+      await runtime.reconciliationRuntime.requestWakeAt(Date.parse(dueAt));
+    }
     if(venue!==null&&occurrence?.kind==="arrival"){
       const witnesses=coPresentAtActorArrival(lived,occurrence,venue).slice(0,2)
         .map(item=>({threadId:item.threadId,situationId:item.situationId}));

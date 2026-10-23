@@ -38,7 +38,10 @@ import { createThreadContactProcess } from "#services/world-kernel/src/thread-co
 import { createThreadContactPerception } from "#services/world-kernel/src/thread-contact-perception.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
 import { createSocialMeetingService } from "#services/world-kernel/src/lived-social-meeting.mjs";
-import { createWorldSocialOpportunity } from "#services/world-kernel/src/world-social-opportunity.mjs";
+import {
+  createWorldSocialOpportunity,
+  enqueueEnactedSocialReconsideration,
+} from "#services/world-kernel/src/world-social-opportunity.mjs";
 import {
   combineWorldEnvironmentProcesses,
   createWorldEnvironmentOpportunity,
@@ -375,6 +378,14 @@ export async function startWorldKernelFromEnvironment(
       const place=livedNowStore.getWorldPlace(
         situation.threadId,situation.location.placeRef,{required:false},
       );
+      const reconsiderationWakes=enqueueEnactedSocialReconsideration({
+        situation,previous,thread:store.getThread(situation.threadId,{required:false}),
+        livedNowStore,experienceStore:livedExperienceStore,
+        nextBoundaryAt:nextLivedBoundary(livedNowStore,situation),
+      });
+      for(const dueAt of reconsiderationWakes){
+        await reconciliationRuntime.requestWakeAt(Date.parse(dueAt));
+      }
       const scene=worldAmbientScene({
         situation,place,nextBoundaryAt:nextLivedBoundary(livedNowStore,situation),
       });
