@@ -155,6 +155,28 @@ export function projectSituatedPercept({
     if (candidate.situation.threadId !== candidate.threadId) {
       throw new TypeError("Situated Percept observed situation belongs to another Thread");
     }
+    const noticed=experienceStore.listNoticedSharedHistory?.(
+      observerThreadId,candidate.threadId,{before:at,limit:12},
+    )??[];
+    const remembered=noticed.slice(0,2);
+    const placeNames=[...new Set(remembered.map(item=>{
+      const location=livedNowStore?.getSituation?.(item.situationId,{
+        required:false,
+      })?.location;
+      return location?.kind==="place"
+        ?livedNowStore?.getWorldPlace?.(observerThreadId,location.placeRef,{
+          required:false,
+        })?.displayName??null:null;
+    }).filter(Boolean))];
+    const familiarity=noticed.length===0?null:Object.freeze({
+      noticedBeforeCount:noticed.length,
+      lastNoticedAt:noticed[0].occurredAt,
+      placeNames:Object.freeze(placeNames),
+      experiences:Object.freeze(remembered.map(item=>Object.freeze({
+        encounterRef:item.encounterRef,
+        experienceText:item.experienceText,
+      }))),
+    });
     const person=observablePerson({
       threadId:candidate.threadId,situation:candidate.situation,
       observerThreadId,name:candidate.name??null,at,
@@ -164,6 +186,7 @@ export function projectSituatedPercept({
       kind:"thread",
       threadId:candidate.threadId,
       name:person.name,
+      familiarity,
       observableDescription:person.observableDescription,
       currentActivity:candidate.situation.activity ?? null,
       situationRef:candidate.situation.situationId,
@@ -182,6 +205,8 @@ export function projectSituatedPercept({
     situation.location?.placeRef ?? null,
     ...observed.map((candidate) => candidate.situationRef),
     ...events.map((event) => event.ref),
+    ...observed.flatMap(person=>person.familiarity?.experiences
+      .map(item=>item.encounterRef)??[]),
   ].filter((value) => typeof value === "string" && value.length > 0);
 
   return Object.freeze({
