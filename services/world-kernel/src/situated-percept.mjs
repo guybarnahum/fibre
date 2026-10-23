@@ -66,9 +66,10 @@ function familiarityCutoff(situation,counterpartSituation,at,livedNowStore){
   }
   const leftSince=socialVenueVisitSince(livedNowStore,situation,venue);
   const rightSince=socialVenueVisitSince(livedNowStore,counterpartSituation,venue);
-  // Unknown visit continuity must never manufacture older familiarity.
-  const visitCutoff=leftSince===null||rightSince===null
-    ?recentCutoff:Math.max(Date.parse(leftSince),Date.parse(rightSince));
+  // An unproven visit start cannot distinguish older acquaintance from
+  // another moment of this same visit.
+  if(leftSince===null||rightSince===null)return null;
+  const visitCutoff=Math.max(Date.parse(leftSince),Date.parse(rightSince));
   return new Date(Math.min(recentCutoff,visitCutoff)).toISOString();
 }
 
@@ -185,12 +186,13 @@ export function projectSituatedPercept({
     if (candidate.situation.threadId !== candidate.threadId) {
       throw new TypeError("Situated Percept observed situation belongs to another Thread");
     }
-    const noticed=experienceStore.listNoticedSharedHistory?.(
-      observerThreadId,candidate.threadId,{
-        before:familiarityCutoff(situation,candidate.situation,at,livedNowStore),
-        limit:12,
-      },
-    )??[];
+    const before=familiarityCutoff(
+      situation,candidate.situation,at,livedNowStore,
+    );
+    const noticed=before===null?[]
+      :experienceStore.listNoticedSharedHistory?.(
+        observerThreadId,candidate.threadId,{before,limit:12},
+      )??[];
     const remembered=noticed.slice(0,2);
     const placeNames=[...new Set(remembered.map(item=>{
       const location=livedNowStore?.getSituation?.(item.situationId,{
