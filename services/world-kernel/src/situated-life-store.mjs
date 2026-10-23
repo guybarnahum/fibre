@@ -230,15 +230,20 @@ export class SituatedLifeStore {
     }
   }
 
-  #resolvedEvidence(threadId, references) {
+  #resolvedEvidence(threadId, references, { worldSocialContact = false } = {}) {
     const resolved = assertAllSituatedReferencesResolve(
       this.#database,
       threadId,
       references,
     );
-    if (!resolved.some((witness) => witness.kind === "thread_event")) {
+    // An admitted Encounter Story is itself a World-owned factual witness
+    // for this participant's social_contact relation. Other Situated Life
+    // records still require a Thread event, as before.
+    if (!resolved.some((witness) =>
+      witness.kind === "thread_event"
+      || (worldSocialContact && witness.kind === "encounter_story"))) {
       throw new SituatedLifeConflictError(
-        "situated-life records require at least one resolved Thread-event witness",
+        "situated-life records require a resolved Thread-event witness or admitted social Encounter Story",
       );
     }
     return resolved;
@@ -362,7 +367,10 @@ export class SituatedLifeStore {
     try {
       const transactionResult = this.#database.transaction(() => {
         this.#requireRelatedParty(record);
-        this.#resolvedEvidence(record.threadId, record.sourceReferences);
+        this.#resolvedEvidence(record.threadId, record.sourceReferences, {
+          worldSocialContact:record.relationKind === "social_contact"
+            && record.provenance === "world_recorded",
+        });
         const history = this.lifeRelationHistory(
           record.threadId,
           record.relationId,
