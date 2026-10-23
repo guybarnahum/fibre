@@ -54,7 +54,8 @@ test("birth API exposes durable pending births without changing initiation", asy
     headers:{ "x-fibre-private-token":TOKEN },
   }));
   assert.equal(list.status, 200);
-  assert.deepEqual(await list.json(), { ok:true, births:pending });
+  assert.deepEqual(await list.json(), { ok:true, births:pending,
+    recentBirths:[{requestId:"recent_birth",status:"published"}] });
 
   const settled = await api.fetch(new Request("https://birth.internal/internal/births/stillborn", {
     headers:{ "x-fibre-private-token":TOKEN },
