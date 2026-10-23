@@ -1,4 +1,5 @@
 import { projectDailyRhythm } from "./daily-rhythm.mjs";
+import {genesisPlaceLabel} from "./genesis-place-presentation.mjs";
 import {
   assertExactKeys,
   assertId,
