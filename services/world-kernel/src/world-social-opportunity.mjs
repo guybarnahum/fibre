@@ -73,6 +73,33 @@ export function enqueueNextSocialNeedBand({
   return null;
 }
 
+// Arrival changes the social scene for people already there, without
+// inventing a fresh situation for them. Only the arrival's captured
+// witnesses receive a possible future Body crossing (at most two).
+export function enqueueArrivalWitnessSocialNeedBands({
+  witnesses,at,venueRef,livedNowStore,experienceStore,worldReader,
+}){
+  const wakes=[];
+  for(const witness of witnesses.slice(0,2)){
+    const situation=livedNowStore.getCurrentSituation(witness.threadId);
+    if(situation?.situationId!==witness.situationId
+      ||!atVenue(livedNowStore,situation,venueRef))continue;
+    const debt=livedNowStore.inspectLivedBoundary?.(witness.threadId);
+    if((debt?.failedAttempts??0)>0
+      ||(debt?.dueAt&&Date.parse(debt.dueAt)<=Date.parse(at)))continue;
+    const thread=worldReader.getThread(witness.threadId,{required:false});
+    if(thread===null)continue;
+    const visitSince=socialVenueVisitSince(livedNowStore,situation,venueRef);
+    const nextBoundaryAt=nextLivedBoundary(livedNowStore,situation);
+    const result=enqueueNextSocialNeedBand({
+      livedNowStore,experienceStore,thread,situation,
+      nextBoundaryAt,visitSince,at,
+    });
+    if(result!==null)wakes.push(result.dueAt);
+  }
+  return wakes;
+}
+
 // Called only when LivedNow enacts a World-owned situation. This adds neither
 // a new simulation clock nor a population scan.
 export function enqueueEnactedSocialReconsideration({
