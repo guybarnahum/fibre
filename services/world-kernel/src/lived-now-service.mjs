@@ -16,7 +16,7 @@ import {
   FLIGHT_PLAN_TRAVEL_INFEASIBLE,
 } from "./lived-now.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
-import {genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
+import {authoredGenesisPlaceLocality,genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FORWARD_PLAN_MS = 12 * 60 * 60 * 1000;
@@ -222,8 +222,9 @@ export function planningLocalityForPlace({livedNowStore,placeEpisodes,threadId,p
   const context=genesisContextLocations(
     episode?[episode]:[],livedNowStore.listLocatedGenesisContexts([threadId]),
     {privatePerspective:true,worldPlaces:worldPlace?[worldPlace]:[],threadId},
-  ).find(item=>item.placeRef===placeRef)?.geography??null;
-  return context===null?null
+  ).find(item=>item.placeRef===placeRef)?.geography
+    ??authoredGenesisPlaceLocality(episode);
+  return context==null?null
     :{locality:context.city,countryCode:context.countryCode};
 }
 
