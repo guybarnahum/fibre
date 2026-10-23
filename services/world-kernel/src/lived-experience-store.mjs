@@ -292,21 +292,38 @@ export class LivedExperienceStore {
 
   enqueueObservedSocialOpportunity({
     encounterRef,threadId,situationId,counterpartyThreadId,venueRef,dueAt,
+    sourceKind="arrival",visitSince=null,
   }){
     for(const [name,id] of Object.entries({
       encounterRef,threadId,situationId,counterpartyThreadId,venueRef,
     }))assertId(`noticed social ${name}`,id);
     assertIsoTimestamp("noticed social time",dueAt);
-    if(threadId===counterpartyThreadId){
-      throw new TypeError("an observed arrival needs a distinct other person");
+    if(threadId===counterpartyThreadId)throw new TypeError("social observer must be another person");
+    if(!["arrival","social_act"].includes(sourceKind)){
+      throw new TypeError("social opportunity source is invalid");
     }
-    const inserted=this.#database.prepare(`
-      INSERT OR IGNORE INTO world_observed_social_opportunities(
-        encounter_ref,thread_id,situation_id,counterparty_thread_id,venue_ref,due_at
-      ) VALUES(?,?,?,?,?,?)
-    `).run(encounterRef,threadId,situationId,counterpartyThreadId,venueRef,dueAt)
-      .changes===1;
-    return Object.freeze({inserted,dueAt});
+    if(sourceKind==="social_act")assertIsoTimestamp("shared visit start",visitSince);
+    return this.#database.transaction(()=>{
+      if(sourceKind==="social_act"){
+        const count=this.#database.prepare(`
+          SELECT COUNT(*) AS n FROM world_observed_social_opportunities
+          WHERE source_kind='social_act' AND venue_ref=?
+            AND due_at>=? AND due_at<=?
+            AND ((thread_id=? AND counterparty_thread_id=?)
+              OR (thread_id=? AND counterparty_thread_id=?))
+        `).get(venueRef,visitSince,dueAt,threadId,counterpartyThreadId,
+          counterpartyThreadId,threadId).n;
+        if(count>=4)return Object.freeze({inserted:false,capped:true,dueAt});
+      }
+      const inserted=this.#database.prepare(`
+        INSERT OR IGNORE INTO world_observed_social_opportunities(
+          encounter_ref,thread_id,situation_id,counterparty_thread_id,
+          venue_ref,due_at,source_kind
+        ) VALUES(?,?,?,?,?,?,?)
+      `).run(encounterRef,threadId,situationId,counterpartyThreadId,venueRef,
+        dueAt,sourceKind).changes===1;
+      return Object.freeze({inserted,capped:false,dueAt});
+    });
   }
 
   nextSocialOpportunityAt({after=null,asOf=null}={}){
@@ -422,7 +439,7 @@ export class LivedExperienceStore {
       assertId("observed social Thread",threadId);
     }
     assertIsoTimestamp("social opportunity completion",at);
-    if(!["no_co_presence","missed_window","expired","life_unresolved","background","not_initiated","not_met","met","scene_changed"].includes(outcome)){
+    if(!["no_co_presence","missed_window","expired","life_unresolved","background","not_initiated","acted","not_met","met","scene_changed"].includes(outcome)){
       throw new TypeError("social opportunity outcome is invalid");
     }
     const table=observed

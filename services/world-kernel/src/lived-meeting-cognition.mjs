@@ -8,7 +8,7 @@ import {
 import { runInteriorCognition } from "./interior-cognition.mjs";
 
 const DECISIONS = Object.freeze(["accept", "decline", "defer"]);
-const INITIATION_DECISIONS = Object.freeze(["initiate", "not_initiate"]);
+const SOCIAL_ACTS = Object.freeze(["none","acknowledge","greet","remark","invite_conversation"]);
 
 const SOCIAL_RESPONSE_ADAPTER = Object.freeze({
   id:"social-response",
@@ -35,25 +35,31 @@ Do not change location, rewrite the Flight Plan, invent a relationship, expose p
 
 const SOCIAL_INITIATION_ADAPTER = Object.freeze({
   id:"social-initiation",
-  instruction:`Decide whether this Thread genuinely wants to initiate a small social encounter with this one co-present actor right now.
-Co-presence creates an opportunity, not an obligation. Initiate only when the Thread actually wants something social from this actor now: attention, company, help, information, conversation, shared activity, or another concrete engagement grounded in the life already underway.
-If initiating, write the short outward request this actor would actually hear. It must make the ask clear enough that they can meaningfully decide whether to engage.
-Choose not_initiate when the Thread does not genuinely want to ask anything of them now.
-When grounded Body interoception is supplied, it may shape interest but does not assert loneliness, friendliness, consent, or an obligation to make contact. Interpret it through this person's particular life, relation and current activity.
-RecentPersonalExperiences contains this Thread's own admitted immediate interpretation of recent events, not another person's feelings and not permanent autobiographical Memory. It may influence but does not command the present choice.
-reason is a concise private operator-facing explanation of the material considerations. Do not change location, rewrite the Flight Plan, invent a relationship, expose private records, or manufacture a motive merely to make an encounter happen.`,
+  instruction:`How, if at all, does this person engage the other person right now?
+The range of ordinary choices includes no outward act, a brief non-verbal acknowledgment,
+a greeting, a remark about the shared situation, or an invitation to converse.
+Neither manufacture nor suppress interest; this person's own life, state, history and the setting decide.
+For none, there is no expression or immediate personal Experience.
+For acknowledge, express a brief gesture as an observer would see it.
+For greet and remark, supply the short words actually said.
+For invite_conversation, use a short spoken invitation clear enough to accept or decline.
+For an outward act, experienceText is this person's concise first-person immediate experience
+of choosing and doing it, not a permanent Memory or knowledge of another's feelings.
+Place affordances are grounded possibilities, not rules or obligations.
+Body interoception may shape interest but does not assert loneliness, consent, or a duty to engage.
+RecentPersonalExperiences are this person's own admitted interpretations; they may influence
+but do not command this choice. Do not invent private motives, relationships or company.`,
   resultSchema:{
-    type:"object",
-    additionalProperties:false,
-    required:["decision","requestText","reason"],
+    type:"object",additionalProperties:false,
+    required:["act","expression","experienceText","reason"],
     properties:{
-      decision:{ type:"string", enum:INITIATION_DECISIONS },
-      requestText:{ anyOf:[{ type:"string", minLength:1, maxLength:500 },{ type:"null" }] },
-      reason:{ type:"string", minLength:1, maxLength:500 },
+      act:{type:"string",enum:SOCIAL_ACTS},
+      expression:{anyOf:[{type:"string",minLength:1,maxLength:500},{type:"null"}]},
+      experienceText:{anyOf:[{type:"string",minLength:1,maxLength:1200},{type:"null"}]},
+      reason:{type:"string",minLength:1,maxLength:500},
     },
   },
 });
-
 
 export function meetingPresenceCompatible(left, right, {
   leftWorldPlaces = [],
@@ -99,7 +105,7 @@ export async function formSocialEncounterRequest({
     at,
     concern:{
       kind:"social_initiation",
-      question:"Do I want to ask this co-present actor for something now?",
+      question:"How, if at all, do I engage this person right now?",
       externalContext:{
         situatedPercept:structuredClone(situatedPercept),
         recentPersonalExperiences:structuredClone(recentPersonalExperiences),
@@ -113,20 +119,25 @@ export async function formSocialEncounterRequest({
   });
 
   assertPlainObject("social encounter request output", cognition.result);
-  assertExactKeys("social encounter request output", cognition.result, ["decision","requestText","reason"]);
-  if (!INITIATION_DECISIONS.includes(cognition.result.decision)) {
-    throw new TypeError("social encounter request decision is invalid");
+  assertExactKeys("social act output",cognition.result,
+    ["act","expression","experienceText","reason"]);
+  if(!SOCIAL_ACTS.includes(cognition.result.act)){
+    throw new TypeError("social act is invalid");
   }
-  assertNonEmpty("social encounter request reason", cognition.result.reason);
-  if (cognition.result.decision === "initiate") {
-    assertNonEmpty("social encounter request requestText", cognition.result.requestText);
-  } else if (cognition.result.requestText !== null) {
-    throw new TypeError("not_initiate cannot carry request text");
+  assertNonEmpty("social act reason",cognition.result.reason);
+  if(cognition.result.act==="none"){
+    if(cognition.result.expression!==null||cognition.result.experienceText!==null){
+      throw new TypeError("no social act cannot create outward speech or Experience");
+    }
+  }else{
+    assertNonEmpty("social act expression",cognition.result.expression);
+    assertNonEmpty("social act experience",cognition.result.experienceText);
   }
 
   return Object.freeze({
-    decision:cognition.result.decision,
-    requestText:cognition.result.requestText,
+    act:cognition.result.act,
+    expression:cognition.result.expression,
+    experienceText:cognition.result.experienceText,
     reason:cognition.result.reason,
     decisionContext:Object.freeze({
       interoception:interoception===null?null:structuredClone(interoception),

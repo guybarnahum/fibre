@@ -38,6 +38,7 @@ function currentPlace(threadId, situation, situatedLifeStore, livedNowStore) {
     placeId:worldPlace.ref,
     displayName:worldPlace.displayName,
     authority:"shared_world",
+    affordances:Object.freeze([...(worldPlace.affordances??[])]),
   });
 }
 

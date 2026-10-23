@@ -124,6 +124,8 @@ export function createLivedExperienceTables(database) {
       completed_at TEXT,
       outcome TEXT,
       decision_json TEXT CHECK (decision_json IS NULL OR json_valid(decision_json)),
+      source_kind TEXT NOT NULL DEFAULT 'arrival'
+        CHECK(source_kind IN ('arrival','social_act')),
       PRIMARY KEY(encounter_ref,thread_id),
       FOREIGN KEY(encounter_ref) REFERENCES encounter_story_records(encounter_id),
       FOREIGN KEY(thread_id) REFERENCES threads(thread_id)
@@ -522,6 +524,15 @@ export function createLivedExperienceTables(database) {
         CHECK (decision_json IS NULL OR json_valid(decision_json))`);
     }
   }
+  if(!database.prepare("PRAGMA table_info(world_observed_social_opportunities)")
+    .all().some(column=>column.name==="source_kind")){
+    database.exec(`ALTER TABLE world_observed_social_opportunities
+      ADD COLUMN source_kind TEXT NOT NULL DEFAULT 'arrival'
+      CHECK(source_kind IN ('arrival','social_act'))`);
+  }
+  database.exec(`CREATE INDEX IF NOT EXISTS idx_world_social_act_reciprocity
+    ON world_observed_social_opportunities(venue_ref,due_at,source_kind)
+    WHERE source_kind='social_act'`);
   if(needsStoryTimeline){
     database.exec(`
       INSERT INTO thread_encounter_story_timeline(thread_id,encounter_ref,occurred_at)
