@@ -998,6 +998,8 @@ test("E2 incompatible presence or decline creates no Encounter Story", async () 
   assert.equal(declined.socialInteractions.length, 1,
     "an outward request plus decline should remain available as shared social history");
   assert.equal(declined.socialInteractions[0].responseDecision, "decline");
+  assert.equal(declined.acquaintanceRelations.length,0,
+    "declining a conversation cannot establish a factual acquaintance");
 });
 
 
@@ -1015,6 +1017,8 @@ test("accepted social intention does not manufacture a stale-scene conversation"
     "changed lived context should stop the admitted conversation before it starts");
   assert.equal(attempt.encounterStory,null,
     "stale accepted intention fabricated an Encounter Story");
+  assert.equal(f.acquaintanceRelations.length,0,
+    "unheld consent was mistaken for a World-founded acquaintance");
   assert.equal(attempt.live,null,
     "stale accepted intention should not start Live Encounter runtime");
   assert.equal(f.experiences.length,0,
