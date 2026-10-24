@@ -297,6 +297,7 @@ test("N6.3b keeps the displayed scene valid when enacted life frustrates the Fli
         location:{ kind:"place", placeRef:life.homeRef },
         mediatedContext:null,
         activity:displayed.activity,
+        outwardActivity:displayed.outwardActivity,
         reason:"World evidence shows Maya is still finishing the fox sketch after the planned departure.",
         participantRefs:[],
         evidenceRefs:[life.sourceEvent],
@@ -826,7 +827,8 @@ test("a blocked life carries its failed journey into an independently renewed pl
           const stop=(startAt,endAt,activity)=>({
             startAt,endAt,physicalPlaceRef:samePlace,
             presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
-            activity,purpose:"Choose how to continue at home.",travelFromPrevious:"",
+            activity,outwardActivity:activity==="Rest at home."?"resting":"studying",
+            purpose:"Choose how to continue at home.",travelFromPrevious:"",
           });
           return {
             output:{result:{stops:[

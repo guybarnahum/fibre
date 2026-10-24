@@ -143,7 +143,7 @@ test("the same planning mind can choose a World-listed place or stay home",async
         const go=offered&&visiting&&!/unwelcome/iu.test(remembered);
         const base={physicalPlaceRef:homeRef,presenceMode:"physical",
           wakefulness:"awake",mediatedContext:"",activity:"Read",
-          purpose:"Enjoy the day",travelFromPrevious:""};
+          outwardActivity:"reading",purpose:"Enjoy the day",travelFromPrevious:""};
         return {output:{result:{stops:[
           {...base,startAt:at,endAt:go?"2026-10-18T16:45:00Z":end},
           ...(go?[{...base,physicalPlaceRef:place.ref,
