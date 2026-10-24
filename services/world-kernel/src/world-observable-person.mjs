@@ -46,17 +46,19 @@ function publicAppearance(threadId,embodimentStore,birthDate,at){
     });
     if(projection===null)continue;
     const layers=canonicalVisualAppearanceLayers(projection.subjectDescription);
-    if(layers!==null)return visibleAppearance(layers,birthDate,at);
+    if(layers!==null)return {
+      description:visibleAppearance(layers,birthDate,at),structured:true,
+    };
     const clause=projection.subjectDescription.split(/[;\n.]/u)[0]
       ?.replace(/\bThreads?\b/giu,"person").trim()??"";
     if(!clause||/:|\b(?:phenotype|zygomatic|faceWidth|pigmentation)\b/iu.test(clause))
-      return "a person";
+      return {description:"a person",structured:false};
     const words=clause.split(/\s+/u),bounded=[];
     for(const word of words){
       if(([...bounded,word].join(" ")).length>120)break;
       bounded.push(word);
     }
-    return bounded.join(" ")||"a person";
+    return {description:bounded.join(" ")||"a person",structured:false};
   }
   return null;
 }
@@ -121,12 +123,13 @@ export function observablePerson({
   });
   const known=knowledge.full;
   const heardName=knowledge.heard;
-  const description=publicAppearance(threadId,embodimentStore,birthDate,at)??"a person";
+  const appearance=publicAppearance(threadId,embodimentStore,birthDate,at);
+  const description=appearance?.description??"a person";
   // Objective World Stories have no observer, hence no authority to reveal
   // names. For unfamiliar witnesses, redact any identity in portrait prose.
   return Object.freeze({
     name:typeof name!=="string"?null:known?name:heardName,
-    observableDescription:boundedDescription(known?description
-      :redactUnknownName(description,name,heardName)),
+    observableDescription:boundedDescription(known||appearance?.structured
+      ?description:redactUnknownName(description,name,heardName)),
   });
 }

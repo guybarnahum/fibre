@@ -171,7 +171,7 @@ test("layered public portrait becomes a short visible age and hair description",
   };
   const person=observablePerson({
     threadId:record.threadId,situation,birthDate:"1998-12-01",
-    name:"Hidden Person",observerThreadId:"thr_observer",
+    name:"Hidden Brown",observerThreadId:"thr_observer",
     embodimentStore:{listCurrent:()=>[record]},
     situatedLifeStore:{listCurrentLifeRelations:()=>[]},
     experienceStore:{hasMetEncounter:()=>false},
