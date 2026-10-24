@@ -60,7 +60,7 @@ They are lived history, not an obligation to repeat or reverse any choice.
 Do not invent private motives, relationships or company.`,
   resultSchema:{
     type:"object",additionalProperties:false,
-    required:["act","expression","experienceText","reason"],
+    required:["act","expression","experienceText","reason","introducesSelf"],
     properties:{
       act:{type:"string",enum:SOCIAL_ACTS},
       expression:{anyOf:[{type:"string",minLength:1,maxLength:500},{type:"null"}]},
@@ -133,14 +133,16 @@ export async function formSocialEncounterRequest({
 
   assertPlainObject("social encounter request output", cognition.result);
   assertExactKeys("social act output",cognition.result,[
-    "act","expression","experienceText","reason",
-    ...(cognition.result.introducesSelf===undefined?[]:["introducesSelf"]),
+    "act","expression","experienceText","reason","introducesSelf",
   ]);
   if(!SOCIAL_ACTS.includes(cognition.result.act)){
     throw new TypeError("social act is invalid");
   }
   assertNonEmpty("social act reason",cognition.result.reason);
-  const requestedIntroduction=cognition.result.introducesSelf===true;
+  if(typeof cognition.result.introducesSelf!=="boolean"){
+    throw new TypeError("social introduction choice must be boolean");
+  }
+  const requestedIntroduction=cognition.result.introducesSelf;
   const spoken=["greet","remark","invite_conversation"].includes(cognition.result.act);
   const disclosedName=requestedIntroduction&&spoken
     ?spokenNameDisclosure(cognition.result.expression,

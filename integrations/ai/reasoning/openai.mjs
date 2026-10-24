@@ -59,6 +59,44 @@ export function projectOpenAIStructuredOutputSchema(value) {
   return result;
 }
 
+// Strict Structured Outputs requires every declared object field, including
+// nested alternatives, to be required. Validate before provider I/O.
+export function assertOpenAIStrictResponseSchema(schema,path="$"){
+  if(schema===null||typeof schema!=="object")return schema;
+  if(Array.isArray(schema)){
+    for(let i=0;i<schema.length;i++)
+      assertOpenAIStrictResponseSchema(schema[i],path+"["+i+"]");
+    return schema;
+  }
+  if(schema.type==="object"||schema.properties!==undefined){
+    const props=schema.properties;
+    const keys=props&&typeof props==="object"&&!Array.isArray(props)
+      ?Object.keys(props):[];
+    const required=schema.required;
+    const validRequired=Array.isArray(required)
+      &&required.length===keys.length
+      &&new Set(required).size===keys.length
+      &&keys.every(key=>required.includes(key));
+    if(schema.additionalProperties!==false||!validRequired){
+      const missing=keys.filter(key=>!required?.includes?.(key));
+      throw new GuardianModelError(
+        "OpenAI strict response schema invalid at "+path+
+          ": object requires additionalProperties:false and every property required"+
+          (missing.length?" (missing: "+missing.join(", ")+")":""),
+        {code:"MODEL_RESPONSE_SCHEMA_INVALID",retryable:false},
+      );
+    }
+  }
+  if(schema.properties)for(const [key,value] of Object.entries(schema.properties))
+    assertOpenAIStrictResponseSchema(value,path+".properties."+key);
+  if(schema.$defs)for(const [key,value] of Object.entries(schema.$defs))
+    assertOpenAIStrictResponseSchema(value,path+".$defs."+key);
+  for(const key of ["items","anyOf","allOf","oneOf"])
+    if(schema[key]!==undefined)
+      assertOpenAIStrictResponseSchema(schema[key],path+"."+key);
+  return schema;
+}
+
 function canonicalItemKey(value) {
   return canonicalJson(value);
 }
@@ -385,6 +423,7 @@ export function createOpenAIModelAdapter({
       if (terminalFailure !== null) throw terminalFailure;
 
       const providerResponseSchema = projectOpenAIStructuredOutputSchema(responseSchema);
+      assertOpenAIStrictResponseSchema(providerResponseSchema);
       const maximumAttempts = retryLimit + 1;
       const operationalRetries = [];
       for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {

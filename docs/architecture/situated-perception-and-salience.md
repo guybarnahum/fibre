@@ -341,6 +341,9 @@ of names through speech, event-driven reconsideration during continuous
 co-presence beyond these acts, and proof that Memory changes a subsequent
 unforced social choice.
 
+Social initiation uses strict structured output: `introducesSelf` is always
+present as a boolean, false when no introduction is chosen.
+
 ## Familiarity, introductions, and person-owned social history (October 23 source)
 
 When a Thread sees a real co-present person, Situated Percept may include
