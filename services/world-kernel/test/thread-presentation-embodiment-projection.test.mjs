@@ -150,6 +150,8 @@ test("ordinary World perception uses public morphology without a stranger's ance
     "legacy public appearance leaked specification details");
   assert.doesNotMatch(person.observableDescription,/broad family appearance prior/,
     "ancestry prior leaked into public observation");
+  assert.doesNotMatch(person.observableDescription,/Reading|Currently:/u,
+    "a legacy situation leaked private activity");
 });
 
 test("layered public portrait becomes a short visible age and hair description",()=>{

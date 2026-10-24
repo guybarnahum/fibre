@@ -1716,7 +1716,9 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
         const situation=normalizeCurrentSituation({
           situationId:"sit_"+threadId,threadId,establishedAt,
           phase:"at_place",location:{kind:"place",placeRef},
-          mediatedContext:null,activity:"Reading at a café.",
+          mediatedContext:null,
+          activity:"Read quietly without expecting conversation.",
+          ...(threadId===ids[3]?{outwardActivity:"reading"}:{}),
           wakefulness:"awake",reason:"An independent visit.",
           participantRefs:[],evidenceRefs:["evt_"+threadId],
           sourcePlanRefs:["plan_"+threadId],
@@ -1758,12 +1760,14 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
     });
     assert.equal(lived.inspectLivedBoundary(ids[0]).failedAttempts,1);
     let attemptedLifeEnactment=0;
+    const attentionInputs=[];
     const arrival=createWorldArrivalPerception({
       experienceStore:experience,livedNowStore:lived,
       worldReader:{getThread:id=>structuredClone(people.get(id)??null)},
       semanticStateStore:{listCurrentState:()=>[]},
       memoryStore:{listCurrentMemories:()=>[]},
-      modelAdapter:{async invoke(){
+      modelAdapter:{async invoke(request){
+        attentionInputs.push(request.input);
         return {output:{outcome:"not_noticed",experienceText:null},
           provenance:{provider:"fixture",modelId:"no-attention"}};
       }},
@@ -1809,6 +1813,19 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
     assert.equal(experience.inspectSocialOpportunities(ids[2])[0].startedAt,null,
       "social choice bypassed unspent arrival attention");
     const result=await process.runOnce();
+    const freeStory=experience.listEncounterStories(ids[2],{limit:5})[0];
+    assert.ok(freeStory,"witnessed arrival lost its Story");
+    assert.equal(freeStory.story.beats.length,2,"arrival invented participants");
+    assert.match(freeStory.story.beats[0].text,/^A person arrives at the venue\.$/u);
+    assert.match(freeStory.story.beats[1].text,/^A person is reading\.$/u);
+    assert.ok(freeStory.story.beats.every(beat=>beat.text.length<120
+      &&!beat.text.includes("Currently:")
+      &&!beat.text.includes("expecting conversation")),
+    "private intent entered the objective Story");
+    assert.ok(attentionInputs.some(input=>input.currentSituation.threadId===ids[3]
+      &&input.encounterStory.story.beats.some(beat=>
+        beat.self===true&&beat.text==="You are reading nearby.")),
+    "witness attention did not see its own readable presence");
     assert.equal(result.environmentEvolution.result.results[0].outcome,"recorded",
       "other venue's failed life suppressed real arrival perception");
     assert.equal(result.socialOpportunity.result.results[0].outcome,"background",

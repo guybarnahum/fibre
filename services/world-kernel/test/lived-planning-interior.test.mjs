@@ -607,6 +607,23 @@ test("personal Flight Plan admission keeps private cognition evidence separate f
     });
 
     const admitted = livedNowStore.recordPlan(plan);
+    assert.equal(admitted.stops[0].outwardActivity,"reading",
+      "Thread-authored outward activity did not survive plan admission");
+    const invalidModel=fixturePlanningModel();
+    await assert.rejects(()=>formPersonalLivedPlan({
+      threadId:"thr_lived_plan_admission",
+      authoredAt:"2026-09-22T09:00:00.000Z",
+      horizonEnd:"2026-09-22T13:00:00.000Z",
+      availablePlaceRefs:[placeRef],startingPlaceRef:placeRef,
+      sourceReferences:[event.eventId],
+      sourceStores:{worldStore,identityStore,semanticStateStore,
+        memoryStore,situatedLifeStore,livedNowStore},
+      modelAdapter:{...invalidModel,async invoke(call){
+        const answer=await invalidModel.invoke(call);
+        delete answer.output.result.stops[0].outwardActivity;
+        return answer;
+      }},
+    }),/outwardActivity/u,"new plans must not omit outward activity");
     assert.deepEqual(
       admitted.sourceReferences.sort(),
       [event.eventId, placeRef].sort(),
