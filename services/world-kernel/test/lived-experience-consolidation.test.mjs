@@ -672,6 +672,7 @@ test("retained lived Memory, not archived history, changes a later voluntary soc
               return {output:{
                 result:{
                   act:recall?"invite_conversation":"none",
+                  introducesSelf:false,
                   expression:recall?"Would you like to talk for a moment?":null,
                   experienceText:recall?"I felt ready to approach.":null,
                   reason:recall?"The remembered encounter matters to me.":

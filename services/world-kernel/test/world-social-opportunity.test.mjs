@@ -707,7 +707,7 @@ test("social cognition prefers the encountered person's factual relation and ret
 test("a shared visit owns one Body-band obligation across activity changes",async()=>{
   let decisions=0;
   const f=groundedReconsiderationFixture({onInvoke:()=>({
-    output:{result:{act:"none",expression:null,experienceText:null,
+    output:{result:{act:"none",expression:null,experienceText:null,introducesSelf:false,
       reason:"I prefer the quiet company."},
       evidenceRefs:[],conflictingMotives:[],uncertainty:null},
     provenance:{provider:"fixture",modelId:"visit-band"},
@@ -828,7 +828,7 @@ test("a noticed greeting recalls the recipient's earlier silence",async()=>{
       "a recipient's earlier choice was absent from a voluntary reply");
     observedChoices++;
     return {output:{result:{
-      act:"none",expression:null,experienceText:null,
+      act:"none",expression:null,experienceText:null,introducesSelf:false,
       reason:"I will keep reading.",
     },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
     provenance:{provider:"fixture",modelId:"greeting-reply"}};
@@ -1016,7 +1016,7 @@ test("a grounded Body crossing earns consideration but never forces an act",asyn
     judgments++;
     return {
       output:{result:{
-        act:"none",expression:null,experienceText:null,
+        act:"none",expression:null,experienceText:null,introducesSelf:false,
         reason:"I still want to read quietly.",
       },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
       provenance:{provider:"fixture",modelId:"band-choice"},
@@ -1061,7 +1061,7 @@ test("a later voluntary choice recalls the Thread's own earlier silence",async()
     decisions++;
     return {
       output:{result:{
-        act:"none",expression:null,experienceText:null,
+        act:"none",expression:null,experienceText:null,introducesSelf:false,
         reason:"I still prefer to read.",
       },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
       provenance:{provider:"fixture",modelId:"reconsideration-choice"},
