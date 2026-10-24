@@ -1168,7 +1168,16 @@ test("an enacted arrival permits immediate voluntary consideration without forci
     async meet({initiatorThreadId,at}){
       invoked.push({initiatorThreadId,at});
       if(initiatorThreadId===people[2]){
-        throw new Error("expression transport interrupted");
+        const failure=new Error("expression transport interrupted");
+        failure.fibreSocialCounterpartyThreadId=people[1];
+        failure.fibreSocialSalience={outcome:"salient",
+          anchors:["social_contact_pressure"],
+          sourceReferences:["sit_social_2"],
+          bodyAtGate:{asOf:AT,drives:[{
+            family:"social_contact",pressure:0.6,evidenceRefs:["sit_social_2"],
+          }]},
+        };
+        throw failure;
       }
       return {attempts:[{
         counterpartyThreadId:people[2],outcome:"not_initiated",
@@ -1252,11 +1261,15 @@ test("an enacted arrival permits immediate voluntary consideration without forci
     assert.equal(invoked.length,2,"World retried private speech after interruption");
     assert.equal(experience.nextSocialOpportunityAt(),null,
       "completed or interrupted social decisions left recurring alarms");
-    assert.deepEqual(
-      experience.inspectSocialOpportunities(people[2]).map(x=>x.outcome),
-      ["interrupted"],
-      "uncertain contact was hidden instead of remaining inspectable",
-    );
+    const failedRecord=experience.inspectSocialOpportunities(people[2])[0];
+    assert.equal(failedRecord.outcome,"interrupted",
+      "uncertain contact was hidden instead of remaining inspectable");
+    assert.match(failedRecord.decision?.error??"",/expression transport interrupted/,
+      "interrupted speech lost its durable failure reason");
+    assert.equal(failedRecord.decision?.counterpartyThreadId,people[1],
+      "the interrupted opportunity lost its observed counterpart");
+    assert.equal(failedRecord.decision?.salience?.bodyAtGate?.drives[0]?.pressure,0.6,
+      "the salience already evaluated before interruption was discarded");
   }finally{
     experience.close();
     rmSync(directory,{recursive:true,force:true});

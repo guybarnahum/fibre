@@ -2,6 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createSocialMeetingService } from "../src/lived-social-meeting.mjs";
+import {
+  assertOpenAIStrictResponseSchema,projectOpenAIStructuredOutputSchema,
+} from "../../../integrations/ai/reasoning/openai.mjs";
 import { placeEpisodeRevisionRef } from "../src/situated-life-evidence.mjs";
 
 const AT = "2026-09-21T18:00:00.000Z";
@@ -237,7 +240,15 @@ function fixture({
     configuration:{transport:"fixture"},
     async invoke(call) {
       modelCalls += 1;
+      // Capture the *complete* schema runInteriorCognition sends for both
+      // initiation and response, not a reconstructed isolated result shape.
+      assert.doesNotThrow(()=>assertOpenAIStrictResponseSchema(
+        projectOpenAIStructuredOutputSchema(call.responseSchema),
+      ),"social cognition sent an invalid strict response schema");
       if (call.input?.concern?.kind === "social_initiation") {
+        assert.deepEqual(call.responseSchema?.properties?.result?.required,
+          ["act","expression","experienceText","reason","introducesSelf"],
+          "initiation must require a boolean introduction choice");
         assert.deepEqual(call.responseSchema?.properties?.result?.properties?.act?.enum,
           ["none","acknowledge","greet","remark","invite_conversation"],
           "the social mind lost its ordinary range of actions");
@@ -288,7 +299,7 @@ function fixture({
           output:{
             result:{
               act:decision,
-              ...(introducesSelf?{introducesSelf:true}:{}),
+              introducesSelf,
               expression:customExpression!==undefined?customExpression
                 :introducesSelf?"Hello, I'm "+call.input.thread.name+"."
                 :decision==="acknowledge"?"offers a brief nod."

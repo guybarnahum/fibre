@@ -8,6 +8,7 @@ import test from "node:test";
 import { recoverModelOutput } from "#integrations/ai/reasoning/output-recovery.mjs";
 import {
   assertOpenAIProjectedSchemaConstraints,
+  assertOpenAIStrictResponseSchema,
   createOpenAIModelAdapter,
   projectOpenAIStructuredOutputSchema,
 } from "../../../integrations/ai/reasoning/openai.mjs";
@@ -132,4 +133,30 @@ test("World Pass-B domain independently rejects duplicate episodeRefs after prov
     /must contain unique references/,
   );
   assert.deepEqual(assertUniquePassBEpisodeRefs(["ep_1", "ep_2"]), ["ep_1", "ep_2"]);
+});
+
+test("strict OpenAI schema fails locally at the nested field before provider I/O",async()=>{
+  let requests=0;
+  const adapter=createOpenAIModelAdapter({
+    environment:{OPENAI_API_KEY:"fixture"},modelId:"gpt-test",
+    fetchImpl:async()=>{requests++;throw new Error("provider must not be called");},
+  });
+  const invalid={
+    type:"object",additionalProperties:false,required:["result"],
+    properties:{result:{
+      type:"object",additionalProperties:false,required:["act"],
+      properties:{act:{type:"string"},introducesSelf:{type:"boolean"}},
+    }},
+  };
+  await assert.rejects(adapter.invoke({
+    systemPrompt:"Validate first.",input:{},responseSchema:invalid,
+    clientRequestId:"strict-schema-fail-fast",
+  }),(error)=>error?.code==="MODEL_RESPONSE_SCHEMA_INVALID"
+    &&error?.retryable===false
+    &&error.message.includes("$.properties.result")
+    &&error.message.includes("introducesSelf"));
+  assert.equal(requests,0,"invalid strict schema reached the provider");
+  assert.doesNotThrow(()=>assertOpenAIStrictResponseSchema(
+    projectOpenAIStructuredOutputSchema(GENESIS_PASS_B_RESPONSE_SCHEMA),
+  ),"a previously valid genesis schema became invalid");
 });

@@ -218,6 +218,28 @@ test("social timing report distinguishes missed company from voluntary refusal",
     "a missed opportunity was misrepresented as a voluntary refusal");
 });
 
+test("social probe explains a durably interrupted cognition attempt",()=>{
+  const at="2026-10-24T07:15:00.000Z";
+  const report=formatWorldSocialReport({
+    environment:"staging",checkedAt:at,targetedThreadId:"thr_surafel",
+    scannedThreadCount:1,availableThreadCount:1,unavailableThreadIds:[],
+    deployedGitSha:"8f6e674",runtimeSourceMatches:false,
+    groundedLife:{withVenues:[],withoutVenues:[]},sharedCurrentVenues:[],
+    socialOpportunities:[{
+      threadId:"thr_surafel",kind:"arrival",dueAt:at,
+      startedAt:at,completedAt:at,outcome:"interrupted",
+      decision:{error:"OpenAI strict response schema invalid at $.properties.result",
+        counterpartyThreadId:"thr_samuel",salience:{outcome:"salient",anchors:[]}},
+    }],
+    causalContinuity:{inspectedSharedStoryCount:0,distinctExperiencePairCount:0,
+      retainedMemoryChainCount:0,laterContactAfterRetentionCount:0,episodes:[]},
+  },"/tmp/social-failure.json");
+  assert.match(report,/strict response schema invalid/,
+    "interrupted model failure was omitted from the social probe");
+  assert.match(report,/thr_surafel → thr_samuel/,
+    "interrupted social attention lost its counterpart");
+});
+
 test("the social probe retains an operator-grounded current city without mistaking birthplace for residence",()=>{
   const threadId="thr_london";
   const person={
