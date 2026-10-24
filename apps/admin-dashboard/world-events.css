@@ -1,5 +1,5 @@
 /* World Observatory — source-grounded geographic monitoring. */
-.world-events-surface{display:grid;gap:18px;width:100%;min-width:0}
+.world-events-surface{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;width:100%;min-width:0}
 .world-events-surface>.panel{max-width:none;margin-inline:30px;width:auto}
 .world-events-drill{margin-inline:30px}
 .world-events-drill>.panel{max-width:none;margin:0;width:auto}
@@ -17,7 +17,7 @@
 .world-events-panel-title .world-events-day-copy-hint{font-size:10px;opacity:.7;margin-left:4px}
 .world-events-timeline-copy[hidden]{display:none}
 .world-events-main-map-panel,.world-events-place-panel,.world-events-timeline-panel{padding:20px;min-width:0}
-.world-events-world-map{height:clamp(320px,40vw,620px);overflow:hidden}
+.world-events-world-map{width:100%;min-width:0;aspect-ratio:2/1;height:auto;overflow:hidden}
 .world-events-world-map .thread-world-map-svg{width:100%;height:100%}
 .world-events-city-marker,.world-events-place-marker{cursor:pointer;outline:none}
 .world-events-dot{fill:#477c91;stroke:#e0f7ff;stroke-width:1.6;transition:fill .2s,r .2s}
