@@ -214,7 +214,8 @@ export function projectSituatedPercept({
     });
     const person=observablePerson({
       threadId:candidate.threadId,situation:candidate.situation,
-      observerThreadId,name:candidate.name??null,at,
+      observerThreadId,name:candidate.name??null,
+      birthDate:candidate.birthDate??null,at,
       embodimentStore,situatedLifeStore,experienceStore,
     });
     return Object.freeze({
@@ -223,7 +224,7 @@ export function projectSituatedPercept({
       name:person.name,
       familiarity,
       observableDescription:person.observableDescription,
-      currentActivity:candidate.situation.activity ?? null,
+      currentActivity:candidate.situation.outwardActivity ?? null,
       situationRef:candidate.situation.situationId,
     });
   });

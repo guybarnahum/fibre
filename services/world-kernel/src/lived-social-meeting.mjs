@@ -85,6 +85,7 @@ function observedThread(context) {
   return Object.freeze({
     threadId:context.thread.threadId,
     name:context.thread.identity?.name ?? null,
+    birthDate:context.thread.identity?.birthDate??null,
     situation:context.situation,
   });
 }
@@ -344,13 +345,14 @@ export function createSocialMeetingService({
     const gesture=initiation.act==="acknowledge";
     const description=observablePerson({
       threadId:currentLeft.thread.threadId,situation:currentLeft.situation,
-      name:currentLeft.thread.identity?.name??null,embodimentStore,
-    }).observableDescription.replace(/; Currently:.*$/u,"");
+      name:currentLeft.thread.identity?.name??null,
+      birthDate:currentLeft.thread.identity?.birthDate??null,at,embodimentStore,
+    }).observableDescription;
     const story={storyVersion:"encounter-story-v0.1",beats:[{
       actorThreadId:currentLeft.thread.threadId,
       kind:gesture?"action":"utterance",
-      text:gesture?description+" "+initiation.expression
-        :description+' says: "'+initiation.expression+'"',
+      text:gesture?description[0].toUpperCase()+description.slice(1)+" "+initiation.expression
+        :description[0].toUpperCase()+description.slice(1)+' says: "'+initiation.expression+'"',
       ...(initiation.disclosedName?{
         disclosesSpeakerName:true,disclosedName:initiation.disclosedName,
       }:{}),

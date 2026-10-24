@@ -191,6 +191,7 @@ function normalizeStop(value, index) {
     "physicalPlaceRef",
     "mediatedContext",
     "activity",
+    ...(value.outwardActivity===undefined?[]:["outwardActivity"]),
     "wakefulness",
     "purpose",
     "companionRefs",
@@ -204,6 +205,11 @@ function normalizeStop(value, index) {
   assertId(`${name}.physicalPlaceRef`, value.physicalPlaceRef);
   const mediatedContext = nullableText(`${name}.mediatedContext`, value.mediatedContext);
   assertNonEmpty(`${name}.activity`, value.activity);
+  if(value.outwardActivity!==undefined){
+    assertNonEmpty(`${name}.outwardActivity`,value.outwardActivity);
+    if(value.outwardActivity.length>60||/[\r\n]/u.test(value.outwardActivity))
+      throw new TypeError("lived stop outwardActivity must be short observable text");
+  }
   assertNonEmpty(`${name}.purpose`, value.purpose);
   const companionRefs = normalizeIds(`${name}.companionRefs`, value.companionRefs);
   const travelFromPrevious = nullableText(`${name}.travelFromPrevious`, value.travelFromPrevious);
@@ -213,6 +219,7 @@ function normalizeStop(value, index) {
     physicalPlaceRef: value.physicalPlaceRef,
     mediatedContext,
     activity: value.activity,
+    ...(value.outwardActivity===undefined?{}:{outwardActivity:value.outwardActivity}),
     ...(value.wakefulness === undefined ? {} : { wakefulness:normalizeWakefulness(value.wakefulness) }),
     purpose: value.purpose,
     companionRefs,
@@ -399,6 +406,7 @@ export function plannedPositionAt(planCandidate, at) {
         location: { kind: "place", placeRef: stop.physicalPlaceRef },
         mediatedContext: stop.mediatedContext,
         activity: stop.activity,
+        ...(stop.outwardActivity===undefined?{}:{outwardActivity:stop.outwardActivity}),
         wakefulness: stop.wakefulness ?? "unknown",
         reason: stop.purpose,
         participantRefs: stop.companionRefs,
@@ -452,6 +460,7 @@ export function normalizeWorldObservation(value) {
     "location",
     "mediatedContext",
     "activity",
+    ...(value.outwardActivity===undefined?[]:["outwardActivity"]),
     "wakefulness",
     "reason",
     "participantRefs",
@@ -475,6 +484,7 @@ export function normalizeWorldObservation(value) {
     location,
     mediatedContext,
     activity: value.activity,
+    ...(value.outwardActivity===undefined?{}:{outwardActivity:value.outwardActivity}),
     ...(value.wakefulness === undefined ? {} : { wakefulness:normalizeWakefulness(value.wakefulness) }),
     reason: value.reason,
     participantRefs,
@@ -492,6 +502,7 @@ export function normalizeCurrentSituation(value) {
     "location",
     "mediatedContext",
     "activity",
+    ...(value.outwardActivity===undefined?[]:["outwardActivity"]),
     "wakefulness",
     "reason",
     "participantRefs",
@@ -509,6 +520,7 @@ export function normalizeCurrentSituation(value) {
     location: value.location,
     mediatedContext: value.mediatedContext,
     activity: value.activity,
+    ...(value.outwardActivity===undefined?{}:{outwardActivity:value.outwardActivity}),
     wakefulness: value.wakefulness,
     reason: value.reason,
     participantRefs: value.participantRefs,

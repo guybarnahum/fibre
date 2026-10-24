@@ -50,18 +50,26 @@ export function createWorldArrivalPerception({
           }):[];
           let encounterRef=null;
           if(witnesses.length>0){
-            const describe=situation=>observablePerson({
-              threadId:situation.threadId,situation,embodimentStore,
-              name:worldReader.getThread(situation.threadId,{required:false})
-                ?.identity?.name??null,
-            }).observableDescription;
+            const describe=situation=>{
+              const identity=worldReader.getThread(situation.threadId,{
+                required:false,
+              })?.identity;
+              const words=observablePerson({
+                threadId:situation.threadId,situation,embodimentStore,
+                name:identity?.name??null,birthDate:identity?.birthDate??null,
+                at:obligation.dueAt,
+              }).observableDescription;
+              return words[0].toUpperCase()+words.slice(1);
+            };
             const story={storyVersion:"encounter-story-v0.1",
               beats:[
                 {actorThreadId:arrival.threadId,kind:"action",
                   text:`${describe(arrival)} arrives at the venue.`},
                 ...witnesses.map(situation=>({
                   actorThreadId:situation.threadId,kind:"occurrence",
-                  text:`${describe(situation)} is present at the venue.`,
+                  text:situation.outwardActivity
+                    ?`${describe(situation)} is ${situation.outwardActivity}.`
+                    :`${describe(situation)} is present at the venue.`,
                 })),
               ]};
             const encounter=experienceStore.recordEncounterStory({

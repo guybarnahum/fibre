@@ -69,6 +69,7 @@ function observationFromPlan(plan, at) {
         },
     mediatedContext: position.mediatedContext,
     activity: position.activity,
+    ...(position.outwardActivity===undefined?{}:{outwardActivity:position.outwardActivity}),
     wakefulness: position.wakefulness,
     reason: position.reason,
     participantRefs: [...position.participantRefs],
@@ -99,6 +100,7 @@ function sceneFacts(situation) {
       : structuredClone(situation.location),
     mediatedContext:situation.mediatedContext,
     activity:situation.activity,
+    outwardActivity:situation.outwardActivity??null,
     wakefulness:situation.wakefulness??"unknown",
     participantRefs:[...situation.participantRefs].sort(),
   };
@@ -114,6 +116,7 @@ function plannedScene(position) {
     location:structuredClone(position.location),
     mediatedContext:position.mediatedContext,
     activity:position.activity,
+    outwardActivity:position.outwardActivity??null,
     wakefulness:position.wakefulness,
     participantRefs:[...position.participantRefs].sort(),
   };

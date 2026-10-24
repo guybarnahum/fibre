@@ -56,9 +56,21 @@ export async function appraiseEncounterAttention({
       story:{
         ...structuredClone(encounterStory.story),
         // Observer-relative cognition only; never alter World Story evidence.
-        beats:encounterStory.story.beats.map(beat=>({
-          ...structuredClone(beat),self:beat.actorThreadId===thread.threadId,
-        })),
+        beats:encounterStory.story.beats.map(beat=>{
+          const self=beat.actorThreadId===thread.threadId;
+          const arrival=beat.kind==="action"
+            &&beat.text.endsWith(" arrives at the venue.");
+          const presence=beat.kind==="occurrence"
+            &&encounterStory.story.beats.some(other=>
+              other.kind==="action"&&other.text.endsWith(" arrives at the venue."));
+          return {
+            ...structuredClone(beat),self,
+            ...(self&&arrival?{text:"You arrive at the venue."}
+              :self&&presence?{text:situation.outwardActivity
+                ?`You are ${situation.outwardActivity} nearby.`:"You are nearby."}
+                :{}),
+          };
+        }),
       },
     },
     semanticStates:semanticStates.map((state) => ({

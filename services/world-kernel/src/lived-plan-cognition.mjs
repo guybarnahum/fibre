@@ -27,6 +27,7 @@ const STOP_SCHEMA = Object.freeze({
     "presenceMode",
     "mediatedContext",
     "activity",
+    "outwardActivity",
     "wakefulness",
     "purpose",
     "travelFromPrevious",
@@ -38,6 +39,7 @@ const STOP_SCHEMA = Object.freeze({
     presenceMode: { type: "string", enum: ["physical", "mediated"] },
     mediatedContext: { type: "string" },
     activity: { type: "string", minLength: 1, maxLength: 500 },
+    outwardActivity: { type:"string", minLength:1, maxLength:60 },
     wakefulness: { type:"string", enum:["awake","asleep","unknown"] },
     purpose: { type: "string", minLength: 1, maxLength: 500 },
     travelFromPrevious: { type: "string" },
@@ -67,6 +69,7 @@ When dailyRhythm is supplied, let sleep/wake timing usually reflect it while all
 For each stop, state wakefulness separately from the natural-language activity: asleep only when the stop is actual sleep, awake for ordinary waking life, unknown only when the state cannot be established. This is a World-enacted feasibility fact, not the Thread\'s willingness to converse.
 When interoception is supplied, it is bounded subsemantic organismic state grounded in recent lived evidence. Interpret what it means for this Thread alongside developed self/history and current commitments. Exploration pressure is not a command or proof of boredom. Social-contact pressure is not a diagnosis of loneliness or a demand to seek company. Interpret both through this person's life; meaningful contact, novelty, learning, play, solitude, staying put, or changing places may all be legitimate responses. Never invent a person, a shared venue, a meeting, or consent to satisfy a drive.
 A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
+Each private activity describes only this Thread's own intention, never prescriptions or disclaimers about what other people will do (for example, do not add "without expecting conversation"). Supply outwardActivity separately: a short (up to 60 characters) plain phrase of observable behaviour such as "reading", "walking through the garden" or "eating lunch". Do not put purposes, feelings, expectations or social plans in outwardActivity.
 Public City Guide suggestions, when offered, are editorial *possibilities* in the Thread's grounded locality. A listing does not mean anyone is there or has invited the Thread, and makes no promise of satisfaction. This Thread may consider one, rely on familiar remembered places, or ignore the guide. Never treat a listing as a visit or a promise of contact.
 Use offered physical-place refs for known destinations. Never invent a World reference such as wpl_ or per:. For a NEW forward-looking destination absent from the list, physicalPlaceRef may instead name it naturally, such as "Porto, Portugal" for a city or "A neighborhood café, Porto, Portugal" for a specific place. World will replace that temporary name with its place reference before admission. Retrospective horizons must use ONLY offered physical-place refs: discovering a new place now does not establish that it existed in the Thread's historical knowledge. Unknown geography is allowed in forward planning; do not invent exact addresses, shared venues or people present. Propose at most two new places per forward plan. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
 A change of activity within one physical location (such as studying at the dining table instead of resting elsewhere at home) is not a journey. Keep the same physicalPlaceRef for activities within that location; a distinct World place ref is a distinct destination unless World has established otherwise.
@@ -313,6 +316,10 @@ function normalizeCognitiveStop(output, index, places, horizonStart, horizonEnd)
     assertNonEmpty(`personal plan cognition stops[${index}].mediatedContext`, output.mediatedContext);
   }
   assertNonEmpty(`personal plan cognition stops[${index}].activity`, output.activity);
+  assertNonEmpty(`personal plan cognition stops[${index}].outwardActivity`,output.outwardActivity);
+  if(output.outwardActivity.trim().length>60||/[\r\n]/u.test(output.outwardActivity)){
+    throw new TypeError("Flight Plan outwardActivity must be short observable text");
+  }
   if(!["awake","asleep","unknown"].includes(output.wakefulness)){
     throw new TypeError("personal Flight Plan must declare wakefulness");
   }
@@ -326,6 +333,7 @@ function normalizeCognitiveStop(output, index, places, horizonStart, horizonEnd)
     physicalPlaceRef: output.physicalPlaceRef,
     mediatedContext: output.presenceMode === "physical" ? null : output.mediatedContext,
     activity: output.activity,
+    outwardActivity:output.outwardActivity.trim(),
     wakefulness:output.wakefulness,
     purpose: output.purpose,
     companionRefs: [],
