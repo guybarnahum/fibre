@@ -668,6 +668,7 @@ export function createSocialMeetingService({
           continue;
         }
 
+        try{
         // An observed arrival or small act is a new opportunity inside
         // the same shared visit; the observer owns their earlier choices.
         // Explicit reconsideration already supplies its witnessed start.
@@ -679,9 +680,7 @@ export function createSocialMeetingService({
           )?.physicalVenue?.ref??null:null;
         const decisionVisitSince=visitSince??(venue===null?null
           :sharedVisitSince(initiator,counterparty,venue));
-        let initiation;
-        try{
-          initiation = await formSocialEncounterRequest({
+        const initiation = await formSocialEncounterRequest({
           threadId:initiator.thread.threadId,
           at:input.at,
           recentPersonalExperiences:recentPersonalExperiences(
@@ -705,19 +704,7 @@ export function createSocialMeetingService({
             experienceStore,
           },
           modelAdapter,
-          });
-        }catch(cause){
-          if(cause&&typeof cause==="object"){
-            cause.fibreSocialCounterpartyThreadId=counterparty.thread.threadId;
-            cause.fibreSocialSalience={
-              outcome:salience.outcome,
-              anchors:[...salience.anchors],
-              sourceReferences:[...salience.sourceReferences],
-              bodyAtGate:salience.bodyAtGate??null,
-            };
-          }
-          throw cause;
-        }
+        });
 
         if (initiation.act === "none") {
           attemptByActor.set(counterparty.thread.threadId, Object.freeze({
@@ -806,26 +793,51 @@ export function createSocialMeetingService({
           stance,
           interaction,
         }));
+        }catch(cause){
+          if(cause&&typeof cause==="object"){
+            cause.fibreSocialCounterpartyThreadId=counterparty.thread.threadId;
+            cause.fibreSocialSalience={
+              outcome:salience.outcome,
+              anchors:[...salience.anchors],
+              sourceReferences:[...salience.sourceReferences],
+              bodyAtGate:salience.bodyAtGate??null,
+            };
+          }
+          throw cause;
+        }
       }
 
       for (const pending of accepted) {
         const witnesses = discovered.filter((context) =>
           context.thread.threadId !== pending.counterparty.thread.threadId
           && compatible(pending.counterparty, context, livedNowStore));
-        attemptByActor.set(
-          pending.counterparty.thread.threadId,
-          await formAcceptedEncounter({
-            initiator,
-            counterparty:pending.counterparty,
-            witnesses,
-            at:input.at,
-            salience:pending.salience,
-            initiation:pending.initiation,
-            request:pending.request,
-            stance:pending.stance,
-            interaction:pending.interaction,
-          }),
-        );
+        try{
+          attemptByActor.set(
+            pending.counterparty.thread.threadId,
+            await formAcceptedEncounter({
+              initiator,
+              counterparty:pending.counterparty,
+              witnesses,
+              at:input.at,
+              salience:pending.salience,
+              initiation:pending.initiation,
+              request:pending.request,
+              stance:pending.stance,
+              interaction:pending.interaction,
+            }),
+          );
+        }catch(cause){
+          if(cause&&typeof cause==="object"){
+            cause.fibreSocialCounterpartyThreadId=pending.counterparty.thread.threadId;
+            cause.fibreSocialSalience={
+              outcome:pending.salience.outcome,
+              anchors:[...pending.salience.anchors],
+              sourceReferences:[...pending.salience.sourceReferences],
+              bodyAtGate:pending.salience.bodyAtGate??null,
+            };
+          }
+          throw cause;
+        }
       }
 
       const attempts = opportunities
