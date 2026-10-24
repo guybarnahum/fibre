@@ -100,6 +100,15 @@ function redactUnknownName(description,name,heardName=null){
   },description);
 }
 
+function boundedDescription(text){
+  const words=[];
+  for(const word of text.trim().split(/\s+/u)){
+    if([...words,word].join(" ").length>120)break;
+    words.push(word);
+  }
+  return words.join(" ")||"a person";
+}
+
 // This is an observer-relative projection, not a new identity authority.
 // Objective stories have no observer and must not disclose civil names.
 export function observablePerson({
@@ -117,7 +126,7 @@ export function observablePerson({
   // names. For unfamiliar witnesses, redact any identity in portrait prose.
   return Object.freeze({
     name:typeof name!=="string"?null:known?name:heardName,
-    observableDescription:(known?description
-      :redactUnknownName(description,name,heardName)).slice(0,120),
+    observableDescription:boundedDescription(known?description
+      :redactUnknownName(description,name,heardName)),
   });
 }
