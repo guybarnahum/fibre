@@ -55,6 +55,7 @@ function situation(threadId, activity, placeRef, mediatedContext = null, partici
     location:{ kind:"place", placeRef },
     mediatedContext,
     activity,
+    outwardActivity:"reading",
     participantRefs:[...participantRefs],
   };
 }
@@ -263,11 +264,16 @@ function fixture({
         assert.equal(percept.setting.place?.displayName, "The same neighborhood café",
           "social cognition should receive the actual setting");
         observedAtInitiation.push(structuredClone(percept.observed[0]));
+        assert.doesNotMatch(percept.observed[0].observableDescription,/Currently:|without expecting/u,
+          "private planning text became observable");
+        assert.notEqual(percept.observed[0].currentActivity,
+          situations.get(percept.observed[0].threadId)?.activity,
+          "counterparty private activity leaked into cognition");
         const observedThreadId = percept.observed[0]?.threadId;
         assert.equal(
           percept.observed[0]?.currentActivity,
-          situations.get(observedThreadId)?.activity,
-          "social cognition should receive observable counterparty activity",
+          situations.get(observedThreadId)?.outwardActivity,
+          "social cognition should receive only observable counterpart activity",
         );
         assert.equal(Object.hasOwn(percept.observed[0], "currentState"), false,
           "Situated Percept must not expose counterparty interior state");

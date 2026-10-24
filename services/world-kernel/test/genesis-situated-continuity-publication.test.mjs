@@ -329,6 +329,7 @@ test("a Genesis public venue can become live shared World presence without rewri
                   mediatedContext:"",
                   activity:"Finish getting ready before going out.",
                   purpose:"Leave from the life already underway.",
+                  outwardActivity:"reading",
                   travelFromPrevious:"",
                 },
                 {
@@ -340,6 +341,7 @@ test("a Genesis public venue can become live shared World presence without rewri
                   mediatedContext:"",
                   activity:"Read and work quietly at the public library.",
                   purpose:"Spend some time somewhere public with books and room to focus.",
+                  outwardActivity:"reading",
                   travelFromPrevious:"Walk to the library.",
                 },
               ],
@@ -512,6 +514,7 @@ test("Birth earns one real first life, no invented dormant past, and a continuin
                 mediatedContext: "",
                 activity: "Continue ordinary life from the place already reached.",
                 purpose: "Carry existing life forward without inventing a meeting.",
+                outwardActivity:"reading",
                 travelFromPrevious: "",
               }],
             },

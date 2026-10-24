@@ -143,6 +143,7 @@ function personalPlan(life) {
         activity: "Finish a fox sketch before leaving.",
         purpose: "I want to finish the expression while I still see what is wrong with it.",
         companionRefs: [],
+        outwardActivity:"reading",
         travelFromPrevious: null,
       },
       {
@@ -153,6 +154,7 @@ function personalPlan(life) {
         activity: "Return a book and look through animal drawing references.",
         purpose: "I want another look at how animals hold their ears and faces.",
         companionRefs: [],
+        outwardActivity:"reading",
         travelFromPrevious: "Walk to the neighborhood library.",
       },
     ],
@@ -184,6 +186,7 @@ function requiredCarePlan(life) {
         activity: "Stay home and get ready for the dental appointment.",
         purpose: "Leave enough time for the household to reach the appointment.",
         companionRefs: ["human_maya_mother"],
+        outwardActivity:"reading",
         travelFromPrevious: null,
       },
     ],
@@ -445,7 +448,8 @@ test("a rejected instantaneous journey is reconsidered by its Thread before Worl
             "the alternative destination must be World-grounded");
           const base={
             presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
-            activity:"Read quietly",purpose:"Continue an ordinary morning",
+            activity:"Read quietly",outwardActivity:"reading",
+            purpose:"Continue an ordinary morning",
           };
           return {
             output:{
@@ -454,6 +458,7 @@ test("a rejected instantaneous journey is reconsidered by its Thread before Worl
                   physicalPlaceRef:from,travelFromPrevious:""},
                 {...base,startAt:calls===1?"2026-09-10T05:35:00Z":"2026-09-10T05:50:00Z",
                   endAt:context.horizon.endAt,physicalPlaceRef:to,
+                  outwardActivity:"reading",
                   travelFromPrevious:"Walk to the library"},
               ]},
               evidenceRefs:[],conflictingMotives:[],uncertainty:null,
@@ -515,7 +520,8 @@ test("precise travel rejection lets a Thread choose to stay without invented tra
           const to=from===life.homeRef?life.libraryRef:life.homeRef;
           const stop={
             presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
-            activity:"Draw at home.",purpose:"Follow my own quiet interest.",
+            activity:"Draw at home.",outwardActivity:"drawing",
+            purpose:"Follow my own quiet interest.",
           };
           const stops=proposals===1?[
             {...stop,startAt:context.horizon.startAt,endAt:"2026-09-10T05:35:00Z",
@@ -628,6 +634,7 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
                 mediatedContext: "",
                 activity: "Continue ordinary life from the place already reached.",
                 purpose: "Carry forward existing intentions without inventing a visitor or exceptional event.",
+                outwardActivity:"reading",
                 travelFromPrevious: "",
               }],
             },
@@ -756,6 +763,7 @@ test("a month without World wakes leaves an honest gap and resumes from the last
             physicalPlaceRef:context.startingPlaceRef,
             presenceMode:"physical",wakefulness:"awake",mediatedContext:"",
             activity:"Resume ordinary activities.",purpose:"Continue my chosen life.",
+            outwardActivity:"reading",
             travelFromPrevious:"",
           }]},evidenceRefs:[],conflictingMotives:[],uncertainty:null},
           provenance:{provider:"fixture",modelId:"gap-renewal",
@@ -907,6 +915,7 @@ test("a slightly delayed horizon alarm renews forward life without inventing ret
                   mediatedContext:"",wakefulness:"awake",
                   activity:"Continue reading at the library.",
                   purpose:"Follow my existing interest without inventing an elapsed journey.",
+                  outwardActivity:"reading",
                   travelFromPrevious:"",
                 }]},evidenceRefs:[],conflictingMotives:[],uncertainty:null},
                 provenance:{provider:"fixture",modelId:"boundary-forward-renewal",
@@ -1444,6 +1453,7 @@ test("an admitted personal public-visit plan enacts transit, empty stay and retu
           endAt:"2026-10-14T17:40:00.000Z",
           physicalPlaceRef:library.ref,activity:"Read at the library.",
           purpose:"Seek intellectual stimulation without expecting company.",
+          outwardActivity:"reading",
           travelFromPrevious:"Travel across the city.",
         },
         {
@@ -1674,6 +1684,7 @@ test("World rejects a rushed cross-city arrival and autonomous life completes a 
             physicalPlaceRef:lisbon.ref,mediatedContext:null,
             activity:"Prepare for the visit.",wakefulness:"awake",
             purpose:"Leave Lisbon in good time.",companionRefs:[],
+            outwardActivity:"reading",
             travelFromPrevious:null,
           },
           {
@@ -1681,6 +1692,7 @@ test("World rejects a rushed cross-city arrival and autonomous life completes a 
             physicalPlaceRef:madrid.ref,mediatedContext:null,
             activity:"Explore Madrid.",wakefulness:"awake",
             purpose:"Spend the afternoon in Madrid.",companionRefs:[],
+            outwardActivity:"reading",
             travelFromPrevious:"Travel from Lisbon to Madrid.",
           },
         ],

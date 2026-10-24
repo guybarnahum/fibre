@@ -115,6 +115,7 @@ test("inherited social need can change a later Thread-authored Flight Plan witho
         startAt:at,endAt:seekCompany?"2026-10-13T19:00:00Z":"2026-10-14T06:00:00Z",
         physicalPlaceRef:"wpl_home",presenceMode:"physical",wakefulness:"awake",
         mediatedContext:"",activity:"Continue drawing.",purpose:"Spend time on my own work.",
+        outwardActivity:"reading",
         travelFromPrevious:"",
       };
       const stops=[home];
@@ -122,6 +123,7 @@ test("inherited social need can change a later Thread-authored Flight Plan witho
         ...home,startAt:"2026-10-13T19:05:00Z",endAt:"2026-10-14T06:00:00Z",
         physicalPlaceRef:"wpl_cafe",activity:"Draw where people gather.",
         purpose:"Make room for social contact without arranging a meeting.",
+        outwardActivity:"reading",
         travelFromPrevious:"Walk to the café.",
       });
       return {

@@ -14,6 +14,9 @@ import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { internalizeThreadEncounterExperience } from "../src/lived-thread-experience-aftermath.mjs";
 import { openIdentityStore } from "../src/identity-store.mjs";
 import { formPersonalLivedPlan } from "../src/lived-plan-cognition.mjs";
+import {
+  assertOpenAIStrictResponseSchema,projectOpenAIStructuredOutputSchema,
+} from "../../../integrations/ai/reasoning/openai.mjs";
 import { explorationInteroceptionForLivedContinuity } from "../src/lived-now-regulation.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
@@ -115,6 +118,12 @@ function fixturePlanningModel() {
     provider:"fixture",
     modelId:"fixture-lived-planning",
     async invoke(call) {
+      assert.doesNotThrow(()=>assertOpenAIStrictResponseSchema(
+        projectOpenAIStructuredOutputSchema(call.responseSchema),
+      ),"Flight Plan response is not strict-valid");
+      const stopSchema=call.responseSchema.properties.result.properties.stops.items;
+      assert.ok(stopSchema.required.includes("outwardActivity"),
+        "Flight Plan must require observable activity");
       const external = call.input.concern.externalContext;
       if (sharedExternalContext === null) {
         sharedExternalContext = structuredClone(external);
@@ -141,6 +150,7 @@ function fixturePlanningModel() {
               purpose:welcomesCompany
                 ? "Quiet company has helped me settle into focused work before."
                 : "Background social presence has made focused work harder for me before.",
+              outwardActivity:"reading",
               travelFromPrevious:"",
             }],
           },
@@ -195,6 +205,7 @@ function x4PlanningModel() {
                 :aversive
                   ?"A retained experience made unstructured social interruption feel costly."
                   :"Follow the ordinary day without reconstructing meaning from old history.",
+              outwardActivity:"reading",
               travelFromPrevious:"",
             }],
           },
@@ -656,6 +667,7 @@ test("Flight Planning receives actual local civil time for a non-UTC World", asy
                 mediatedContext:"",
                 activity:"Continue the ordinary day from the current place.",
                 purpose:"Follow the life already underway.",
+                outwardActivity:"reading",
                 travelFromPrevious:"",
               }],
             },
@@ -790,6 +802,7 @@ test("X1 grounded exploration reaches the existing planning mind without becomin
                 purpose:exploring
                   ? "I want some variety and a chance to run into ideas outside this morning's groove."
                   : "I want to keep following the work already in front of me.",
+                outwardActivity:"reading",
                 travelFromPrevious:"",
               }],
             },
@@ -932,6 +945,7 @@ test("X2 planning place meaning comes from World/situated authority, not caller 
                 mediatedContext:"",
                 activity:"Read somewhere already known as a place of study.",
                 purpose:"Use the real alternatives available in my world.",
+                outwardActivity:"reading",
                 travelFromPrevious:"",
               }],
             },
@@ -1035,6 +1049,7 @@ test("dormant Flight Plan cognition cannot request a destination outside its his
               mediatedContext:"",wakefulness:"awake",
               activity:"Read and think in a familiar place.",
               purpose:"Follow my existing interests without invented history.",
+              outwardActivity:"reading",
               travelFromPrevious:"",
             }]},
             evidenceRefs:[],conflictingMotives:[],uncertainty:null,

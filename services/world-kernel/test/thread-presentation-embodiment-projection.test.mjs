@@ -7,6 +7,7 @@ import {
 } from "../src/embodiment-domain.mjs";
 import { projectPublicEmbodimentVisualIdentity } from "../src/thread-presentation-embodiment-projection.mjs";
 import {observablePerson} from "../src/world-observable-person.mjs";
+import { CANONICAL_VISUAL_APPEARANCE_LAYER_VERSION } from "../src/canonical-visual-identity-from-physical-genome.mjs";
 
 function portrait({
   visibility = "public",
@@ -143,8 +144,41 @@ test("ordinary World perception uses public morphology without a stranger's ance
     experienceStore:{hasMetEncounter:()=>false},
   });
   assert.equal(person.name,null,"unknown stranger's name leaked");
-  assert.match(person.observableDescription,/softly angular oval face/,
-    "verified public morphology did not reach situated perception");
+  assert.match(person.observableDescription,/adult male/,
+    "legacy appearance lost its first readable clause");
+  assert.doesNotMatch(person.observableDescription,/softly angular oval face/,
+    "legacy public appearance leaked specification details");
   assert.doesNotMatch(person.observableDescription,/broad family appearance prior/,
     "ancestry prior leaked into public observation");
+});
+
+test("layered public portrait becomes a short visible age and hair description",()=>{
+  const record=portrait();
+  record.specification.subject.description=[
+    "CANONICAL APPEARANCE LAYERS "+CANONICAL_VISUAL_APPEARANCE_LAYER_VERSION,
+    "SEX","male",
+    "STRUCTURAL MORPHOLOGY","Identity-critical inherited geometry — faceWidth: medium; zygomaticProjection: high",
+    "REFERENCE GEOMETRY STATE","A neutral structural reference.",
+    "SURFACE PHENOTYPE","Inherited surface phenotype — pigmentation and hair: pigmentation: deep; eyeColor: dark brown; hairColor: brown; hairTexture: curly; hairDensity: dense",
+    "REFERENCE SURFACE STATE","Ordinary adult state.",
+  ].join("\n");
+  record.specificationDigest=embodimentSpecificationDigest(record.specification);
+  const situation={
+    threadId:record.threadId,establishedAt:"2026-10-24T12:00:00Z",
+    activity:"Reading without expecting conversation.",outwardActivity:"reading",
+  };
+  const person=observablePerson({
+    threadId:record.threadId,situation,birthDate:"1998-12-01",
+    name:"Hidden Person",observerThreadId:"thr_observer",
+    embodimentStore:{listCurrent:()=>[record]},
+    situatedLifeStore:{listCurrentLifeRelations:()=>[]},
+    experienceStore:{hasMetEncounter:()=>false},
+  });
+  assert.match(person.observableDescription,/man in his twenties with curly brown hair/u);
+  assert.ok(person.observableDescription.length<=120,"public appearance exceeded 120 characters");
+  assert.doesNotMatch(person.observableDescription,
+    /faceWidth|zygomatic|Identity-critical|phenotype|pigmentation:|\w+:\s/u,
+    "a rendering specification entered perception");
+  assert.doesNotMatch(person.observableDescription,/Reading|Currently:|conversation/u,
+    "private activity entered the public portrait");
 });

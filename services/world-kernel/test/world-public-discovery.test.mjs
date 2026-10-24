@@ -148,6 +148,7 @@ test("the same planning mind can choose a World-listed place or stay home",async
           {...base,startAt:at,endAt:go?"2026-10-18T16:45:00Z":end},
           ...(go?[{...base,physicalPlaceRef:place.ref,
             startAt:"2026-10-18T17:00:00Z",endAt:end,
+            outwardActivity:"reading",
             travelFromPrevious:"Walk to the library."}]:[]),
         ]},evidenceRefs:[],conflictingMotives:[],uncertainty:null},
         provenance:{provider:"fixture",modelId:"world-discovery"}};
