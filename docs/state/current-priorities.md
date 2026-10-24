@@ -9,6 +9,17 @@ canonical: true
 
 **North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
 
+**October 24 readable social perception — source-only, validation pending:**
+Abrehot Library (Addis Ababa) staging evidence reported **0 of 5**
+already-present witnesses noticing newcomers on October 24 (and 2 of 4
+arrivers noticing witnesses). That is a diagnostic baseline, never a
+required frequency or acceptance target. Raw visual specifications and
+a private plan's intention were also visible in arrival Stories and
+social perception. New source derives bounded appearance phrases and
+separates Thread-authored `outwardActivity` from private `activity`.
+Existing history is not rewritten. No evidence yet establishes any
+change to autonomous attention or choices.
+
 **October 23 recognition and acquaintance — source-only, not deployed:**
 Bounded observer-owned noticed Story history can now make a previously
 seen person recognizable at the next social opportunity, without

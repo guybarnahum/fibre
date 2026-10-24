@@ -476,6 +476,11 @@ export function normalizeWorldObservation(value) {
   }
   const mediatedContext = nullableText("World observation.mediatedContext", value.mediatedContext);
   assertNonEmpty("World observation.activity", value.activity);
+  if(value.outwardActivity!==undefined){
+    assertNonEmpty("World observation.outwardActivity",value.outwardActivity);
+    if(value.outwardActivity.length>60||/[\r\n]/u.test(value.outwardActivity))
+      throw new TypeError("World outwardActivity must be short observable text");
+  }
   assertNonEmpty("World observation.reason", value.reason);
   const participantRefs = normalizeIds("World observation.participantRefs", value.participantRefs);
   const evidenceRefs = normalizeIds("World observation.evidenceRefs", value.evidenceRefs, { required: true });

@@ -160,13 +160,15 @@ Do not invent a human's feelings, motives, intentions or personality from appear
 
 A physical presence does not disclose a person's internal Thread ID or
 globally registered name. The World-owned `observablePerson` projection
-gives an observer bounded public portrayal from an **available public
-portrait Embodiment** (the same family-prior-stripped subject description
-authorized for presentation), plus currently enacted activity. If that
-authority is absent the description is merely "a person" with the enacted
-activity; there is no inference of nationality, religion, ancestry,
-temperament, intention or worth. This description is **context-only**,
-not a new World fact, private judgment, or authority to invent a gesture.
+gives an observer a short human-readable phrase from an **available public
+portrait Embodiment**: canonical presented sex, an age band from the
+authoritative birth date at World time, and one or two visible hair cues
+from structured surface fields. Rendering/genome specification text does
+not become perception. Legacy portraits supply at most a bounded first
+plain-language clause; absent public portrait means simply "a person".
+No appearance asserts nationality, religion, ancestry, temperament, intent
+or worth. This description is **context-only**, not authority to invent
+a gesture or assert another person's inner life.
 
 A name is observer-known only if the two Threads have a current lived
 relation or a prior accepted-and-spoken Encounter Story. Otherwise
@@ -175,14 +177,16 @@ Introductions, speaker-claimed names, remembering introductions and
 recognizing faces across time are **deferred**, not silently guessed from
 a portrait. See [observer knowledge owner decision](../decisions/observer-grounded-person-knowledge.md).
 
-**Deferred — observable activity authority.** The current
-`Currently: <activity>` phrase in `observablePerson` reuses the
-plan-authored `CurrentSituation.activity` prose. That prose can reveal
-private purpose or intent even when it is not visible in the World.
-A later, World-owned activity category or observed affordance should
-provide the public description instead. Until then this field is
-**context-only and not authoritative observable evidence**; it must
-not justify claims of witnessed motivation or private knowledge.
+**Outward activity is not private purpose (October 24 source).**
+A newly authored Flight Plan stop has both private `activity` (what the
+Thread intends) and short `outwardActivity` (what others might see).
+World carries outward activity into enacted CurrentSituation, public
+presence Stories, and other Threads' `observed[].currentActivity`.
+A counterpart never receives the private plan activity or purpose
+through Situated Percept. Historic plans or situations without the new
+field show no activity, not a fallback to private prose. This is
+Thread-authored outward behaviour enacted by World, not independent
+evidence of motive, consent or a prediction of another's response.
 
 A recent, personally **noticed** arrival Story can make the newcomer
 salient to a witness through `recent_observable_history` and, if the

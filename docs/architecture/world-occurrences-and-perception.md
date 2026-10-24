@@ -20,6 +20,20 @@ actor's action occurs. Compute may omit *materialization* of speculative,
 unobserved ambient activity in empty places. That optimization does not
 assert that the rest of reality stopped happening.
 
+## Readable arrival Stories (October 24 source)
+
+One objectively admitted arrival into an occupied public venue gives one
+short sentence for the arriving Thread and one for each real witness.
+Public observable appearance uses a bounded human-readable description;
+witness presence can add only World-enacted `outwardActivity`. For
+example: "A man in his twenties arrives at the venue." and "A woman
+in her thirties is reading." Old situations without outward activity
+describe presence only. Private planning intent or expectation never
+appears. Each person sees the same objective Story, but attention
+cognition marks the person's own beat `self:true` and may render
+"You are reading nearby." for legibility. This does not require
+attention, reciprocity, or a meeting.
+
 ## Four different facts
 
 1. **Occurrence:** an objectively admitted change or action at a World time.
