@@ -123,7 +123,7 @@
 .world-events-caveat{margin:0 0 22px}
 .world-events-window{display:flex;align-items:center;gap:7px;font-size:12px}
 .world-events-window select{min-width:114px}
-@media (max-width:950px){.world-events-drill{grid-template-columns:minmax(0,1fr)}.world-events-timeline{max-height:none}.world-events-world-map{height:320px}}
+@media (max-width:950px){.world-events-drill{grid-template-columns:minmax(0,1fr)}.world-events-timeline{max-height:none}}
 
 .world-events-appearance{margin-top:18px;padding:15px;border:1px solid var(--border,#30414d);border-radius:12px;background:var(--surface-subtle,rgba(130,144,152,.045));min-width:0}
 .world-events-appearance h3{font-size:14px;margin:0 0 8px;font-weight:650}
