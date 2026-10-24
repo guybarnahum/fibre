@@ -529,7 +529,7 @@ export class LivedExperienceStore {
     }
     assertIsoTimestamp("social opportunity completion",at);
     if(!["no_co_presence","missed_window","expired","life_unresolved","background","not_initiated","acted","not_met","met","scene_changed",
-      "need_unreached","pair_limit"].includes(outcome)){
+      "need_unreached","pair_limit","interrupted"].includes(outcome)){
       throw new TypeError("social opportunity outcome is invalid");
     }
     const table=observed

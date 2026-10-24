@@ -679,7 +679,9 @@ export function createSocialMeetingService({
           )?.physicalVenue?.ref??null:null;
         const decisionVisitSince=visitSince??(venue===null?null
           :sharedVisitSince(initiator,counterparty,venue));
-        const initiation = await formSocialEncounterRequest({
+        let initiation;
+        try{
+          initiation = await formSocialEncounterRequest({
           threadId:initiator.thread.threadId,
           at:input.at,
           recentPersonalExperiences:recentPersonalExperiences(
@@ -703,7 +705,19 @@ export function createSocialMeetingService({
             experienceStore,
           },
           modelAdapter,
-        });
+          });
+        }catch(cause){
+          if(cause&&typeof cause==="object"){
+            cause.fibreSocialCounterpartyThreadId=counterparty.thread.threadId;
+            cause.fibreSocialSalience={
+              outcome:salience.outcome,
+              anchors:[...salience.anchors],
+              sourceReferences:[...salience.sourceReferences],
+              bodyAtGate:salience.bodyAtGate??null,
+            };
+          }
+          throw cause;
+        }
 
         if (initiation.act === "none") {
           attemptByActor.set(counterparty.thread.threadId, Object.freeze({

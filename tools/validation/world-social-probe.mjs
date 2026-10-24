@@ -408,6 +408,8 @@ export function formatWorldSocialReport(evidence,evidencePath){
       " · "+(act??opportunity.outcome??"pending")+
       " / "+(opportunity.outcome??"pending").replaceAll("_"," ")+
       (typeof expression==="string"&&expression.trim()?" · “"+short(expression,72)+"”":"")+
+      (opportunity.outcome==="interrupted"
+        ?" · error: "+short(opportunity.decision?.error??"not recorded",200):"")+
       (opportunity.needBand===null||opportunity.needBand===undefined
         ?"":" · Body band "+opportunity.needBand)+
       (opportunity.startedAt?" · started "+time(opportunity.startedAt):"")+

@@ -453,8 +453,24 @@ export function createWorldSocialOpportunity({
           });
         }catch(cause){
           // A speech/model call may have occurred before interruption.
-          // Never quietly invoke it again; inspection shows "interrupted".
+          // Preserve evidence without replaying the one-shot claim.
           error=String(cause?.message??cause).slice(0,200);
+          const salience=cause?.fibreSocialSalience??null;
+          const counterpartyThreadId=cause?.fibreSocialCounterpartyThreadId??null;
+          try{
+            experienceStore.completeSocialOpportunity({
+              situationId:opportunity.situationId,
+              opportunityId:opportunity.opportunityId,
+              sourceEncounterRef:opportunity.sourceEncounterRef,
+              threadId:opportunity.threadId,at:now(),outcome:"interrupted",
+              decision:{error,...(counterpartyThreadId===null?{}
+                :{counterpartyThreadId}),...(salience===null?{}:{salience})},
+            });
+          }catch(recordError){
+            // The claim remains one-shot even when recording fails.
+            error=(error+"; recording failed: "+
+              String(recordError?.message??recordError)).slice(0,200);
+          }
         }
       }
       // A blocked due opportunity does not keep waking World in a hot
