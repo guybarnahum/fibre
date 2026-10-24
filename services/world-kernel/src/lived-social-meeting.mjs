@@ -30,6 +30,18 @@ function requireMethod(name, value, method) {
   }
 }
 
+function rethrowSocialFailure(cause,counterpartyThreadId,salience){
+  if(cause&&typeof cause==="object"){
+    cause.fibreSocialCounterpartyThreadId=counterpartyThreadId;
+    cause.fibreSocialSalience={
+      outcome:salience.outcome,anchors:[...salience.anchors],
+      sourceReferences:[...salience.sourceReferences],
+      bodyAtGate:salience.bodyAtGate??null,
+    };
+  }
+  throw cause;
+}
+
 function contextFor({ threadId, worldReader, livedNowStore, semanticStateStore, memoryStore }) {
   const thread = worldReader.getThread(threadId, { required:false });
   if (thread === null) throw new TypeError(`Thread ${threadId} was not found`);
@@ -794,16 +806,7 @@ export function createSocialMeetingService({
           interaction,
         }));
         }catch(cause){
-          if(cause&&typeof cause==="object"){
-            cause.fibreSocialCounterpartyThreadId=counterparty.thread.threadId;
-            cause.fibreSocialSalience={
-              outcome:salience.outcome,
-              anchors:[...salience.anchors],
-              sourceReferences:[...salience.sourceReferences],
-              bodyAtGate:salience.bodyAtGate??null,
-            };
-          }
-          throw cause;
+          rethrowSocialFailure(cause,counterparty.thread.threadId,salience);
         }
       }
 
@@ -827,16 +830,8 @@ export function createSocialMeetingService({
             }),
           );
         }catch(cause){
-          if(cause&&typeof cause==="object"){
-            cause.fibreSocialCounterpartyThreadId=pending.counterparty.thread.threadId;
-            cause.fibreSocialSalience={
-              outcome:pending.salience.outcome,
-              anchors:[...pending.salience.anchors],
-              sourceReferences:[...pending.salience.sourceReferences],
-              bodyAtGate:pending.salience.bodyAtGate??null,
-            };
-          }
-          throw cause;
+          rethrowSocialFailure(cause,pending.counterparty.thread.threadId,
+            pending.salience);
         }
       }
 
