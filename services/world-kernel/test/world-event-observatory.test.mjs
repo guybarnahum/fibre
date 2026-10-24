@@ -170,7 +170,8 @@ test("God-view links arrival perspectives to the enacted action, not a second ci
 
 test("one shared conversation retains both actors without assigning every witness authorship",()=>{
   const beats=[
-    {kind:"utterance",actorThreadId:"thr_victor",text:"Good morning."},
+    {kind:"utterance",actorThreadId:"thr_victor",
+      text:"The long setting must not erase what came next. ".repeat(12)},
     {kind:"utterance",actorThreadId:"thr_reader",text:"Hello."},
   ];
   const story={
@@ -191,6 +192,8 @@ test("one shared conversation retains both actors without assigning every witnes
   });
   const event=snapshot.events.find(item=>item.eventRef===story.encounter_id);
   assert.ok(event,"recorded conversation disappeared from World history");
+  assert.ok(event.summary.length>440&&event.summary.endsWith("Hello."),
+    "the World overview cut off a speaker's recorded words");
   assert.deepEqual(event.actorThreadIds,["thr_victor","thr_reader"],
     "a speaker was mistaken for a mere observer");
   assert.equal(event.witnesses.find(item=>item.threadId==="thr_onlooker")?.attention,

@@ -76,7 +76,7 @@ export function projectWorldEventOverview({placeRows=[],situationRows=[],storyRo
           ?"encounter":"ambient",
         occurredAt:row.occurred_at,placeRef:explicit?.placeRef??null,
         source:"encounter_story",
-        summary:beats.filter(b=>typeof b.text==="string").map(b=>b.text).join(" · ").slice(0,440),
+        summary:beats.filter(b=>typeof b.text==="string").map(b=>b.text).join(" · "),
         actorThreadId:actors[0]??null,actorThreadIds:actors,
         sourcePlaceEvidence:explicit?"source_reference":null,
         witnesses:[],

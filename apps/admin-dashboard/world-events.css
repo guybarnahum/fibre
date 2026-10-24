@@ -93,6 +93,10 @@
 .world-events-event-head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;color:var(--muted,#8b9ca7);font-size:12px}
 .world-events-event-kind{font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#a8d9cc;font-size:10px}
 .world-events-event-summary{font-size:14px;line-height:1.48;margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.world-events-story-source{font-size:11px;color:var(--muted,#8b9ca7);margin:8px 0 0}
+.world-events-event-more{display:inline-block;border:0;background:none;padding:0;margin:0 0 9px;color:var(--accent,#8ed3c0);font:inherit;font-size:12px;cursor:pointer}
+.world-events-event-more:hover{text-decoration:underline}
+.world-events-event-more:focus-visible{outline:2px solid currentColor;outline-offset:3px;border-radius:2px}
 .world-events-event-ref{font-size:10px;opacity:.55;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
 .world-events-event-card h3{font-size:12px;letter-spacing:.01em;margin:12px 0 7px}
 .world-events-involvement-scroll{min-width:0;max-width:100%;overflow-x:auto}

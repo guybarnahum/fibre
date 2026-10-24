@@ -287,14 +287,38 @@ export function renderWorldEventsPage(){
       const head=el("div","world-events-event-head");
       head.append(el("span","world-events-event-kind",pretty(event.kind)),
         el("time",null,formatWorldEventTime(event.occurredAt,zone)));
-      const summary=el("p","world-events-event-summary",event.summary||"Admitted World event");
+      const fullText=event.summary||"Admitted World event";
+      const previewLimit=260;
+      const preview=fullText.length>previewLimit
+        ?fullText.slice(0,previewLimit).trimEnd()+"…"
+        :fullText;
+      const summary=el("p","world-events-event-summary",preview);
+      const toggle=fullText.length>previewLimit
+        ?el("button","world-events-event-more","Show more »"):null;
+      if(toggle){
+        toggle.type="button";
+        toggle.setAttribute("aria-expanded","false");
+        toggle.addEventListener("click",()=>{
+          const expanded=toggle.getAttribute("aria-expanded")!=="true";
+          summary.textContent=expanded?fullText:preview;
+          toggle.textContent=expanded?"Show less «":"Show more »";
+          toggle.setAttribute("aria-expanded",String(expanded));
+        });
+      }
       const ref=el("div","world-events-event-ref",event.eventRef);
       const copy=createCopyButton({
         value:()=>worldEventDebugRecord(snapshot,event),label:"Copy event JSON",
         tooltip:"Copy this event's returned JSON and query coverage",
       });
       head.append(copy);
-      card.append(head,summary,ref);
+      card.append(head);
+      if(event.source==="encounter_story"){
+        card.append(el("p","world-events-story-source",
+          "World Story · recorded actions and scene, not a Thread's inner voice"));
+      }
+      card.append(summary);
+      if(toggle)card.append(toggle);
+      card.append(ref);
       const people=worldEventThreadEvidence(event);
       if(people.length){
         card.append(el("h3",null,"Involved Threads"));
