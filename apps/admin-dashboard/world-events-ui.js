@@ -289,8 +289,10 @@ export function renderWorldEventsPage(){
         el("time",null,formatWorldEventTime(event.occurredAt,zone)));
       const fullText=event.summary||"Admitted World event";
       const previewLimit=260;
+      const excerpt=fullText.slice(0,previewLimit);
+      const lastSpace=excerpt.lastIndexOf(" ");
       const preview=fullText.length>previewLimit
-        ?fullText.slice(0,previewLimit).trimEnd()+"…"
+        ?excerpt.slice(0,lastSpace>previewLimit-25?lastSpace:previewLimit).trimEnd()+"…"
         :fullText;
       const summary=el("p","world-events-event-summary",preview);
       const toggle=fullText.length>previewLimit
