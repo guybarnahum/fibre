@@ -1270,6 +1270,9 @@ test("an enacted arrival permits immediate voluntary consideration without forci
       "the interrupted opportunity lost its observed counterpart");
     assert.equal(failedRecord.decision?.salience?.bodyAtGate?.drives[0]?.pressure,0.6,
       "the salience already evaluated before interruption was discarded");
+    assert.deepEqual(experience.socialChoicesThisVisit({
+      threadId:people[2],counterpartyThreadId:people[1],visitSince:AT,
+    }),[],"interrupted cognition was treated as voluntary silence");
   }finally{
     experience.close();
     rmSync(directory,{recursive:true,force:true});
