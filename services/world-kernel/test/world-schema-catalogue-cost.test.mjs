@@ -83,7 +83,7 @@ test("a deployed World does not consult schema metadata during lived and due-que
           purpose:"Continue a personally meaningful line of thought.",
           companionRefs:[],travelFromPrevious:null}],
         sourceReferences:[eventRef,placeRef,previous.encounterId],
-        cognition:{provider:"fixture",modelId:"catalogue-cost-fixture"},
+        cognition:{provider:"fixture",modelId:"catalogue-cost-fixture",providerRequestId:null},
       });
       lived.enactCurrentSituation({
         threadId,situationId:livedSituationId({threadId,at:authoredAt}),
