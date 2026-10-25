@@ -20,4 +20,4 @@ export function createCloudflareInfraDriver({ schedulerScopes = {}, ...options }
 export * from "./driver.mjs";
 export { createCloudflareHealthPort, classifyCloudflareInfraError, extendCloudflareHealth, normalCloudflareCheck, probeCloudflareHealth } from "./health.mjs";
 export { createCloudflareSchedulerPort } from "./scheduler.mjs";
-export { sampleCloudflareResourceHealth } from "./resource-health.mjs";
+export { sampleCloudflareResourceHealth,normalizeResourceHealthLimits,RESOURCE_HEALTH_DEFAULT_LIMITS } from "./resource-health.mjs";
