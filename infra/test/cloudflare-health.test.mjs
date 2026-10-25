@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { createCloudflareInfraDriver } from "../providers/cloudflare/index.mjs";
+import { createCloudflareInfraDriver, classifyCloudflareInfraError } from "../providers/cloudflare/index.mjs";
 
 test("Cloudflare state health is one read-only row probe and surfaces the DO quota limit", async () => {
   const statements = [];
@@ -28,4 +28,17 @@ test("Cloudflare state health is one read-only row probe and surfaces the DO quo
   assert.equal(health.checks[0].error.code, "DURABLE_OBJECT_ROWS_READ_LIMIT");
   assert.deepEqual(statements, ["SELECT 1 AS fibre_health"]);
   assert.equal(transactions, 0);
+});
+
+test("provider wording varies without guessing a daily quota from a generic failure",()=>{
+  assert.equal(classifyCloudflareInfraError(
+    new Error("Your account has exceeded D1's free tier daily row read limit.")
+  ).code,"D1_ROWS_READ_LIMIT");
+  assert.equal(classifyCloudflareInfraError(
+    new Error("Durable Objects Free plan rows written quota exceeded")
+  ).code,"DURABLE_OBJECT_ROWS_WRITE_LIMIT");
+  assert.equal(classifyCloudflareInfraError(
+    new Error("Durable Objects query timed out")
+  ).code,"CLOUDFLARE_INFRA_UNAVAILABLE",
+    "an unrelated error invented a free-tier reset");
 });
