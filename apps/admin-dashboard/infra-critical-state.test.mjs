@@ -17,6 +17,9 @@ test("confirmed Durable Object exhaustion stops Admin until a valid recovery sam
     "restored infrastructure remained blocked");
   assert.equal(criticalInfrastructureState({error:{message:"monitor unavailable"}}),null,
     "unverified monitor failure was presented as known critical state");
+  assert.equal(criticalInfrastructureState({sample:{level:"critical",checks:[{
+    level:"critical",kind:"worker_requests_15m",value:30000,limit:25000,
+  }]}}),null,"warning threshold halted healthy Admin infrastructure");
 });
 
 test("nonquota critical infrastructure has no invented recovery time",()=>{
