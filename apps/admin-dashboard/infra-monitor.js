@@ -1,5 +1,6 @@
 import { bindCopyAction } from "./copy-action.js";
-import { decorateActionButton, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
+import { decorateActionButton, faIcon, setRefreshButtonState, setWaitingContent } from "./fa-icons.js";
+import {criticalInfrastructureState} from "./infra-critical-state.mjs";
 
 const button = document.querySelector("#infra-health-button");
 const dialog = document.querySelector("#infra-dialog");
@@ -12,6 +13,14 @@ const banner = document.querySelector("#infra-degradation-banner");
 const bannerTitle = document.querySelector("#infra-banner-title");
 const bannerDetail = document.querySelector("#infra-banner-detail");
 const bannerDetails = document.querySelector("#infra-banner-details");
+const outage=document.querySelector("#infra-critical-overlay");
+const outageShell=document.querySelector(".shell");
+const outageIcon=document.querySelector("#infra-critical-icon");
+const outageReason=document.querySelector("#infra-critical-reason");
+const outageReset=document.querySelector("#infra-critical-reset");
+const outageRecoveryNote=document.querySelector("#infra-critical-recovery-note");
+const outageDiagnostic=document.querySelector("#infra-critical-diagnostic");
+const outageRetry=document.querySelector("#infra-critical-retry");
 const REFRESH_MS = 15 * 60_000;
 let timer = null;
 let current = null;
@@ -112,7 +121,41 @@ function statusText(payload) {
   return lines.join("\n");
 }
 
+function showCriticalOutage(payload){
+  if(!outage)return;
+  const state=criticalInfrastructureState(payload);
+  if(!state){
+    // A failed health request does not prove recovery. Only a valid
+    // non-critical sample may lift an existing infrastructure stop.
+    if(!payload?.sample)return;
+    const wasVisible=!outage.hidden;
+    outage.hidden=true;
+    if(outageShell)outageShell.inert=false;
+    if(wasVisible)button?.focus();
+    return;
+  }
+  outageReason.textContent=state.reason;
+  outageDiagnostic.textContent=[state.code,
+    state.observedAt?"Observed "+new Date(state.observedAt).toLocaleString():null]
+    .filter(Boolean).join(" · ") || "No additional diagnostic is available.";
+  if(state.resetAt){
+    const minutes=Math.max(0,Math.ceil((Date.parse(state.resetAt)-Date.now())/60_000));
+    outageReset.textContent="Next quota reset · 00:00 UTC";
+    outageRecoveryNote.textContent="Approximately "+Math.floor(minutes/60)+"h "+(minutes%60)
+      +"m remaining. The quota resets daily; recovery is not guaranteed.";
+  }else{
+    outageReset.textContent="Recovery time unknown";
+    outageRecoveryNote.textContent="This is not a confirmed free-tier quota exhaustion. Check the service status.";
+  }
+  if(dialog?.open)dialog.close();
+  const wasHidden=outage.hidden;
+  outage.hidden=false;
+  if(outageShell)outageShell.inert=true;
+  if(wasHidden)outageRetry?.focus();
+}
+
 function render(payload) {
+  showCriticalOutage(payload);
   current = payload;
   const sample = payload?.sample;
   if (!sample) {
@@ -165,6 +208,8 @@ async function load({ force = false } = {}) {
     if (!response.ok) throw new Error(payload.detail ?? payload.error ?? `HTTP ${response.status}`);
     render(payload);
   } catch (error) {
+    // Keep any previously attested critical state until a valid health
+    // sample establishes recovery. Never silently dismiss on fetch failure.
     setBadge("unavailable", error.message);
     setBanner("unavailable", null, error.message);
     if (dialog.open) body.replaceChildren(detail("Monitor", error.message));
@@ -198,6 +243,10 @@ function schedule() {
   }, delay);
 }
 
+if(outageIcon)outageIcon.append(faIcon("circle-exclamation"));
+if(outageRetry)decorateActionButton(outageRetry,{icon:"rotate",label:"Check again",
+  tooltip:"Recheck infrastructure health"});
+outageRetry?.addEventListener("click",()=>load({force:true}));
 button?.addEventListener("click", openDetails);
 bannerDetails?.addEventListener("click", openDetails);
 forceButton?.addEventListener("click", () => load({ force:true }));
