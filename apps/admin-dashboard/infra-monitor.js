@@ -140,12 +140,15 @@ function showCriticalOutage(payload){
     .filter(Boolean).join(" · ") || "No additional diagnostic is available.";
   if(state.resetAt){
     const minutes=Math.max(0,Math.ceil((Date.parse(state.resetAt)-Date.now())/60_000));
-    outageReset.textContent="Next quota reset · 00:00 UTC";
-    outageRecoveryNote.textContent="Approximately "+Math.floor(minutes/60)+"h "+(minutes%60)
-      +"m remaining. The quota resets daily; recovery is not guaranteed.";
+    outageReset.textContent=minutes===0
+      ?"Daily quota reset window passed":"Possible daily reset · 00:00 UTC";
+    outageRecoveryNote.textContent=minutes===0
+      ?"Check again to verify whether the service recovered."
+      :"About "+Math.floor(minutes/60)+"h "+(minutes%60)
+        +"m until the provider's daily reset window. Recovery is not guaranteed.";
   }else{
     outageReset.textContent="Recovery time unknown";
-    outageRecoveryNote.textContent="This is not a confirmed free-tier quota exhaustion. Check the service status.";
+    outageRecoveryNote.textContent="No provider-confirmed daily reset window is available for this failure.";
   }
   if(dialog?.open)dialog.close();
   const wasHidden=outage.hidden;
