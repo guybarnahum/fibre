@@ -76,10 +76,13 @@ test("World environment author sees observable activity but not private purpose"
           if(request.clientRequestId.startsWith("world-initial-opportunity_")){
             assert.equal(request.input.initiatingSituation.physicalVenue,null,
               "home study incorrectly became a public venue");
-            assert.equal(request.input.initiatingSituation.activity,"reading",
-              "World model lost enacted outward activity");
-            assert.ok(request.input.potentialObservers.every(item=>item.activity==="reading"),
-              "World model lost observable candidate activity");
+            const expectedActivity=request.input.initiatingSituation.situationId==="sit_arrival_a"
+              ?"reading":null;
+            assert.equal(request.input.initiatingSituation.activity,expectedActivity,
+              "World model used private activity instead of an observable fact");
+            assert.ok(request.input.potentialObservers.every(item=>
+              item.activity===expectedActivity),
+              "World model used private candidate activity instead of an observable fact");
             assert.doesNotMatch(JSON.stringify(request.input),/important reunion|without expecting conversation/u,
               "another person's private plan entered World event cognition");
             if(request.input.initiatingSituation.situationId==="sit_arrival_a"){
