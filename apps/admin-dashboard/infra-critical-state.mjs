@@ -1,27 +1,34 @@
 const DAILY_QUOTAS=new Map([
-  ["DURABLE_OBJECT_ROWS_READ_LIMIT","Durable Objects daily read quota (5 million rows)"],
-  ["DURABLE_OBJECT_ROWS_WRITE_LIMIT","Durable Objects daily write quota"],
-  ["D1_ROWS_READ_LIMIT","D1 daily read quota"],
-  ["D1_ROWS_WRITE_LIMIT","D1 daily write quota"],
+  ["DURABLE_OBJECT_ROWS_READ_LIMIT","Durable Objects daily read quota exhausted."],
+  ["DURABLE_OBJECT_ROWS_WRITE_LIMIT","Durable Objects daily write quota exhausted."],
+  ["D1_ROWS_READ_LIMIT","D1 daily read quota exhausted."],
+  ["D1_ROWS_WRITE_LIMIT","D1 daily write quota exhausted."],
 ]);
 
-// Monitor state remains authoritative. An unavailable monitor is not, by
-// itself, proof of a catastrophic infrastructure failure.
+// Actual failed health checks, not analytics thresholds, determine outage.
+// A single ancillary-service failure should not lock the entire dashboard.
 export function criticalInfrastructureState(payload,now=Date.now()){
   const sample=payload?.sample;
-  const checks=sample?.checks??[];
-  const quota=checks.find(check=>check.level==="critical"&&DAILY_QUOTAS.has(check.error?.code));
   if(sample?.level!=="critical")return null;
-  // Capacity warning thresholds may mark a healthy service "critical".
-  // The blocking overlay requires an observed failed health check.
-  const first=quota??checks.find(check=>check.level==="critical"&&check.error);
+  const failures=(sample.checks??[]).filter(check=>
+    check.level==="critical"&&check.error);
+  const quota=failures.find(check=>DAILY_QUOTAS.has(check.error.code));
+  const core=failures.find(check=>
+    ["world-kernel","admin-dashboard"].includes(check.service));
+  const affected=new Set(failures.map(check=>check.service??check.resource).filter(Boolean));
+  const first=quota??core??(affected.size>1?failures[0]:null);
   if(!first)return null;
   const code=first.error.code??null;
-  const reason=quota
-    ?DAILY_QUOTAS.get(code)+" reached."
-    :first?.error?.detail??"Core infrastructure is reporting a critical condition.";
-  const resetAt=quota
-    ?new Date(Math.floor(now/86_400_000)*86_400_000+86_400_000).toISOString()
+  const observedAt=sample.infra?.observedAt??sample.observedAt??null;
+  const observedMs=Date.parse(observedAt??"");
+  // Midnight is a potential reset only for explicitly reported daily quota
+  // failures, anchored to the observation date, never an arbitrary next day.
+  const resetAt=quota&&Number.isFinite(observedMs)&&observedMs<=now+60_000
+    ?new Date(Math.floor(observedMs/86_400_000)*86_400_000+86_400_000).toISOString()
     :null;
-  return Object.freeze({reason,code,resetAt,observedAt:sample.observedAt??null});
+  return Object.freeze({
+    reason:quota?DAILY_QUOTAS.get(code)
+      :first.error.detail??"Core infrastructure is reporting a critical condition.",
+    code,resetAt,observedAt,
+  });
 }
