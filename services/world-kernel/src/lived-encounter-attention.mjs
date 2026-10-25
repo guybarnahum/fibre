@@ -33,6 +33,7 @@ export async function appraiseEncounterAttention({
   encounterStory,
   semanticStates = [],
   memories = [],
+  selfRole=null,
   modelAdapter,
 }) {
   assertPlainObject("attention Thread", thread);
@@ -40,6 +41,8 @@ export async function appraiseEncounterAttention({
   assertPlainObject("attention situation", situation);
   assertPlainObject("attention Encounter Story", encounterStory);
   assertId("attention Encounter Story.encounterId", encounterStory.encounterId);
+  if(![null,"arriver","witness"].includes(selfRole))
+    throw new TypeError("attention selfRole is invalid");
 
   const input = {
     thread:{
@@ -58,16 +61,13 @@ export async function appraiseEncounterAttention({
         // Observer-relative cognition only; never alter World Story evidence.
         beats:encounterStory.story.beats.map(beat=>{
           const self=beat.actorThreadId===thread.threadId;
-          const arrival=beat.kind==="action"
-            &&beat.text.endsWith(" arrives at the venue.");
-          const presence=beat.kind==="occurrence"
-            &&encounterStory.story.beats.some(other=>
-              other.kind==="action"&&other.text.endsWith(" arrives at the venue."));
           return {
             ...structuredClone(beat),self,
-            ...(self&&arrival?{text:"You arrive at the venue."}
-              :self&&presence?{text:situation.outwardActivity
-                ?`You are ${situation.outwardActivity} nearby.`:"You are nearby."}
+            ...(self&&selfRole==="arriver"&&beat.kind==="action"
+              ?{text:"You arrive at the venue."}
+              :self&&selfRole==="witness"&&beat.kind==="occurrence"
+                ?{text:situation.outwardActivity
+                  ?`You are ${situation.outwardActivity} nearby.`:"You are nearby."}
                 :{}),
           };
         }),
@@ -134,13 +134,14 @@ export async function admitEncounterAttention({
   experienceStore,
   modelAdapter,
   onExperienceQueued=null,
+  selfRole=null,
 }){
   let attention=experienceStore.getThreadEncounterAttention(
     thread.threadId,encounterStory.encounterId,
   );
   if(attention===null){
     const appraisal=await appraiseEncounterAttention({
-      thread,situation,encounterStory,semanticStates,memories,modelAdapter,
+      thread,situation,encounterStory,semanticStates,memories,modelAdapter,selfRole,
     });
     attention=experienceStore.recordThreadEncounterAttention({
       threadId:thread.threadId,

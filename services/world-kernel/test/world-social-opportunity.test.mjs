@@ -1822,10 +1822,20 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       &&!beat.text.includes("Currently:")
       &&!beat.text.includes("expecting conversation")),
     "private intent entered the objective Story");
-    assert.ok(attentionInputs.some(input=>input.currentSituation.threadId===ids[3]
-      &&input.encounterStory.story.beats.some(beat=>
-        beat.self===true&&beat.text==="You are reading nearby.")),
-    "witness attention did not see its own readable presence");
+    for(const [observer,role] of [[ids[2],"arriver"],[ids[3],"witness"]]){
+      const input=attentionInputs.find(item=>item.currentSituation.threadId===observer);
+      assert.ok(input,role+" never received the objective Story");
+      const own=input.encounterStory.story.beats.find(beat=>beat.actorThreadId===observer);
+      const other=input.encounterStory.story.beats.find(beat=>beat.actorThreadId!==observer);
+      assert.equal(own.self,true,role+" lost its own beat");
+      assert.notEqual(own.text,freeStory.story.beats.find(beat=>
+        beat.actorThreadId===observer).text,role+" did not see itself as the reader");
+      assert.equal(other.self,false,role+" mistook another person for itself");
+      assert.equal(other.text,freeStory.story.beats.find(beat=>
+        beat.actorThreadId!==observer).text,role+" rewrote another person's beat");
+    }
+    assert.match(freeStory.story.beats[0].text,/arrives at the venue/u,
+      "personal attention rewrote objective World history");
     assert.equal(result.environmentEvolution.result.results[0].outcome,"recorded",
       "other venue's failed life suppressed real arrival perception");
     assert.equal(result.socialOpportunity.result.results[0].outcome,"background",

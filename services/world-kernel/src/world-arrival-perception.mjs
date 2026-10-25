@@ -98,7 +98,7 @@ export function createWorldArrivalPerception({
                   situation.threadId,encounter.encounterId,
                 );
                 const attention=await admitEncounterAttention({
-                  thread,situation,encounterStory:encounter,
+                  thread,situation,encounterStory:encounter,selfRole:"witness",
                   semanticStates:prior===null
                     ?semanticStateStore.listCurrentState(situation.threadId):[],
                   memories:prior===null
@@ -130,7 +130,7 @@ export function createWorldArrivalPerception({
                 );
                 const attention=await admitEncounterAttention({
                   thread:arrivingThread,situation:arrival,encounterStory:encounter,
-                  semanticStates:prior===null
+                  selfRole:"arriver",semanticStates:prior===null
                     ?semanticStateStore.listCurrentState(arrival.threadId):[],
                   memories:prior===null
                     ?memoryStore.listCurrentMemories(arrival.threadId,{
