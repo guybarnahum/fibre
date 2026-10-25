@@ -14,7 +14,7 @@ const seed=JSON.parse(readFileSync(
 const AT="2026-10-08T17:24:00.000Z";
 const DUE="2026-10-08T17:25:00.000Z";
 
-test("an observed scene can earn one optional ambient change without fabricating attendance",async()=>{
+test("World environment author sees observable activity but not private purpose",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-world-arrival-"));
   const storage={
     infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
@@ -32,7 +32,8 @@ test("an observed scene can earn one optional ambient change without fabricating
     situations.set(situationId,{
       threadId:thread.threadId,situationId,establishedAt:AT,
       location:{kind:"place",placeRef:i===0?"per:home_study:1":`wpl_home_study_${i}`},
-      activity:"Reading at home.",
+      activity:"Privately plan an important reunion without expecting conversation.",
+       outwardActivity:"reading",
     });
   }
   world.close();
@@ -75,6 +76,12 @@ test("an observed scene can earn one optional ambient change without fabricating
           if(request.clientRequestId.startsWith("world-initial-opportunity_")){
             assert.equal(request.input.initiatingSituation.physicalVenue,null,
               "home study incorrectly became a public venue");
+            assert.equal(request.input.initiatingSituation.activity,"reading",
+              "World model lost enacted outward activity");
+            assert.ok(request.input.potentialObservers.every(item=>item.activity==="reading"),
+              "World model lost observable candidate activity");
+            assert.doesNotMatch(JSON.stringify(request.input),/important reunion|without expecting conversation/u,
+              "another person's private plan entered World event cognition");
             if(request.input.initiatingSituation.situationId==="sit_arrival_a"){
               assert.equal(request.input.initiatingSituation.sceneDescription,
                 "A reading nook beside a private home's window.",

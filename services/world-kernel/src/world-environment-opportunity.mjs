@@ -145,7 +145,7 @@ export function createWorldEnvironmentOpportunity({
                 physicalVenueRef:place?.physicalVenue?.ref??null,
                 placeName:(place?.physicalVenue?.displayName??place?.displayName
                   ??place?.specificPlace??"").slice(0,300),
-                activity:(item.activity??"").slice(0,220),
+                activity:item.outwardActivity?.slice(0,220)??null,
               };
             });
             const existing=physicalVenue===null?null
@@ -170,7 +170,7 @@ export function createWorldEnvironmentOpportunity({
                 occurrenceAt:opportunity.dueAt,
                 initiatingSituation:{
                   situationId:sceneWitness?.situationId??situation.situationId,
-                  activity:sceneWitness?.activity??situation.activity??null,
+                  activity:(sceneWitness?.outwardActivity??situation.outwardActivity)?.slice(0,220)??null,
                   physicalVenue:physicalVenue===null?null:{
                     ref:physicalVenue.ref,name:physicalVenue.displayName,
                     locality:physicalVenue.locality??null,country:physicalVenue.country??null,
