@@ -1,4 +1,4 @@
-import { createCloudflareInfraDriver, sampleCloudflareResourceHealth, normalizeResourceHealthLimits } from "#infra/providers/cloudflare";
+import { createCloudflareInfraDriver, sampleCloudflareResourceHealth, normalizeResourceHealthLimits, classifyCloudflareInfraError } from "#infra/providers/cloudflare";
 
 const DEFAULT_TTL_MS = 15 * 60_000;
 const CAPACITY_CACHE = new WeakMap();
@@ -88,7 +88,8 @@ async function probeService(env, service) {
     try { payload = await response.json(); } catch {}
     return checksFromService(service, payload, response.ok);
   } catch (error) {
-    return [failedServiceCheck(service, "INFRA_HEALTH_UNAVAILABLE", error)];
+    const classified=classifyCloudflareInfraError(error,"INFRA_HEALTH_UNAVAILABLE");
+    return [failedServiceCheck(service,classified.code,classified.detail)];
   }
 }
 
