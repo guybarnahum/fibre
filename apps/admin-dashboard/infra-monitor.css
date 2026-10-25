@@ -169,7 +169,7 @@
 .infra-critical-primary,.infra-critical-secondary{
   display:inline-flex;align-items:center;justify-content:center;gap:8px;
   min-width:150px;padding:11px 20px;text-decoration:none;
-  font:600 13px/1.4 inherit;border-radius:10px;cursor:pointer;
+  font-family:inherit;font-size:13px;line-height:1.4;font-weight:650;border-radius:10px;cursor:pointer;
 }
 .infra-critical-primary{
   color:#1c0a10;background:#ff727e;border:1px solid #ff8993;
