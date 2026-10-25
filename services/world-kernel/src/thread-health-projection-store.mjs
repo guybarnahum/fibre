@@ -1,5 +1,5 @@
 import { canonicalJson } from "./persistence-common.mjs";
-import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import { openWorldStateDatabase,worldTableExists } from "./world-state-storage.mjs";
 
 const TABLE = "thread_health_projections";
 
@@ -8,20 +8,10 @@ function parseJson(value) {
   catch { return null; }
 }
 
-function tableNames(database) {
-  return new Set(database.prepare(`
-    SELECT name FROM sqlite_master
-    WHERE type='table' AND name IN (
-      'threads',
-      'fibre_civil_registrations',
-      'embodiment_current_heads',
-      'thread_visual_publication_work',
-      'genesis_birth_publications',
-      'genesis_raised_language_corrections',
-      'symbolic_genomes'
-    )
-  `).all().map((row) => row.name));
-}
+const HEALTH_SOURCE_TABLES=["threads","fibre_civil_registrations",
+  "embodiment_current_heads","thread_visual_publication_work",
+  "genesis_birth_publications","genesis_raised_language_corrections",
+  "symbolic_genomes"];
 
 export class ThreadHealthProjectionStore {
   #database;
@@ -38,11 +28,8 @@ export class ThreadHealthProjectionStore {
         FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
       ) STRICT;
     `);
-    this.#tables=storage.schemaReady
-      ?new Set(["threads","fibre_civil_registrations","embodiment_current_heads",
-        "thread_visual_publication_work","genesis_birth_publications",
-        "genesis_raised_language_corrections","symbolic_genomes"])
-      :tableNames(this.#database);
+    this.#tables=new Set(HEALTH_SOURCE_TABLES.filter(name=>
+      worldTableExists(this.#database,name)));
   }
 
   close() { this.#database.close(); }

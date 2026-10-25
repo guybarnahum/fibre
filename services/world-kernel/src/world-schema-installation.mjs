@@ -59,6 +59,24 @@ export function installWorldSchemas(storage){
     database.prepare("SELECT discovery_json FROM world_public_places LIMIT 1").get();
     database.prepare("SELECT appearance_json FROM world_public_places LIMIT 1").get();
     database.prepare("SELECT 1 FROM thread_known_places LIMIT 1").get();
+    // A ready World must actually have every table that live readers assume.
+    for(const name of [
+      "threads","thread_events","situated_evidence_witnesses",
+      "encounter_story_thread_presence","social_interaction_records",
+      "embodiment_reference_index","lived_now_next_boundaries",
+      "inside_fibre_work_commitments","fibre_civil_registrations",
+      "genesis_world_specs","genesis_manifests",
+      "genesis_raised_language_corrections","genesis_birth_publications",
+      "genesis_historical_envelope_plans","genesis_generation_attempts",
+      "genesis_origin_authorities","live_world_place_records",
+      "live_physical_venue_bindings","symbolic_genomes",
+      "symbolic_genome_runtime_baselines","symbolic_genome_loci",
+      "symbolic_genome_mutations","thread_journal_profiles",
+      "thread_visual_publication_work","thaw_leases","runtime_sessions",
+      "embodiment_current_heads",
+    ]){
+      database.prepare(`SELECT 1 FROM "${name}" LIMIT 1`).get();
+    }
   }finally{database.close();}
   }finally{worldReader.close();}
 }

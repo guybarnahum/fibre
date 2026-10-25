@@ -1,11 +1,8 @@
+import { worldTableExists } from "./world-state-storage.mjs";
 import { IntegrityError } from "./persistence-common.mjs";
 import { IDENTITY_DOMAIN_REGISTRY_VERSION } from "./identity-domain-registry.mjs";
 
-function tableExists(database, name) {
-  return database.prepare(
-    "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
-  ).get(name) !== undefined;
-}
+const tableExists=worldTableExists;
 
 export function repairIdentityAssertionRegistryV2Schema(database) {
   // Pre-production Fibre supports one identity storage dialect. There are no

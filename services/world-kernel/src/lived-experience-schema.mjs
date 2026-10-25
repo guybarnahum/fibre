@@ -8,6 +8,13 @@ export function createLivedExperienceTables(database) {
       AND name='thread_experience_pending_work'
   `).get()===undefined;
   database.exec(`
+    CREATE TABLE IF NOT EXISTS thread_journal_profiles (
+      thread_id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      presentation_style TEXT NOT NULL,
+      aesthetic_note TEXT NOT NULL
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS lived_encounter_records (
       event_id TEXT PRIMARY KEY,
       thread_id TEXT NOT NULL,
@@ -106,6 +113,8 @@ export function createLivedExperienceTables(database) {
       decision_json TEXT CHECK (decision_json IS NULL OR json_valid(decision_json)),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_world_social_thread_due
+      ON world_social_opportunities(thread_id,due_at);
     CREATE INDEX IF NOT EXISTS idx_world_social_opportunities_due
       ON world_social_opportunities(due_at)
       WHERE started_at IS NULL;
@@ -130,6 +139,8 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY(encounter_ref) REFERENCES encounter_story_records(encounter_id),
       FOREIGN KEY(thread_id) REFERENCES threads(thread_id)
     ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_world_observed_social_thread_due
+      ON world_observed_social_opportunities(thread_id,due_at);
     CREATE INDEX IF NOT EXISTS idx_world_observed_social_due
       ON world_observed_social_opportunities(due_at)
       WHERE started_at IS NULL;

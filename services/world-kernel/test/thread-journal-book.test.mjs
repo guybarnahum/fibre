@@ -6,6 +6,7 @@ import { join } from "node:path";
 
 import { createLocalInfraDriver } from "#infra/providers/local";
 import { createThreadJournalBook } from "../src/thread-journal-book.mjs";
+import { installWorldSchemas } from "../src/world-schema-installation.mjs";
 
 const profile={
   threadId:"thr_journal_owner",
@@ -42,6 +43,7 @@ test("a Thread's chosen Journal survives restart and renders new World reflectio
     },
   };
   try{
+    installWorldSchemas(storage);
     const book=createThreadJournalBook({storage,experienceStore});
     const defaultBook=await book.read(profile.threadId);
     assert.equal(defaultBook?.profile.title,"Journal",

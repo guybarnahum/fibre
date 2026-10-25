@@ -478,10 +478,7 @@ export class FibreWorldDurableObject extends DurableObject {
 
   directoryForRequest() {
     if (this.threadDirectory === null) {
-      this.threadDirectoryStore = new ThreadDirectoryStore({
-        infraDriver:this.infraDriver,
-        stateScopeId:WORLD_SCOPE_ID,
-      });
+      this.threadDirectoryStore = new ThreadDirectoryStore(this.worldStorage);
       this.threadDirectory = createThreadDirectoryService({ directoryStore:this.threadDirectoryStore });
     }
     return this.threadDirectory;
@@ -1025,6 +1022,10 @@ export class FibreWorldDurableObject extends DurableObject {
           event: "world-reconciliation-alarm-completed",
           reconciliationPending: result.reconciliationPending,
           retryDelayMs: result.retryDelayMs,
+          nextWakeAt:result.nextWakeAt??null,
+          nextWakeStage:["environmentEvolution","socialOpportunity",
+            "livedBoundary","firstLife","contactReception"].find(stage=>
+            result[stage]?.result?.nextDueAt===result.nextWakeAt)??null,
           stages:reconciliationOutcome(result),
         }));
         return result;

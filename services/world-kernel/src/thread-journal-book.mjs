@@ -87,20 +87,6 @@ Do not describe the Thread from outside and do not imitate a demographic stereot
 export function createThreadJournalBook({ storage, experienceStore } = {}) {
   requireMethod("experienceStore",experienceStore,"listThreadJournalEntries");
   const database=openWorldStateDatabase(storage,{storeName:"ThreadJournalBook"});
-  try{
-    database.exec(`
-      CREATE TABLE IF NOT EXISTS thread_journal_profiles (
-        thread_id TEXT PRIMARY KEY,
-        title TEXT NOT NULL,
-        presentation_style TEXT NOT NULL,
-        aesthetic_note TEXT NOT NULL
-      ) STRICT;
-    `);
-  }catch(error){
-    database.close();
-    throw error;
-  }
-
   function profileFor(threadId){
     assertId("journal threadId",threadId);
     const row=database.prepare(`

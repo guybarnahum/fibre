@@ -102,6 +102,15 @@ export function worldSchemaReady(database){
   return INITIALIZATION_BY_DATABASE.get(database)?.schemaReady===true;
 }
 
+// Deployed schema is installed and verified before a World serves requests.
+// Local and isolated fixtures retain real table-existence inspection.
+export function worldTableExists(database,name){
+  if(worldSchemaReady(database))return true;
+  return database.prepare(
+    "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+  ).get(name)!==undefined;
+}
+
 export function openWorldStateDatabase(storage, {
   readOnly = false,
   storeName = "World state store",

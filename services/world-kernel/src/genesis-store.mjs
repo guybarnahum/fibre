@@ -59,7 +59,7 @@ import {
   assertGenesisHistoricalEnvelopePublication,
   normalizeGenesisHistoricalEnvelopePlan,
 } from "./genesis-historical-envelope-authority.mjs";
-import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import { openWorldStateDatabase, worldTableExists } from "./world-state-storage.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -106,11 +106,7 @@ function parseRecord(name, json) {
   catch (error) { throw new IntegrityError(`${name} is not valid JSON: ${error.message}`); }
 }
 
-function tableExists(database, tableName) {
-  return database.prepare(
-    "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name=?",
-  ).get(tableName) !== undefined;
-}
+const tableExists=worldTableExists;
 
 function genesisSchemaPresent(database) {
   return GENESIS_TABLES.every((tableName) => tableExists(database, tableName));

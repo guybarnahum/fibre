@@ -1,4 +1,4 @@
-import {worldSchemaReady} from "./world-state-storage.mjs";
+import { worldTableExists } from "./world-state-storage.mjs";
 
 import {
   IntegrityError,
@@ -41,12 +41,7 @@ const SYMBOLIC_GENOMES_UPDATE_GUARD = `
   BEGIN SELECT RAISE(ABORT,'symbolic_genomes is immutable'); END;
 `;
 
-function tableExists(database, tableName) {
-  if(worldSchemaReady(database))return true;
-  return database.prepare(
-    "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name=?",
-  ).get(tableName) !== undefined;
-}
+const tableExists=worldTableExists;
 
 function recordDigest(kind, record) {
   return `sha256:${sha256(canonicalJson({ kind, record }))}`;

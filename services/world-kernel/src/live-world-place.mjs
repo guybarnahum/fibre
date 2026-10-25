@@ -1,4 +1,4 @@
-import {worldSchemaReady} from "./world-state-storage.mjs";
+import { worldTableExists } from "./world-state-storage.mjs";
 import {
   IntegrityError,
   canonicalJson,
@@ -13,12 +13,7 @@ export const LIVE_WORLD_PLACE_POLICY = Object.freeze({
   admittedPlaceKinds:Object.freeze(["library_or_learning"]),
 });
 
-function tableExists(database, name) {
-  if(worldSchemaReady(database))return true;
-  return database.prepare(
-    "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name=?",
-  ).get(name) !== undefined;
-}
+const tableExists=worldTableExists;
 
 function parseRecord(name, value) {
   try { return JSON.parse(value); }

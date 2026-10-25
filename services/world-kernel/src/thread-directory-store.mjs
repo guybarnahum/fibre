@@ -1,3 +1,4 @@
+import { worldTableExists } from "./world-state-storage.mjs";
 import { countryCodeForCountry, resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 import { IntegrityError } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
@@ -129,16 +130,10 @@ export class ThreadDirectoryStore {
       readOnly: true,
       storeName: "ThreadDirectoryStore",
     });
-    this.#tables = storage.schemaReady
-      ?new Set(["threads","fibre_civil_registrations","genesis_manifests",
-        "genesis_world_specs","genesis_raised_language_corrections",
-        "thread_visual_publication_work","thaw_leases","runtime_sessions"])
-      :new Set(this.#database.prepare(`
-      SELECT name FROM sqlite_master
-      WHERE type='table' AND name IN (
-        'threads','fibre_civil_registrations','genesis_manifests','genesis_world_specs','genesis_raised_language_corrections','thread_visual_publication_work','thaw_leases','runtime_sessions'
-      )
-    `).all().map((row) => row.name));
+    const names=["threads","fibre_civil_registrations","genesis_manifests",
+      "genesis_world_specs","genesis_raised_language_corrections",
+      "thread_visual_publication_work","thaw_leases","runtime_sessions"];
+    this.#tables=new Set(names.filter(name=>worldTableExists(this.#database,name)));
   }
 
   close() { this.#database.close(); }

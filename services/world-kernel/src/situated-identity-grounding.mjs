@@ -1,10 +1,7 @@
+import { worldTableExists } from "./world-state-storage.mjs";
 import { IntegrityError } from "./persistence-common.mjs";
 
-function tableExists(database, table) {
-  return database.prepare(
-    "SELECT 1 AS present FROM sqlite_master WHERE type='table' AND name=?",
-  ).get(table) !== undefined;
-}
+const tableExists=worldTableExists;
 
 function hasThreadEvent(database, threadId, reference) {
   return database.prepare(

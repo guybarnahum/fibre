@@ -7,7 +7,7 @@ import {
 } from "./persistence-common.mjs";
 import { migrateDatabase, translateStorageError } from "./persistence-sqlite.mjs";
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
-import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import { openWorldStateDatabase,worldTableExists } from "./world-state-storage.mjs";
 import { spokenNameDisclosure } from "./spoken-name.mjs";
 
 function digest(value) {
@@ -185,10 +185,7 @@ export class LivedExperienceStore {
   // Independent stores may be opened before their LivedNow frontier exists
   // (Genesis and isolated replay fixtures). No phantom life debt is inferred.
   #hasLivedBoundaryFrontier(){
-    return this.#database.prepare(`
-      SELECT 1 FROM sqlite_master
-      WHERE type='table' AND name='lived_now_next_boundaries'
-    `).get()!==undefined;
+    return worldTableExists(this.#database,"lived_now_next_boundaries");
   }
 
   enqueueArrivalPerception({situationId,venueRef,dueAt,witnesses}){
