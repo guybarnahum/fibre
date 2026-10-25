@@ -125,9 +125,9 @@ function showCriticalOutage(payload){
   if(!outage)return;
   const state=criticalInfrastructureState(payload);
   if(!state){
-    // A failed health request does not prove recovery. Only a valid
-    // non-critical sample may lift an existing infrastructure stop.
-    if(!payload?.sample)return;
+    // A failed or unavailable health sample cannot prove recovery.
+    // Only measured normal/elevated state may lift an existing stop.
+    if(!["normal","elevated"].includes(payload?.sample?.level))return;
     const wasVisible=!outage.hidden;
     outage.hidden=true;
     if(outageShell)outageShell.inert=false;
