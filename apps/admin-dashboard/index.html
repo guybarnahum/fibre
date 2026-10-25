@@ -475,6 +475,34 @@
   </dialog>
 
 
+  <section id="infra-critical-overlay" class="infra-critical-overlay"
+    role="alertdialog" aria-modal="true" aria-labelledby="infra-critical-heading"
+    aria-describedby="infra-critical-description" hidden>
+    <div class="infra-critical-card">
+      <div class="infra-critical-symbol" aria-hidden="true">
+        <div class="infra-critical-octagon"><span id="infra-critical-icon"></span></div>
+      </div>
+      <p class="infra-critical-kicker">Fibre · Infrastructure critical</p>
+      <h2 id="infra-critical-heading">Infrastructure unavailable</h2>
+      <p id="infra-critical-description" class="infra-critical-intro">The Admin Dashboard cannot operate normally while its supporting infrastructure is in a critical state.</p>
+      <p id="infra-critical-reason" class="infra-critical-reason"></p>
+      <div class="infra-critical-recovery">
+        <span class="infra-critical-recovery-label">Recovery</span>
+        <strong id="infra-critical-reset">Recovery time unknown</strong>
+        <span id="infra-critical-recovery-note">Check infrastructure status for an update.</span>
+      </div>
+      <p class="infra-critical-caution">Dashboard information may be incomplete or stale. Actions are unavailable until service recovers.</p>
+      <div class="infra-critical-actions">
+        <button id="infra-critical-retry" class="infra-critical-primary" type="button">Check again</button>
+        <a class="infra-critical-secondary" href="https://status.insidefibre.com" target="_blank" rel="noopener noreferrer">System status ↗</a>
+      </div>
+      <details class="infra-critical-details">
+        <summary>Technical details</summary>
+        <p id="infra-critical-diagnostic"></p>
+      </details>
+    </div>
+  </section>
+
   <script src="/admin-session.js"></script>
   <script type="module" src="/build-info.js"></script>
   <script type="module" src="/infra-monitor.js"></script>
