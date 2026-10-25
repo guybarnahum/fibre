@@ -7,11 +7,22 @@ function bounded(value) {
 
 export function classifyCloudflareInfraError(error, fallbackCode = "CLOUDFLARE_INFRA_UNAVAILABLE") {
   const detail = bounded(error);
-  let code = fallbackCode;
-  if (/Exceeded allowed rows read in Durable Objects free tier/iu.test(detail)) code = "DURABLE_OBJECT_ROWS_READ_LIMIT";
-  else if (/Exceeded allowed rows written in Durable Objects free tier/iu.test(detail)) code = "DURABLE_OBJECT_ROWS_WRITE_LIMIT";
-  else if (/exceeded D1's free tier daily row read limit/iu.test(detail)) code = "D1_ROWS_READ_LIMIT";
-  else if (/exceeded D1's free tier daily row write limit/iu.test(detail)) code = "D1_ROWS_WRITE_LIMIT";
+  let code=fallbackCode;
+  // Only provider-reported Free-tier exhaustion earns a daily-quota code.
+  // Tolerate harmless wording changes; unknown failures stay unknown.
+  const limited=/\bfree[\s-]*(?:tier|plan)\b/iu.test(detail)
+    && /\b(?:exceeded?|limit|quota)\b/iu.test(detail);
+  if(limited){
+    const rowsRead=/\b(?:rows?\s+read|read\s+rows?)\b/iu.test(detail);
+    const rowsWritten=/\b(?:rows?\s+(?:written|write)|write\s+rows?)\b/iu.test(detail);
+    if(/\bdurable objects?\b/iu.test(detail)){
+      if(rowsRead)code="DURABLE_OBJECT_ROWS_READ_LIMIT";
+      else if(rowsWritten)code="DURABLE_OBJECT_ROWS_WRITE_LIMIT";
+    }else if(/\bd1\b/iu.test(detail)){
+      if(rowsRead)code="D1_ROWS_READ_LIMIT";
+      else if(rowsWritten)code="D1_ROWS_WRITE_LIMIT";
+    }
+  }
   return Object.freeze({
     code,
     detail,
