@@ -1,4 +1,4 @@
-import { createCloudflareInfraDriver, sampleCloudflareResourceHealth } from "#infra/providers/cloudflare";
+import { createCloudflareInfraDriver, sampleCloudflareResourceHealth, normalizeResourceHealthLimits } from "#infra/providers/cloudflare";
 
 const DEFAULT_TTL_MS = 15 * 60_000;
 const CAPACITY_CACHE = new WeakMap();
@@ -36,14 +36,7 @@ function monitorConfig(env) {
     accountId:nonEmpty("Cloudflare account ID", parsed.accountId),
     apiToken:nonEmpty("Cloudflare analytics token", parsed.apiToken),
     ttlMs:numberSetting("ttlSeconds", parsed.ttlSeconds, DEFAULT_TTL_MS / 1000) * 1000,
-    limits:Object.freeze({
-      d1RowsReadDaily:numberSetting("d1RowsReadDaily", parsed.limits?.d1RowsReadDaily, 5_000_000),
-      d1RowsWrittenDaily:numberSetting("d1RowsWrittenDaily", parsed.limits?.d1RowsWrittenDaily, 100_000),
-      durableObjectRowsReadDaily:numberSetting("durableObjectRowsReadDaily", parsed.limits?.durableObjectRowsReadDaily, 5_000_000),
-      durableObjectRowsWrittenDaily:numberSetting("durableObjectRowsWrittenDaily", parsed.limits?.durableObjectRowsWrittenDaily, 100_000),
-      workerRequests15m:numberSetting("workerRequests15m", parsed.limits?.workerRequests15m, 25_000),
-      workerErrors15m:numberSetting("workerErrors15m", parsed.limits?.workerErrors15m, 100),
-    }),
+    limits:normalizeResourceHealthLimits(parsed.limits),
     d1Resources:Object.freeze(d1Resources),
   });
 }
