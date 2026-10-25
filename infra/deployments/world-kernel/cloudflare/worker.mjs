@@ -1023,9 +1023,10 @@ export class FibreWorldDurableObject extends DurableObject {
           reconciliationPending: result.reconciliationPending,
           retryDelayMs: result.retryDelayMs,
           nextWakeAt:result.nextWakeAt??null,
-          nextWakeStage:["environmentEvolution","socialOpportunity",
-            "livedBoundary","firstLife","contactReception"].find(stage=>
-            result[stage]?.result?.nextDueAt===result.nextWakeAt)??null,
+          nextWakeStage:result.nextWakeAt==null?null:
+            ["environmentEvolution","socialOpportunity",
+              "livedBoundary","firstLife","contactReception"].find(stage=>
+              result[stage]?.result?.nextDueAt===result.nextWakeAt)??null,
           stages:reconciliationOutcome(result),
         }));
         return result;

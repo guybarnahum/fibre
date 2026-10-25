@@ -33,7 +33,7 @@ test("World environment author sees observable activity but not private purpose"
       threadId:thread.threadId,situationId,establishedAt:AT,
       location:{kind:"place",placeRef:i===0?"per:home_study:1":`wpl_home_study_${i}`},
       activity:"Privately plan an important reunion without expecting conversation.",
-       outwardActivity:"reading",
+       ...(i===0?{outwardActivity:"reading"}:{}),
     });
   }
   world.close();

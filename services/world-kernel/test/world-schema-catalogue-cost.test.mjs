@@ -52,20 +52,14 @@ test("a deployed World does not consult schema metadata during lived and due-que
     // Capture the actual SQL prepared by all deployed-style state handles,
     // not a count of helper invocations or an inferred cost estimate.
     const prepared=[];
-    const state=Object.create(storage.infraDriver.state);
-    Object.defineProperty(state,"open",{value:(...args)=>{
+    const state={...storage.infraDriver.state,open:(...args)=>{
       const database=storage.infraDriver.state.open(...args);
-      return new Proxy(database,{get(target,key){
-        if(key==="prepare")return sql=>{
-          prepared.push(sql);
-          return target.prepare(sql);
-        };
-        const value=Reflect.get(target,key,target);
-        return typeof value==="function"?value.bind(target):value;
-      }});
-    }});
-    const infraDriver=Object.create(storage.infraDriver);
-    Object.defineProperty(infraDriver,"state",{value:state});
+      return {...database,prepare:sql=>{
+        prepared.push(sql);
+        return database.prepare(sql);
+      }};
+    }};
+    const infraDriver={...storage.infraDriver,state};
     const deployed={infraDriver,stateScopeId:storage.stateScopeId,schemaReady:true};
     const lived=openLivedNowStore(deployed);
     const experience=openLivedExperienceStore(deployed);
