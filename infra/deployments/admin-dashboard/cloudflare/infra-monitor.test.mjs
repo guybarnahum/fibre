@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { readAdminInfraMonitor } from "./infra-monitor.mjs";
+import { readAdminInfraMonitor, sampleAdminInfraHealth } from "./infra-monitor.mjs";
 
 function healthBinding(service, check, { criticalFromRead = Infinity } = {}) {
   let reads = 0;
@@ -117,4 +117,16 @@ test("live service health is never hidden behind the slower capacity cache", asy
   assert.ok(services.every((service) => service.reads === 2), "runtime health must be probed on every monitor read");
   assert.equal(activity.reads, 2, "Admin D1 liveness must be probed on every monitor read");
   assert.equal(analyticsReads, 1, "capacity analytics remain bounded by the TTL");
+});
+
+test("a DO quota refusal before the health endpoint responds keeps the quota diagnosis",async()=>{
+  const {env}=monitorEnv();
+  env.WORLD_KERNEL={async fetch(){
+    throw new Error("Exceeded allowed rows read in Durable Objects free tier.");
+  }};
+  const health=await sampleAdminInfraHealth({env,environment:"staging"});
+  assert.equal(health.level,"critical");
+  const failure=health.checks.find(check=>check.service==="world-kernel");
+  assert.equal(failure?.error?.code,"DURABLE_OBJECT_ROWS_READ_LIMIT",
+    "pre-handler quota exhaustion was mislabeled as an unknown outage");
 });
