@@ -12,8 +12,11 @@ export function criticalInfrastructureState(payload,now=Date.now()){
   const checks=sample?.checks??[];
   const quota=checks.find(check=>check.level==="critical"&&DAILY_QUOTAS.has(check.error?.code));
   if(sample?.level!=="critical")return null;
-  const first=quota??checks.find(check=>check.level==="critical");
-  const code=first?.error?.code??null;
+  // Capacity warning thresholds may mark a healthy service "critical".
+  // The blocking overlay requires an observed failed health check.
+  const first=quota??checks.find(check=>check.level==="critical"&&check.error);
+  if(!first)return null;
+  const code=first.error.code??null;
   const reason=quota
     ?DAILY_QUOTAS.get(code)+" reached."
     :first?.error?.detail??"Core infrastructure is reporting a critical condition.";
