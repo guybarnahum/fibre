@@ -104,3 +104,92 @@
   .infra-health-label { display: none; }
   .infra-degradation-banner { margin-inline: 12px; align-items: flex-start; }
 }
+
+/* An independent, read-only stop sign for an Admin runtime that cannot operate. */
+.infra-critical-overlay[hidden]{display:none}
+.infra-critical-overlay{
+  position:fixed;inset:0;z-index:1500;display:grid;place-items:center;
+  padding:24px;background:rgba(4,9,18,.86);backdrop-filter:blur(7px);
+  color:#edf3f7;overflow:auto;
+}
+.infra-critical-card{
+  width:min(680px,100%);max-height:calc(100dvh - 48px);overflow:auto;
+  padding:clamp(24px,4vw,46px);text-align:center;
+  border:1px solid rgba(249,83,99,.34);border-radius:20px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(204,48,72,.16),transparent 54%),
+    linear-gradient(155deg,#192231 0%,#0d131f 77%);
+  box-shadow:0 35px 100px rgba(0,0,0,.64),inset 0 1px rgba(255,255,255,.07);
+}
+.infra-critical-symbol{
+  position:relative;display:grid;place-items:center;
+  width:176px;height:176px;margin:0 auto 22px;
+  border-radius:50%;background:radial-gradient(circle,rgba(252,69,85,.23),rgba(252,69,85,.06) 62%,transparent 72%);
+  box-shadow:0 0 75px rgba(237,53,77,.17);
+}
+.infra-critical-octagon{
+  position:relative;width:132px;height:132px;display:grid;place-items:center;
+  clip-path:polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%);
+  background:linear-gradient(145deg,#ff737a,#cf2945 65%,#8e1e36);
+}
+.infra-critical-octagon::before{
+  content:"";position:absolute;inset:6px;
+  clip-path:inherit;background:linear-gradient(145deg,#341823,#17121e);
+}
+.infra-critical-octagon #infra-critical-icon{position:relative;z-index:1;display:grid;place-items:center}
+.infra-critical-octagon .fa-action-icon{width:63px;height:63px;color:#ff8190}
+.infra-critical-kicker{
+  margin:0 0 9px;color:#ff8290;letter-spacing:.15em;
+  font-size:10px;font-weight:800;text-transform:uppercase;
+}
+.infra-critical-card h2{
+  margin:0;font-size:clamp(28px,3.7vw,38px);line-height:1.17;
+  letter-spacing:-.035em;font-weight:720;color:#f7f9fb;
+}
+.infra-critical-intro{
+  max-width:530px;margin:15px auto 0;color:#d1d9e4;
+  line-height:1.5;font-size:15px;
+}
+.infra-critical-reason{
+  max-width:530px;margin:12px auto 0;color:#9faebf;
+  line-height:1.45;font-size:13px;overflow-wrap:anywhere;
+}
+.infra-critical-recovery{
+  display:grid;gap:5px;max-width:500px;margin:26px auto 0;
+  padding:14px 20px;border:1px solid rgba(251,90,110,.32);
+  border-radius:12px;background:rgba(251,90,110,.055);
+}
+.infra-critical-recovery-label{
+  color:#ff8795;font-size:10px;letter-spacing:.11em;
+  font-weight:780;text-transform:uppercase;
+}
+.infra-critical-recovery strong{font-size:17px;color:#f3f6fb;font-weight:670}
+.infra-critical-recovery>span:last-child{font-size:12px;line-height:1.5;color:#abb8c9}
+.infra-critical-caution{margin:18px auto 0;font-size:11px;color:#8e9bac;line-height:1.55}
+.infra-critical-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-top:24px}
+.infra-critical-primary,.infra-critical-secondary{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  min-width:150px;padding:11px 20px;text-decoration:none;
+  font:600 13px/1.4 inherit;border-radius:10px;cursor:pointer;
+}
+.infra-critical-primary{
+  color:#1c0a10;background:#ff727e;border:1px solid #ff8993;
+  box-shadow:0 6px 23px rgba(244,69,90,.17);
+}
+.infra-critical-primary:hover{background:#ff929a}
+.infra-critical-primary:disabled{opacity:.6;cursor:wait}
+.infra-critical-secondary{
+  border:1px solid #4b5669;color:#e1e8f0;background:rgba(255,255,255,.035)
+}
+.infra-critical-secondary:hover{background:rgba(255,255,255,.09)}
+.infra-critical-primary .fa-action-icon{height:14px;width:14px}
+.infra-critical-details{margin:24px auto 0;max-width:520px;color:#8696a8;font-size:11px}
+.infra-critical-details summary{cursor:pointer;list-style-position:inside}
+.infra-critical-details p{margin:10px 0 0;overflow-wrap:anywhere;line-height:1.5}
+@media(max-width:620px){
+  .infra-critical-overlay{padding:12px}
+  .infra-critical-card{max-height:calc(100dvh - 24px);padding:24px 18px}
+  .infra-critical-symbol{width:136px;height:136px;margin-bottom:16px}
+  .infra-critical-octagon{width:110px;height:110px}
+  .infra-critical-octagon .fa-action-icon{height:52px;width:52px}
+}
+@media(prefers-reduced-motion:reduce){.infra-critical-overlay{backdrop-filter:none}}
