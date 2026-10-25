@@ -1,8 +1,8 @@
 const GRAPHQL_URL = "https://api.cloudflare.com/client/v4/graphql";
 
 export const RESOURCE_HEALTH_DEFAULT_LIMITS = Object.freeze({
-  d1RowsReadDaily: 500_000,
-  d1RowsWrittenDaily: 10_000,
+  d1RowsReadDaily: 5_000_000,
+  d1RowsWrittenDaily: 100_000,
   durableObjectRowsReadDaily: 5_000_000,
   durableObjectRowsWrittenDaily: 100_000,
   workerRequests15m: 25_000,
