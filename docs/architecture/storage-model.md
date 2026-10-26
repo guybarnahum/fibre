@@ -11,6 +11,30 @@ A Thread is a logical aggregate reconstructed from durable world state. It is no
 
 The long-term architecture may use several physical stores—relational state, append-only events, graphs, semantic indexes, object storage, secrets and double-entry ledgers—but domain authority is defined by explicit records, provenance, versions and replay contracts rather than by a particular cloud/database product.
 
+## Three distinct costs and authorities
+
+1. **Schema shape belongs to installation.** Creation, migration, indexes,
+   structural inspection, and the deployment revision stamp are operator/deploy
+   operations. A ready World runs under a runtime SQL guard and does not probe
+   or repair schema. Cloudflare reports unexpected access; local installed-World
+   tests reject it.
+2. **Storage re-verification belongs to an explicit integrity audit.** Admitted
+   records are parsed and projected without continually replaying their digest,
+   lineage, and projection witnesses on every read. The private
+   `world:integrity-audit` command runs bounded, cursored families on demand.
+   A full audit intentionally reads the entire World once; it is never run
+   automatically at deployment or reconciliation.
+3. **Semantic authority remains live.** Request-bound consent and authorization,
+   request digests, evidence resolution at admission, append-only triggers,
+   storage CHECK constraints, and obligations, authorizations, and ledger
+   re-validation at consumption remain load-bearing. Trusting admitted storage
+   does **not** make an old authorization valid for a new request.
+
+The installed World stamp must match the running deployment Git revision;
+otherwise requests fail closed with `WORLD_SCHEMA_NOT_INSTALLED` until explicit
+installation succeeds. Stale alarms may be rearmed through Durable Object
+scheduling without SQL after a storage-quota outage.
+
 ## Current transactional persistence profile
 
 Authoritative World stores receive one provider-neutral state binding:
@@ -87,7 +111,7 @@ Autobiographical memory is distinct from historical fact. Current memory records
 
 Genesis-capable memory records distinguish remembered content from durable remembered meaning. Reinterpretation appends/supersedes meaning without rewriting the underlying event or prior memory revision.
 
-Historical reads validate durable structure and lineage without retroactively applying every future current-write content-size policy. New writes still obey current admission policy.
+Ordinary historical reads trust admitted storage and retain optional-field compatibility shaping. Explicit integrity audits re-verify durable structure and lineage without retroactively applying every future current-write content-size policy. New writes still obey current admission policy.
 
 ### Memory visual companions
 
