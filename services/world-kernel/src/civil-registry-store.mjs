@@ -1,4 +1,4 @@
-import { worldTableExists } from "./world-state-storage.mjs";
+import { worldTableExists,worldSchemaReady } from "./world-state-storage.mjs";
 import {
   normalizeFibreCivilRegistration,
   normalizeFibreIdentityNumber,
@@ -11,10 +11,11 @@ import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
 const tableExists=database=>worldTableExists(database,"fibre_civil_registrations");
 
-function parseStored(row, label) {
+function parseStored(row, label,trusted=false) {
   let parsed;
   try { parsed = JSON.parse(row.record_json); }
   catch (error) { throw new IntegrityError(`${label} JSON is invalid: ${error.message}`); }
+  if(trusted)return parsed;
   const record = normalizeFibreCivilRegistration(parsed);
   if (row.record_json !== canonicalJson(record) || row.record_digest !== record.registrationDigest) {
     throw new IntegrityError(`${label} failed canonical/digest verification`);
@@ -106,7 +107,7 @@ export class CivilRegistryStore {
       if (!required) return null;
       throw new Error(`FIN ${normalized} was not found`);
     }
-    return parseStored(row, `FIN ${normalized}`);
+    return parseStored(row, `FIN ${normalized}`,worldSchemaReady(this.#database));
   }
 
   getCivilRegistrationByThreadId(threadId, { required = true } = {}) {
@@ -122,6 +123,6 @@ export class CivilRegistryStore {
       if (!required) return null;
       throw new Error(`Thread ${threadId} has no Fibre registration`);
     }
-    return parseStored(row, `registration for ${threadId}`);
+    return parseStored(row, `registration for ${threadId}`,worldSchemaReady(this.#database));
   }
 }

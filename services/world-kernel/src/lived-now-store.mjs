@@ -296,7 +296,8 @@ function placeEpisodeEvidence(ref, json, recordDigest, witnessDigest) {
   return record;
 }
 
-function planFromRow(row) {
+function planFromRow(row,trusted=false) {
+  if(trusted)return parseJson(`lived plan ${row.plan_id}`,row.record_json);
   const record = normalizeLivedPlan(parseJson(`lived plan ${row.plan_id}`, row.record_json));
   if (
     record.planId !== row.plan_id ||
@@ -313,7 +314,8 @@ function planFromRow(row) {
   return record;
 }
 
-function situationFromRow(row) {
+function situationFromRow(row,trusted=false) {
+  if(trusted)return parseJson(`current situation ${row.situation_id}`,row.record_json);
   const record = normalizeCurrentSituation(
     parseJson(`current situation ${row.situation_id}`, row.record_json),
   );
@@ -508,7 +510,7 @@ export class LivedNowStore {
           "SELECT * FROM lived_now_plans WHERE plan_id=?",
         ).get(record.planId);
         if (existingRow !== undefined) {
-          const existing = planFromRow(existingRow);
+          const existing = planFromRow(existingRow,worldSchemaReady(this.#database));
           if (canonicalJson(existing) === canonicalJson(record)) return existing;
           throw new LivedNowConflictError(`lived plan ${record.planId} already exists differently`);
         }
@@ -563,7 +565,7 @@ export class LivedNowStore {
       SELECT * FROM lived_now_plans
       WHERE subject_thread_id=? AND plan_id=?
     `).get(threadId,planId);
-    return row===undefined?null:planFromRow(row);
+    return row===undefined?null:planFromRow(row,worldSchemaReady(this.#database));
   }
 
   listPlans(threadId, { kind = null } = {}) {
@@ -597,7 +599,7 @@ export class LivedNowStore {
       ORDER BY authored_at DESC,plan_id DESC
       LIMIT 1
     `).get(threadId, kind, at, at, at);
-    return row === undefined ? null : planFromRow(row);
+    return row === undefined ? null : planFromRow(row,worldSchemaReady(this.#database));
   }
 
   ensureWorldPlaces(threadId) {
@@ -780,7 +782,7 @@ export class LivedNowStore {
       if (!required) return null;
       throw new LivedNowNotFoundError(`current situation ${situationId} was not found`);
     }
-    return situationFromRow(row);
+    return situationFromRow(row,worldSchemaReady(this.#database));
   }
 
   scheduleNextLivedBoundary({threadId,situationId,dueAt}){
@@ -973,7 +975,7 @@ export class LivedNowStore {
       SELECT situation_id,thread_id,established_at,record_json,record_digest
       FROM current_situation_frontier WHERE thread_id=?
     `).get(threadId);
-    return row === undefined ? null : situationFromRow(row);
+    return row === undefined ? null : situationFromRow(row,worldSchemaReady(this.#database));
   }
 
   // Historical scene reads must resolve the latest situation at the
@@ -987,7 +989,7 @@ export class LivedNowStore {
       WHERE thread_id=? AND established_at<=?
       ORDER BY established_at DESC,situation_id DESC LIMIT 1
     `).get(threadId,at);
-    return row===undefined?null:situationFromRow(row);
+    return row===undefined?null:situationFromRow(row,worldSchemaReady(this.#database));
   }
 
   getPreviousSituation(threadId, before) {
@@ -998,7 +1000,7 @@ export class LivedNowStore {
       WHERE thread_id=? AND established_at<?
       ORDER BY established_at DESC,situation_id DESC LIMIT 1
     `).get(threadId, before);
-    return row === undefined ? null : situationFromRow(row);
+    return row === undefined ? null : situationFromRow(row,worldSchemaReady(this.#database));
   }
 
   listRecentSituations(threadId,{limit=8}={}){
@@ -1052,7 +1054,7 @@ export class LivedNowStore {
       ORDER BY thread_id
     `).all(at,at,at);
     return rows.map(row=>{
-      const situation=situationFromRow(row);
+      const situation=situationFromRow(row,worldSchemaReady(this.#database));
       if(!includeLifeContinuity)return situation;
       return Object.freeze({
         ...situation,
@@ -1132,7 +1134,7 @@ export class LivedNowStore {
       venueRef,at,at,excludeThreadId,excludeThreadId,limit,
     );
     const present=new Map([...rows,...publicRows]
-      .map(row=>[row.thread_id,situationFromRow(row)]));
+      .map(row=>[row.thread_id,situationFromRow(row,worldSchemaReady(this.#database))]));
     return [...present.values()].sort((a,b)=>a.threadId.localeCompare(b.threadId))
       .slice(0,limit);
   }

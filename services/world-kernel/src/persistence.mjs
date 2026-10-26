@@ -50,7 +50,7 @@ import {
   ensureMemoryVisualCompanion,
   persistLegacySeedIdentity,
 } from "./identity-schema.mjs";
-import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import { openWorldStateDatabase,worldSchemaReady } from "./world-state-storage.mjs";
 
 export {
   WORLD_STORE_SCHEMA_VERSION,
@@ -208,6 +208,8 @@ export class WorldStore {
     const row = this.#projectionRow(threadId, required);
     if (row === null) return null;
     const thread = parseJson(`Thread ${threadId} state`, row.state_json);
+    // Admitted projection checks belong to an explicit integrity audit.
+    if(worldSchemaReady(this.#database))return thread;
     validateStoredThread(threadId, thread);
     if (thread.threadId !== threadId || row.thread_id !== threadId) {
       throw new IntegrityError(

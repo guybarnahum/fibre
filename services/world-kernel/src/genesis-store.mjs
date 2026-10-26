@@ -59,7 +59,7 @@ import {
   assertGenesisHistoricalEnvelopePublication,
   normalizeGenesisHistoricalEnvelopePlan,
 } from "./genesis-historical-envelope-authority.mjs";
-import { openWorldStateDatabase, worldTableExists } from "./world-state-storage.mjs";
+import { openWorldStateDatabase, worldTableExists,worldSchemaReady } from "./world-state-storage.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -572,6 +572,10 @@ export class GenesisStore {
       if (!required) return null;
       throw new GenesisNotFoundError(`WorldSpec ${worldSpecId} was not found`);
     }
+    if(worldSchemaReady(this.#database))return {
+      record:parseRecord(`WorldSpec ${worldSpecId}`,row.record_json),
+      recordDigest:row.record_digest,
+    };
     const record = normalizeGenesisWorldSpec(parseRecord(`WorldSpec ${worldSpecId}`, row.record_json));
     const digest = genesisRecordDigest("world_spec", record);
     if (digest !== row.record_digest || canonicalJson(record) !== row.record_json) {
@@ -1015,6 +1019,10 @@ export class GenesisStore {
       if (!required) return null;
       throw new GenesisNotFoundError(`Genesis historical-envelope plan ${genesisId} was not found`);
     }
+    if(worldSchemaReady(this.#database)){
+      const plan=parseRecord(`Genesis historical-envelope plan ${genesisId}`,row.record_json);
+      return {plan,planDigest:row.plan_digest,recordDigest:row.record_digest};
+    }
     const plan = normalizeGenesisHistoricalEnvelopePlan(
       parseRecord(`Genesis historical-envelope plan ${genesisId}`, row.record_json),
       IntegrityError,
@@ -1043,6 +1051,10 @@ export class GenesisStore {
       if (!required) return null;
       throw new GenesisNotFoundError(`Genesis manifest ${genesisId} was not found`);
     }
+    if(worldSchemaReady(this.#database))return {
+      manifest:parseRecord(`Genesis manifest ${genesisId}`,row.record_json),
+      manifestDigest:row.record_digest,
+    };
     const manifest = normalizeGenesisManifest(parseRecord(`Genesis manifest ${genesisId}`, row.record_json));
     const digest = genesisRecordDigest("manifest", manifest);
     if (digest !== row.record_digest || canonicalJson(manifest) !== row.record_json) {

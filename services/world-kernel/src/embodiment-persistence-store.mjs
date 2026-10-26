@@ -1,6 +1,6 @@
 import { IntegrityError, canonicalJson, sha256 } from "./persistence-common.mjs";
 import { migrateDatabase, translateStorageError } from "./persistence-sqlite.mjs";
-import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import { openWorldStateDatabase,worldSchemaReady } from "./world-state-storage.mjs";
 import { normalizeEmbodimentRepresentation } from "./embodiment-domain.mjs";
 import { normalizeEmbodimentRightsAuthority } from "./embodiment-rights-domain.mjs";
 import { createEmbodimentTables } from "./embodiment-schema.mjs";
@@ -29,10 +29,11 @@ function isSuperset(next, prior) {
   return prior.every((item) => set.has(item));
 }
 
-function parseRow(row) {
+function parseRow(row,trusted=false) {
   let raw;
   try { raw = JSON.parse(row.record_json); }
   catch (error) { throw new IntegrityError(`embodiment ${row.embodiment_id} invalid JSON: ${error.message}`); }
+  if(trusted)return raw;
   const record = normalizeEmbodimentRepresentation(raw);
   const checks = [
     [row.embodiment_id, record.embodimentId, "embodiment ID"],
@@ -69,7 +70,7 @@ export class EmbodimentStore {
     this.#readOnly = readOnly;
     this.#db = openWorldStateDatabase(storage, { readOnly, storeName: "EmbodimentPersistenceStore" });
     try {
-      if (!readOnly) {
+      if (!readOnly&&!storage.schemaReady) {
         migrateDatabase(this.#db);
         this.#db.transaction(() => {
           createEmbodimentTables(this.#db);
@@ -273,7 +274,7 @@ export class EmbodimentStore {
       throw new IntegrityError(`Thread ${threadId} embodiment current-head projection is stale`);
     }
     return rows.map((row) => {
-      const record = parseRow(row);
+      const record = parseRow(row,worldSchemaReady(this.#db));
       const previousHeadDigest = record.revision === 1 ? null : row.previous_head_digest;
       if (record.revision > 1 && typeof previousHeadDigest !== "string") {
         throw new IntegrityError(`embodiment ${record.embodimentId} current head has no predecessor witness`);

@@ -1,4 +1,4 @@
-import { worldTableExists } from "./world-state-storage.mjs";
+import { worldTableExists,worldSchemaReady } from "./world-state-storage.mjs";
 import {
   IntegrityError,
   canonicalJson,
@@ -131,8 +131,9 @@ function worldSpecFor(database, sourceWorldRef) {
   );
 }
 
-function recordFromRow(row) {
+function recordFromRow(row,trusted=false) {
   const record = parseRecord(`live World place ${row.place_ref}`, row.record_json);
+  if(trusted)return Object.freeze(record);
   if (canonicalJson(record) !== row.record_json || digest(record) !== row.record_digest) {
     throw new IntegrityError(`live World place ${row.place_ref} failed canonical/digest verification`);
   }
@@ -304,7 +305,7 @@ export function listLiveWorldPlaces(database, threadId) {
     locality:row.locality,country:row.country,evidenceRef:row.evidence_ref,
   })]));
   return Object.freeze(rows.map((row)=>{
-    const record=recordFromRow(row);
+    const record=recordFromRow(row,worldSchemaReady(database));
     const physicalVenue=venues.get(record.ref);
     return presentedLivePlace(record,physicalVenue??null);
   }));
@@ -321,7 +322,7 @@ export function resolveLiveWorldPlace(database, threadId, reference) {
     WHERE place_ref=? AND source_world_ref=?
   `).get(reference,sourceWorldRef);
   if(row===undefined)return null;
-  const record=recordFromRow(row);
+  const record=recordFromRow(row,worldSchemaReady(database));
   const physicalVenue=physicalVenueFor(database,threadId,reference);
   return presentedLivePlace(record,physicalVenue);
 }

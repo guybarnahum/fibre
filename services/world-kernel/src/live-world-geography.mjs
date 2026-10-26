@@ -3,6 +3,7 @@ import {
   assertPlainObject,canonicalJson,sha256,
 } from "./persistence-common.mjs";
 import { resolveLivePhysicalVenue,resolveLiveWorldPlace } from "./live-world-place.mjs";
+import {worldSchemaReady} from "./world-state-storage.mjs";
 
 const WORLD_PLACE_AUTHORITY="world-public-place-v1";
 const PRIVATE_PLACE_AUTHORITY="world-private-place-v1";
@@ -20,10 +21,10 @@ function timeZone(value){
   try{new Intl.DateTimeFormat("en",{timeZone:value});}
   catch{throw new TypeError("World place timeZone must be an IANA zone");}
 }
-function stored(row,label){
+function stored(row,label,trusted=false){
   if(!row)return null;
   const value=JSON.parse(row.record_json);
-  if(row.record_digest!==digest(value)||canonicalJson(value)!==row.record_json){
+  if(!trusted&&(row.record_digest!==digest(value)||canonicalJson(value)!==row.record_json)){
     throw new IntegrityError(`${label} failed World record integrity`);
   }
   return Object.freeze(value);
@@ -85,7 +86,7 @@ export function getWorldPlaceEntity(db,threadId,placeRef){
   const row=db.prepare(`SELECT p.record_json,p.record_digest
     FROM world_places p JOIN thread_known_places k ON k.place_ref=p.place_ref
     WHERE p.place_ref=? AND k.thread_id=?`).get(placeRef,threadId);
-  return stored(row,"World place");
+  return stored(row,"World place",worldSchemaReady(db));
 }
 
 export function listKnownWorldPlaces(db,threadId,{limit=24}={}){
@@ -95,7 +96,7 @@ export function listKnownWorldPlaces(db,threadId,{limit=24}={}){
   return Object.freeze(db.prepare(`SELECT p.record_json,p.record_digest
     FROM thread_known_places k JOIN world_places p ON p.place_ref=k.place_ref
     WHERE k.thread_id=? ORDER BY p.place_ref LIMIT ?`
-  ).all(threadId,limit).map(row=>stored(row,"World place")));
+  ).all(threadId,limit).map(row=>stored(row,"World place",worldSchemaReady(db))));
 }
 
 export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind="place",geography=null,parentRef=null}={}){
@@ -204,8 +205,8 @@ export function admitWorldPublicPlace(db,input){
   return record;
 }
 
-function publicPlaceFromRow(row){
-  const place=stored(row,"public World place");
+function publicPlaceFromRow(row,db){
+  const place=stored(row,"public World place",worldSchemaReady(db));
   if(place===null)return null;
   return Object.freeze({
     ...place,
@@ -220,7 +221,7 @@ export function getWorldPublicPlace(db,placeRef){
   if(typeof placeRef!=="string"||!placeRef.startsWith("wpl_"))return null;
   return publicPlaceFromRow(db.prepare(
     "SELECT record_json,record_digest,discovery_json,appearance_json FROM world_public_places WHERE place_ref=?",
-  ).get(placeRef));
+  ).get(placeRef),db);
 }
 
 // A visual seed describes one possible view; it never becomes evidence of

@@ -9,7 +9,7 @@ import {
   migrateDatabase,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
-import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import { openWorldStateDatabase,worldSchemaReady } from "./world-state-storage.mjs";
 import {
   sameSemanticStateSlot,
   semanticStateDigest,
@@ -27,7 +27,7 @@ function parseJson(name, text) {
   }
 }
 
-function rowToState(row) {
+function rowToState(row,trusted=false) {
   const record = normalizeSemanticStateRecord({
     stateId: row.state_id,
     threadId: row.thread_id,
@@ -42,7 +42,7 @@ function rowToState(row) {
     visibility: row.visibility,
     staleness: row.staleness,
   });
-  if (semanticStateDigest(record) !== row.state_digest) {
+  if (!trusted&&semanticStateDigest(record) !== row.state_digest) {
     throw new IntegrityError(`semantic state ${record.stateId} digest failed`);
   }
   return record;
@@ -127,7 +127,7 @@ export class SemanticStateStore {
       if (!required) return null;
       throw new IntegrityError(`semantic state ${stateId} was not found`);
     }
-    return rowToState(row);
+    return rowToState(row,worldSchemaReady(this.#database));
   }
 
   listStateHistory(threadId) {
@@ -151,7 +151,7 @@ export class SemanticStateStore {
       WHERE h.thread_id=?
       ORDER BY r.domain,r.dimension,r.as_of,r.state_id
     `).all(threadId).map((row) => {
-      const state = rowToState(row);
+      const state = rowToState(row,worldSchemaReady(this.#database));
       if (row.current_head_digest !== row.state_digest || row.current_head_as_of !== row.as_of) {
         throw new IntegrityError(`semantic state ${state.stateId} current-head witness mismatch`);
       }

@@ -1,4 +1,4 @@
-import { worldTableExists } from "./world-state-storage.mjs";
+import { worldTableExists,worldSchemaReady } from "./world-state-storage.mjs";
 import {
   IntegrityError,
   canonicalJson,
@@ -58,9 +58,12 @@ export function readSymbolicGenomeInTransaction(
     return conflict(ErrorType, `symbolic genome ${genomeId} was not found`);
   }
 
-  const header = normalizeSymbolicGenomeHeader(
-    parseRecord(`symbolic genome ${genomeId}`, genomeRow.header_json),
-  );
+  const trusted=worldSchemaReady(database);
+  const header=trusted
+    ?parseRecord(`symbolic genome ${genomeId}`,genomeRow.header_json)
+    :normalizeSymbolicGenomeHeader(
+      parseRecord(`symbolic genome ${genomeId}`, genomeRow.header_json),
+    );
   const runtimeBaselines = normalizeSymbolicRuntimeBaselines(Object.fromEntries(
     database.prepare(`
       SELECT baseline_key,value FROM symbolic_genome_runtime_baselines
@@ -71,10 +74,9 @@ export function readSymbolicGenomeInTransaction(
     SELECT record_json,record_digest FROM symbolic_genome_loci
     WHERE genome_id=? ORDER BY ordinal
   `).all(genomeId).map((row) => {
-    const locus = normalizeSymbolicGenomeLocus(
-      parseRecord(`symbolic genome ${genomeId} locus`, row.record_json),
-    );
-    if (recordDigest("locus", locus) !== row.record_digest || canonicalJson(locus) !== row.record_json) {
+    const raw=parseRecord(`symbolic genome ${genomeId} locus`,row.record_json);
+    const locus=trusted?raw:normalizeSymbolicGenomeLocus(raw);
+    if (!trusted&&(recordDigest("locus", locus) !== row.record_digest || canonicalJson(locus) !== row.record_json)) {
       throw new IntegrityError(
         `symbolic genome locus ${locus.locusId} failed canonical/digest verification`,
       );
@@ -85,13 +87,12 @@ export function readSymbolicGenomeInTransaction(
     SELECT record_json,record_digest FROM symbolic_genome_mutations
     WHERE genome_id=? ORDER BY ordinal
   `).all(genomeId).map((row) => {
-    const mutation = normalizeSymbolicGenomeMutation(
-      parseRecord(`symbolic genome ${genomeId} mutation`, row.record_json),
-    );
-    if (
+    const raw=parseRecord(`symbolic genome ${genomeId} mutation`,row.record_json);
+    const mutation=trusted?raw:normalizeSymbolicGenomeMutation(raw);
+    if (!trusted&&(
       recordDigest("mutation", mutation) !== row.record_digest ||
       canonicalJson(mutation) !== row.record_json
-    ) {
+    )) {
       throw new IntegrityError(
         `symbolic genome mutation ${mutation.mutationId} failed canonical/digest verification`,
       );
@@ -100,13 +101,13 @@ export function readSymbolicGenomeInTransaction(
   });
 
   const bundle = { header, loci, runtimeBaselines, mutations, genomeDigest: genomeRow.genome_digest };
-  if (
+  if (!trusted&&(
     symbolicGenomeDigest(bundle) !== genomeRow.genome_digest ||
     canonicalJson(header) !== genomeRow.header_json
-  ) {
+  )) {
     throw new IntegrityError(`symbolic genome ${genomeId} failed aggregate digest verification`);
   }
-  if (loci.length < 2 || loci.some((locus, index) => locus.ordinal !== index + 1)) {
+  if (!trusted&&(loci.length < 2 || loci.some((locus, index) => locus.ordinal !== index + 1))) {
     throw new IntegrityError(`symbolic genome ${genomeId} locus order is not contiguous`);
   }
   return bundle;

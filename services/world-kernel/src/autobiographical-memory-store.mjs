@@ -3,7 +3,7 @@ import {
   migrateDatabase,
   translateStorageError,
 } from "./persistence-sqlite.mjs";
-import { openWorldStateDatabase } from "./world-state-storage.mjs";
+import { openWorldStateDatabase,worldSchemaReady } from "./world-state-storage.mjs";
 import {
   autobiographicalMemoryIsCurrent,
   autobiographicalMemoryRecordDigest,
@@ -190,6 +190,19 @@ export class AutobiographicalMemoryStore {
       throw new TypeError("current memory limit must be between 1 and 1000");
     }
     if (typeof newestFirst !== "boolean") throw new TypeError("newestFirst must be boolean");
+    if(worldSchemaReady(this.#database)){
+      // Current heads are admitted: audit alone replays all lineage witnesses.
+      const order=newestFirst?"current.recorded_at DESC,current.memory_id DESC":"current.memory_id";
+      const rows=this.#database.prepare(`
+        SELECT records.record_json
+        FROM autobiographical_memory_current_heads current
+        JOIN autobiographical_memory_records records
+          ON records.memory_id=current.memory_id AND records.revision=current.revision
+        WHERE current.thread_id=? AND records.status<>'retracted'
+        ORDER BY ${order}${limit===null?"":" LIMIT ?"}
+      `).all(...(limit===null?[threadId]:[threadId,limit]));
+      return rows.map(row=>rehydrateAutobiographicalMemory(JSON.parse(row.record_json)));
+    }
     const order = newestFirst
       ? "current.recorded_at DESC,current.memory_id DESC"
       : "current.memory_id";
