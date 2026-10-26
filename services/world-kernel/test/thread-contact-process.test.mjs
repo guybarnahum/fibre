@@ -354,7 +354,7 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
           assert.match(call.input.encounterStory.story.beats[0].text,/compare sketches/,
             "recipient did not encounter the actual addressed message");
           return {
-            output:{outcome:"noticed",experienceText:"I saw Kaleo asking about our sketches."},
+            output:{outcome:"noticed",experienceText:"I saw Kaleo asking about our sketches.",passedReason:null},
             provenance:{provider:"fixture",modelId:"recipient-test"},
           };
         },
@@ -639,7 +639,7 @@ test("delivered private contact may remain unnoticed and never become memory",as
         appraisals++;
         if(appraisals===1)throw new Error("temporary attention provider failure");
         return {
-          output:{outcome:"not_noticed",experienceText:null},
+          output:{outcome:"not_noticed",experienceText:null,passedReason:"I was absorbed in my own work."},
           provenance:{provider:"fixture",modelId:"recipient-quiet-test"},
         };
       }},

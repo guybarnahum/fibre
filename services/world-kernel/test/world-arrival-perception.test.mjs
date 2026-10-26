@@ -364,8 +364,10 @@ test("objective arrivals redact full and partial names from public portrait and 
     assert.equal(result.failed,0,result.results[0]?.message??"arrival failed");
     const story=store.listEncounterStories(ids[0])[0];
     const recorded=story.story.beats.map(beat=>beat.text).join(" ");
-    assert.match(recorded,/small freckle/,
-      "authorized observable appearance disappeared from the Story");
+    assert.match(recorded,/arrives at the venue/,
+      "the arrival disappeared from the objective Story");
+    assert.doesNotMatch(recorded,/freckle|short hair/i,
+      "legacy portrait rendering prose became objective perception");
     assert.doesNotMatch(recorded,/\b(?:Mina|Rivera)\b/i,
       "objective arrival revealed a private name token");
   }finally{ctx.close();}
