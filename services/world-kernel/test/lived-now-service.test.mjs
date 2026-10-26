@@ -1076,6 +1076,8 @@ test("an established legacy Thread without a wake frontier is adopted once",asyn
     const oldDatabase=new DatabaseSync(databasePath);
     oldDatabase.exec("DROP TABLE lived_now_recovery_adopted");
     oldDatabase.close();
+    // Legacy adoption is installation work, never a side effect of runtime opening.
+    installedWorldStateStorage(databasePath);
     const recovered=openLivedNowStore(storage);
     const boundary=recovered.inspectLivedBoundary(life.thread.threadId);
     assert.ok(boundary?.dueAt,"World failed to adopt an established stranded Thread");
