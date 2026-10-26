@@ -14,6 +14,7 @@ import {openWorldReconciliationRetryStore} from "./world-reconciliation-retry-st
 import {ThreadHealthProjectionStore} from "./thread-health-projection-store.mjs";
 import {ThreadVisualPublicationWorksetStore} from "./thread-visual-publication-workset-store.mjs";
 import {GenesisOriginAuthorityStore} from "./genesis-origin-authority-store.mjs";
+import {materializeLiveWorldPlacesForWorld} from "./live-world-place.mjs";
 
 // Called by the explicit deployment command, never by an ordinary World
 // request. Constructors retain local development setup, but skip this work
@@ -54,10 +55,6 @@ export function installWorldSchemas(storage,{deploymentGitSha="local"}={}){
       installed_git_sha TEXT NOT NULL,
       installed_at TEXT NOT NULL
     ) STRICT`);
-    stampDatabase.prepare(`INSERT INTO world_schema_installation
-      (id,installed_git_sha,installed_at) VALUES (1,?,?)
-      ON CONFLICT(id) DO UPDATE SET installed_git_sha=excluded.installed_git_sha,
-        installed_at=excluded.installed_at`).run(deploymentGitSha,new Date().toISOString());
   }finally{stampDatabase.close();}
   // Deployment must not acknowledge a World with missing queue frontiers.
   // Verify physical schema on the same state scope that serves alarms.
@@ -87,9 +84,23 @@ export function installWorldSchemas(storage,{deploymentGitSha="local"}={}){
       "symbolic_genome_mutations","thread_journal_profiles",
       "thread_visual_publication_work","thaw_leases","runtime_sessions",
       "embodiment_current_heads","world_schema_installation",
+      "live_world_contexts","live_world_source_places",
     ]){
       database.prepare(`SELECT 1 FROM "${name}" LIMIT 1`).get();
     }
+    // One-time backfill of already published Genesis World data.
+    const worlds=database.prepare(
+      "SELECT world_spec_id FROM genesis_world_specs ORDER BY world_spec_id",
+    ).all();
+    database.transaction(()=>{
+      for(const {world_spec_id} of worlds)
+        materializeLiveWorldPlacesForWorld(database,world_spec_id);
+      // Stamp only after installation, materialization, and verification succeed.
+      database.prepare(`INSERT INTO world_schema_installation
+        (id,installed_git_sha,installed_at) VALUES (1,?,?)
+        ON CONFLICT(id) DO UPDATE SET installed_git_sha=excluded.installed_git_sha,
+          installed_at=excluded.installed_at`).run(deploymentGitSha,new Date().toISOString());
+    });
   }finally{database.close();}
   }finally{worldReader.close();}
 }

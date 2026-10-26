@@ -60,6 +60,7 @@ import {
   normalizeGenesisHistoricalEnvelopePlan,
 } from "./genesis-historical-envelope-authority.mjs";
 import { openWorldStateDatabase, worldTableExists,worldSchemaReady } from "./world-state-storage.mjs";
+import {materializeLiveWorldPlacesForWorld} from "./live-world-place.mjs";
 
 export class GenesisConflictError extends Error {}
 export class GenesisNotFoundError extends Error {}
@@ -976,6 +977,13 @@ export class GenesisStore {
           historicalEnvelopeRecordDigest = this.#insertHistoricalEnvelopePlan(manifest, historicalEnvelopePlan);
         }
         const manifestDigest = this.#insertManifest(manifest);
+        // Birth has established its WorldSpec and historical envelope;
+        // materialize their exterior projection once, inside this admission.
+        if(tableExists(this.#database,"live_world_contexts")){
+          materializeLiveWorldPlacesForWorld(this.#database,manifest.worldSpecRef,{
+            recordedAt:publishedAt,
+          });
+        }
         if (failAfterManifestForTest) {
           throw new GenesisConflictError("simulated post-manifest publication failure");
         }

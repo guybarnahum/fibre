@@ -42,6 +42,19 @@ export function liveWorldPlaceRef({ sourceWorldRef, sourcePlaceId, placeKind }) 
 
 export function createLiveWorldPlaceTables(database) {
   database.exec(`
+    CREATE TABLE IF NOT EXISTS live_world_contexts (
+      source_world_ref TEXT PRIMARY KEY,
+      time_zone TEXT,
+      recorded_at TEXT NOT NULL
+    ) STRICT;
+
+    CREATE TABLE IF NOT EXISTS live_world_source_places (
+      source_world_ref TEXT NOT NULL,
+      source_place_id TEXT NOT NULL,
+      record_json TEXT NOT NULL CHECK(json_valid(record_json)),
+      PRIMARY KEY(source_world_ref,source_place_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS live_world_place_records (
       place_ref TEXT PRIMARY KEY,
       live_world_ref TEXT NOT NULL,
@@ -153,51 +166,55 @@ function presentedLivePlace(record,physicalVenue=null){
 
 export function genesisWorldPlacesForThread(database,threadId){
   const worldRef=worldRefForThread(database,threadId);
-  return worldRef===null?Object.freeze([])
-    :Object.freeze(worldSpecFor(database,worldRef)?.places??[]);
+  if(worldRef===null)return Object.freeze([]);
+  if(worldSchemaReady(database))return Object.freeze(database.prepare(`
+    SELECT record_json FROM live_world_source_places
+    WHERE source_world_ref=? ORDER BY source_place_id
+  `).all(worldRef).map(row=>parseRecord("admitted Genesis place",row.record_json)));
+  return Object.freeze(worldSpecFor(database,worldRef)?.places??[]);
 }
 
-export function ensureLiveWorldPlaces(database, threadId) {
-  const sourceWorldRef = worldRefForThread(database, threadId);
-  if (sourceWorldRef === null) return Object.freeze([]);
-  const world = worldSpecFor(database, sourceWorldRef);
-  if (world === null) return Object.freeze([]);
-  const { kinds } = envelopeAuthorityForWorld(database, sourceWorldRef);
-  const admittedKinds = new Set(LIVE_WORLD_PLACE_POLICY.admittedPlaceKinds);
-  const liveWorld = liveWorldRef(sourceWorldRef);
-
-  for (const place of world.places) {
-    const placeKind = kinds.get(place.placeId) ?? null;
-    if (!admittedKinds.has(placeKind)) continue;
-    const record = Object.freeze({
-      ref:liveWorldPlaceRef({
-        sourceWorldRef,
-        sourcePlaceId:place.placeId,
-        placeKind,
-      }),
-      liveWorldRef:liveWorld,
-      sourceWorldRef,
-      sourcePlaceId:place.placeId,
-      placeKind,
-      displayName:place.description,
-      authority:LIVE_WORLD_PLACE_POLICY.version,
+// Called only when Genesis publishes a birth or installation backfills Worlds.
+// It is deliberately never invoked by runtime planning or read projection.
+export function materializeLiveWorldPlacesForWorld(database,sourceWorldRef,{
+  recordedAt=new Date().toISOString(),
+}={}){
+  const world=worldSpecFor(database,sourceWorldRef);
+  if(world===null)return;
+  const {kinds,timeZone}=envelopeAuthorityForWorld(database,sourceWorldRef);
+  database.prepare(`INSERT INTO live_world_contexts(source_world_ref,time_zone,recorded_at)
+    VALUES(?,?,?) ON CONFLICT(source_world_ref) DO UPDATE SET
+      time_zone=COALESCE(excluded.time_zone,live_world_contexts.time_zone),
+      recorded_at=excluded.recorded_at`).run(sourceWorldRef,timeZone,recordedAt);
+  const admittedKinds=new Set(LIVE_WORLD_PLACE_POLICY.admittedPlaceKinds);
+  const liveWorld=liveWorldRef(sourceWorldRef);
+  for(const place of world.places){
+    database.prepare(`INSERT OR IGNORE INTO live_world_source_places(
+      source_world_ref,source_place_id,record_json
+    ) VALUES(?,?,?)`).run(sourceWorldRef,place.placeId,canonicalJson(place));
+    const placeKind=kinds.get(place.placeId)??null;
+    if(!admittedKinds.has(placeKind))continue;
+    const record=Object.freeze({
+      ref:liveWorldPlaceRef({sourceWorldRef,sourcePlaceId:place.placeId,placeKind}),
+      liveWorldRef:liveWorld,sourceWorldRef,sourcePlaceId:place.placeId,
+      placeKind,displayName:place.description,authority:LIVE_WORLD_PLACE_POLICY.version,
     });
-    database.prepare(`
-      INSERT OR IGNORE INTO live_world_place_records(
-        place_ref,live_world_ref,source_world_ref,source_place_id,place_kind,
-        record_json,record_digest
-      ) VALUES (?,?,?,?,?,?,?)
-    `).run(
-      record.ref,
-      record.liveWorldRef,
-      record.sourceWorldRef,
-      record.sourcePlaceId,
-      record.placeKind,
-      canonicalJson(record),
-      digest(record),
+    database.prepare(`INSERT OR IGNORE INTO live_world_place_records(
+      place_ref,live_world_ref,source_world_ref,source_place_id,place_kind,
+      record_json,record_digest
+    ) VALUES (?,?,?,?,?,?,?)`).run(
+      record.ref,record.liveWorldRef,record.sourceWorldRef,record.sourcePlaceId,
+      record.placeKind,canonicalJson(record),digest(record),
     );
   }
-  return listLiveWorldPlaces(database, threadId);
+}
+
+export function ensureLiveWorldPlaces(database,threadId){
+  if(worldSchemaReady(database))return listLiveWorldPlaces(database,threadId);
+  const sourceWorldRef=worldRefForThread(database,threadId);
+  if(sourceWorldRef===null)return Object.freeze([]);
+  materializeLiveWorldPlacesForWorld(database,sourceWorldRef);
+  return listLiveWorldPlaces(database,threadId);
 }
 
 // A stable, externally grounded physical identity is explicit World authority.
@@ -330,7 +347,10 @@ export function resolveLiveWorldPlace(database, threadId, reference) {
 export function liveWorldContext(database, threadId) {
   const sourceWorldRef = worldRefForThread(database, threadId);
   if (sourceWorldRef === null) return null;
-  const { timeZone } = envelopeAuthorityForWorld(database, sourceWorldRef);
+  const timeZone=worldSchemaReady(database)
+    ?database.prepare("SELECT time_zone FROM live_world_contexts WHERE source_world_ref=?")
+      .get(sourceWorldRef)?.time_zone??null
+    :envelopeAuthorityForWorld(database,sourceWorldRef).timeZone;
   if (timeZone === null) return null;
   return Object.freeze({
     sourceWorldRef,
