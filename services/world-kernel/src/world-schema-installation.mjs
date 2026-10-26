@@ -18,7 +18,7 @@ import {GenesisOriginAuthorityStore} from "./genesis-origin-authority-store.mjs"
 // Called by the explicit deployment command, never by an ordinary World
 // request. Constructors retain local development setup, but skip this work
 // when their Cloudflare storage has schemaReady=true.
-export function installWorldSchemas(storage){
+export function installWorldSchemas(storage,{deploymentGitSha="local"}={}){
   const worldReader=openWorldStore(storage);
   try{
   const constructors=[
@@ -46,6 +46,19 @@ export function installWorldSchemas(storage){
     const store=open();
     store.close();
   }
+  // Schema and its revision witness are installed only by an operator.
+  const stampDatabase=openWorldStateDatabase(storage,{storeName:"WorldSchemaStamp"});
+  try{
+    stampDatabase.exec(`CREATE TABLE IF NOT EXISTS world_schema_installation (
+      id INTEGER PRIMARY KEY CHECK(id=1),
+      installed_git_sha TEXT NOT NULL,
+      installed_at TEXT NOT NULL
+    ) STRICT`);
+    stampDatabase.prepare(`INSERT INTO world_schema_installation
+      (id,installed_git_sha,installed_at) VALUES (1,?,?)
+      ON CONFLICT(id) DO UPDATE SET installed_git_sha=excluded.installed_git_sha,
+        installed_at=excluded.installed_at`).run(deploymentGitSha,new Date().toISOString());
+  }finally{stampDatabase.close();}
   // Deployment must not acknowledge a World with missing queue frontiers.
   // Verify physical schema on the same state scope that serves alarms.
   const database=openWorldStateDatabase(storage,{storeName:"WorldSchemaInstallation"});
@@ -73,7 +86,7 @@ export function installWorldSchemas(storage){
       "symbolic_genome_runtime_baselines","symbolic_genome_loci",
       "symbolic_genome_mutations","thread_journal_profiles",
       "thread_visual_publication_work","thaw_leases","runtime_sessions",
-      "embodiment_current_heads",
+      "embodiment_current_heads","world_schema_installation",
     ]){
       database.prepare(`SELECT 1 FROM "${name}" LIMIT 1`).get();
     }

@@ -186,12 +186,20 @@ export async function deployCloudflareService({
   const stdout = result.stdout ?? "";
   const stderr = result.stderr ?? "";
   const deploymentOutput=`${stdout}\n${stderr}`;
+  // The World revision declines health checks until its schema stamp
+  // matches; install explicitly before health acceptance for this service.
+  const preinstalledWorldSchema=serviceId==="world-kernel"&&acceptSchemaImpl===null
+    ?await createWranglerDeploymentClient({cwd:root}).migrateWorldOrFid({
+      serviceId,baseUrl:healthBaseUrlForDeployment({
+        serviceId,resolvedConfig:prepared.config,deploymentOutput,
+      }),expectedSha:prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA,
+    }):null;
   const serviceRevision=await acceptServiceRevisionImpl({
     prepared,deploymentOutput,
   });
   const expectedSha=prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA;
   const schemaAcceptance=["world-kernel","fibre-identity-authority","birth-center"].includes(serviceId)
-    ?await (acceptSchemaImpl??(async()=>{
+    ?preinstalledWorldSchema??await (acceptSchemaImpl??(async()=>{
       const client=createWranglerDeploymentClient({cwd:root});
       if(serviceId==="birth-center"){
         const migration=await client.migrateBirthCenter({

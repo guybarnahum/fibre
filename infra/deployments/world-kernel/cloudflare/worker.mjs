@@ -27,6 +27,7 @@ import { THREAD_REPAIR_CONTRACT } from "#services/world-kernel/src/thread-genesi
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { createWorldCloudflareRuntime } from "./runtime.mjs";
 import {installWorldSchemas} from "#services/world-kernel/src/world-schema-installation.mjs";
+import {openWorldStateDatabase} from "#services/world-kernel/src/world-state-storage.mjs";
 
 const WORLD_SCOPE_ID = "world";
 const TOKEN_ENCODER = new TextEncoder();
@@ -450,6 +451,7 @@ export class FibreWorldDurableObject extends DurableObject {
     this.calibrationModel = null;
     this.appearanceCoverage = null;
     this.threadMigrationSummary = null;
+    this.schemaStatus = null;
     this.threadHealthProjectionStore = null;
     this.threadHealthProjection = null;
   }
@@ -467,7 +469,32 @@ export class FibreWorldDurableObject extends DurableObject {
     return this.calibrationModel;
   }
 
+  worldSchemaStatus(){
+    if(this.schemaStatus!==null)return this.schemaStatus;
+    let installedGitSha=null;
+    try{
+      const database=openWorldStateDatabase(this.worldStorage,{
+        readOnly:true,storeName:"WorldSchemaStampRead",
+      });
+      try{
+        installedGitSha=database.prepare(
+          "SELECT installed_git_sha FROM world_schema_installation WHERE id=1",
+        ).get()?.installed_git_sha??null;
+      }finally{database.close();}
+    }catch{
+      // Missing or unavailable installed schema never causes runtime repair.
+    }
+    const expectedGitSha=this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local";
+    this.schemaStatus=Object.freeze({
+      ready:installedGitSha!==null&&installedGitSha===expectedGitSha,
+      installedGitSha,expectedGitSha,
+    });
+    return this.schemaStatus;
+  }
+
   runtimeForRequest() {
+    if(!this.worldSchemaStatus().ready)
+      throw new Error("WORLD_SCHEMA_NOT_INSTALLED");
     if (this.runtime === null) {
       this.runtime = createWorldCloudflareRuntime({
         storage:this.ctx.storage,
@@ -701,7 +728,10 @@ export class FibreWorldDurableObject extends DurableObject {
       const schemaStorage={
         infraDriver:this.infraDriver,stateScopeId:WORLD_SCOPE_ID,
       };
-      installWorldSchemas(schemaStorage);
+      installWorldSchemas(schemaStorage,{
+        deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local",
+      });
+      this.schemaStatus=null;
       // A running World can now reopen its installed, schema-ready stores.
       await this.runtime?.close();
       this.runtime=null;
@@ -991,6 +1021,17 @@ export class FibreWorldDurableObject extends DurableObject {
 
   async fetch(request) {
     const url = new URL(request.url);
+    const installing=url.pathname==="/internal/world-schema/migrate"
+      &&request.method==="POST";
+    if(!installing&&!this.worldSchemaStatus().ready){
+      const response={error:{code:"WORLD_SCHEMA_NOT_INSTALLED"}};
+      if(url.pathname.startsWith("/internal/health/")){
+        return Response.json({...response,ok:false,service:"world-kernel",
+          deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
+          schema:this.worldSchemaStatus()}, {status:503});
+      }
+      return Response.json(response,{status:503});
+    }
     if (request.method === "GET"
       && (url.pathname === "/internal/health/state" || url.pathname === "/internal/health/infra")) {
       const health = await this.health.check();
@@ -1012,6 +1053,13 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async alarm(alarmInfo) {
+    if(!this.worldSchemaStatus().ready){
+      console.warn(JSON.stringify({
+        event:"world-reconciliation-schema-not-installed",
+        expectedGitSha:this.worldSchemaStatus().expectedGitSha,
+      }));
+      return;
+    }
     return this.withStateCost({ kind:"alarm", path:"world-reconciliation" }, async () => {
       const runtime = this.runtimeForRequest();
       console.log(JSON.stringify({
