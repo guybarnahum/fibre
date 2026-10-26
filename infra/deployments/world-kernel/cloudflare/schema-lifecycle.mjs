@@ -1,4 +1,4 @@
-import {classifyCloudflareInfraError} from "../../../providers/cloudflare/health.mjs";
+import {classifyCloudflareInfraError} from "#infra/providers/cloudflare";
 
 // A quota failure is not evidence of a missing or mismatched schema stamp.
 export function readWorldSchemaStatus(readStamp,expectedGitSha){
