@@ -1,6 +1,7 @@
 import { mkdirSync, realpathSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import {checkRuntimeSchemaSql,runtimeSchemaGuardMode} from "../../runtime-schema-guard.mjs";
 
 import {
   INFRA_DRIVER_VERSION,
@@ -57,7 +58,9 @@ function stateGuarantees(databasePath) {
   });
 }
 
-function createSession(scopeId, databasePath, { readOnly, busyTimeoutMs }) {
+function createSession(scopeId, databasePath, {
+  readOnly,busyTimeoutMs,sessionMode,guardMode,queryLabel,
+}) {
   const database = new DatabaseSync(databasePath, {
     readOnly,
     enableForeignKeyConstraints: true,
@@ -85,10 +88,12 @@ function createSession(scopeId, databasePath, { readOnly, busyTimeoutMs }) {
     readOnly,
     exec(sql) {
       assertOpen();
+      checkRuntimeSchemaSql(sql,{mode:sessionMode,guard:guardMode,label:queryLabel});
       return database.exec(sql);
     },
     prepare(sql) {
       assertOpen();
+      checkRuntimeSchemaSql(sql,{mode:sessionMode,guard:guardMode,label:queryLabel});
       const statement = database.prepare(sql);
       return Object.freeze({
         run(...params) {
@@ -158,9 +163,15 @@ export function createSqliteTransactionalStatePort({
     guarantees(scopeId) {
       return stateGuarantees(requireScope(scopeId));
     },
-    open(scopeId, { readOnly = false } = {}) {
+    open(scopeId, {
+      readOnly=false,queryLabel=scopeId,sessionMode="install",
+    }={}) {
       if (typeof readOnly !== "boolean") throw new TypeError("transactional state readOnly must be boolean");
-      return createSession(scopeId, requireScope(scopeId), { readOnly, busyTimeoutMs });
+      if(!["install","runtime"].includes(sessionMode))throw new TypeError("invalid World state session mode");
+      return createSession(scopeId,requireScope(scopeId),{
+        readOnly,busyTimeoutMs,sessionMode,queryLabel,
+        guardMode:runtimeSchemaGuardMode("reject"),
+      });
     },
     costSnapshot(scopeId) {
       requireScope(scopeId);

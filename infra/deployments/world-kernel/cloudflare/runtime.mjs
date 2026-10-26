@@ -156,6 +156,7 @@ export function createWorldCloudflareRuntime({
     stateScopes: { [WORLD_SCOPE_ID]: storage },
     schedulerScopes: { [WORLD_SCOPE_ID]: storage },
     realtimeChannels: env?.ADMIN_LIVE ?? null,
+    runtimeSchemaGuard:env?.FIBRE_RUNTIME_SCHEMA_GUARD??null,
   });
   const worldStorage = Object.freeze({
     infraDriver,stateScopeId:WORLD_SCOPE_ID,

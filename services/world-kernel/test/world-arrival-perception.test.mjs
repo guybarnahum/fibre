@@ -1,9 +1,9 @@
+import {installedWorldStateStorage} from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {mkdtempSync,readFileSync,rmSync} from "node:fs";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
-import {createSqliteStateInfraDriver} from "../../../infra/providers/local/sqlite-state.mjs";
 import {openWorldStore} from "../src/persistence.mjs";
 import {openLivedExperienceStore} from "../src/lived-experience-store.mjs";
 import {createWorldArrivalPerception} from "../src/world-arrival-perception.mjs";
@@ -18,8 +18,7 @@ const seed=JSON.parse(readFileSync(
 const AT="2026-10-18T14:00:00.000Z";
 function setup(){
   const dir=mkdtempSync(join(tmpdir(),"fibre-arrival-witness-"));
-  const storage={infraDriver:createSqliteStateInfraDriver({
-    scopes:{world:join(dir,"world.sqlite")}}),stateScopeId:"world"};
+  const storage=installedWorldStateStorage(join(dir,"world.sqlite"));
   const ids=["thr_arrival_actor","thr_arrival_reader","thr_arrival_worker"];
   const world=openWorldStore(storage);
   const threads=new Map();

@@ -1,10 +1,10 @@
+import {installedWorldStateStorage} from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
 import { mkdtempSync,readFileSync,rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
@@ -42,11 +42,7 @@ const AT="2026-10-13T19:00:00.000Z";
 
 test("four act-triggered reply opportunities bound one shared visit, not future visits",()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-social-reciprocity-"));
-  const storage={
-    infraDriver:createSqliteStateInfraDriver({
-      scopes:{world:join(directory,"world.sqlite")},
-    }),stateScopeId:"world",
-  };
+  const storage=installedWorldStateStorage(join(directory,"world.sqlite"));
   const ids=["thr_reciprocal_a","thr_reciprocal_b"];
   const world=openWorldStore(storage);
   const experience=openLivedExperienceStore(storage);
@@ -96,10 +92,7 @@ test("four act-triggered reply opportunities bound one shared visit, not future 
 function groundedReconsiderationFixture({onInvoke=null,speakerName=null}={}){
   const directory=mkdtempSync(join(tmpdir(),"fibre-reconsideration-"));
   const path=join(directory,"world.sqlite");
-  const storage={
-    infraDriver:createSqliteStateInfraDriver({scopes:{world:path}}),
-    stateScopeId:"world",
-  };
+  const storage=installedWorldStateStorage(path);
   const world=openWorldStore(storage),lived=openLivedNowStore(storage);
   const experience=openLivedExperienceStore(storage);
   const people=[
@@ -1141,10 +1134,7 @@ test("reconsideration bounds cognition by visit and by chosen counterpart",async
 
 test("an enacted arrival permits immediate voluntary consideration without forcing speech",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-natural-social-"));
-  const storage={
-    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
-    stateScopeId:"world",
-  };
+  const storage=installedWorldStateStorage(join(directory,"world.sqlite"));
   const world=openWorldStore(storage);
   const people=["thr_social_park","thr_social_cafe_visitor","thr_social_cafe_reader"];
   for(const threadId of people){
@@ -1283,10 +1273,7 @@ test("an enacted arrival permits immediate voluntary consideration without forci
 test("venue discovery reaches actual awake long-stayers beyond historical bindings",()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-venue-presence-"));
   const path=join(directory,"world.sqlite");
-  const storage={
-    infraDriver:createSqliteStateInfraDriver({scopes:{world:path}}),
-    stateScopeId:"world",
-  };
+  const storage=installedWorldStateStorage(path);
   const historical=Array.from({length:32},(_,i)=>"thr_venue_history_"+String(i).padStart(2,"0"));
   const asleep="thr_venue_asleep";
   const reader="thr_venue_reader";
@@ -1381,10 +1368,7 @@ test("venue discovery reaches actual awake long-stayers beyond historical bindin
 test("independently admitted public places reveal only actual same-venue visitors",()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-public-venue-presence-"));
   const path=join(directory,"world.sqlite");
-  const storage={
-    infraDriver:createSqliteStateInfraDriver({scopes:{world:path}}),
-    stateScopeId:"world",
-  };
+  const storage=installedWorldStateStorage(path);
   const reader="thr_public_reader",visitor="thr_public_visitor";
   let lived=null;
   try{
@@ -1458,8 +1442,7 @@ test("independently admitted public places reveal only actual same-venue visitor
 
 test("arrival exactly as another Thread leaves never creates a missed social window",async()=>{
   const dir=mkdtempSync(join(tmpdir(),"fibre-zero-social-overlap-"));
-  const storage={infraDriver:createSqliteStateInfraDriver({
-    scopes:{world:join(dir,"world.sqlite")}}),stateScopeId:"world"};
+  const storage=installedWorldStateStorage(join(dir,"world.sqlite"));
   const world=openWorldStore(storage);
   const ids=["thr_tie_arrives","thr_tie_leaves"];
   for(const threadId of ids){
@@ -1503,8 +1486,7 @@ test("arrival exactly as another Thread leaves never creates a missed social win
 
 test("a witnessed short overlap expires without inventing a social refusal or conversation",async()=>{
   const dir=mkdtempSync(join(tmpdir(),"fibre-missed-social-window-"));
-  const storage={infraDriver:createSqliteStateInfraDriver({
-    scopes:{world:join(dir,"world.sqlite")}}),stateScopeId:"world"};
+  const storage=installedWorldStateStorage(join(dir,"world.sqlite"));
   const world=openWorldStore(storage);
   const ids=["thr_social_visitor","thr_social_witness"];
   for(const threadId of ids){
@@ -1596,8 +1578,7 @@ test("a witnessed short overlap expires without inventing a social refusal or co
 
 test("sustained shared presence reaches voluntary social consideration without forcing contact",async()=>{
   const dir=mkdtempSync(join(tmpdir(),"fibre-sustained-social-"));
-  const storage={infraDriver:createSqliteStateInfraDriver({
-    scopes:{world:join(dir,"world.sqlite")}}),stateScopeId:"world"};
+  const storage=installedWorldStateStorage(join(dir,"world.sqlite"));
   const world=openWorldStore(storage);
   const ids=["thr_social_arrival","thr_social_reader"];
   for(const threadId of ids){
@@ -1674,8 +1655,7 @@ test("sustained shared presence reaches voluntary social consideration without f
 test("unrelated life debt and Genesis cannot consume another venue's arrival or social chance",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-independent-venues-"));
   const databasePath=join(directory,"world.sqlite");
-  const storage={infraDriver:createSqliteStateInfraDriver({
-    scopes:{world:databasePath}}),stateScopeId:"world"};
+  const storage=installedWorldStateStorage(databasePath);
   const ids=["thr_debt_arrival","thr_debt_reader","thr_free_arrival","thr_free_reader"];
   const world=openWorldStore(storage);
   const people=new Map();
@@ -1885,8 +1865,7 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
 
 test("only actual acquaintance reveals a name in an ordinary perceived person",()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-identity-familiarity-"));
-  const storage={infraDriver:createSqliteStateInfraDriver({
-    scopes:{world:join(directory,"world.sqlite")}}),stateScopeId:"world"};
+  const storage=installedWorldStateStorage(join(directory,"world.sqlite"));
   const ids=["thr_observing_witness","thr_unfamiliar_person"];
   const world=openWorldStore(storage);
   for(const threadId of ids){

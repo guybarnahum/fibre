@@ -355,6 +355,7 @@ export function createCloudflareInfraDriver({
   presentationChannels = null,
   realtimeChannels = null,
   catalogDatabase = null,
+  runtimeSchemaGuard = null,
 } = {}) {
   const driver = {
     driverId: "cloudflare-v1",
@@ -362,7 +363,9 @@ export function createCloudflareInfraDriver({
     capabilities: [],
   };
   if (Object.keys(stateScopes).length > 0) {
-    driver.state = createCloudflareTransactionalStatePort({ scopes: stateScopes });
+    driver.state = createCloudflareTransactionalStatePort({
+      scopes:stateScopes,schemaGuard:runtimeSchemaGuard,
+    });
     driver.capabilities.push("state");
   }
   if (objectBucket !== null) {

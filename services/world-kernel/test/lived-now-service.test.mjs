@@ -26,7 +26,7 @@ import {
   placeEpisodeRevisionRef,
 } from "../src/situated-life-evidence.mjs";
 import { openSituatedLifeStore } from "../src/situated-life-store.mjs";
-import { localWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
+import { localWorldStateStorage,installedWorldStateStorage } from "./support/world-state-storage-fixture.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -36,6 +36,7 @@ async function withDatabase(run) {
   const directory = mkdtempSync(join(tmpdir(), "fibre-ensure-lived-now-"));
   const databasePath = join(directory, "world.sqlite");
   try {
+    installedWorldStateStorage(databasePath);
     return await run(databasePath);
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -62,12 +63,12 @@ function seedLife(databasePath,threadId="thr_ensure_maya") {
     createdBy: "ensure-lived-now-test",
   };
 
-  const world = openWorldStore(localWorldStateStorage(databasePath));
+  const world = openWorldStore({...localWorldStateStorage(databasePath),schemaReady:true});
   const seeded = world.seedThread(thread).thread;
   const sourceEvent = world.listEvents(thread.threadId)[0].eventId;
   world.close();
 
-  const situated = openSituatedLifeStore(localWorldStateStorage(databasePath));
+  const situated = openSituatedLifeStore({...localWorldStateStorage(databasePath),schemaReady:true});
   const place = (label, displayName) => {
     const record = situated.recordPlaceEpisode({
       episodeId: placeEpisodeId({ threadId: thread.threadId, label }),
@@ -202,7 +203,7 @@ function requiredCarePlan(life) {
 test("N1 ensure-LivedNow advances the Thread from its own plans and preserves care authority", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
-    const lived = openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived = openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     lived.recordPlan(personalPlan(life));
 
     const earned=[];
@@ -254,7 +255,7 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
 test("World enacts sleep and waking from Thread-owned plan facts, not activity wording",async()=>
   withDatabase(async(databasePath)=>{
     const life=seedLife(databasePath);
-    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived=openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     const plan=personalPlan(life);
     plan.stops[0].activity="Sleep.";
     plan.stops[0].wakefulness="asleep";
@@ -276,7 +277,7 @@ test("World enacts sleep and waking from Thread-owned plan facts, not activity w
 test("N6.3b keeps the displayed scene valid when enacted life frustrates the Flight Plan", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
-    const lived = openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived = openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     lived.recordPlan(personalPlan(life));
     const service = createLivedNowService({ livedNowStore:lived });
 
@@ -325,7 +326,7 @@ test("N6.3b keeps the displayed scene valid when enacted life frustrates the Fli
 test("N6.3b rejects the displayed scene after World enacts materially different life", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
-    const lived = openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived = openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     lived.recordPlan(personalPlan(life));
     const service = createLivedNowService({ livedNowStore:lived });
 
@@ -352,7 +353,7 @@ test("N6.3b rejects the displayed scene after World enacts materially different 
 test("a real LivedNow transition can become current interior state exactly once", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
-    const storage = localWorldStateStorage(databasePath);
+    const storage = {...localWorldStateStorage(databasePath),schemaReady:true};
     const lived = openLivedNowStore(storage);
     const world = openWorldStore(storage);
     const semantic = openSemanticStateStore(storage);
@@ -416,7 +417,7 @@ test("a real LivedNow transition can become current interior state exactly once"
 test("a rejected instantaneous journey is reconsidered by its Thread before World schedules life",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     const lived=openLivedNowStore(storage);
     const world=openWorldStore(storage);
     const identity=openIdentityStore(storage);
@@ -497,7 +498,7 @@ test("a rejected instantaneous journey is reconsidered by its Thread before Worl
 test("precise travel rejection lets a Thread choose to stay without invented transit",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     const lived=openLivedNowStore(storage);
     const world=openWorldStore(storage);
     const identity=openIdentityStore(storage);
@@ -572,7 +573,7 @@ test("precise travel rejection lets a Thread choose to stay without invented tra
 test("N1 refuses to present a stale scene when elapsed life has no plan coverage", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
-    const lived = openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived = openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     lived.recordPlan(personalPlan(life));
 
     const service = createLivedNowService({ livedNowStore: lived });
@@ -598,7 +599,7 @@ test("N1 refuses to present a stale scene when elapsed life has no plan coverage
 test("N2 restores a multi-day dormant Thread with historically honest bounded catch-up", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
-    const storage = localWorldStateStorage(databasePath);
+    const storage = {...localWorldStateStorage(databasePath),schemaReady:true};
     const lived = openLivedNowStore(storage);
     const initialPlan = lived.recordPlan(personalPlan(life));
 
@@ -737,7 +738,7 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
 test("a month without World wakes leaves an honest gap and resumes from the last witnessed place",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     const lived=openLivedNowStore(storage);
     lived.recordPlan(personalPlan(life));
     const world=openWorldStore(storage);
@@ -797,7 +798,7 @@ test("a month without World wakes leaves an honest gap and resumes from the last
 test("a blocked life carries its failed journey into an independently renewed plan",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     const lived=openLivedNowStore(storage);
     lived.recordPlan(personalPlan(life));
     const world=openWorldStore(storage);
@@ -892,7 +893,7 @@ test("a blocked life carries its failed journey into an independently renewed pl
 test("a slightly delayed horizon alarm renews forward life without inventing retrospective intentions",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     const lived=openLivedNowStore(storage);
     const world=openWorldStore(storage);
     const identity=openIdentityStore(storage);
@@ -965,7 +966,7 @@ test("a slightly delayed horizon alarm renews forward life without inventing ret
 test("E7.5 admitted Flight Plan boundaries advance life without polling",async()=>
   withDatabase(async(databasePath)=>{
     const life=seedLife(databasePath);
-    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived=openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     lived.recordPlan(personalPlan(life));
     const enacted=[];
     const livedNow=createLivedNowService({
@@ -1002,7 +1003,7 @@ test("E7.5 admitted Flight Plan boundaries advance life without polling",async()
 test("a failed life retries its original planned departure, not the backoff clock",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived=openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     try{
       lived.recordPlan(personalPlan(life));
       const actual=createLivedNowService({
@@ -1064,7 +1065,7 @@ test("an interrupted World's overdue life debt is paced, not awakened in a burst
 test("an established legacy Thread without a wake frontier is adopted once",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     const first=openLivedNowStore(storage);
     first.recordPlan(personalPlan(life));
     await createLivedNowService({livedNowStore:first}).ensure({
@@ -1090,7 +1091,7 @@ test("an established legacy Thread without a wake frontier is adopted once",asyn
 test("a lost or obsolete life deadline is repaired without rewriting the Thread",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     let lived=openLivedNowStore(storage);
     lived.recordPlan(personalPlan(life));
     const initial=await createLivedNowService({livedNowStore:lived}).ensure({
@@ -1152,7 +1153,7 @@ test("a lost or obsolete life deadline is repaired without rewriting the Thread"
 test("continuity repair preserves failure retries and never revives retired Threads",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     let lived=openLivedNowStore(storage);
     lived.recordPlan(personalPlan(life));
     const situation=await createLivedNowService({livedNowStore:lived}).ensure({
@@ -1190,7 +1191,7 @@ test("continuity repair preserves failure retries and never revives retired Thre
 test("World audits lost life daily and preserves restored deadlines between checks",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     const lived=openLivedNowStore(storage);
     lived.recordPlan(personalPlan(life));
     const original=await createLivedNowService({livedNowStore:lived}).ensure({
@@ -1223,7 +1224,7 @@ test("World audits lost life daily and preserves restored deadlines between chec
 test("periodic recovery restores a lost Thread wake through World into continuing life",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const storage=localWorldStateStorage(databasePath);
+    const storage={...localWorldStateStorage(databasePath),schemaReady:true};
     const plan=personalPlan(life);
     const planAt="2030-06-01T05:00:00Z";
     plan.planId=livedPlanId({
@@ -1340,7 +1341,7 @@ test("periodic recovery restores a lost Thread wake through World into continuin
 test("a failed Thread wake retains a quiet recovery deadline and eventually resumes life",async()=>
   withDatabase(async(databasePath)=>{
     const life=seedLife(databasePath);
-    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived=openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     lived.recordPlan(personalPlan(life));
     const service=createLivedNowService({
       livedNowStore:lived,
@@ -1386,7 +1387,7 @@ test("a failed Thread wake retains a quiet recovery deadline and eventually resu
 test("an admitted later situation re-arms an exhausted life frontier without rewriting past",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived=openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     lived.recordPlan(personalPlan(life));
     const service=createLivedNowService({
       livedNowStore:lived,
@@ -1429,7 +1430,7 @@ test("an admitted later situation re-arms an exhausted life frontier without rew
 test("an admitted personal public-visit plan enacts transit, empty stay and return home",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived=openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     try{
       const library=lived.admitPublicPlace({
         venueIdentity:"fixture:tucson-public-reading",
@@ -1554,7 +1555,7 @@ test("simultaneous departure and arrival cannot create historical company in eit
     await withDatabase(async databasePath=>{
       const leaving=seedLife(databasePath,ids[0]);
       const arriving=seedLife(databasePath,ids[1]);
-      const storage=localWorldStateStorage(databasePath);
+      const storage={...localWorldStateStorage(databasePath),schemaReady:true};
       const lived=openLivedNowStore(storage);
       const experience=openLivedExperienceStore(storage);
       try{
@@ -1662,7 +1663,7 @@ test("simultaneous departure and arrival cannot create historical company in eit
 test("World rejects a rushed cross-city arrival and autonomous life completes a feasible journey",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
-    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    const lived=openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
     try{
       const threadId=life.thread.threadId;
       const city=(name,country,countryCode,lat,long,timeZone)=>

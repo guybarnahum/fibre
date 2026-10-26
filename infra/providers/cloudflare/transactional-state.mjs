@@ -1,3 +1,4 @@
+import {checkRuntimeSchemaSql,runtimeSchemaGuardMode} from "../../runtime-schema-guard.mjs";
 import {
   INFRA_DRIVER_VERSION,
   assertInfraDriver,
@@ -210,7 +211,7 @@ function executeCloudflareSql(storage, sql, params, { readOnly, cost, label }) {
   return storage.sql.exec(sql, ...params);
 }
 
-function createSession(scopeId, storage, { readOnly, label, cost }) {
+function createSession(scopeId, storage, { readOnly, label, cost, sessionMode, guardMode }) {
   let closed = false;
   let transactionActive = false;
 
@@ -220,6 +221,7 @@ function createSession(scopeId, storage, { readOnly, label, cost }) {
 
   function execute(sql, params = [], { mutation = false } = {}) {
     assertOpen();
+    checkRuntimeSchemaSql(sql,{mode:sessionMode,guard:guardMode,label});
     if (readOnly && mutation) throw new Error(`transactional state scope ${scopeId} is read-only`);
     if (readOnly) assertReadOnlySql(sql);
     return executeCloudflareSql(storage, sql, params, { readOnly, cost, label });
@@ -233,6 +235,7 @@ function createSession(scopeId, storage, { readOnly, label, cost }) {
     },
     prepare(sql) {
       assertOpen();
+      checkRuntimeSchemaSql(sql,{mode:sessionMode,guard:guardMode,label});
       return Object.freeze({
         run(...params) {
           return runResult(execute(sql, params, { mutation: true }), cost, label);
@@ -265,7 +268,7 @@ function createSession(scopeId, storage, { readOnly, label, cost }) {
   return assertTransactionalStateSession(Object.freeze(session), { scopeId, readOnly });
 }
 
-export function createCloudflareTransactionalStatePort({ scopes } = {}) {
+export function createCloudflareTransactionalStatePort({ scopes,schemaGuard=null } = {}) {
   const normalizedScopes = normalizeScopes(scopes);
   return Object.freeze({
     stateVersion: TRANSACTIONAL_STATE_VERSION,
@@ -274,15 +277,19 @@ export function createCloudflareTransactionalStatePort({ scopes } = {}) {
       if (!normalizedScopes.has(scopeId)) throw new Error(`transactional state scope ${scopeId} is not configured`);
       return stateGuarantees();
     },
-    open(scopeId, { readOnly = false, queryLabel:requestedLabel = null } = {}) {
+    open(scopeId, {
+      readOnly=false,queryLabel:requestedLabel=null,sessionMode="install",
+    } = {}) {
       assertInfraId("transactional state scopeId", scopeId);
       if (typeof readOnly !== "boolean") throw new TypeError("transactional state readOnly must be boolean");
+      if(!["install","runtime"].includes(sessionMode))throw new TypeError("invalid World state session mode");
       const storage = normalizedScopes.get(scopeId);
       if (storage === undefined) throw new Error(`transactional state scope ${scopeId} is not configured`);
       return createSession(scopeId, storage, {
         readOnly,
         label:queryLabel(requestedLabel, scopeId),
         cost:costFor(storage),
+        sessionMode,guardMode:runtimeSchemaGuardMode("report",schemaGuard),
       });
     },
     costSnapshot(scopeId) {

@@ -436,7 +436,10 @@ export class FibreWorldDurableObject extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
     this.runtime = null;
-    this.infraDriver = createCloudflareInfraDriver({ stateScopes:{ [WORLD_SCOPE_ID]:ctx.storage } });
+    this.infraDriver = createCloudflareInfraDriver({
+      stateScopes:{[WORLD_SCOPE_ID]:ctx.storage},
+      runtimeSchemaGuard:env.FIBRE_RUNTIME_SCHEMA_GUARD??null,
+    });
     this.worldStorage = Object.freeze({
       infraDriver:this.infraDriver,stateScopeId:WORLD_SCOPE_ID,schemaReady:true,
     });

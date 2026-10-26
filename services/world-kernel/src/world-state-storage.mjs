@@ -127,7 +127,10 @@ export function openWorldStateDatabase(storage, {
     stateScopeId,
     FIBRE_WORLD_STATE_REQUIREMENTS,
   );
-  const database = infra.state.open(stateScopeId, { readOnly, queryLabel:storeName });
+  const database = infra.state.open(stateScopeId, {
+    readOnly,queryLabel:storeName,
+    sessionMode:storage.schemaReady===true?"runtime":"install",
+  });
   const initialization = initializationFor(storage);
   if(storage.schemaReady===true){
     initialization.schemaReady=true;

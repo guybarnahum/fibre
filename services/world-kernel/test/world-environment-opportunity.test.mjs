@@ -1,9 +1,9 @@
+import {installedWorldStateStorage} from "./support/world-state-storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { mkdtempSync,readFileSync,rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { createSqliteStateInfraDriver } from "../../../infra/providers/local/sqlite-state.mjs";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { createWorldEnvironmentOpportunity,worldStayOpportunityDueAt,worldAmbientScene } from "../src/world-environment-opportunity.mjs";
@@ -16,10 +16,7 @@ const DUE="2026-10-08T17:25:00.000Z";
 
 test("World environment author sees observable activity but not private purpose",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-world-arrival-"));
-  const storage={
-    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
-    stateScopeId:"world",
-  };
+  const storage=installedWorldStateStorage(join(directory,"world.sqlite"));
   const threads=new Map();
   const situations=new Map();
   const world=openWorldStore(storage);
@@ -150,10 +147,7 @@ test("World environment author sees observable activity but not private purpose"
 
 test("a scene has one sparse ambient consideration with independently perceiving visitors",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-world-extended-stay-"));
-  const storage={
-    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
-    stateScopeId:"world",
-  };
+  const storage=installedWorldStateStorage(join(directory,"world.sqlite"));
   const arrive="2026-10-08T10:00:00.000Z";
   const stayDue="2026-10-08T10:01:00.000Z";
   const people=["thr_world_stay_a","thr_world_stay_b"];
@@ -283,10 +277,7 @@ test("a scene has one sparse ambient consideration with independently perceiving
 
 test("the shared World scene stays observable after its first visitor leaves",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-scene-handoff-"));
-  const storage={
-    infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
-    stateScopeId:"world",
-  };
+  const storage=installedWorldStateStorage(join(directory,"world.sqlite"));
   const threadIds=["thr_scene_handoff_a","thr_scene_handoff_b"];
   const world=openWorldStore(storage);
   try{
