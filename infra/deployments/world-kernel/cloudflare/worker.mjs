@@ -30,6 +30,10 @@ import {installWorldSchemas} from "#services/world-kernel/src/world-schema-insta
 import {openWorldStateDatabase} from "#services/world-kernel/src/world-state-storage.mjs";
 import {auditWorldIntegrityBatch} from "#services/world-kernel/src/world-integrity-audit.mjs";
 import {reviveStaleWorldAlarm} from "#services/world-kernel/src/world-reconciliation-process.mjs";
+import {
+  readWorldSchemaStatus,worldSchemaStatusError,
+  deferAlarmForSchemaInstall,resumeAlarmAfterSchemaInstall,
+} from "./schema-lifecycle.mjs";
 
 const WORLD_SCOPE_ID = "world";
 const TOKEN_ENCODER = new TextEncoder();
@@ -474,30 +478,19 @@ export class FibreWorldDurableObject extends DurableObject {
 
   worldSchemaStatus(){
     if(this.schemaStatus!==null)return this.schemaStatus;
-    let installedGitSha=null;
-    try{
+    const status=readWorldSchemaStatus(()=>{
       const database=openWorldStateDatabase(this.worldStorage,{
         readOnly:true,storeName:"WorldSchemaStampRead",
       });
       try{
-        installedGitSha=database.prepare(
+        return database.prepare(
           "SELECT installed_git_sha FROM world_schema_installation WHERE id=1",
         ).get()?.installed_git_sha??null;
       }finally{database.close();}
-    }catch{
-      // A quota outage may temporarily prevent the stamp read. Fail closed,
-      // but do not cache a transient failure for this DO's entire lifetime.
-      return Object.freeze({
-        ready:false,installedGitSha:null,
-        expectedGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local",
-      });
-    }
-    const expectedGitSha=this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local";
-    this.schemaStatus=Object.freeze({
-      ready:installedGitSha!==null&&installedGitSha===expectedGitSha,
-      installedGitSha,expectedGitSha,
-    });
-    return this.schemaStatus;
+    },this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local");
+    // A transient storage outage must not be cached as schema absence.
+    if(!status.unavailable)this.schemaStatus=status;
+    return status;
   }
 
   runtimeForRequest() {
@@ -758,6 +751,7 @@ export class FibreWorldDurableObject extends DurableObject {
         deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local",
       });
       this.schemaStatus=null;
+      await resumeAlarmAfterSchemaInstall(this.ctx.storage);
       // A running World can now reopen its installed, schema-ready stores.
       await this.runtime?.close();
       this.runtime=null;
@@ -1071,12 +1065,13 @@ export class FibreWorldDurableObject extends DurableObject {
     const url = new URL(request.url);
     const installing=url.pathname==="/internal/world-schema/migrate"
       &&request.method==="POST";
-    if(!installing&&!this.worldSchemaStatus().ready){
-      const response={error:{code:"WORLD_SCHEMA_NOT_INSTALLED"}};
+    const schema=installing?null:this.worldSchemaStatus();
+    if(schema!==null&&!schema.ready){
+      const response={error:worldSchemaStatusError(schema)};
       if(url.pathname.startsWith("/internal/health/")){
         return Response.json({...response,ok:false,service:"world-kernel",
           deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
-          schema:this.worldSchemaStatus()}, {status:503});
+          schema}, {status:503});
       }
       return Response.json(response,{status:503});
     }
@@ -1101,11 +1096,13 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async alarm(alarmInfo) {
-    if(!this.worldSchemaStatus().ready){
+    const schema=this.worldSchemaStatus();
+    if(!schema.ready){
       console.warn(JSON.stringify({
         event:"world-reconciliation-schema-not-installed",
-        expectedGitSha:this.worldSchemaStatus().expectedGitSha,
+        expectedGitSha:schema.expectedGitSha,
       }));
+      await deferAlarmForSchemaInstall(this.ctx.storage);
       return;
     }
     return this.withStateCost({ kind:"alarm", path:"world-reconciliation" }, async () => {

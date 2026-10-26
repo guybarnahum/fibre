@@ -30,10 +30,38 @@ The long-term architecture may use several physical stores—relational state, a
    re-validation at consumption remain load-bearing. Trusting admitted storage
    does **not** make an old authorization valid for a new request.
 
-The installed World stamp must match the running deployment Git revision;
-otherwise requests fail closed with `WORLD_SCHEMA_NOT_INSTALLED` until explicit
-installation succeeds. Stale alarms may be rearmed through Durable Object
-scheduling without SQL after a storage-quota outage.
+The installed World stamp must match the running deployment Git revision.
+A missing or mismatched stamp returns `WORLD_SCHEMA_NOT_INSTALLED`; a failed
+stamp read returns its classified storage-unavailable code (including quota
+exhaustion). Alarms stay scheduled while installation is pending and resume
+when installation succeeds, without SQL-based wake recovery.
+
+### Known exceptions, to be converted
+
+The runtime read-audit separation is not yet exhaustive. The following
+ordinary read paths still repeat storage verification and are **not** listed
+as authority-bearing consumption:
+
+- `situated-life-store.mjs` — `lifeRelationHistory`,
+  `placeEpisodeHistory`, and current lineage projections still verify
+  canonical JSON, digests, revision chains, and head witnesses.
+- `genesis-store.mjs` — remaining readers including raised-language
+  projections and Genesis inspection/attempt histories still normalize or
+  cross-check admitted data on read; the principal WorldSpec, manifest,
+  and historical-envelope readers have a trusted runtime path.
+- `autobiographical-memory-store.mjs` — memory history and selected
+  current-head verification paths still reread lineage and Thread-history
+  anchors; the ordinary current-memory list has a trusted runtime path.
+- `embodiment-persistence-store.mjs` — embodiment history and current-head
+  projection readers still check revision/head chains; this is distinct
+  from rights-authority validation, which must remain live.
+- `live-world-geography.mjs` and `symbolic-genome-persistence.mjs` —
+  specialized read paths retain some digest/normalization work beyond
+  their installed-World fast paths.
+
+These are explicit migration debt for a subsequent small, measured slice.
+Do not disable the checks that validate consent, request binding, evidence
+admission, obligations, authorization, withdrawal, or ledger consumption.
 
 ## Current transactional persistence profile
 
@@ -111,7 +139,7 @@ Autobiographical memory is distinct from historical fact. Current memory records
 
 Genesis-capable memory records distinguish remembered content from durable remembered meaning. Reinterpretation appends/supersedes meaning without rewriting the underlying event or prior memory revision.
 
-Ordinary historical reads trust admitted storage and retain optional-field compatibility shaping. Explicit integrity audits re-verify durable structure and lineage without retroactively applying every future current-write content-size policy. New writes still obey current admission policy.
+Many ordinary historical reads now trust admitted storage and retain optional-field compatibility shaping; remaining read-time verification exceptions are listed above. Explicit integrity audits re-verify durable structure and lineage without retroactively applying every future current-write content-size policy. New writes still obey current admission policy.
 
 ### Memory visual companions
 
