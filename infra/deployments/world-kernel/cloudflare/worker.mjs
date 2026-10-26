@@ -28,6 +28,7 @@ import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-
 import { createWorldCloudflareRuntime } from "./runtime.mjs";
 import {installWorldSchemas} from "#services/world-kernel/src/world-schema-installation.mjs";
 import {openWorldStateDatabase} from "#services/world-kernel/src/world-state-storage.mjs";
+import {auditWorldIntegrityBatch} from "#services/world-kernel/src/world-integrity-audit.mjs";
 
 const WORLD_SCOPE_ID = "world";
 const TOKEN_ENCODER = new TextEncoder();
@@ -651,7 +652,8 @@ export class FibreWorldDurableObject extends DurableObject {
       const cost = stateCostDelta(before, state.costSnapshot(WORLD_SCOPE_ID));
       // A private Observatory inspection can measure its own SQL cost
       // without relying on sampled console tails or an extra DB query.
-      if (response && THREAD_OBSERVATORY_ROUTE.test(operation.path ?? "")) {
+      if (response && (THREAD_OBSERVATORY_ROUTE.test(operation.path ?? "")
+        ||operation.path==="/internal/integrity/audit")) {
         response.headers.set("x-fibre-state-rows-read", String(cost.rowsRead));
         response.headers.set("x-fibre-state-rows-written", String(cost.rowsWritten));
         response.headers.set("x-fibre-state-queries", String(cost.queries));
@@ -669,6 +671,23 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetchWorldRequest(request, url) {
+    if(url.pathname==="/internal/integrity/audit"){
+      if(request.method!=="POST")return Response.json({error:{code:"METHOD_NOT_ALLOWED"}},{status:405});
+      if(!privateOperatorAuthorized(request,this.env))
+        return Response.json({error:{code:"PRIVATE_TOKEN_REQUIRED"}},{status:403});
+      let input;
+      try{
+        input=await request.json();
+        if(!input||typeof input!=="object"||Array.isArray(input))
+          throw new TypeError("audit body must be an object");
+        return Response.json(auditWorldIntegrityBatch(this.worldStorage,input));
+      }catch(error){
+        if(error instanceof TypeError)
+          return Response.json({error:{code:"INVALID_AUDIT_REQUEST",message:error.message}},
+            {status:400});
+        throw error;
+      }
+    }
     if(url.pathname==="/internal/world-events/overview"){
       if(request.method!=="GET")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
       if(!privateOperatorAuthorized(request,this.env)){

@@ -80,6 +80,7 @@
     "ready": "npm run git-check && npm run check",
     "editor": "node tools/editor/serve-thread-editor.mjs",
     "infra:measure": "node tools/ops/infra-measure.mjs",
+    "world:integrity-audit": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-integrity-audit.mjs",
     "world-life:wave": "node tools/deployment/run-with-progress.mjs world-life:wave node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-life-wave.mjs",
     "world-kernel": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning infra/deployments/world-kernel/local/visual-server.mjs",
     "birth-center": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning infra/deployments/birth-center/local/server.mjs",
