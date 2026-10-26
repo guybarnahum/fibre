@@ -106,6 +106,8 @@ Examples include:
 
 An opportunity is not automatically an Encounter Story. Mere co-presence may remain background. A World occurrence that objectively happens can become an Encounter Story whether or not the Thread notices it; personal experience still requires the normal attention/experience path.
 
+When an observer appraises an Encounter Story as `not_noticed`, their private attention record keeps a short first-person `passedReason` explaining the missed salience from their own situation. Noticing keeps `passedReason:null`. This is diagnostic interior evidence only: it does not bias the attention decision, enter objective Story beats, other Threads' percepts, or later choices. The individual Thread's private Observatory may display it. Historic attention rows retain `null`; the original attention record digest intentionally covers only Thread, Story, situation, time and outcome, **not** `passedReason`, so admission identity and existing digests remain unchanged.
+
 Fibre Commons remains one legitimate mediated place. It is not the mechanism by which social life exists and must not be the acceptance harness's artificial source of motivation.
 
 ### A scene yields independent actor opportunities

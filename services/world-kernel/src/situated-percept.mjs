@@ -215,7 +215,7 @@ export function projectSituatedPercept({
     const person=observablePerson({
       threadId:candidate.threadId,situation:candidate.situation,
       observerThreadId,name:candidate.name??null,
-      birthDate:candidate.birthDate??null,at,
+      birthDate:candidate.birthDate??null,sex:candidate.sex??null,at,
       embodimentStore,situatedLifeStore,experienceStore,
     });
     return Object.freeze({

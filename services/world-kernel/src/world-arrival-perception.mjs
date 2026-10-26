@@ -57,6 +57,7 @@ export function createWorldArrivalPerception({
               const words=observablePerson({
                 threadId:situation.threadId,situation,embodimentStore,
                 name:identity?.name??null,birthDate:identity?.birthDate??null,
+                sex:identity?.sex??null,
                 at:obligation.dueAt,
               }).observableDescription;
               return words[0].toUpperCase()+words.slice(1);

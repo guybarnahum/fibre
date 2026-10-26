@@ -1748,7 +1748,8 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       memoryStore:{listCurrentMemories:()=>[]},
       modelAdapter:{async invoke(request){
         attentionInputs.push(request.input);
-        return {output:{outcome:"not_noticed",experienceText:null},
+        return {output:{outcome:"not_noticed",experienceText:null,
+          passedReason:"I was focused on my own activity."},
           provenance:{provider:"fixture",modelId:"no-attention"}};
       }},
       now:()=>decisionAt,

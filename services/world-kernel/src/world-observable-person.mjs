@@ -38,7 +38,7 @@ function visibleAppearance(layers,birthDate,at){
 
 // An available public portrait may inform what is visible, but its rendering
 // specifications and inherited physical coordinates are never perception prose.
-function publicAppearance(threadId,embodimentStore,birthDate,at){
+function publicAppearance(threadId,embodimentStore,birthDate,at,sex){
   const portraits=embodimentStore?.listCurrent?.(threadId)??[];
   for(const embodiment of portraits){
     const projection=projectPublicEmbodimentVisualIdentity(embodiment,{
@@ -49,16 +49,9 @@ function publicAppearance(threadId,embodimentStore,birthDate,at){
     if(layers!==null)return {
       description:visibleAppearance(layers,birthDate,at),structured:true,
     };
-    const clause=projection.subjectDescription.split(/[;\n.]/u)[0]
-      ?.replace(/\bThreads?\b/giu,"person").trim()??"";
-    if(!clause||/:|\b(?:phenotype|zygomatic|faceWidth|pigmentation)\b/iu.test(clause))
-      return {description:"a person",structured:false};
-    const words=clause.split(/\s+/u),bounded=[];
-    for(const word of words){
-      if(([...bounded,word].join(" ")).length>120)break;
-      bounded.push(word);
-    }
-    return {description:bounded.join(" ")||"a person",structured:false};
+    // Legacy portrait prose is rendering input, not readable perception.
+    // Use only identity facts; missing hair cues stay unknown.
+    return {description:agePhrase(birthDate,at,sex),structured:true};
   }
   return null;
 }
@@ -114,7 +107,7 @@ function boundedDescription(text){
 // This is an observer-relative projection, not a new identity authority.
 // Objective stories have no observer and must not disclose civil names.
 export function observablePerson({
-  threadId,situation,observerThreadId=null,name=null,birthDate=null,
+  threadId,situation,observerThreadId=null,name=null,birthDate=null,sex=null,
   embodimentStore=null,situatedLifeStore=null,experienceStore=null,
   at=situation.establishedAt,
 }={}){
@@ -123,7 +116,7 @@ export function observablePerson({
   });
   const known=knowledge.full;
   const heardName=knowledge.heard;
-  const appearance=publicAppearance(threadId,embodimentStore,birthDate,at);
+  const appearance=publicAppearance(threadId,embodimentStore,birthDate,at,sex);
   const description=appearance?.description??"a person";
   // Objective World Stories have no observer, hence no authority to reveal
   // names. For unfamiliar witnesses, redact any identity in portrait prose.

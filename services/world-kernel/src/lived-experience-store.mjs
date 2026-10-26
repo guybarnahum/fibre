@@ -1437,7 +1437,7 @@ export class LivedExperienceStore {
     assertId("attention threadId", threadId);
     assertId("attention encounterRef", encounterRef);
     const row = this.#database.prepare(`
-      SELECT thread_id,encounter_ref,situation_id,occurred_at,outcome
+      SELECT thread_id,encounter_ref,situation_id,occurred_at,outcome,passed_reason
       FROM thread_encounter_attention
       WHERE thread_id=? AND encounter_ref=?
     `).get(threadId,encounterRef);
@@ -1458,6 +1458,7 @@ export class LivedExperienceStore {
       situationId:row.situation_id,
       occurredAt:row.occurred_at,
       outcome:row.outcome,
+      passedReason:row.passed_reason,
       experience:experience === null ? null : {
         experienceId:experience.experience_id,
         threadId:experience.thread_id,
@@ -1481,6 +1482,13 @@ export class LivedExperienceStore {
     if (candidate.outcome === "not_noticed" && candidate.experienceText !== null) {
       throw new TypeError("not_noticed cannot carry experience text");
     }
+    const passedReason=candidate.passedReason??null;
+    if(passedReason!==null){
+      if(candidate.outcome!=="not_noticed")
+        throw new TypeError("noticed cannot carry a passed reason");
+      assertNonEmpty("attention.passedReason",passedReason);
+      if(passedReason.length>300)throw new TypeError("attention.passedReason exceeds 300 characters");
+    }
     const attention = {
       threadId:candidate.threadId,
       encounterRef:candidate.encounterRef,
@@ -1488,6 +1496,8 @@ export class LivedExperienceStore {
       occurredAt:candidate.occurredAt,
       outcome:candidate.outcome,
     };
+    // Preserve the historical digest contract: this private explanation
+    // is not part of the immutable attention identity or replay digest.
     const attentionDigest = digest(attention);
 
     try {
@@ -1508,21 +1518,22 @@ export class LivedExperienceStore {
         }
 
         const prior = this.#database.prepare(`
-          SELECT record_digest FROM thread_encounter_attention
+          SELECT record_digest,passed_reason FROM thread_encounter_attention
           WHERE thread_id=? AND encounter_ref=?
         `).get(candidate.threadId,candidate.encounterRef);
         if (prior !== undefined) {
-          if (prior.record_digest !== attentionDigest) throw new TypeError("encounter attention conflicts");
+          if (prior.record_digest !== attentionDigest||prior.passed_reason!==passedReason)
+            throw new TypeError("encounter attention conflicts");
           return this.getThreadEncounterAttention(candidate.threadId,candidate.encounterRef);
         }
 
         this.#database.prepare(`
           INSERT INTO thread_encounter_attention(
-            thread_id,encounter_ref,situation_id,occurred_at,outcome,record_digest
-          ) VALUES (?,?,?,?,?,?)
+            thread_id,encounter_ref,situation_id,occurred_at,outcome,passed_reason,record_digest
+          ) VALUES (?,?,?,?,?,?,?)
         `).run(
           candidate.threadId,candidate.encounterRef,candidate.situationId,
-          candidate.occurredAt,candidate.outcome,attentionDigest,
+          candidate.occurredAt,candidate.outcome,passedReason,attentionDigest,
         );
 
         let experience = null;
@@ -1547,7 +1558,7 @@ export class LivedExperienceStore {
           experience = experienceRecord;
         }
 
-        return { ...attention, experience };
+        return { ...attention,passedReason, experience };
       });
     } catch (error) { throw translateStorageError(error); }
   }
@@ -2090,7 +2101,7 @@ export class LivedExperienceStore {
         p.thread_id AS participant_thread_id,p.situation_id AS participant_situation_id,
         sit.record_json AS situation_json,
         a.situation_id AS attention_situation_id,a.occurred_at AS attention_at,
-        a.outcome AS attention_outcome,
+        a.outcome AS attention_outcome,a.passed_reason AS attention_passed_reason,
         x.experience_id,x.situation_id AS experience_situation_id,
         x.occurred_at AS experience_at,x.experience_text,
         f.place_ref AS followup_place,f.due_at AS followup_due,
@@ -2148,6 +2159,7 @@ export class LivedExperienceStore {
             threadId,encounterRef:row.encounter_id,
             situationId:row.attention_situation_id,occurredAt:row.attention_at,
             outcome:row.attention_outcome,
+            passedReason:row.attention_passed_reason,
             experience:row.experience_id===null?null:{
               experienceId:row.experience_id,threadId,
               encounterRef:row.encounter_id,situationId:row.experience_situation_id,

@@ -98,7 +98,7 @@ test("World environment author sees observable activity but not private purpose"
           }
           if(request.clientRequestId.startsWith("encounter-attention_")){
             return {output:{
-              outcome:"noticed",experienceText:"I hear the window rattle.",
+              outcome:"noticed",experienceText:"I hear the window rattle.",passedReason:null,
             },provenance:{provider:"fixture",modelId:"attention"}};
           }
           throw new Error("unexpected World cognition");
@@ -237,8 +237,9 @@ test("a scene has one sparse ambient consideration with independently perceiving
               throw new Error("temporary attention interruption");
             }
             return {output:observed===people[0]
-              ?{outcome:"noticed",experienceText:"I hear the rain begin at the window."}
-              :{outcome:"not_noticed",experienceText:null},
+              ?{outcome:"noticed",experienceText:"I hear the rain begin at the window.",passedReason:null}
+              :{outcome:"not_noticed",experienceText:null,
+                passedReason:"I was concentrating on my own task."},
               provenance:{provider:"fixture",modelId:"world-attention"}};
           }
           throw new Error("unexpected World cognition");

@@ -23,6 +23,7 @@ export function buildThreadWorldEvents({ livedNow=null, encounterStories=[] }={}
         encounterId:story.encounterId,
         text:beat.text??null,
         attention:story.attention?.outcome??null,
+        passedReason:story.attention?.passedReason??null,
       });
     }
   }

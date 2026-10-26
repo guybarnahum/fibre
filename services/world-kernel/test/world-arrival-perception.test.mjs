@@ -109,6 +109,7 @@ test("one enacted arrival permits distinct noticing and missed attention with re
     assert.equal(store.enqueueArrivalPerception(work).inserted,false,
       "arrival was scheduled twice");
     let calls=0,interrupt=true;
+    const attentionInputs=[];
     const process=createWorldArrivalPerception({
       experienceStore:store,livedNowStore,
       worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
@@ -116,6 +117,7 @@ test("one enacted arrival permits distinct noticing and missed attention with re
       memoryStore:{listCurrentMemories:()=>[]},
       modelAdapter:{async invoke({input}){
         calls++;
+        attentionInputs.push(structuredClone(input));
         assert.equal(input.encounterStory.occurredAt,AT,"World changed event time");
         assert.equal(input.encounterStory.story.beats[0].actorThreadId,ids[0],
           "actor was misattributed");
@@ -129,8 +131,9 @@ test("one enacted arrival permits distinct noticing and missed attention with re
           interrupt=false;throw new Error("model interrupted");
         }
         return {output:input.thread.threadId===ids[1]
-          ?{outcome:"noticed",experienceText:"I see the arrival."}
-          :{outcome:"not_noticed",experienceText:null},
+          ?{outcome:"noticed",experienceText:"I see the arrival.",passedReason:null}
+          :{outcome:"not_noticed",experienceText:null,
+            passedReason:"I stayed absorbed in the book before me."},
           provenance:{provider:"fixture",modelId:"attention"}};
       }},
       now:()=>AT,
@@ -158,6 +161,21 @@ test("one enacted arrival permits distinct noticing and missed attention with re
     assert.ok(noticed?.experience?.experienceId,"noticed event has no Experience");
     assert.equal(ignored?.outcome,"not_noticed","second witness was forced to notice");
     assert.equal(ignored?.experience,null,"missed event became an Experience");
+    assert.ok(ignored?.passedReason?.length>0,
+      "missed attention had no private explanation");
+    assert.equal(noticed?.passedReason,null,
+      "noticed attention invented a passing explanation");
+    assert.equal(story.story.beats.some(beat=>
+      beat.text.includes(ignored.passedReason)),false,
+      "private missed-attention reason entered objective World history");
+    const observerStories=store.inspectRecentEncounterStories(ids[2]);
+    assert.equal(observerStories[0]?.attention?.passedReason,ignored.passedReason,
+      "personal Observatory did not show the missed-attention reason");
+    assert.equal(store.inspectRecentEncounterStories(ids[1])[0]?.attention?.passedReason,
+      null,"another Thread's Observatory disclosed private missed attention");
+    assert.ok(attentionInputs.every(input=>
+      !JSON.stringify(input).includes(ignored.passedReason)),
+      "private passing reason entered someone else's cognition");
     assert.equal(store.getThreadEncounterAttention(ids[0],story.encounterId)?.outcome,
       "not_noticed","arriver was not given independent attention");
     assert.equal(calls,4,"replay rerolled admitted personal attention");
@@ -263,8 +281,9 @@ test("an arriver's own noticed company changes later social salience",async()=>{
         modelAdapter:{async invoke({input}){
           return {
             output:input.thread.threadId===ids[0]&&noticed
-              ?{outcome:"noticed",experienceText:"I became aware of a reader."}
-              :{outcome:"not_noticed",experienceText:null},
+              ?{outcome:"noticed",experienceText:"I became aware of a reader.",passedReason:null}
+              :{outcome:"not_noticed",experienceText:null,
+                passedReason:"I was focused on my own thoughts."},
             provenance:{provider:"fixture",modelId:"arrival-attention"},
           };
         }},
@@ -335,7 +354,8 @@ test("objective arrivals redact full and partial names from public portrait and 
       semanticStateStore:{listCurrentState:()=>[]},
       memoryStore:{listCurrentMemories:()=>[]},
       modelAdapter:{async invoke(){return{
-        output:{outcome:"not_noticed",experienceText:null},
+        output:{outcome:"not_noticed",experienceText:null,
+          passedReason:"I was occupied with something else."},
         provenance:{provider:"fixture",modelId:"attention"},
       };}},
       now:()=>AT,

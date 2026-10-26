@@ -88,34 +88,43 @@ An objective Encounter Story occurred within this Thread's current situation. De
 Co-presence is not enough. Each Story beat carries self=true only when its actor is you; distinguish your own arrival or presence from the actions of others. Consider the Thread's current activity, focus, needs, feelings, stable tendencies and the salience of the observable occurrence.
 Return not_noticed when it plausibly passed without entering lived attention.
 If noticed, write a concise first-person immediate experience: what this Thread actually noticed and the thought, feeling, association or bodily response it stirred now. This is not a journal entry and not a durable memory.
+If it did not enter attention, say briefly in passedReason why it passed by.
 Do not add objective facts absent from the Encounter Story. Do not claim lasting meaning, relationship change, memory retention or future behavior.`,
     input,
     responseSchema:{
       type:"object",
       additionalProperties:false,
-      required:["outcome","experienceText"],
+      required:["outcome","experienceText","passedReason"],
       properties:{
         outcome:{ type:"string", enum:["noticed","not_noticed"] },
         experienceText:{ anyOf:[{ type:"string", minLength:1, maxLength:1200 },{ type:"null" }] },
+        passedReason:{ anyOf:[{type:"string",minLength:1,maxLength:300},{type:"null"}] },
       },
     },
     clientRequestId:requestId(input),
   });
 
   assertPlainObject("attention output", invocation.output);
-  assertExactKeys("attention output", invocation.output, ["outcome","experienceText"]);
+  assertExactKeys("attention output", invocation.output, ["outcome","experienceText","passedReason"]);
   if (!["noticed","not_noticed"].includes(invocation.output.outcome)) {
     throw new TypeError("attention outcome is invalid");
   }
   if (invocation.output.outcome === "noticed") {
     assertNonEmpty("attention experienceText", invocation.output.experienceText);
-  } else if (invocation.output.experienceText !== null) {
-    throw new TypeError("not_noticed cannot carry experience text");
+    if(invocation.output.passedReason!==null)
+      throw new TypeError("noticed cannot carry a passed reason");
+  } else {
+    if(invocation.output.experienceText!==null)
+      throw new TypeError("not_noticed cannot carry experience text");
+    assertNonEmpty("attention passedReason",invocation.output.passedReason);
+    if(invocation.output.passedReason.length>300)
+      throw new TypeError("attention passedReason exceeds 300 characters");
   }
 
   return Object.freeze({
     outcome:invocation.output.outcome,
     experienceText:invocation.output.experienceText,
+    passedReason:invocation.output.passedReason,
     cognition:Object.freeze({
       provider:invocation.provenance.provider,
       modelId:invocation.provenance.modelId,
@@ -150,6 +159,7 @@ export async function admitEncounterAttention({
       occurredAt:encounterStory.occurredAt,
       outcome:appraisal.outcome,
       experienceText:appraisal.experienceText,
+      passedReason:appraisal.passedReason,
     });
   }
   if(attention.outcome==="noticed"){

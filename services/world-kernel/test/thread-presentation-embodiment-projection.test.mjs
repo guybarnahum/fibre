@@ -139,13 +139,16 @@ test("ordinary World perception uses public morphology without a stranger's ance
   const person=observablePerson({
     threadId:portraitRecord.threadId,situation,
     observerThreadId:"thr_other_observer",name:"Hidden Person",
+    sex:"male",birthDate:"1989-05-01",
     embodimentStore:{listCurrent:()=>[portraitRecord]},
     situatedLifeStore:{listCurrentLifeRelations:()=>[]},
     experienceStore:{hasMetEncounter:()=>false},
   });
   assert.equal(person.name,null,"unknown stranger's name leaked");
-  assert.match(person.observableDescription,/adult male/,
-    "legacy appearance lost its first readable clause");
+  assert.equal(person.observableDescription,"a man in his thirties",
+    "legacy portrait used rendering prose instead of known age and sex");
+  assert.equal(person.observableDescription[0],"a",
+    "legacy portrait introduced a mid-sentence capital");
   assert.doesNotMatch(person.observableDescription,/softly angular oval face/,
     "legacy public appearance leaked specification details");
   assert.doesNotMatch(person.observableDescription,/broad family appearance prior/,

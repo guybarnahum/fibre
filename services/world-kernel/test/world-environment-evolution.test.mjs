@@ -105,7 +105,8 @@ test("E7.2 makes a distant but perceivable World change and lets no_change stay 
         calls.push(structuredClone(request));
         if(request.clientRequestId.startsWith("encounter-attention_")){
           return {
-            output:{outcome:"not_noticed",experienceText:null},
+            output:{outcome:"not_noticed",experienceText:null,
+              passedReason:"I was absorbed in my surroundings."},
             provenance:{provider:"fixture",modelId:"attention"},
           };
         }
@@ -228,7 +229,8 @@ test("E7.2 retries a persisted perceptible change without rerolling cognition",a
       memoryStore:f.memoryStore,
       modelAdapter:{async invoke(request){
         if(request.clientRequestId.startsWith("encounter-attention_"))return {
-          output:{outcome:"not_noticed",experienceText:null},
+          output:{outcome:"not_noticed",experienceText:null,
+              passedReason:"I was absorbed in my surroundings."},
           provenance:{provider:"fixture",modelId:"attention"},
         };
         calls++;
@@ -316,6 +318,7 @@ test("E7.3 one observable World event yields distinct lives without coerced memo
               output:{
                 outcome:local?"noticed":"not_noticed",
                 experienceText:local?"I look up in surprise as the sky flashes.":null,
+                passedReason:local?null:"I was absorbed in what I was doing.",
               },
               provenance:{provider:"fixture",modelId:"e7-attention"},
             };
@@ -390,7 +393,7 @@ test("E7.3 resumes admitted attention after interrupted consolidation scheduling
           if(request.clientRequestId.startsWith("encounter-attention_")){
             attentionCalls++;
             return {
-              output:{outcome:"noticed",experienceText:"I look up as the sky flashes."},
+              output:{outcome:"noticed",experienceText:"I look up as the sky flashes.",passedReason:null},
               provenance:{provider:"fixture",modelId:"attention"},
             };
           }

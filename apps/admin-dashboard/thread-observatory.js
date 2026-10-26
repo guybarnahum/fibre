@@ -139,6 +139,7 @@ export function threadObservatoryDebugSnapshot({
           place:threadSituationPlace({location:event.location},livedNow),
         }:{
           encounterId:event.encounterId,text:event.text,attention:event.attention,
+          passedReason:event.passedReason??null,
         }),
       })),
     encounterEpisodes:episodes.slice(0,5).map((episode)=>({
@@ -1100,6 +1101,8 @@ function worldEventsSection({livedNow=null,encounterStories=[],encounterError=nu
         "Attention: "+(event.attention==="noticed"?"noticed"
           :event.attention==="not_noticed"?"not noticed"
             :"not established")+" · "+event.encounterId));
+      if(event.attention==="not_noticed"&&event.passedReason)
+        row.append(el("p","thread-empty-note","Passed by: "+event.passedReason));
     }
     list.append(row);
   }
@@ -1215,6 +1218,11 @@ function encounterEpisodeSection({
       if(experience.experienceText){
         experienceBlock.append(el("p",null,experience.experienceText));
       }
+    }
+    for(const story of episode.stories){
+      if(story.attention?.outcome==="not_noticed"&&story.attention.passedReason)
+        experienceBlock.append(el("p","thread-empty-note",
+          "Passed by: "+story.attention.passedReason));
     }
 
     const consequenceBlock=el("div","thread-encounter-causal-step");

@@ -411,7 +411,7 @@ function fixture({
         );
         return {
           output:{
-            outcome:"noticed",
+            outcome:"noticed",passedReason:null,
             experienceText:rude && call.input.thread.name === "Sela"
               ? "I stayed quiet, but my shoulders tightened when Mina spoke to Noor that way. I felt protective of Noor and wary of Mina."
               : "I noticed the nearby exchange without joining it and kept listening from where I was.",

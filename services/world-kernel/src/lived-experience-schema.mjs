@@ -234,6 +234,7 @@ export function createLivedExperienceTables(database) {
       situation_id TEXT NOT NULL,
       occurred_at TEXT NOT NULL,
       outcome TEXT NOT NULL CHECK (outcome IN ('noticed','not_noticed')),
+      passed_reason TEXT CHECK (passed_reason IS NULL OR length(passed_reason)<=300),
       record_digest TEXT NOT NULL CHECK (record_digest LIKE 'sha256:%'),
       PRIMARY KEY (thread_id, encounter_ref),
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
@@ -526,6 +527,13 @@ export function createLivedExperienceTables(database) {
         SELECT RAISE(ABORT, 'thread_journal_entries is append-only');
       END;
   `);
+  // Install-only additive migration: earlier immutable attention rows have no
+  // reason, and their original record digests remain unchanged.
+  if(!database.prepare("PRAGMA table_info(thread_encounter_attention)").all()
+    .some(column=>column.name==="passed_reason")){
+    database.exec(`ALTER TABLE thread_encounter_attention ADD COLUMN passed_reason TEXT
+      CHECK (passed_reason IS NULL OR length(passed_reason)<=300)`);
+  }
   // Keep the durable one-shot opportunity row as the witness owner.
   // Existing rows remain truthful "not captured"; no replay or backfill.
   for(const table of ["world_social_opportunities","world_observed_social_opportunities"]){

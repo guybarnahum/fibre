@@ -111,11 +111,13 @@ test("E6a World authors a bounded occurrence once and attention remains selectiv
                 output:{
                   outcome:"noticed",
                   experienceText:"I caught the bee hovering at the flower and stopped for a second. Something about its tiny concentration made the whole walk feel quieter.",
+                  passedReason:null,
                 },
                 provenance:{ provider:"fixture", modelId:"fixture-e1" },
               }
             : {
-                output:{ outcome:"not_noticed", experienceText:null },
+                output:{ outcome:"not_noticed", experienceText:null,
+                  passedReason:"I continued my walk without looking up." },
                 provenance:{ provider:"fixture", modelId:"fixture-e1" },
               };
         }
@@ -384,6 +386,7 @@ test("shared World occurrence belongs to one place and different observers notic
             output:{
               outcome:noticing?"noticed":"not_noticed",
               experienceText:noticing?"The first drops make me look up from my reading.":null,
+              passedReason:noticing?null:"I was focused on another matter.",
             },
             provenance:{provider:"fixture",modelId:"attention"},
           };
