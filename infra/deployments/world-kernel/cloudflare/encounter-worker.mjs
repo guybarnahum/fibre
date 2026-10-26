@@ -940,6 +940,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
 export default Object.freeze({
   ...baseWorker,
   async scheduled(_controller,env){
+    try{
     const world=env.WORLD_STATE.getByName("world");
     const headers={"x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN};
     const base="https://world.internal/internal/reconciliation/";
@@ -970,5 +971,12 @@ export default Object.freeze({
     }))return;
     const wake=await world.fetch(new Request(base+"wake",{method:"POST",headers}));
     if(!wake.ok)throw new Error("World continuity watchdog could not re-arm reconciliation");
+    }catch(error){
+      console.error(JSON.stringify({
+        event:"world-continuity-watchdog-failed",
+        message:String(error?.message??error).slice(0,240),
+      }));
+      throw error;
+    }
   },
 });

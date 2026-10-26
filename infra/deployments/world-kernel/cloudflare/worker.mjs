@@ -29,6 +29,7 @@ import { createWorldCloudflareRuntime } from "./runtime.mjs";
 import {installWorldSchemas} from "#services/world-kernel/src/world-schema-installation.mjs";
 import {openWorldStateDatabase} from "#services/world-kernel/src/world-state-storage.mjs";
 import {auditWorldIntegrityBatch} from "#services/world-kernel/src/world-integrity-audit.mjs";
+import {reviveStaleWorldAlarm} from "#services/world-kernel/src/world-reconciliation-process.mjs";
 
 const WORLD_SCOPE_ID = "world";
 const TOKEN_ENCODER = new TextEncoder();
@@ -453,6 +454,7 @@ export class FibreWorldDurableObject extends DurableObject {
     this.appearanceCoverage = null;
     this.threadMigrationSummary = null;
     this.schemaStatus = null;
+    this.lastStaleAlarmCheckAt=null;
     this.threadHealthProjectionStore = null;
     this.threadHealthProjection = null;
   }
@@ -1039,6 +1041,28 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetch(request) {
+    // A stale past-due DO alarm must recover even when the SQL quota has
+    // temporarily prevented reconciliation. This uses DO scheduling only.
+    const at=Date.now();
+    if(this.lastStaleAlarmCheckAt===null
+      ||at-this.lastStaleAlarmCheckAt>=60_000){
+      const previous=this.lastStaleAlarmCheckAt;
+      this.lastStaleAlarmCheckAt=at;
+      try{
+        const recovery=await reviveStaleWorldAlarm({
+          scheduler:this.ctx.storage,at,lastCheckedAt:previous,
+          running:this.runtime?.reconciliationProcess?.running===true,
+        });
+        if(recovery.revived)console.warn(JSON.stringify({
+          event:"world-stale-alarm-rearmed",staleAt:recovery.staleAt,
+        }));
+      }catch(error){
+        console.warn(JSON.stringify({
+          event:"world-stale-alarm-check-failed",
+          message:String(error?.message??error).slice(0,240),
+        }));
+      }
+    }
     const url = new URL(request.url);
     const installing=url.pathname==="/internal/world-schema/migrate"
       &&request.method==="POST";

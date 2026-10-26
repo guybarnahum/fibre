@@ -12,7 +12,7 @@ import {
   createWorldReconciliationProcess,
   createWorldReconciliationRuntime,
   worldReconciliationNeedsRetry,
-  worldAlarmNeedsRevival,
+  worldAlarmNeedsRevival,reviveStaleWorldAlarm,
 } from "../src/world-reconciliation-process.mjs";
 
 function createRuntimeFixture({
@@ -832,4 +832,22 @@ test("schema-ready World reconciliation does not repeat schema work on a cold ru
         "World reconciliation lost durable retry state");
     }finally{await runtime.stop();}
   }finally{rmSync(directory,{recursive:true,force:true});}
+});
+
+
+test("first request revives stale World alarm without SQL, next minute-bound request does not",async()=>{
+  const at=Date.parse("2026-10-26T14:00:00Z");
+  let scheduled=at-10*60_000,checks=0,wakes=0;
+  const scheduler={
+    async getAlarm(){checks++;return scheduled;},
+    async setAlarm(value){wakes++;scheduled=value;},
+  };
+  const first=await reviveStaleWorldAlarm({scheduler,at});
+  assert.equal(first.revived,true,"expired World alarm was left stranded");
+  const second=await reviveStaleWorldAlarm({
+    scheduler,at:at+20_000,lastCheckedAt:at,
+  });
+  assert.equal(second.checked,false,"second request repeated stale-alarm probe");
+  assert.equal(checks,1,"repeated requests inspected the same alarm");
+  assert.equal(wakes,1,"second request scheduled another wake");
 });
