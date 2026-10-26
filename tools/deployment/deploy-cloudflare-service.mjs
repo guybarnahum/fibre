@@ -188,12 +188,31 @@ export async function deployCloudflareService({
   const deploymentOutput=`${stdout}\n${stderr}`;
   // The World revision declines health checks until its schema stamp
   // matches; install explicitly before health acceptance for this service.
-  const preinstalledWorldSchema=serviceId==="world-kernel"&&acceptSchemaImpl===null
-    ?await createWranglerDeploymentClient({cwd:root}).migrateWorldOrFid({
-      serviceId,baseUrl:healthBaseUrlForDeployment({
-        serviceId,resolvedConfig:prepared.config,deploymentOutput,
-      }),expectedSha:prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA,
-    }):null;
+  let preinstalledWorldSchema=null;
+  if(serviceId==="world-kernel"&&acceptSchemaImpl===null){
+    const client=createWranglerDeploymentClient({cwd:root});
+    const baseUrl=healthBaseUrlForDeployment({
+      serviceId,resolvedConfig:prepared.config,deploymentOutput,
+    });
+    // Cloudflare can briefly serve the preceding DO revision after deploy.
+    // Retry installation acceptance only here, not in the living World.
+    for(let attempt=0;attempt<8;attempt++){
+      try{
+        preinstalledWorldSchema=await client.migrateWorldOrFid({
+          serviceId,baseUrl,expectedSha:prepared.config.vars.FIBRE_DEPLOYMENT_GIT_SHA,
+        });
+        break;
+      }catch(error){
+        if(attempt===7)throw new Error(
+          "World schema installation did not reach the deployed revision",
+          {cause:error},
+        );
+        const delayMs=Math.min(15_000,1_500*2**attempt);
+        print("STATE SCHEMA REVISION PENDING world-kernel; next check in "+delayMs/1_000+"s");
+        await new Promise(resolve=>setTimeout(resolve,delayMs));
+      }
+    }
+  }
   const serviceRevision=await acceptServiceRevisionImpl({
     prepared,deploymentOutput,
   });

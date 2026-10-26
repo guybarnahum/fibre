@@ -51,6 +51,7 @@ export function createLiveWorldPlaceTables(database) {
     CREATE TABLE IF NOT EXISTS live_world_source_places (
       source_world_ref TEXT NOT NULL,
       source_place_id TEXT NOT NULL,
+      ordinal INTEGER NOT NULL CHECK(ordinal>=0),
       record_json TEXT NOT NULL CHECK(json_valid(record_json)),
       PRIMARY KEY(source_world_ref,source_place_id)
     ) STRICT;
@@ -169,7 +170,7 @@ export function genesisWorldPlacesForThread(database,threadId){
   if(worldRef===null)return Object.freeze([]);
   if(worldSchemaReady(database))return Object.freeze(database.prepare(`
     SELECT record_json FROM live_world_source_places
-    WHERE source_world_ref=? ORDER BY source_place_id
+    WHERE source_world_ref=? ORDER BY ordinal
   `).all(worldRef).map(row=>parseRecord("admitted Genesis place",row.record_json)));
   return Object.freeze(worldSpecFor(database,worldRef)?.places??[]);
 }
@@ -188,10 +189,10 @@ export function materializeLiveWorldPlacesForWorld(database,sourceWorldRef,{
       recorded_at=excluded.recorded_at`).run(sourceWorldRef,timeZone,recordedAt);
   const admittedKinds=new Set(LIVE_WORLD_PLACE_POLICY.admittedPlaceKinds);
   const liveWorld=liveWorldRef(sourceWorldRef);
-  for(const place of world.places){
+  for(const [ordinal,place] of world.places.entries()){
     database.prepare(`INSERT OR IGNORE INTO live_world_source_places(
-      source_world_ref,source_place_id,record_json
-    ) VALUES(?,?,?)`).run(sourceWorldRef,place.placeId,canonicalJson(place));
+      source_world_ref,source_place_id,ordinal,record_json
+    ) VALUES(?,?,?,?)`).run(sourceWorldRef,place.placeId,ordinal,canonicalJson(place));
     const placeKind=kinds.get(place.placeId)??null;
     if(!admittedKinds.has(placeKind))continue;
     const record=Object.freeze({

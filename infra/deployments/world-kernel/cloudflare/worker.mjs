@@ -485,7 +485,12 @@ export class FibreWorldDurableObject extends DurableObject {
         ).get()?.installed_git_sha??null;
       }finally{database.close();}
     }catch{
-      // Missing or unavailable installed schema never causes runtime repair.
+      // A quota outage may temporarily prevent the stamp read. Fail closed,
+      // but do not cache a transient failure for this DO's entire lifetime.
+      return Object.freeze({
+        ready:false,installedGitSha:null,
+        expectedGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local",
+      });
     }
     const expectedGitSha=this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local";
     this.schemaStatus=Object.freeze({

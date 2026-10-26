@@ -99,8 +99,10 @@ export class ExpressionStore {
   constructor(storage) {
     this.#db = openWorldStateDatabase(storage, { storeName: "ExpressionStore" });
     try {
-      migrateDatabase(this.#db);
-      createExpressionTables(this.#db);
+      if(!storage.schemaReady){
+        migrateDatabase(this.#db);
+        createExpressionTables(this.#db);
+      }
     } catch (error) {
       this.#db.close();
       throw error;
