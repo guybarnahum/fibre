@@ -50,6 +50,9 @@ export function createWorldArrivalPerception({
           }):[];
           let encounterRef=null;
           if(witnesses.length>0){
+            const venueName=typeof place.physicalVenue.displayName==="string"
+              &&place.physicalVenue.displayName.trim()
+              ?place.physicalVenue.displayName.trim():null;
             const describe=situation=>{
               const identity=worldReader.getThread(situation.threadId,{
                 required:false,
@@ -65,7 +68,9 @@ export function createWorldArrivalPerception({
             const story={storyVersion:"encounter-story-v0.1",
               beats:[
                 {actorThreadId:arrival.threadId,kind:"action",
-                  text:`${describe(arrival)} arrives at the venue.`},
+                  text:venueName
+                    ?`${describe(arrival)} arrives at ${venueName}.`
+                    :`${describe(arrival)} arrives here.`},
                 ...witnesses.map(situation=>({
                   actorThreadId:situation.threadId,kind:"occurrence",
                   text:situation.outwardActivity
@@ -131,7 +136,7 @@ export function createWorldArrivalPerception({
                 );
                 const attention=await admitEncounterAttention({
                   thread:arrivingThread,situation:arrival,encounterStory:encounter,
-                  selfRole:"arriver",semanticStates:prior===null
+                  selfRole:"arriver",venueName,semanticStates:prior===null
                     ?semanticStateStore.listCurrentState(arrival.threadId):[],
                   memories:prior===null
                     ?memoryStore.listCurrentMemories(arrival.threadId,{

@@ -350,11 +350,12 @@ export function createSocialMeetingService({
       birthDate:currentLeft.thread.identity?.birthDate??null,
       sex:currentLeft.thread.identity?.sex??null,at,embodimentStore,
     }).observableDescription;
+    const described=description[0].toUpperCase()+description.slice(1);
     const story={storyVersion:"encounter-story-v0.1",beats:[{
       actorThreadId:currentLeft.thread.threadId,
       kind:gesture?"action":"utterance",
-      text:gesture?description[0].toUpperCase()+description.slice(1)+" "+initiation.expression
-        :description[0].toUpperCase()+description.slice(1)+' says: "'+initiation.expression+'"',
+      text:gesture?described+" "+initiation.expression[0].toLowerCase()+initiation.expression.slice(1)
+        :described+' says: "'+initiation.expression+'"',
       ...(initiation.disclosedName?{
         disclosesSpeakerName:true,disclosedName:initiation.disclosedName,
       }:{}),

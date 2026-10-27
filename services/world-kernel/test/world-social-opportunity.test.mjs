@@ -1797,7 +1797,8 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
     const freeStory=experience.listEncounterStories(ids[2],{limit:5})[0];
     assert.ok(freeStory,"witnessed arrival lost its Story");
     assert.equal(freeStory.story.beats.length,2,"arrival invented participants");
-    assert.match(freeStory.story.beats[0].text,/^A person arrives at the venue\.$/u);
+    assert.equal(freeStory.story.beats[0].text,
+      "A person arrives at "+freePlace.physicalVenue.displayName+".");
     assert.match(freeStory.story.beats[1].text,/^A person is reading\.$/u);
     assert.ok(freeStory.story.beats.every(beat=>beat.text.length<120
       &&!beat.text.includes("Currently:")
@@ -1815,7 +1816,8 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       assert.equal(other.text,freeStory.story.beats.find(beat=>
         beat.actorThreadId!==observer).text,role+" rewrote another person's beat");
     }
-    assert.match(freeStory.story.beats[0].text,/arrives at the venue/u,
+    assert.ok(freeStory.story.beats[0].text.includes(
+      "arrives at "+freePlace.physicalVenue.displayName),
       "personal attention rewrote objective World history");
     assert.equal(result.environmentEvolution.result.results[0].outcome,"recorded",
       "other venue's failed life suppressed real arrival perception");

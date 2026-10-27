@@ -41,7 +41,7 @@ The range of ordinary choices includes no outward act, a brief non-verbal acknow
 a greeting, a remark about the shared situation, or an invitation to converse.
 Neither manufacture nor suppress interest; this person's own life, state, history and the setting decide.
 For none, there is no expression or immediate personal Experience.
-For acknowledge, express a brief gesture as an observer would see it.
+For acknowledge, expression is what an observer sees you do right now: a short present-tense verb phrase without a subject, such as “nods briefly.” or “smiles and raises a hand.”. Not an intention or a condition.
 For greet and remark, supply the short words actually said.
 For invite_conversation, use a short spoken invitation clear enough to accept or decline.
 For greet, remark and invite_conversation, introducesSelf may be true only if

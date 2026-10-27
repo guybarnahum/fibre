@@ -34,6 +34,7 @@ export async function appraiseEncounterAttention({
   semanticStates = [],
   memories = [],
   selfRole=null,
+  venueName=null,
   modelAdapter,
 }) {
   assertPlainObject("attention Thread", thread);
@@ -64,7 +65,7 @@ export async function appraiseEncounterAttention({
           return {
             ...structuredClone(beat),self,
             ...(self&&selfRole==="arriver"&&beat.kind==="action"
-              ?{text:"You arrive at the venue."}
+              ?{text:venueName?`You arrive at ${venueName}.`:"You arrive here."}
               :self&&selfRole==="witness"&&beat.kind==="occurrence"
                 ?{text:situation.outwardActivity
                   ?`You are ${situation.outwardActivity} nearby.`:"You are nearby."}
@@ -144,13 +145,14 @@ export async function admitEncounterAttention({
   modelAdapter,
   onExperienceQueued=null,
   selfRole=null,
+  venueName=null,
 }){
   let attention=experienceStore.getThreadEncounterAttention(
     thread.threadId,encounterStory.encounterId,
   );
   if(attention===null){
     const appraisal=await appraiseEncounterAttention({
-      thread,situation,encounterStory,semanticStates,memories,modelAdapter,selfRole,
+      thread,situation,encounterStory,semanticStates,memories,modelAdapter,selfRole,venueName,
     });
     attention=experienceStore.recordThreadEncounterAttention({
       threadId:thread.threadId,

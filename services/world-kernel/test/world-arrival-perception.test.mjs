@@ -145,6 +145,15 @@ test("one enacted arrival permits distinct noticing and missed attention with re
     const stories=store.listEncounterStories(ids[1]);
     assert.equal(stories.length,1,"World duplicated its arrival Story");
     const story=stories[0];
+    const admittedVenue=livedNowStore.getWorldPlace(
+      ids[0],ctx.situations[0].location.placeRef,
+    ).physicalVenue.displayName;
+    assert.ok(story.story.beats[0].text.endsWith(" arrives at "+admittedVenue+"."),
+      "objective arrival did not name its admitted venue");
+    const arrivingInput=attentionInputs.find(input=>input.thread.threadId===ids[0]);
+    assert.equal(arrivingInput?.encounterStory.story.beats[0].text,
+      "You arrive at "+admittedVenue+".",
+      "arriver's own attention used a different venue");
     assert.deepEqual(story.threadPresence.map(x=>x.threadId).sort(),[...ids].sort(),
       "independently situated witnesses were lost");
     assert.deepEqual(story.visualization.visualizationSourceReferences,
@@ -364,8 +373,11 @@ test("objective arrivals redact full and partial names from public portrait and 
     assert.equal(result.failed,0,result.results[0]?.message??"arrival failed");
     const story=store.listEncounterStories(ids[0])[0];
     const recorded=story.story.beats.map(beat=>beat.text).join(" ");
-    assert.match(recorded,/arrives at the venue/,
-      "the arrival disappeared from the objective Story");
+    const venueName=livedNowStore.getWorldPlace(
+      ids[0],ctx.situations[0].location.placeRef,
+    ).physicalVenue.displayName;
+    assert.ok(recorded.includes("arrives at "+venueName+"."),
+      "the arrival disappeared from its admitted venue");
     assert.doesNotMatch(recorded,/freckle|short hair/i,
       "legacy portrait rendering prose became objective perception");
     assert.doesNotMatch(recorded,/\b(?:Mina|Rivera)\b/i,

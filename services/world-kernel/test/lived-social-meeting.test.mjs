@@ -801,7 +801,8 @@ test("a chosen small act becomes one World Story and an independent noticed oppo
     ["acknowledge","action"],["greet","utterance"],["remark","utterance"],
   ]){
     const f=fixture({boundedVenueDiscovery:true,withoutLifeRelations:true,
-      initiationFor:()=>act});
+      initiationFor:()=>act==="acknowledge"
+        ?{act,expression:"Nods briefly."}:act});
     const result=await f.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
     const attempt=attemptFor(result);
     assert.equal(attempt.outcome,"acted","social gesture was not enacted");
@@ -813,7 +814,10 @@ test("a chosen small act becomes one World Story and an independent noticed oppo
     const outward=attempt.encounterStory.story.beats[0].text;
     assert.doesNotMatch(outward,/Currently:/u,
       "a social gesture incorrectly narrated the speaker's activity");
-    if(act!=="acknowledge")assert.match(outward,/ says: "/u,
+    if(act==="acknowledge"){
+      assert.match(outward,/^A person nods briefly\.$/u,
+        "a chosen acknowledgment did not become a readable performed act");
+    }else assert.match(outward,/ says: "/u,
       "the recipient could not tell who actually spoke");
     assert.equal(f.socialInteractions.length,0,
       "a gesture became a consented conversation");
