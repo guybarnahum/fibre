@@ -22,6 +22,7 @@ import {
   resolveGenesisWorldSelection,
   selectDefaultBirthplace,
 } from "./genesis-selection.mjs";
+import {newbornLocationStatus} from "./birth-location-verification.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
@@ -163,6 +164,15 @@ async function inspectDevelopmentIfExists({ baseUrl, privateToken, requestId, ti
   return json(response, "Genesis development inspection");
 }
 
+async function inspectWorldObservatory({baseUrl,privateToken,threadId,timeoutMs}){
+  return json(await fetch(
+    `${baseUrl}/internal/threads/${encodeURIComponent(threadId)}/observatory?view=full`,{
+      headers:{"x-fibre-private-token":privateToken},
+      signal:AbortSignal.timeout(timeoutMs),
+    },
+  ),"World newborn observatory");
+}
+
 async function inspectWorld({ baseUrl, privateToken, plan, timeoutMs }) {
   return json(await fetch(
     `${baseUrl}/internal/genesis/${encodeURIComponent(plan.genesisId)}/threads/${encodeURIComponent(plan.threadId)}/inspection`,
@@ -190,7 +200,10 @@ async function poll(operation, ready, { timeoutMs, intervalMs = 2_000 }) {
     if (ready(latest)) return latest;
     await delay(intervalMs);
   }
-  throw new Error(`Thread birth convergence timed out; latest=${JSON.stringify(latest)}`);
+  const error=new Error("Thread birth convergence timed out");
+  error.code="THREAD_BIRTH_CONVERGENCE_TIMEOUT";
+  error.latest=latest;
+  throw error;
 }
 
 function assertGenesisReference({ body, plan, world, presentation }) {
@@ -430,6 +443,24 @@ async function main() {
   );
   const validated = assertGenesisReference({ body, plan, world, presentation });
   emit("birth_verified");
+  let location;
+  try{
+    location=await poll(async()=>{
+      const observation=await inspectWorldObservatory({
+        baseUrl:worldKernel,privateToken,threadId:plan.threadId,timeoutMs,
+      });
+      return newbornLocationStatus(observation.observatory);
+    },result=>result.state==="located",{timeoutMs});
+  }catch(error){
+    if(error?.code!=="THREAD_BIRTH_CONVERGENCE_TIMEOUT")throw error;
+    process.stdout.write(JSON.stringify({
+      event:"thread-birth-unlocated",threadId:plan.threadId,
+      state:error.latest?.state??"awaiting_first_life",
+    })+"\n");
+    const failure=new Error("Newborn has no located current life");
+    failure.code="THREAD_BIRTH_UNLOCATED";
+    throw failure;
+  }
 
   process.stdout.write(`${JSON.stringify({
     event: "thread-birth-complete",
@@ -448,6 +479,8 @@ async function main() {
     sex: validated.expectedSex,
     birthDate: validated.identity.birthDate,
     birthCity: validated.identity.birthCity,
+    locality:location.location.locality,
+    countryCode:location.location.countryCode,
     languages: validated.identity.languages,
     memoryRefCount: world.inspection.authoritativeThread.memoryRefCount,
     worldSpecId: body.worldSpec.worldSpecId,
