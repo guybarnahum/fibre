@@ -108,7 +108,10 @@ async function fetchJson(fetchImpl, url) {
 
 function requireDeployedRevision(payload,expectedSha,serviceId){
   if(expectedSha&&payload?.deploymentGitSha!==expectedSha){
-    throw new Error(`${serviceId} deployed revision not ready: ${String(payload?.deploymentGitSha)}; expected ${expectedSha}`);
+    const error=new Error(`${serviceId} deployed revision not ready: ${String(payload?.deploymentGitSha)}; expected ${expectedSha}`);
+    error.servingGitSha=payload?.deploymentGitSha;
+    error.expectedGitSha=expectedSha;
+    throw error;
   }
   return payload;
 }
@@ -283,8 +286,13 @@ export async function retryStateHealth({
       // minutes after the Worker deploy. Probe sparingly, never redeploy.
       const pause=Math.min(30_000,1_500*2**attempt);
       const elapsed=Math.floor((Date.now()-startedAt)/1_000);
-      log(JSON.stringify({progress:`STATE REVISION PENDING ${serviceId}: ${error.message} (attempt ${attempt+1}/${attempts}, ${elapsed}s); `+
-        (attempt===attempts-1?"no further retries":`next check in ${pause/1_000}s`)}));
+      const revisionMismatch=typeof error?.servingGitSha==="string"&&error.servingGitSha.length>=7
+        &&typeof error?.expectedGitSha==="string"&&error.expectedGitSha.length>=7;
+      const reason=String(error?.message??error);
+      const detail=revisionMismatch
+        ?`${serviceId} serving ${error.servingGitSha.slice(0,7)} · waiting for ${error.expectedGitSha.slice(0,7)}`
+        :`${serviceId} not healthy: ${reason.length>60?reason.slice(0,59)+"…":reason}`;
+      log(JSON.stringify({progress:`${detail} (attempt ${attempt+1}/${attempts}, ${elapsed}s)`}));
       if(attempt===attempts-1)break;
       await wait(pause);
     }

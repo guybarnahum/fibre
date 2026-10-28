@@ -68,9 +68,10 @@ function allSecrets() {
   ]);
 }
 
-test("deploy waits for the current World revision before accepting persistent state",async()=>{
+test("state health keeps non-revision diagnostics readable while retrying",async()=>{
   let checks=0;
   const logs=[];
+  const reason="health endpoint failed with HTTP 503: "+ "World loading ".repeat(7);
   const state=await retryStateHealth({
     serviceId:"world-kernel",
     baseUrl:"https://world.example",
@@ -80,7 +81,7 @@ test("deploy waits for the current World revision before accepting persistent st
     client:{
       async checkStateHealth({expectedSha}){
         checks++;
-        if(checks<3)throw new Error("deployed revision not ready: previous World");
+        if(checks<3)throw new Error(reason);
         return {ok:true,stateChecked:true,deploymentGitSha:expectedSha};
       },
     },
@@ -88,8 +89,43 @@ test("deploy waits for the current World revision before accepting persistent st
   assert.equal(checks,3,"deployment skipped Durable Object revision convergence");
   assert.equal(state.deploymentGitSha,"b".repeat(40));
   assert.equal(logs.length,2,"state retry diagnostics missing");
-  assert.ok(logs.every(line=>/STATE REVISION PENDING world-kernel: deployed revision not ready: previous World/u
-    .test(progressDetailFromLine(line)??"")),"state retry reason missing");
+  for(const line of logs){
+    const progress=progressDetailFromLine(line);
+    assert.match(progress,/^world-kernel not healthy: /u,"state failure reason missing");
+    const shortened=progress.slice("world-kernel not healthy: ".length).split(" (attempt ")[0];
+    assert.ok(shortened.length<=60&&shortened.endsWith("…"),"state failure was not shortened");
+    assert.ok(!progress.includes("STATE REVISION PENDING"),"progress duplicated its heading");
+  }
+});
+
+test("state revision progress shows short SHAs; final failure preserves full revisions",async()=>{
+  const serving="a".repeat(40),expected="b".repeat(40);
+  for(const serviceId of ["world-kernel","fibre-identity-authority","birth-center"]){
+    const log=[];
+    const client=createWranglerDeploymentClient({
+      fetchImpl:async()=>Response.json({
+        ok:true,service:serviceId,stateChecked:true,deploymentGitSha:serving,
+      }),
+    });
+    await assert.rejects(retryStateHealth({
+      client,serviceId,baseUrl:"https://state.example",expectedSha:expected,
+      attempts:2,wait:async()=>{},log:line=>log.push(line),
+    }),error=>{
+      assert.ok(error.message.includes(serving)&&error.message.includes(expected),
+        "final revision diagnostic lost full SHAs");
+      assert.equal(error.cause?.servingGitSha,serving);
+      assert.equal(error.cause?.expectedGitSha,expected);
+      return true;
+    });
+    assert.equal(log.length,2,"state revision retries missing");
+    for(const line of log){
+      const progress=progressDetailFromLine(line);
+      assert.ok(progress.startsWith(`${serviceId} serving aaaaaaa · waiting for bbbbbbb (attempt `),
+        "state revision progress lost short SHAs");
+      assert.ok(!progress.includes(serving)&&!progress.includes(expected),
+        "state revision progress leaked full SHAs");
+    }
+  }
 });
 
 test("cloud deployment accepts the Fibre service stack after shallow and durable state health", async () => {
