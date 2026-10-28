@@ -1,3 +1,4 @@
+import {urgeVariantsFromGenome} from "../../../core/src/inherited-urges.mjs";
 import {
   GENESIS_EVENT_STRUCTURE_POOL_V3,
   buildDeNovoSymbolicGenome,
@@ -248,6 +249,8 @@ export function normalizeGenesisDevelopmentRequest(candidate) {
     };
     if(originMaterial.selectionDigest!==`sha256:${sha256(JSON.stringify(selected))}`)
       throw new TypeError("Genesis origin library selection digest does not match selected loci");
+    if(originMaterial.kind==="urge_library")
+      urgeVariantsFromGenome({header:{originMaterial},loci:genomeValues.map(value=>({value}))});
   }
   if (!Array.isArray(candidate.participants) || candidate.participants.length === 0) {
     throw new TypeError("Genesis development request participants must be a non-empty array");

@@ -77,7 +77,8 @@ export function buildGenesisPassBInput({ threadId, bornAt, worldSpec, episodes, 
   if (!Array.isArray(windows) || windows.length !== episodes.length) throw new TypeError("replacement Pass-B windows must align with admitted history");
   const index = callOrdinal - 1;
   const horizon = GENESIS_LIFE_PASS_B_HORIZONS[index];
-  const formationMode = GENESIS_LIFE_PASS_B_FORMATION_MODES[index];
+  const modernUrges=genome?.header?.originMaterial?.kind==="urge_library";
+  const formationMode=modernUrges?"life_only":GENESIS_LIFE_PASS_B_FORMATION_MODES[index];
   const window = windows[horizon - 1];
   const priorTreatmentMemoryExposure = priorRememberedMemories.some((item) => item.formationMode === "life_plus_genome");
   const analysisStratum = formationMode === "life_plus_genome" ? "life_plus_genome" : priorTreatmentMemoryExposure ? "life_only_exposed" : "life_only_unexposed";
@@ -101,7 +102,9 @@ export function buildGenesisPassBInput({ threadId, bornAt, worldSpec, episodes, 
     genomeExposure: formationMode === "life_plus_genome" ? genomeExposure(genome) : null,
     policyWitness: {
       policyVersion: GENESIS_PASS_B_POLICY.version,
-      assignmentRef: `pr39-replacement-v2-pass-b:call:${String(callOrdinal).padStart(2, "0")}`,
+      assignmentRef:modernUrges
+        ?`genesis-urge-life-only-v2:call:${String(callOrdinal).padStart(2,"0")}`
+        :`pr39-replacement-v2-pass-b:call:${String(callOrdinal).padStart(2, "0")}`,
       genomeExposurePolicyRef: formationMode === "life_plus_genome" ? GENESIS_LIFE_GENOME_EXPOSURE_POLICY.policyVersion : null,
     },
   });

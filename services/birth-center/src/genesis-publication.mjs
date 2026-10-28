@@ -1,3 +1,4 @@
+import {urgeVariantsFromGenome} from "../../../core/src/inherited-urges.mjs";
 import { resolveLocalityGeography } from "#core/src/locality-geography.mjs";
 import {
   buildFibreCivilRegistration,
@@ -147,6 +148,7 @@ export function buildNeutralGenesisThreadSeed({
   worldSpec,
   bornAt,
   runtimeBaselines,
+  urgeProjection = null,
 }) {
   const identity = modernGenesisIdentity({ threadId, subjectIdentity, worldSpec, bornAt });
   const thread = {
@@ -154,7 +156,7 @@ export function buildNeutralGenesisThreadSeed({
     version: 1,
     status: "frozen",
     identity,
-    genome: { textualTraits: {}, runtimeBaselines: structuredClone(runtimeBaselines), ...(subjectIdentity.physicalGenome ? { physical:structuredClone(subjectIdentity.physicalGenome) } : {}) },
+    genome: { textualTraits: {}, runtimeBaselines: structuredClone(runtimeBaselines), ...(urgeProjection===null?{}:{urgeProjection:structuredClone(urgeProjection)}), ...(subjectIdentity.physicalGenome ? { physical:structuredClone(subjectIdentity.physicalGenome) } : {}) },
     currentState: {
       needs: [],
       feelings: [],
@@ -328,6 +330,7 @@ export function buildGenesisBirthBundle({ candidate, slotPlan, cognition, public
     worldSpec: slotPlan.worldSpec,
     bornAt: slotPlan.bornAt,
     runtimeBaselines:slotPlan.genome.runtimeBaselines,
+    urgeProjection:urgeVariantsFromGenome(slotPlan.genome),
   });
   const parentIds = (slotPlan.genome.header.sourceEligibility?.sourceOwners ?? []).map((owner) => owner.ownerId);
   const thread = attachGenesisCanonicalVisualIdentity(

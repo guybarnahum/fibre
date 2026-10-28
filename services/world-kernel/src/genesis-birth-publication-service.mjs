@@ -1,3 +1,4 @@
+import {urgeVariantsFromGenome} from "../../../core/src/inherited-urges.mjs";
 function assertAuthority(authority) {
   if (authority === null || typeof authority !== "object" || typeof authority.publishBirth !== "function") {
     throw new TypeError("Genesis birth publication authority must expose publishBirth(bundle)");
@@ -114,6 +115,18 @@ export function createGenesisBirthPublicationService({
       const symbolicGenomes = prerequisiteGenomes(bundle);
       if (symbolicGenomes.length > 0 && genomes === null) {
         throw new TypeError("Genesis birth publication cannot admit symbolicGenomes without a genome authority");
+      }
+      const birthUrgeGenome=symbolicGenomes.find(genome=>
+        genome.header?.owner?.kind==="thread"
+        &&genome.header.owner.ownerId===bundle.thread?.threadId
+        &&genome.header.originMaterial?.kind==="urge_library")??null;
+      const declaredProjection=bundle.thread?.genome?.urgeProjection??null;
+      if(birthUrgeGenome!==null){
+        const expected=urgeVariantsFromGenome(birthUrgeGenome);
+        if(!sameJson(expected,declaredProjection))
+          throw new TypeError("birth Body projection differs from admitted symbolic urge genome");
+      }else if(declaredProjection!==null){
+        throw new TypeError("birth Body projection has no authoritative v2 genome");
       }
       for (const genome of symbolicGenomes) {
         await runActivityStage(activity, {

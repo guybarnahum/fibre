@@ -23,7 +23,7 @@ import {
   selectDefaultBirthplace,
 } from "./genesis-selection.mjs";
 import {newbornLocationStatus} from "./birth-location-verification.mjs";
-import {selectSymbolicBirthLoci} from "./symbolic-locus-library.mjs";
+import {selectedUrgesForBirth} from "../../core/src/inherited-urges.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
@@ -59,7 +59,7 @@ function birthRequest({
   calibrationModel,
   canonicalPlace = null,
 }) {
-  const symbolicBirth=selectSymbolicBirthLoci(requestId);
+  const symbolicBirth=selectedUrgesForBirth(requestId);
   const composedIdentity = composeBirthSubjectIdentity({
     requestId,
     material:selection.material,

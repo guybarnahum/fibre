@@ -1,3 +1,4 @@
+import {normalizeOrganismPolicy} from "../../core/src/organism-policy.mjs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import { spawn } from "node:child_process";
@@ -235,6 +236,8 @@ export function createCloudflareResourcePlan(configs, { environment }) {
 export function resolveWranglerConfig(baseConfig, { environment, resourceState, runtimeConfig = {} }) {
   const env = normalizeCloudflareEnvironment(environment);
   const config = clone(baseConfig);
+  if(config.vars?.FIBRE_ORGANISM_POLICY!==undefined)
+    normalizeOrganismPolicy(config.vars.FIBRE_ORGANISM_POLICY);
   config.name = environmentResourceName(config.name, env);
 
   for (const bucket of config.r2_buckets ?? []) bucket.bucket_name = environmentResourceName(bucket.bucket_name, env);
@@ -263,6 +266,8 @@ export function resolveWranglerConfig(baseConfig, { environment, resourceState, 
   for (const route of config.routes ?? []) route.pattern = environmentDomain(route.pattern, env);
   config.vars ??= {};
   for (const [key, value] of Object.entries(runtimeConfig)) config.vars[key] = value;
+  if(config.vars?.FIBRE_ORGANISM_POLICY!==undefined)
+    normalizeOrganismPolicy(config.vars.FIBRE_ORGANISM_POLICY);
   if (config.vars?.VIEWER_ORIGIN && env === "staging") config.vars.VIEWER_ORIGIN = "https://staging.insidefibre.com";
   return config;
 }

@@ -60,6 +60,8 @@ function driveContext(drive) {
     family: drive.family,
     targetRef: drive.targetRef,
     orientation: drive.orientation,
+    ...(drive.inheritedDirection===undefined?{}:{feltDirection:drive.inheritedDirection}),
+    ...(drive.targetAvailability===undefined?{}:{targetAvailability:drive.targetAvailability}),
     pressure: drive.pressure,
     urgency: drive.urgency,
     progressError: drive.progressError,
@@ -75,7 +77,9 @@ export function projectInteroception(regulationFrame) {
   assertPlainObject("regulationFrame.intrinsicAffect", regulationFrame.intrinsicAffect);
 
   const drives = regulationFrame.drives
-    .filter((drive) => drive.pressure > 0 || drive.attained || drive.progressError !== 0 || drive.predictionError !== 0)
+    .filter((drive) => (drive.felt===undefined
+      ?drive.pressure > 0 || drive.attained || drive.progressError !== 0 || drive.predictionError !== 0
+      :drive.felt===true))
     .map(driveContext);
   const resonance = regulationFrame.intrinsicAffect.socialResonance ?? {
     activation: 0,
@@ -85,7 +89,9 @@ export function projectInteroception(regulationFrame) {
   };
   const evidenceRefs = new Set();
   for (const drive of regulationFrame.drives) {
-    if (drive.pressure > 0 || drive.attained || drive.progressError !== 0 || drive.predictionError !== 0) {
+    if ((drive.felt===undefined
+      ?drive.pressure > 0 || drive.attained || drive.progressError !== 0 || drive.predictionError !== 0
+      :drive.felt===true)) {
       for (const ref of drive.evidenceRefs ?? []) evidenceRefs.add(ref);
     }
   }

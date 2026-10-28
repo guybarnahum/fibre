@@ -15,7 +15,8 @@
   "triggers": { "crons": ["0 * * * *"] },
   "vars": {
     "FIBRE_DEPLOYMENT_ENV": "cloudflare",
-    "FIBRE_WORLD_RECONCILIATION_MS": "5000"
+    "FIBRE_WORLD_RECONCILIATION_MS": "5000",
+    "FIBRE_ORGANISM_POLICY": "{\"version\":\"1\",\"inheritedSpread\":1,\"plasticity\":0,\"plasticityHalfLifeDays\":30,\"enabledFamilies\":[\"social_contact\",\"exploration\",\"presence\"],\"characterFormation\":{\"enabled\":true,\"minSalientResponses\":2}}"
   },
   "secrets": {
     "required": [

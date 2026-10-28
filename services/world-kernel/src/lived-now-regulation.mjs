@@ -1,3 +1,4 @@
+import {DEFAULT_ORGANISM_POLICY,normalizeOrganismPolicy} from "../../../core/src/organism-policy.mjs";
 import { evaluateIntrinsicRegulation } from "../../../core/src/intrinsic-regulation.mjs";
 import { selectRegulationAttention } from "../../../core/src/regulation-attention.mjs";
 import {
@@ -10,6 +11,10 @@ import {
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 
+let organismPolicy=DEFAULT_ORGANISM_POLICY;
+export function configureWorldOrganismPolicy(value){
+  organismPolicy=normalizeOrganismPolicy(value);
+}
 const MIN_SUSTAINED_SAMENESS_MS = 20 * 60 * 1000;
 const MAX_CONTINUITY_WITNESSES = 64;
 
@@ -118,6 +123,8 @@ export function explorationRegulationForLivedContinuity({
       evidenceRefs:[previousSituation.situationId, currentSituation.situationId],
     },
     runtimeBaselines:thread.genome?.runtimeBaselines ?? {},
+    urgeProjection:thread.genome?.urgeProjection??null,
+    organismPolicy,
   });
 }
 
@@ -226,6 +233,8 @@ export function livedRegulationForLivedHistory({
       ...(contact===null?{}:{contact}),
     },
     runtimeBaselines:thread.genome?.runtimeBaselines??{},
+    urgeProjection:thread.genome?.urgeProjection??null,
+    organismPolicy,
   });
 }
 
@@ -260,6 +269,8 @@ function frameForSituation({ thread, situation, livedNowStore, experienceStore }
     },
     targets:[assessment.presenceTarget],
     runtimeBaselines:thread.genome?.runtimeBaselines ?? {},
+    urgeProjection:thread.genome?.urgeProjection??null,
+    organismPolicy,
   });
 }
 

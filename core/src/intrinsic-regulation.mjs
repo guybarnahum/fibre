@@ -1,3 +1,5 @@
+import {URGE_FAMILY_BY_NAME,SPECIES_STANDARD_ORIENTATION} from "./inherited-urges.mjs";
+import {normalizeOrganismPolicy,organismPolicyDigest,legacySensitivity} from "./organism-policy.mjs";
 const ORIENTATIONS = new Set(["approach", "avoid", "maintain"]);
 const TARGET_KINDS = new Set(["place", "entity", "mediated", "activity", "obligation"]);
 const PRESENCE_RELATIONS = new Set([
@@ -143,6 +145,70 @@ function normalizeExploration(value = {}) {
   };
 }
 
+
+function normalizeUrgeAvailability(value={}){
+  plainObject("perceptFrame.urgeAvailability",value);
+  for(const [family,orientations] of Object.entries(value)){
+    if(!URGE_FAMILY_BY_NAME.has(family))throw new TypeError("unknown urge availability family");
+    plainObject("urge availability family",orientations);
+    for(const [orientation,item] of Object.entries(orientations)){
+      if(!URGE_FAMILY_BY_NAME.get(family).orientations.includes(orientation)
+        ||!item||!["available","absent","unknown"].includes(item.state))
+        throw new TypeError("urge availability evidence is invalid");
+      normalizeRefs("urge availability evidenceRefs",item.evidenceRefs??[]);
+      if(item.state!=="unknown"&&(!item.evidenceRefs||item.evidenceRefs.length===0))
+        throw new TypeError("known availability needs evidence");
+    }
+  }
+  return value;
+}
+
+function normalizeUrgeTriggers(value=[]){
+  if(!Array.isArray(value))throw new TypeError("urge triggers must be an array");
+  return value.map(item=>{
+    const family=URGE_FAMILY_BY_NAME.get(item?.family);
+    if(family?.kind!=="triggered"||!family.orientations.includes(item.kind))
+      throw new TypeError("urge trigger family/kind invalid");
+    const pressure=unit("urge trigger pressure",item.pressure);
+    const evidenceRefs=normalizeRefs("urge trigger evidenceRefs",item.evidenceRefs);
+    if(evidenceRefs.length===0)throw new TypeError("urge trigger must cite admitted evidence");
+    return {family:item.family,kind:item.kind,pressure,evidenceRefs};
+  });
+}
+
+function feltUrges({drives,policy,urgeProjection,previousUrges=[],asOf}){
+  const projection=new Map((urgeProjection??[]).map(item=>[item.family,item]));
+  const elapsed=(at,since)=>Math.max(0,(Date.parse(at)-Date.parse(since))/1000);
+  return drives.map(item=>{
+    if(!URGE_FAMILY_BY_NAME.has(item.family))return item;
+    const family=URGE_FAMILY_BY_NAME.get(item.family);
+    const gene=projection.get(item.family)??null;
+    const inherited=gene!==null&&policy.inheritedSpread!==0;
+    const triggerKind=item.triggerKind??null;
+    const matched=inherited&&(family.kind==="directional"||gene.orientation===triggerKind);
+    const position=matched?gene.positions:null;
+    const gain=position===null?1:2**(position.gain*policy.inheritedSpread);
+    const threshold=Math.min(.85,Math.max(.10,.35-(position?.feltThreshold??0)*.15*policy.inheritedSpread));
+    const halfLife=3600*(2**((position?.persistence??0)*policy.inheritedSpread));
+    const previous=previousUrges.find(w=>w.family===item.family
+      &&(w.triggerKind??null)===triggerKind
+      &&w.targetRef===item.targetRef
+      &&w.asOf&&Date.parse(w.asOf)<=Date.parse(asOf)
+      &&w.partiallySatisfied===true
+      &&Number.isFinite(w.pressure)
+      &&Array.isArray(w.evidenceRefs)&&w.evidenceRefs.length>0)??null;
+    const residual=previous===null?0:previous.pressure*2**(-elapsed(asOf,previous.asOf)/halfLife);
+    const pressure=round(Math.max(item.pressure*gain,residual));
+    const direction=family.kind==="triggered"?(matched?gene.orientation:"all"):
+      inherited?gene.orientation:SPECIES_STANDARD_ORIENTATION[item.family];
+    return {...item,pressure,urgency:Math.max(item.urgency,pressure),
+      inheritedDirection:direction,
+      targetAvailability:family.kind==="directional"?"unknown":"available",
+      felt:pressure>=threshold,
+    };
+  });
+}
+
 function normalizeContact(value) {
   if (value === undefined) return null; // Unknown is not social deprivation.
   plainObject("perceptFrame.contact", value);
@@ -180,6 +246,8 @@ export function normalizePerceptFrame(value) {
     environment: normalizeEnvironment(value.environment ?? {}),
     exploration: normalizeExploration(value.exploration ?? {}),
     contact: normalizeContact(value.contact),
+    urgeAvailability:normalizeUrgeAvailability(value.urgeAvailability??{}),
+    urgeTriggers:normalizeUrgeTriggers(value.urgeTriggers??[]),
     social: social.map(normalizeSocialCue),
     evidenceRefs: normalizeRefs("perceptFrame.evidenceRefs", value.evidenceRefs),
   };
@@ -444,7 +512,10 @@ function socialResonance(percept, profile) {
   };
 }
 
-export function evaluateIntrinsicRegulation({ perceptFrame, targets = [], runtimeBaselines = {} }) {
+export function evaluateIntrinsicRegulation({
+  perceptFrame,targets=[],runtimeBaselines={},urgeProjection=null,
+  organismPolicy=null,previousUrges=[],
+}) {
   const percept = normalizePerceptFrame(perceptFrame);
   if (!Array.isArray(targets)) throw new TypeError("targets must be an array");
   const normalizedTargets = targets.map(normalizeTarget);
@@ -452,11 +523,55 @@ export function evaluateIntrinsicRegulation({ perceptFrame, targets = [], runtim
     throw new TypeError("targets must have unique targetId values");
   }
 
-  const profile = threadRegulatorProfile(runtimeBaselines);
-  const drives = [
+  const policy=organismPolicy===null?null:normalizeOrganismPolicy(organismPolicy);
+  const v2=Array.isArray(urgeProjection)&&urgeProjection.length>0;
+  const baselines=policy===null?runtimeBaselines:Object.fromEntries(
+    Object.entries(runtimeBaselines).map(([key,value])=>[
+      key,key.startsWith("regulator")
+        ?v2?1:legacySensitivity(value,policy.inheritedSpread)
+        :value,
+    ]),
+  );
+  const profile=threadRegulatorProfile(baselines);
+  const basal=[
     ...basalDrives(percept, profile),
     ...normalizedTargets.map((target) => presenceDrive(target, percept, profile)),
   ];
+  const triggered=policy===null?[]:percept.urgeTriggers.map(event=>drive({
+    family:event.family,targetRef:`self:urge:${event.family}:${event.kind}`,
+    orientation:"maintain",pressure:event.pressure,urgency:event.pressure,
+    evidenceRefs:event.evidenceRefs,
+  })).map((item,index)=>({...item,triggerKind:percept.urgeTriggers[index].kind}));
+  const rememberedTriggers=policy===null?[]:previousUrges
+    .filter(previous=>{
+      const family=URGE_FAMILY_BY_NAME.get(previous?.family);
+      return family?.kind==="triggered"
+        &&family.orientations.includes(previous.triggerKind)
+        &&previous.partiallySatisfied===true
+        &&Number.isFinite(previous.pressure)
+        &&previous.pressure>0
+        &&Array.isArray(previous.evidenceRefs)
+        &&previous.evidenceRefs.length>0
+        &&typeof previous.asOf==="string"
+        &&Number.isFinite(Date.parse(previous.asOf))
+        &&Date.parse(previous.asOf)<=Date.parse(percept.asOf)
+        &&!percept.urgeTriggers.some(event=>event.family===previous.family&&event.kind===previous.triggerKind);
+    }).map(previous=>({
+      ...drive({family:previous.family,targetRef:previous.targetRef,
+        orientation:"maintain",pressure:0,urgency:0,
+        evidenceRefs:previous.evidenceRefs}),
+      triggerKind:previous.triggerKind,
+    }));
+  const enabled=policy===null?basal:basal.concat(triggered,rememberedTriggers)
+    .filter(item=>policy.enabledFamilies.includes(item.family));
+  const drives=policy===null?enabled:feltUrges({
+    drives:enabled,policy,urgeProjection,previousUrges,asOf:percept.asOf,
+  }).map(item=>{
+    const family=URGE_FAMILY_BY_NAME.get(item.family);
+    if(family?.kind!=="directional")return item;
+    const availability=percept.urgeAvailability[item.family]?.[item.inheritedDirection];
+    return {...item,targetAvailability:availability?.state??"unknown"};
+  });
 
   const active = drives.filter((item) => item.pressure > 0);
   const maxPressure = active.reduce((maximum, item) => Math.max(maximum, item.pressure), 0);
@@ -473,6 +588,7 @@ export function evaluateIntrinsicRegulation({ perceptFrame, targets = [], runtim
   return {
     asOf: percept.asOf,
     species: profile.species,
+    ...(policy===null?{}:{organismPolicyVersion:policy.version,organismPolicyDigest:organismPolicyDigest(policy)}),
     drives,
     intrinsicAffect: {
       activation: round(Math.max(maxPressure, resonance.activation)),

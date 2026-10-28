@@ -1,3 +1,4 @@
+import { URGE_FAMILIES, URGE_LIBRARY_DIGEST, urgeVariantsFromGenome } from "../../../core/src/inherited-urges.mjs";
 import {
   assertExactKeys,
   assertFiniteNumber,
@@ -243,14 +244,24 @@ export function normalizeSymbolicGenomeOriginMaterial(candidate){
     "kind","libraryId","libraryVersion","libraryDigest",
     "selectionPolicy","variantIds","selectionDigest",
   ]);
-  if(candidate.kind!=="ordinal_library"||candidate.libraryId!=="fibre_symbolic_loci"
-    ||candidate.selectionPolicy!=="sha256_per_ordinal_v1")
+  const v2=candidate.kind==="urge_library";
+  if(v2){
+    if(candidate.libraryId!=="fibre_urge_loci"||candidate.libraryVersion!=="2"
+      ||candidate.selectionPolicy!=="sha256_per_family_v2"
+      ||candidate.libraryDigest!==URGE_LIBRARY_DIGEST)
+      throw new TypeError("v2 urge library provenance mismatch");
+  }else if(candidate.kind!=="ordinal_library"||candidate.libraryId!=="fibre_symbolic_loci"
+    ||candidate.selectionPolicy!=="sha256_per_ordinal_v1"){
     throw new TypeError("symbolic genome origin library identity is invalid");
+  }
   assertNonEmpty("symbolicGenome.originMaterial.libraryVersion",candidate.libraryVersion);
   assertDigest("symbolicGenome.originMaterial.libraryDigest",candidate.libraryDigest);
   assertDigest("symbolicGenome.originMaterial.selectionDigest",candidate.selectionDigest);
-  if(!Array.isArray(candidate.variantIds)||candidate.variantIds.length!==6
-    ||candidate.variantIds.some((id,index)=>!new RegExp(`^o${index+1}_v(?:0[1-9]|1[0-6])$`,"u").test(id)))
+  if(!Array.isArray(candidate.variantIds)
+    ||(v2?candidate.variantIds.length!==URGE_FAMILIES.length
+      ||candidate.variantIds.some((id,index)=>!URGE_FAMILIES[index].variants.some(variant=>variant.variantId===id))
+      :candidate.variantIds.length!==6
+      ||candidate.variantIds.some((id,index)=>!new RegExp(`^o${index+1}_v(?:0[1-9]|1[0-6])$`,"u").test(id))))
     throw new TypeError("symbolic genome origin must select one variant per ordinal");
   return structuredClone(candidate);
 }
@@ -389,6 +400,8 @@ export function symbolicGenomeDigest({ header, loci, runtimeBaselines, mutations
   const normalizedLoci = loci.map(normalizeSymbolicGenomeLocus).sort((a, b) => a.ordinal - b.ordinal);
   const normalizedMutations = mutations.map(normalizeSymbolicGenomeMutation).sort((a, b) => a.ordinal - b.ordinal);
   const normalizedRuntimeBaselines = normalizeSymbolicRuntimeBaselines(runtimeBaselines);
+  if(normalizedHeader.originMaterial?.kind==="urge_library")
+    urgeVariantsFromGenome({header:normalizedHeader,loci:normalizedLoci});
   return `sha256:${sha256(canonicalJson({
     header:normalizedHeader,
     loci:normalizedLoci,
@@ -533,6 +546,8 @@ export function buildRecombinedSymbolicGenome({
     }
     return normalized;
   });
+  if(normalizedSources.some(source=>source.header.originMaterial?.kind==="urge_library"))
+    throw new TypeError("family-keyed v2 urge recombination is deferred");
   const [sourceA, sourceB] = normalizedSources;
   if (sourceA.loci.length !== sourceB.loci.length) {
     throw new TypeError("symbolic crossover requires source genomes with equal locus counts");

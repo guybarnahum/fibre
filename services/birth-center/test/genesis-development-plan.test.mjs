@@ -1,3 +1,4 @@
+import {selectedUrgesForBirth} from "../../../core/src/inherited-urges.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -172,4 +173,33 @@ test("modern birth admits selected symbolic loci with provenance but no cognitio
   tampered.genomeValues[0]="An unrelated disposition";
   assert.throws(()=>buildGenesisDevelopmentPlan(tampered),/selection digest/,
     "origin provenance did not bind the selected loci");
+});
+
+test("v2 modern Genesis admits immutable urges without exposing DNA to either memory formation or history",()=>{
+  const requestId="v2-urge-birth-provenance-1";
+  const selected=selectedUrgesForBirth(requestId);
+  const base=developmentRequest();
+  const plan=buildGenesisDevelopmentPlan({
+    ...base,requestId,genomeValues:selected.values,
+    originMaterial:selected.originMaterial,
+  });
+  assert.equal(plan.genome.loci.length,13,"birth did not persist the full urge family set");
+  assert.deepEqual(plan.genome.header.originMaterial,selected.originMaterial);
+  const episodes=plan.windows.map((window,index)=>({
+    episodeId:`history-v2-${index+1}`,occurredAt:window.startAt,
+    ageAtEvent:window.minAge,placeRef:plan.worldSpec.places[0].placeId,
+    participantRefs:[],observableAction:"One ordinary lived event.",introducedParticipants:[],
+  }));
+  for(let callOrdinal=1;callOrdinal<=6;callOrdinal++){
+    const input=buildGenesisPassBInput({
+      threadId:plan.threadId,bornAt:plan.bornAt,worldSpec:plan.worldSpec,
+      episodes,windows:plan.windows,callOrdinal,priorRememberedMemories:[],
+      genome:plan.genome,
+    });
+    assert.equal(input.assignment.formationMode,"life_only",
+      "v2 childhood exposed raw inherited urge text");
+    assert.equal(input.genomeExposure,null);
+    assert.doesNotMatch(JSON.stringify(input),/fibre_urge_loci|originMaterial|variantIds/u);
+  }
+  assert.doesNotMatch(JSON.stringify(plan.envelopePlan),/originMaterial|variantIds/u);
 });

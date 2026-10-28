@@ -1,3 +1,5 @@
+import {configureWorldOrganismPolicy} from "#services/world-kernel/src/lived-now-regulation.mjs";
+import {DEFAULT_ORGANISM_POLICY} from "#core/src/organism-policy.mjs";
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { createGenesisPresentationDeliveryService } from "#services/thread-presentation/src/index.mjs";
 import { CivilRegistryStore } from "#services/world-kernel/src/civil-registry-store.mjs";
@@ -145,6 +147,7 @@ export function createWorldCloudflareRuntime({
     throw new TypeError("calibrationModelProvider must be a function or null");
   }
 
+  configureWorldOrganismPolicy(env?.FIBRE_ORGANISM_POLICY??DEFAULT_ORGANISM_POLICY);
   const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", env?.FIBRE_PRIVATE_TOKEN);
   const presentationBinding = serviceBinding(env, "THREAD_PRESENTATION");
   const assetGeneratorBinding = serviceBinding(env, "ASSET_GENERATOR");
