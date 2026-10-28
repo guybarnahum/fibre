@@ -448,7 +448,8 @@ test("a born Thread without grounded place blocks first life instead of inventin
       modelAdapter:{async invoke(){called=true;throw Error("ungrounded mind ran");}},
     });
     const process=createGenesisFirstLifeProcess({
-      workStore,livedNow,now:()=>"2026-08-22T00:02:00Z",
+      workStore,livedNow,livedNowStore,situatedLifeStore,
+      worldReader:worldStore,now:()=>"2026-08-22T00:02:00Z",
     });
     try{
       const result=await process.runOnce();
@@ -552,7 +553,8 @@ test("Birth earns one real first life, no invented dormant past, and a continuin
     assert.equal(firstLifeStore.nextDueAt(),new Date(bornAt).toISOString(),
       "an admitted birth lacks its durable first-life obligation");
     const process=createGenesisFirstLifeProcess({
-      workStore:firstLifeStore,livedNow:service,now:()=>targetAt,
+      workStore:firstLifeStore,livedNow:service,livedNowStore,situatedLifeStore,
+      worldReader:worldStore,now:()=>targetAt,
     });
     const established=await process.runOnce();
     assert.equal(established.results[0]?.outcome,"established",

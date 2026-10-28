@@ -742,6 +742,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const runtime=this.runtimeForRequest();
       const deployment=resolveServiceDeployment(DEPLOYMENT,"world-kernel");
       const livedNowStore=openLivedNowStore(runtime.worldStorage);
+      const situatedLifeStore=openSituatedLifeStore(runtime.worldStorage);
       const livedNow=createLivedNowService({
         resolveDestinationGeography:this.destinationGeographyResolver(),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
@@ -749,7 +750,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         identityStore:openIdentityStore(runtime.worldStorage),
         semanticStateStore:openSemanticStateStore(runtime.worldStorage),
         memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
-        situatedLifeStore:openSituatedLifeStore(runtime.worldStorage),
+        situatedLifeStore,
         modelAdapter:{
           invoke:async(request)=>{
             this.livedBoundaryModelAdapter??=selectReasoningIntegration(
@@ -766,6 +767,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       });
       this.firstLifeProcess=createGenesisFirstLifeProcess({
         workStore:openGenesisFirstLifeStore(runtime.worldStorage),livedNow,
+        livedNowStore,situatedLifeStore,worldReader:runtime.worldStore,
       });
       runtime.reconciliationProcess.setFirstLifeProcess(this.firstLifeProcess);
       runtime.reconciliationProcess.setLivedBoundaryProcess(this.livedBoundaryProcess);

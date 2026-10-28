@@ -483,6 +483,7 @@ export async function startWorldKernelFromEnvironment(
   const firstLifeStore=openGenesisFirstLifeStore(worldStorage);
   const firstLifeProcess=createGenesisFirstLifeProcess({
     workStore:firstLifeStore,livedNow:contactLivedNow,
+    livedNowStore,situatedLifeStore,worldReader:store,
   });
   let socialModelAdapter=null;
   const socialMeetingService=createSocialMeetingService({

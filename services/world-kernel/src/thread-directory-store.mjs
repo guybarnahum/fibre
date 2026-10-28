@@ -21,7 +21,7 @@ function parse(name, value) {
   catch (error) { throw new IntegrityError(`${name} is not valid JSON: ${error.message}`); }
 }
 
-function birthLocation(identity) {
+export function projectThreadBirthLocation(identity) {
   const place = identity?.birthPlace;
   const structured = place && typeof place === "object" && !Array.isArray(place)
     ? clean(place.country) && clean(place.city)
@@ -107,7 +107,7 @@ function registryEntry(row) {
     originOrientation: clean(identity.originOrientation),
     birthDate: clean(identity.birthDate),
     birthPlace: clean(identity.birthCity),
-    birthLocation:birthLocation(identity),
+    birthLocation:projectThreadBirthLocation(identity),
     culture: strings(identity.culture),
     languages: strings(identity.languages),
     raisedAs,
