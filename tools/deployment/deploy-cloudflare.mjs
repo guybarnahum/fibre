@@ -283,8 +283,8 @@ export async function retryStateHealth({
       // minutes after the Worker deploy. Probe sparingly, never redeploy.
       const pause=Math.min(30_000,1_500*2**attempt);
       const elapsed=Math.floor((Date.now()-startedAt)/1_000);
-      log(`STATE REVISION PENDING ${serviceId}: ${error.message} (attempt ${attempt+1}/${attempts}, ${elapsed}s); `+
-        (attempt===attempts-1?"no further retries":`next check in ${pause/1_000}s`));
+      log(JSON.stringify({progress:`STATE REVISION PENDING ${serviceId}: ${error.message} (attempt ${attempt+1}/${attempts}, ${elapsed}s); `+
+        (attempt===attempts-1?"no further retries":`next check in ${pause/1_000}s`)}));
       if(attempt===attempts-1)break;
       await wait(pause);
     }
@@ -307,15 +307,15 @@ export async function installWorldSchemaWithRetry({
       return installed;
     }catch(error){
       if(attempt===attempts-1)throw new Error(
-        "World schema installation did not reach the deployed revision",
+        `World schema installation did not reach the deployed revision: ${error.message}`,
         {cause:error},
       );
       const delayMs=Math.min(15_000,1_500*2**attempt);
       const revision=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim()
         ?error.deploymentGitSha.slice(0,7):"unknown";
       const elapsed=Math.floor((Date.now()-startedAt)/1_000);
-      log(`STATE SCHEMA REVISION PENDING world-kernel: Cloudflare still serving previous World revision ${revision} `+
-        `(attempt ${attempt+1}/${attempts}, ${elapsed}s); next check in ${delayMs/1_000}s`);
+      log(JSON.stringify({progress:`STATE SCHEMA REVISION PENDING world-kernel: Cloudflare still serving previous World revision ${revision} `+
+        `(attempt ${attempt+1}/${attempts}, ${elapsed}s); next check in ${delayMs/1_000}s`}));
       await wait(delayMs);
     }
   }

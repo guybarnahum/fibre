@@ -14,6 +14,7 @@ import {
   retryStateHealth,
 } from "./deploy-cloudflare.mjs";
 import { CLOUDFLARE_SERVICE_CONFIGS, parseJsonc } from "./cloudflare-operator.mjs";
+import { progressDetailFromLine } from "./run-with-progress.mjs";
 
 const sourceRoot = resolve(new URL("../..", import.meta.url).pathname);
 
@@ -69,12 +70,13 @@ function allSecrets() {
 
 test("deploy waits for the current World revision before accepting persistent state",async()=>{
   let checks=0;
+  const logs=[];
   const state=await retryStateHealth({
     serviceId:"world-kernel",
     baseUrl:"https://world.example",
     expectedSha:"b".repeat(40),
     wait:async()=>{},
-    log:()=>{},
+    log:line=>logs.push(line),
     client:{
       async checkStateHealth({expectedSha}){
         checks++;
@@ -85,6 +87,9 @@ test("deploy waits for the current World revision before accepting persistent st
   });
   assert.equal(checks,3,"deployment skipped Durable Object revision convergence");
   assert.equal(state.deploymentGitSha,"b".repeat(40));
+  assert.equal(logs.length,2,"state retry diagnostics missing");
+  assert.ok(logs.every(line=>/STATE REVISION PENDING world-kernel: deployed revision not ready: previous World/u
+    .test(progressDetailFromLine(line)??"")),"state retry reason missing");
 });
 
 test("cloud deployment accepts the Fibre service stack after shallow and durable state health", async () => {
@@ -389,6 +394,8 @@ test("unconfirmed World schema fails deployment before any state health",async()
     assert.match(error.message,/World schema installation did not reach the deployed revision/);
     assert.match(error.cause?.message??"",/previous World schema revision/,
       "final installation error lost its cause");
+    assert.match(error.message,/previous World schema revision/,
+      "final installation reason missing");
     return true;
   });
   assert.equal(gated.calls.filter(call=>call==="migrate:world-kernel").length,16,
@@ -432,6 +439,11 @@ test("World deployment waits through revision refusal without accepting stale in
   assert.equal(result.deploymentGitSha,target);
   assert.equal(result.rowsRead,50321);
   assert.equal(result.rowsWritten,17);
+  assert.equal(logs.length,3,"schema retry diagnostics missing");
+  assert.ok(logs.slice(0,-1).every(line=>/STATE SCHEMA REVISION PENDING world-kernel: Cloudflare still serving previous World revision aaaaaaa/u
+    .test(progressDetailFromLine(line)??"")),"schema retry reason missing");
+  assert.equal(progressDetailFromLine(logs.at(-1)),null,
+    "schema installation outcome became progress");
   assert.match(logs.at(-1),/STATE SCHEMA INSTALLED world-kernel after \d+s \(rows read 50321, written 17\)/u,
     "deployment hid the actual schema installation cost");
 });
