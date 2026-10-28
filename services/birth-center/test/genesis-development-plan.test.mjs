@@ -3,6 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { GENESIS_EVENT_STRUCTURE_POOL_V3 } from "../src/genesis-development-contracts.mjs";
+import {buildGenesisPassBInput} from "../src/genesis-memory-input.mjs";
+import {selectSymbolicBirthLoci} from "../../../tools/genesis/symbolic-locus-library.mjs";
+import {selectBirthChronology} from "../../../tools/genesis/birth-material.mjs";
 import {
   GENESIS_DEVELOPMENT_REQUEST_VERSION,
   buildGenesisDevelopmentPlan,
@@ -122,4 +125,51 @@ test("same request ID yields stable identities while changed origin material cha
   assert.equal(changed.genesisId, first.genesisId);
   assert.notEqual(changed.requestDigest, first.requestDigest);
   assert.notEqual(changed.genomeDigest, first.genomeDigest);
+});
+
+ 
+test("modern birth admits selected symbolic loci with provenance but no cognition leakage",()=>{
+  const requestId="genesis-modern-individual-104";
+  const requestedAt="2026-10-28T06:30:00.000Z";
+  const chronology=selectBirthChronology({requestId,requestedAt});
+  const selected=selectSymbolicBirthLoci(requestId);
+  const legacy=developmentRequest();
+  const request={
+    ...legacy,requestId,requestedAt,
+    worldSpec:{...legacy.worldSpec,timeFrame:{
+      startAt:chronology.bornAt,endAt:chronology.chronologyEndsAt,
+    }},
+    genomeValues:[...selected.values],originMaterial:selected.originMaterial,
+    ...chronology,
+  };
+  const plan=buildGenesisDevelopmentPlan(request);
+  assert.deepEqual(plan.genome.loci.map(l=>l.value),selected.values,
+    "development used fixed fixture dispositions instead of individual birth loci");
+  assert.deepEqual(plan.genome.header.originMaterial,selected.originMaterial,
+    "World admission lost inspectable origin provenance");
+  assert.deepEqual(buildGenesisDevelopmentPlan(structuredClone(request)).genomeDigest,
+    plan.genomeDigest,"resumed origin did not replay exactly");
+  const episodes=plan.windows.map((window,index)=>({
+    episodeId:`historical-episode-${index+1}`,
+    occurredAt:window.startAt,ageAtEvent:window.minAge,
+    placeRef:plan.worldSpec.places[0].placeId,
+    participantRefs:[],observableAction:"The subject took part in an ordinary school day.",
+    introducedParticipants:[],
+  }));
+  const memoryInput=buildGenesisPassBInput({
+    threadId:plan.threadId,bornAt:plan.bornAt,worldSpec:plan.worldSpec,
+    episodes,windows:plan.windows,callOrdinal:3,
+    priorRememberedMemories:[],genome:plan.genome,
+  });
+  assert.deepEqual(memoryInput.genomeExposure.loci.map(l=>l.value),selected.values,
+    "developmental memory cognition did not consume the individual dispositions");
+  assert.doesNotMatch(JSON.stringify(memoryInput),/originMaterial|libraryDigest|variantIds|selectionDigest/u,
+    "genome origin provenance leaked into cognition");
+  assert.doesNotMatch(JSON.stringify(plan.envelopePlan),/originMaterial|libraryDigest|selectionDigest/u,
+    "historical Pass A consumed origin provenance");
+
+  const tampered=structuredClone(request);
+  tampered.genomeValues[0]="An unrelated disposition";
+  assert.throws(()=>buildGenesisDevelopmentPlan(tampered),/selection digest/,
+    "origin provenance did not bind the selected loci");
 });

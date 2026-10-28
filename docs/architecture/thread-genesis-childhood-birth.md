@@ -78,6 +78,21 @@ This is not a demographic simulator or quota system. The locality is factual Wor
 
 A newly admitted modern Thread must carry a mappable canonical birthplace: the human-readable birthplace and a bounded geographic coordinate for that locality travel together through birth and publication. The coordinate is identity/geographic metadata, not current-location authority. Current physical presence belongs to CurrentSituation/LivedNow and may later be anywhere its lived World permits.
 
+### Individual birth chronology
+
+Ordinary modern Genesis selects a request-specific birthday in the UTC window
+`[requestedAt − 23 calendar years, requestedAt − 22 calendar years)`.
+The subject's developmental chronology ends on the 22nd UTC-calendar birthday,
+not after the durable request time. Cached place and family authoring can be
+reused, but the WorldSpec temporal bounds are **rebuilt for each birth** so the
+Birth Center and World share one coherent personal chronology.
+
+**Deferred: variable-age Genesis.** Everyone currently enters modern Fibre
+at age 22. A future explicitly versioned developmental-age policy will select
+the entry stage and reconstruct the historical windows and developmental
+contracts accordingly; the current fixed age is not a species constraint.
+Prior published Threads retain their original birth dates and histories.
+
 ## Sex as a pre-development birth fact
 
 Biological/embodied sex is a basic Thread/animal attribute. It is more fundamental than visual phenotype and is not a personality trait.

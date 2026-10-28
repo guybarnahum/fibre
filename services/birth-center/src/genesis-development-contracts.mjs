@@ -7,6 +7,7 @@ export {
   GENESIS_PASS_C_POLICY,
   autobiographicalMemoryId,
   buildDeNovoSymbolicGenome,
+  normalizeSymbolicGenomeOriginMaterial,
   buildHistoricalEnvelopePlan,
   buildRichLifePassAInput,
   buildScheduledReinterpretationPassCInput,

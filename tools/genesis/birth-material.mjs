@@ -71,3 +71,27 @@ export function freshBirthParticipants({ requestId, participants }) {
     return Object.freeze({participantId,factualRoles:Object.freeze([...(participant.factualRoles ?? [])]),relationshipFacts:Object.freeze([...(participant.relationshipFacts ?? [])])});
   }));
 }
+
+ 
+// Every ordinary new Genesis birth enters at age 22; variable-age Genesis is deferred.
+export function selectBirthChronology({requestId,requestedAt}={}){
+  if(typeof requestId!=="string"||!requestId.trim())throw new TypeError("Genesis chronology needs a requestId");
+  const requested=new Date(requestedAt);
+  if(!Number.isFinite(requested.getTime()))throw new TypeError("Genesis chronology needs requestedAt");
+  const lower=new Date(requested);
+  const upper=new Date(requested);
+  lower.setUTCFullYear(lower.getUTCFullYear()-23);
+  upper.setUTCFullYear(upper.getUTCFullYear()-22);
+  const span=upper.getTime()-lower.getTime();
+  const seed=createHash("sha256").update(`fibre-birth-date-v1:${requestId}`).digest("hex");
+  const offset=Number.parseInt(seed.slice(0,12),16)%span;
+  const bornAt=new Date(lower.getTime()+offset);
+  const chronologyEndsAt=new Date(bornAt);
+  chronologyEndsAt.setUTCFullYear(chronologyEndsAt.getUTCFullYear()+22);
+  if(chronologyEndsAt.getTime()>requested.getTime())
+    throw new TypeError("Genesis chronology exceeds requestedAt");
+  return Object.freeze({
+    bornAt:bornAt.toISOString(),
+    chronologyEndsAt:chronologyEndsAt.toISOString(),
+  });
+}

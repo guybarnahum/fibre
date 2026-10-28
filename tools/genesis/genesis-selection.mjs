@@ -350,23 +350,24 @@ export async function resolveGenesisWorldSelection({
   selector,
   heritage = null,
   forceNewWorld = false,
-  cohort,
+  bornAt,
+  chronologyEndsAt,
   repoRoot,
   requestId,
-  baseSlotOrdinal,
   modelId = process.env.FIBRE_GENESIS_WORLD_MODEL?.trim() || DEFAULT_WORLD_MODEL,
   now = () => new Date().toISOString(),
   authorWorld = defaultAuthorWorld,
   onProgress = null,
 } = {}) {
   if (selector === null) throw new TypeError("Genesis requires a birthplace selector");
+  nonEmpty("Genesis bornAt",bornAt);
+  nonEmpty("Genesis chronologyEndsAt",chronologyEndsAt);
 
   if (!forceNewWorld) {
     const cached = readCache(repoRoot, selector, heritage);
     if (cached) {
-      const built = buildAuthoredWorld({selector, heritage, authored:cached.authored, requestId, bornAt:cohort.entry.bornAt, chronologyEndsAt:cohort.entry.chronologyEndsAt, createdAt:cached.createdAt});
-      const slot = cohort.slots[baseSlotOrdinal - 1];
-      return Object.freeze({...cached, ...built, slotOrdinal:baseSlotOrdinal, genomePath:slot.genomePath});
+      const built = buildAuthoredWorld({selector, heritage, authored:cached.authored, requestId, bornAt, chronologyEndsAt, createdAt:cached.createdAt});
+      return Object.freeze({...cached, ...built});
     }
   }
 
@@ -377,8 +378,8 @@ export async function resolveGenesisWorldSelection({
     heritage,
     authored,
     requestId,
-    bornAt: cohort.entry.bornAt,
-    chronologyEndsAt: cohort.entry.chronologyEndsAt,
+    bornAt,
+    chronologyEndsAt,
     createdAt,
   });
   const path = cachePath(repoRoot, selector, heritage);
@@ -396,12 +397,9 @@ export async function resolveGenesisWorldSelection({
   };
   mkdirSync(dirname(path), { recursive:true });
   writeFileSync(path, `${JSON.stringify(record, null, 2)}\n`, "utf8");
-  const slot = cohort.slots[baseSlotOrdinal - 1];
   return Object.freeze({
     ...record,
     mode: "created",
     cachePath: path,
-    slotOrdinal: baseSlotOrdinal,
-    genomePath: slot.genomePath,
   });
 }

@@ -70,6 +70,39 @@ createdAt
 
 A symbolic locus expresses one reasonably independent tendency. It is origin material, not a permanent instruction.
 
+## Individual de-novo birth material (modern Genesis)
+
+Ordinary new Genesis births select six independently authored dispositions from
+`tools/genesis/symbolic-locus-library.mjs`. Its immutable library version 1
+contains **16 situational variants per ordinal**, balanced across contrasting
+non-pathologized temperamental poles:
+
+1. claims and evidence;
+2. learning and persistence;
+3. social entry and engagement;
+4. deciding and committing;
+5. response to error and correction;
+6. solitude, sociality and idle rhythm.
+
+Each variant is a concrete situation-to-tendency proposition, not a flattering
+personality template or a categorical control parameter. Selection is
+deterministic by `requestId` and ordinal; it never depends on sex, birthplace,
+ethnicity, family profile, culture, or a global uniqueness registry. Genomes
+can naturally share loci while having distinct six-locus combinations.
+
+New de-novo symbolic genome headers persist optional `originMaterial`
+(`libraryId`, `libraryVersion`, immutable library digest, variant IDs,
+selection policy and selection digest). The digest binds the exact six selected
+values to the original request. Historical genomes without this field keep
+their original canonical content and digest. Inheritance/mutation continue
+to operate on ordinal and actual natural-language locus meaning.
+
+The origin metadata is inspectable **only as provenance**. It is never fed
+to cognition. Genesis Pass A remains genome-blind; later Pass B exposes
+the six textual dispositions only in its scheduled genome-exposure treatment.
+The Thread's subsequent history and authored interpretation can reinforce,
+transform or contradict any inherited tendency.
+
 ## Runtime baselines: organismic DNA
 
 Primitive regulation is substantially more uniform across Threads than personality. The regulator families and broad dynamics are Fibre-species invariants; genetics only tunes them within bounded envelopes.

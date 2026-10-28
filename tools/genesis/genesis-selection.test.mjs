@@ -88,10 +88,10 @@ test("Genesis keys create and reuse a place plus heritage World", async (t) => {
   const created = await resolveGenesisWorldSelection({
     selector,
     heritage,
-    cohort,
+    bornAt:cohort.entry.bornAt,chronologyEndsAt:cohort.entry.chronologyEndsAt,
     repoRoot:root,
     requestId:"birth-jerusalem-1",
-    baseSlotOrdinal:1,
+    
     now:() => "2026-09-15T06:20:00Z",
     authorWorld:async ({ heritage: receivedHeritage }) => {
       authoredCalls += 1;
@@ -115,10 +115,10 @@ test("Genesis keys create and reuse a place plus heritage World", async (t) => {
   const reused = await resolveGenesisWorldSelection({
     selector,
     heritage,
-    cohort,
+    bornAt:cohort.entry.bornAt,chronologyEndsAt:cohort.entry.chronologyEndsAt,
     repoRoot:root,
     requestId:"birth-jerusalem-2",
-    baseSlotOrdinal:2,
+    
     authorWorld:async () => { throw new Error("cached World should have been reused"); },
   });
   assert.equal(reused.mode, "cached");
@@ -159,10 +159,10 @@ test("uncommon local physical ancestry remains valid when family origin makes it
     selector,
     heritage:null,
     forceNewWorld:true,
-    cohort,
+    bornAt:cohort.entry.bornAt,chronologyEndsAt:cohort.entry.chronologyEndsAt,
     repoRoot:root,
     requestId:"birth-tbilisi-mixed-origin",
-    baseSlotOrdinal:1,
+    
     now:() => "2026-09-18T20:10:00Z",
     authorWorld:async () => authored,
   });
@@ -209,10 +209,10 @@ test("automatic long-tail birth authors one World, reuses it, and leaves genome 
   const first = await resolveGenesisWorldSelection({
     selector,
     heritage:null,
-    cohort,
+    bornAt:cohort.entry.bornAt,chronologyEndsAt:cohort.entry.chronologyEndsAt,
     repoRoot:root,
     requestId:sampledRequestId,
-    baseSlotOrdinal:1,
+    
     authorWorld:async ({ selector: received }) => {
       authoredCalls += 1;
       assert.equal(received.key, selector.key, "sampled birthplace changed before World authoring");
@@ -223,10 +223,10 @@ test("automatic long-tail birth authors one World, reuses it, and leaves genome 
   const second = await resolveGenesisWorldSelection({
     selector:selectDefaultBirthplace(sampledRequestId),
     heritage:null,
-    cohort,
+    bornAt:cohort.entry.bornAt,chronologyEndsAt:cohort.entry.chronologyEndsAt,
     repoRoot:root,
     requestId:sampledRequestId,
-    baseSlotOrdinal:2,
+    
     authorWorld:async () => { throw new Error("automatic World should have been reused"); },
   });
 
@@ -234,8 +234,8 @@ test("automatic long-tail birth authors one World, reuses it, and leaves genome 
   assert.equal(second.mode, "cached", "second automatic birth did not reuse its World");
   assert.equal(first.material.birthCity, selector.birthCity, "sampled locality was lost");
   assert.equal(second.worldSpec.worldSpecId, first.worldSpec.worldSpecId, "reused World changed identity");
-  assert.equal(first.genomePath, cohort.slots[0].genomePath, "first birthplace selected the genome");
-  assert.equal(second.genomePath, cohort.slots[1].genomePath, "reused birthplace selected the genome");
+  assert.equal(first.genomePath,undefined);
+  assert.equal(second.genomePath,undefined);
   assert.equal(authoredCalls, 1, "automatic locality was authored more than once");
 });
 
@@ -251,10 +251,10 @@ test("cached place context samples distinct family histories per birth without r
     {id:"west-african-british",share:1,familyOriginContext:"A British family with West African grandparents and longstanding London family ties.",languages:["English"],raisedLanguages:["English"],nameOrder:"given_family",femaleGivenNames:Array.from({length:12},(_,i)=>"WAF"+i),maleGivenNames:Array.from({length:12},(_,i)=>"WAM"+i),familyNames:Array.from({length:12},(_,i)=>"WAL"+i),physicalAncestry:ancestry("West African British family","afr_west")},
   ]};
   let calls=0;
-  const first=await resolveGenesisWorldSelection({selector,cohort,repoRoot:root,requestId:"family-distribution-0",baseSlotOrdinal:1,authorWorld:async()=>{calls+=1;return authored;}});
+  const first=await resolveGenesisWorldSelection({selector,bornAt:cohort.entry.bornAt,chronologyEndsAt:cohort.entry.chronologyEndsAt,repoRoot:root,requestId:"family-distribution-0",authorWorld:async()=>{calls+=1;return authored;}});
   let second=null;
   for(let i=1;i<100;i+=1){
-    const candidate=await resolveGenesisWorldSelection({selector,cohort,repoRoot:root,requestId:`family-distribution-${i}`,baseSlotOrdinal:1,authorWorld:async()=>{throw Error("cached population context must be reused");}});
+    const candidate=await resolveGenesisWorldSelection({selector,bornAt:cohort.entry.bornAt,chronologyEndsAt:cohort.entry.chronologyEndsAt,repoRoot:root,requestId:`family-distribution-${i}`,authorWorld:async()=>{throw Error("cached population context must be reused");}});
     if(candidate.material.familyProfileId!==first.material.familyProfileId){second=candidate;break;}
   }
   assert.ok(second,"population context must allow more than one family history");
@@ -278,12 +278,12 @@ test("authored World rejects demographic language inventories for one subject", 
     () => resolveGenesisWorldSelection({
       selector:normalizeGenesisWorldSelector("Israel/Jerusalem"),
       heritage:normalizeHeritage("Russian Jewish"),
-      cohort,
+      bornAt:cohort.entry.bornAt,chronologyEndsAt:cohort.entry.chronologyEndsAt,
       materialFixture,
       fixture,
       repoRoot:root,
       requestId:"birth-language-inventory",
-      baseSlotOrdinal:1,
+      
       now:() => "2026-09-18T19:00:00Z",
       authorWorld:async () => ({
         ...authoredJerusalem,

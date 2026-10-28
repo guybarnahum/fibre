@@ -236,6 +236,25 @@ function normalizeRecombinationWitness(candidate) {
   return structuredClone({ ...candidate, policy });
 }
 
+
+export function normalizeSymbolicGenomeOriginMaterial(candidate){
+  assertPlainObject("symbolicGenome.originMaterial",candidate);
+  assertExactKeys("symbolicGenome.originMaterial",candidate,[
+    "kind","libraryId","libraryVersion","libraryDigest",
+    "selectionPolicy","variantIds","selectionDigest",
+  ]);
+  if(candidate.kind!=="ordinal_library"||candidate.libraryId!=="fibre_symbolic_loci"
+    ||candidate.selectionPolicy!=="sha256_per_ordinal_v1")
+    throw new TypeError("symbolic genome origin library identity is invalid");
+  assertNonEmpty("symbolicGenome.originMaterial.libraryVersion",candidate.libraryVersion);
+  assertDigest("symbolicGenome.originMaterial.libraryDigest",candidate.libraryDigest);
+  assertDigest("symbolicGenome.originMaterial.selectionDigest",candidate.selectionDigest);
+  if(!Array.isArray(candidate.variantIds)||candidate.variantIds.length!==6
+    ||candidate.variantIds.some((id,index)=>!new RegExp(`^o${index+1}_v(?:0[1-9]|1[0-6])$`,"u").test(id)))
+    throw new TypeError("symbolic genome origin must select one variant per ordinal");
+  return structuredClone(candidate);
+}
+
 export function normalizeSymbolicGenomeHeader(candidate) {
   assertPlainObject("symbolicGenome", candidate);
   assertExactKeys("symbolicGenome", candidate, [
@@ -247,6 +266,7 @@ export function normalizeSymbolicGenomeHeader(candidate) {
     "sourceEligibility",
     "recombinationWitness",
     "createdAt",
+    "originMaterial",
   ]);
   assertId("symbolicGenome.genomeId", candidate.genomeId);
   const owner = normalizeSymbolicGenomeOwner(candidate.owner);
@@ -261,6 +281,10 @@ export function normalizeSymbolicGenomeHeader(candidate) {
   );
   const sourceEligibility = normalizeSourceEligibility(candidate.sourceEligibility);
   const recombinationWitness = normalizeRecombinationWitness(candidate.recombinationWitness);
+  const originMaterial=Object.hasOwn(candidate,"originMaterial")
+    ?normalizeSymbolicGenomeOriginMaterial(candidate.originMaterial):undefined;
+  if(originMaterial!==undefined&&candidate.originKind!=="de_novo")
+    throw new TypeError("only de_novo genomes can carry origin library provenance");
   assertIsoTimestamp("symbolicGenome.createdAt", candidate.createdAt);
   const expectedId = symbolicGenomeId({ owner, genesisId: candidate.genesisId });
   if (candidate.genomeId !== expectedId) throw new TypeError("symbolicGenome.genomeId is not stable for owner+genesisId");
@@ -270,7 +294,8 @@ export function normalizeSymbolicGenomeHeader(candidate) {
   if (candidate.originKind === "recombined" && (sourceEligibility === null || recombinationWitness === null)) {
     throw new TypeError("recombined genome requires source eligibility and recombination witnesses");
   }
-  return structuredClone({ ...candidate, owner, inheritancePolicy, sourceEligibility, recombinationWitness });
+  return structuredClone({ ...candidate, owner, inheritancePolicy, sourceEligibility, recombinationWitness,
+    ...(originMaterial===undefined?{}:{originMaterial}) });
 }
 
 function normalizeLocusProvenance(candidate) {
@@ -380,7 +405,7 @@ function assertContiguousLoci(loci) {
   }
 }
 
-function buildDeNovoForOwner({ owner, genesisId, values, createdAt }) {
+function buildDeNovoForOwner({ owner, genesisId, values, createdAt, originMaterial = null }) {
   if (!Array.isArray(values) || values.length < 2) throw new TypeError("de_novo genome values must contain at least two loci");
   const normalizedOwner = normalizeSymbolicGenomeOwner(owner);
   const genomeId = symbolicGenomeId({ owner: normalizedOwner, genesisId });
@@ -392,6 +417,7 @@ function buildDeNovoForOwner({ owner, genesisId, values, createdAt }) {
     inheritancePolicy: policyIdentity(SYMBOLIC_GENOME_POLICY),
     sourceEligibility: null,
     recombinationWitness: null,
+    ...(originMaterial===null?{}:{originMaterial}),
     createdAt,
   });
   const loci = values.map((value, index) => normalizeSymbolicGenomeLocus({
@@ -412,12 +438,13 @@ function buildDeNovoForOwner({ owner, genesisId, values, createdAt }) {
   };
 }
 
-export function buildDeNovoSymbolicGenome({ threadId, genesisId, values, createdAt }) {
+export function buildDeNovoSymbolicGenome({ threadId, genesisId, values, createdAt, originMaterial = null }) {
   return buildDeNovoForOwner({
     owner: { kind: "thread", ownerId: threadId },
     genesisId,
     values,
     createdAt,
+    originMaterial,
   });
 }
 

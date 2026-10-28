@@ -14,7 +14,7 @@ import {
 import {
   composeBirthSubjectIdentity,
   freshBirthParticipants,
-  selectBirthSlot,
+  selectBirthChronology,
 } from "./birth-material.mjs";
 import {
   normalizeGenesisWorldSelector,
@@ -23,6 +23,7 @@ import {
   selectDefaultBirthplace,
 } from "./genesis-selection.mjs";
 import {newbornLocationStatus} from "./birth-location-verification.mjs";
+import {selectSymbolicBirthLoci} from "./symbolic-locus-library.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const DEFAULT_TIMEOUT_MS = 900_000;
@@ -30,10 +31,6 @@ const DEFAULT_TIMEOUT_MS = 900_000;
 function required(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
   return value.trim();
-}
-
-function fixture(path) {
-  return JSON.parse(readFileSync(new URL(`../../${path}`, import.meta.url), "utf8"));
 }
 
 function deployment(repoRoot, environment) {
@@ -57,13 +54,12 @@ function serviceBase(record, serviceId) {
 function birthRequest({
   requestId,
   requestedAt,
-  cohort,
   selection,
   sexSelection,
   calibrationModel,
   canonicalPlace = null,
 }) {
-  const genome = fixture(selection.genomePath);
+  const symbolicBirth=selectSymbolicBirthLoci(requestId);
   const composedIdentity = composeBirthSubjectIdentity({
     requestId,
     material:selection.material,
@@ -87,11 +83,12 @@ function birthRequest({
     requestedAt,
     worldSpec: selection.worldSpec,
     subjectIdentity,
-    genomeValues: genome.loci.map((locus) => locus.value),
+    genomeValues:symbolicBirth.values,
+    originMaterial:symbolicBirth.originMaterial,
     participants: freshBirthParticipants({ requestId, participants: selection.participants }),
     placeAffordances: selection.placeAffordances,
-    bornAt: cohort.entry.bornAt,
-    chronologyEndsAt: cohort.entry.chronologyEndsAt,
+    bornAt:selection.worldSpec.timeFrame.startAt,
+    chronologyEndsAt:selection.worldSpec.timeFrame.endAt,
     timeZone: selection.timeZone,
   });
 }
@@ -304,19 +301,12 @@ async function main() {
   const targetEnvironment=remote.environment;
 
   const privateToken = required("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
-  const rawExplicitSlot = process.env.FIBRE_GENESIS_E2E_SLOT?.trim() || null;
-  const explicitSlot = rawExplicitSlot === null ? null : Number.parseInt(rawExplicitSlot, 10);
-  if (rawExplicitSlot !== null && (!Number.isSafeInteger(explicitSlot) || explicitSlot < 1)) {
-    throw new TypeError("FIBRE_GENESIS_E2E_SLOT must be a positive integer");
-  }
-
   const deployed = deployment(REPO_ROOT,targetEnvironment);
   const timeoutMs = Number.parseInt(process.env.FIBRE_GENESIS_E2E_CONVERGENCE_WAIT_MS ?? String(DEFAULT_TIMEOUT_MS), 10);
   const birthCenter = serviceBase(deployed, "birth-center");
   const worldKernel = serviceBase(deployed, "world-kernel");
   const threadPresentation = serviceBase(deployed, "thread-presentation");
   const viewerOrigin = required(`${targetEnvironment} viewer origin`, deployed.externalViewerOrigin);
-  const cohort = fixture("fixtures/genesis/pr39/development-cohort-v1.json");
   emit("read_appearance_calibration");
   const calibrationModel=await readAppearanceCalibrationModel({
     baseUrl:worldKernel,
@@ -337,11 +327,6 @@ async function main() {
     throw new Error(`existing Genesis request ${requestId} was created at ${persistedRequestedAt}; do not override FIBRE_GENESIS_REQUESTED_AT when resuming`);
   }
   let requestedAt = explicitRequestedAt ?? persistedRequestedAt ?? new Date().toISOString();
-  const baseSlotOrdinal = selectBirthSlot({
-    requestId,
-    slotCount: cohort.slots.length,
-    explicitSlot,
-  });
   emit("resolve_birthplace");
   const canonicalPlace = options.world === null
     ? null
@@ -364,6 +349,7 @@ async function main() {
     location,sex:options.sex,action:"start",timeoutMs,
   });
   requestedAt=preparation.requestedAt;
+  const chronology=selectBirthChronology({requestId,requestedAt});
   if(persistedRequestedAt!==null&&persistedRequestedAt!==requestedAt){
     throw new Error("Birth Center preparation time differs from durable Genesis development");
   }
@@ -374,10 +360,9 @@ async function main() {
       selector,
       heritage: options.heritage,
       forceNewWorld: options.forceNewWorld,
-      cohort,
+      ...chronology,
       repoRoot: REPO_ROOT,
       requestId,
-      baseSlotOrdinal,
       onProgress:event=>{
         if(event.type==="model_attempt"||event.type==="operational_failure"){
           progress({model:event.type,attempt:`${event.attempt}/${event.maximumAttempts}`,
@@ -395,7 +380,6 @@ async function main() {
   const body = birthRequest({
     requestId,
     requestedAt,
-    cohort,
     selection,
     sexSelection: options.sex,
     calibrationModel,
@@ -411,7 +395,7 @@ async function main() {
     requestMode:existing===null?"new":"resume",
     place:selection.selector?.display??"sampled",
     worldMode:selection.mode,worldSpecId:body.worldSpec.worldSpecId,
-    genomeSlot:selection.slotOrdinal,worldSlot:selection.worldSlotOrdinal??"none",
+    selectionDigest:body.originMaterial.selectionDigest.slice(0,19),
     genesisId:plan.genesisId,
   });
   emit("submit_development",{genesisId:plan.genesisId});
@@ -465,8 +449,7 @@ async function main() {
     placeSelection: selection.selector?.display ?? null,
     heritageSelection: selection.heritage?.display ?? null,
     worldMode: selection.mode,
-    genomeSlot: selection.slotOrdinal,
-    worldSlot: selection.worldSlotOrdinal ?? null,
+    selectionDigest:body.originMaterial.selectionDigest.slice(0,19),
     genesisId: plan.genesisId,
     threadId: plan.threadId,
     fibreIdentityNumber: birth.fibreIdentityNumber,

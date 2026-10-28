@@ -1,6 +1,7 @@
 import {
   GENESIS_EVENT_STRUCTURE_POOL_V3,
   buildDeNovoSymbolicGenome,
+  normalizeSymbolicGenomeOriginMaterial,
   buildHistoricalEnvelopePlan,
   canonicalJson,
   normalizeGenesisWorldSpec,
@@ -198,7 +199,11 @@ function assertYoungAdultChronology(bornAt, chronologyEndsAt) {
 
 export function normalizeGenesisDevelopmentRequest(candidate) {
   plain("Genesis development request", candidate);
-  const { subjectIdentity: rawSubjectIdentity, ...legacyRequest } = candidate;
+  const {
+    subjectIdentity:rawSubjectIdentity,
+    originMaterial:rawOriginMaterial,
+    ...legacyRequest
+  } = candidate;
   exactKeys("Genesis development request", legacyRequest, [
     "requestVersion",
     "requestId",
@@ -231,6 +236,19 @@ export function normalizeGenesisDevelopmentRequest(candidate) {
   }
   const subjectIdentity = rawSubjectIdentity === undefined ? null : normalizeSubjectIdentity(rawSubjectIdentity);
   const genomeValues = stringArray("Genesis development request genomeValues", candidate.genomeValues, { minimum: 2 });
+  const originMaterial=rawOriginMaterial===undefined
+    ?null:normalizeSymbolicGenomeOriginMaterial(rawOriginMaterial);
+  if(originMaterial!==null){
+    const selected={
+      requestId,libraryId:originMaterial.libraryId,
+      libraryVersion:originMaterial.libraryVersion,
+      libraryDigest:originMaterial.libraryDigest,
+      variantIds:originMaterial.variantIds,
+      values:genomeValues,
+    };
+    if(originMaterial.selectionDigest!==`sha256:${sha256(JSON.stringify(selected))}`)
+      throw new TypeError("Genesis origin library selection digest does not match selected loci");
+  }
   if (!Array.isArray(candidate.participants) || candidate.participants.length === 0) {
     throw new TypeError("Genesis development request participants must be a non-empty array");
   }
@@ -252,6 +270,7 @@ export function normalizeGenesisDevelopmentRequest(candidate) {
     worldSpec,
     subjectIdentity,
     genomeValues: Object.freeze(genomeValues),
+    ...(originMaterial===null?{}:{originMaterial}),
     participants: Object.freeze(participants),
     placeAffordances: Object.freeze(placeAffordances),
     bornAt,
@@ -383,6 +402,7 @@ export function buildGenesisDevelopmentPlan(candidate) {
     genesisId,
     values: request.genomeValues,
     createdAt: request.requestedAt,
+    originMaterial:request.originMaterial??null,
   });
   const roster = Object.freeze({
     slot: 1,

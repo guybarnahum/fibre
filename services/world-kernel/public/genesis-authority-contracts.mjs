@@ -6,6 +6,7 @@ export { canonicalJson, sha256 } from "../src/persistence-common.mjs";
 export { normalizeGenesisWorldSpec } from "../src/genesis-domain.mjs";
 export {
   buildDeNovoSymbolicGenome,
+  normalizeSymbolicGenomeOriginMaterial,
   symbolicGenomeDigest,
 } from "../src/symbolic-genome-domain.mjs";
 export {
