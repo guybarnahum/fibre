@@ -74,6 +74,7 @@ test("deploy waits for the current World revision before accepting persistent st
     baseUrl:"https://world.example",
     expectedSha:"b".repeat(40),
     wait:async()=>{},
+    log:()=>{},
     client:{
       async checkStateHealth({expectedSha}){
         checks++;
@@ -196,6 +197,7 @@ test("deployment fails before deploy when required Fibre secrets are incomplete"
     client,
     validateRepository:async () => {},
     provision:async () => state,
+    log:()=>{},
   }), /asset-generator is missing required Cloudflare secrets: OPENAI_API_KEY/);
   assert.equal(deployCalls, 0);
 });

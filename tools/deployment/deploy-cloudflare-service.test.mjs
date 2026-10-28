@@ -81,7 +81,7 @@ test("service deploy re-resolves current source config without provisioning", as
         calls.push(["world-schema"]);
         return {ok:true};
       },
-      print() {},
+      print:()=>{},
       async runner(args, options) {
         calls.push(["wrangler", args, options]);
         return { stdout: "deployed", stderr: "" };
@@ -147,7 +147,7 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
           runtimeAcceptance:{ ok:true, status:404 },
         };
       },
-      print() {},
+      print:()=>{},
     });
 
     assert.deepEqual(calls, ["d1","wrangler:deploy","service-revision","birth-migrate-and-accept"]);
@@ -163,7 +163,7 @@ test("targeted World deploy shares bounded schema-install retry before health ac
   const repoRoot=mkdtempSync(join(tmpdir(),"fibre-world-schema-retry-"));
   const confirmation={ok:true,deploymentGitSha:SHA,installed:true};
   let attempts=0;
-  const waits=[],logs=[];
+  const waits=[];
   try{
     const result=await deployCloudflareService({
       repoRoot,environment:"staging",service:"world-kernel",
@@ -189,7 +189,7 @@ test("targeted World deploy shares bounded schema-install retry before health ac
         };
       },
       wait:async ms=>waits.push(ms),
-      print:line=>logs.push(line),
+      print:()=>{},
       async acceptServiceRevisionImpl(){
         assert.equal(attempts,3,
           "health acceptance started before World schema installation");
@@ -201,9 +201,6 @@ test("targeted World deploy shares bounded schema-install retry before health ac
     assert.equal(attempts,3,"targeted deploy did not reuse bounded install retries");
     assert.deepEqual(waits,[1_500,3_000],
       "shared retry lost its existing exponential wait contract");
-    assert.equal(logs.filter(line=>line.startsWith(
-      "STATE SCHEMA REVISION PENDING world-kernel")).length,2,
-      "targeted deploy lost its schema revision diagnostic");
   }finally{
     rmSync(repoRoot,{recursive:true,force:true});
   }

@@ -270,7 +270,7 @@ export function retryServiceHealth({ client, serviceId, baseUrl, expectedSha, at
 }
 
 export async function retryStateHealth({
-  client,serviceId,baseUrl,expectedSha,wait=delay,attempts=15,
+  client,serviceId,baseUrl,expectedSha,wait=delay,attempts=15,log=console.log,
 }={}){
   let lastError;
   const startedAt=Date.now();
@@ -283,7 +283,7 @@ export async function retryStateHealth({
       // minutes after the Worker deploy. Probe sparingly, never redeploy.
       const pause=Math.min(30_000,1_500*2**attempt);
       const elapsed=Math.floor((Date.now()-startedAt)/1_000);
-      console.log(`STATE REVISION PENDING ${serviceId}: ${error.message} (attempt ${attempt+1}/${attempts}, ${elapsed}s); `+
+      log(`STATE REVISION PENDING ${serviceId}: ${error.message} (attempt ${attempt+1}/${attempts}, ${elapsed}s); `+
         (attempt===attempts-1?"no further retries":`next check in ${pause/1_000}s`));
       if(attempt===attempts-1)break;
       await wait(pause);
@@ -388,7 +388,7 @@ export async function deployCloudflareStack({
       client,serviceId,baseUrl,expectedSha,attempts,wait,
     });
     const stateHealth=STATEFUL_DO_SERVICES.has(serviceId)
-      ?await retryStateHealth({client,serviceId,baseUrl,expectedSha,wait})
+      ?await retryStateHealth({client,serviceId,baseUrl,expectedSha,wait,log})
       :null;
     const migration=serviceId==="world-kernel"
       ?installedWorldSchema
