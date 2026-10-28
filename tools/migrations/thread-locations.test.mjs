@@ -135,3 +135,43 @@ test("operator plan and World home rule agree on Hilo's canonical city",()=>{
   assert.equal(shared.state,"ready");
   assert.equal(shared.place.locality,"Hilo, Hawaii");
 });
+
+test("verified birth coordinates near a known city use that city's canonical locality",()=>{
+  const person={...thread,birthLocation:{
+    city:"A nearby town",country:"Japan",countryCode:"JP",
+    lat:35.7345,long:139.69171,
+  }};
+  const decision=planThreadLocation(person,{
+    ...life({}),worldContext:{timeZone:"Asia/Tokyo"},
+  });
+  assert.equal(decision.state,"ready");
+  assert.equal(decision.basis,"birth_place_world_evidence");
+  assert.equal(decision.place.locality,"Tokyo");
+  assert.equal(decision.place.countryCode,"JP");
+  assert.deepEqual([decision.place.lat,decision.place.long,decision.place.streetAddress],
+    [null,null,null],"birth coordinates leaked into a private home address");
+});
+
+test("verified birth coordinates locate a city not in the shared catalog",()=>{
+  const person={...thread,birthLocation:{
+    city:"Seamount Village",country:"Fiji",countryCode:"FJ",
+    lat:-17.75,long:179.8,
+  }};
+  const decision=planThreadLocation(person,{
+    ...life({}),worldContext:{timeZone:"Pacific/Fiji"},
+  });
+  assert.equal(decision.state,"ready");
+  assert.equal(decision.basis,"birth_place_world_evidence");
+  assert.equal(decision.place.locality,"Seamount Village");
+  assert.equal(decision.place.countryCode,"FJ");
+});
+
+test("unknown birthplace without valid coordinates is not invented",()=>{
+  for(const coordinates of [{},{lat:91,long:179.8}]){
+    const decision=planThreadLocation({...thread,birthLocation:{
+      city:"Seamount Village",country:"Fiji",countryCode:"FJ",
+      ...coordinates,
+    }},life({}));
+    assert.equal(decision.state,"review_birthplace");
+  }
+});

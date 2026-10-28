@@ -1,4 +1,6 @@
 import {
+  FIBRE_LOCALITY_GEOGRAPHY,
+  countryCodeForCountry,
   resolveLocalityGeography,
   resolveMentionedLocalityGeography,
 } from "#core/src/locality-geography.mjs";
@@ -6,6 +8,33 @@ import {placeEpisodeRevisionRef} from "./situated-life-evidence.mjs";
 
 function text(value) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+const degrees=value=>value*Math.PI/180;
+function distanceKm(left,right){
+  const latitude=degrees(right.lat-left.lat);
+  const longitude=degrees(right.long-left.long);
+  const arc=Math.sin(latitude/2)**2+
+    Math.cos(degrees(left.lat))*Math.cos(degrees(right.lat))*
+    Math.sin(longitude/2)**2;
+  return 6371*2*Math.asin(Math.sqrt(arc));
+}
+
+function coordinateBirthplace(birth){
+  if(!text(birth?.city)||!text(birth?.country)
+    ||!Number.isFinite(birth.lat)||!Number.isFinite(birth.long)
+    ||Math.abs(birth.lat)>90||Math.abs(birth.long)>180)return null;
+  const nearby=FIBRE_LOCALITY_GEOGRAPHY
+    .filter(place=>place.country===birth.country)
+    .map(place=>({place,distance:distanceKm(birth,place)}))
+    .filter(candidate=>candidate.distance<=30)
+    .sort((a,b)=>a.distance-b.distance)[0]?.place??null;
+  if(nearby)return nearby;
+  const countryCode=text(birth.countryCode)?.toUpperCase()
+    ??countryCodeForCountry(birth.country);
+  return countryCode?{
+    city:birth.city,country:birth.country,countryCode,
+  }:null;
 }
 
 // A home-location decision attests the present from admitted World evidence;
@@ -35,8 +64,11 @@ export function planThreadLocation(thread, livedNow) {
     displayName:legacyContext.displayName,
     locality:null,countryCode:null,
   };
-  const birthplace = text(birth?.city) && text(birth?.country)
-    ? resolveLocalityGeography(`${birth.country}/${birth.city}`) : null;
+  const catalogBirthplace=text(birth?.city)&&text(birth?.country)
+    ?resolveLocalityGeography(`${birth.country}/${birth.city}`)
+      ??resolveMentionedLocalityGeography(birth.displayName):null;
+  const birthplace=catalogBirthplace??coordinateBirthplace(birth);
+  const birthEvidence=catalogBirthplace===null&&birthplace!==null;
   const mentioned = resolveMentionedLocalityGeography(known.displayName);
   const locality = text(known.locality);
   const code = text(known.countryCode)?.toUpperCase() ?? null;
@@ -71,7 +103,9 @@ export function planThreadLocation(thread, livedNow) {
     threadId:thread.threadId,
     name:thread.displayName,
     currentPlaceRef:placeRef,
-    basis:fallback?"birth_city_operator_default":"situated_place_evidence",
+    basis:fallback
+      ?birthEvidence?"birth_place_world_evidence":"birth_city_operator_default"
+      :"situated_place_evidence",
     place:{
       threadId:thread.threadId,placeRef,
       specificPlace:legacyContext
@@ -81,7 +115,7 @@ export function planThreadLocation(thread, livedNow) {
       country:location.country,countryCode:location.countryCode,
       lat:null,long:null,timeZone,
       evidenceRef:fallback
-        ?`operator_birth_city_default:${thread.threadId}`
+        ?`${birthEvidence?"birth_place_world_evidence":"operator_birth_city_default"}:${thread.threadId}`
         :placeRef,
       publicGranularity:"city",
     },
