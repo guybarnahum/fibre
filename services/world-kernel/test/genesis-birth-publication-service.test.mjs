@@ -1,8 +1,9 @@
 import test from "node:test";
+import {createHash} from "node:crypto";
 import assert from "node:assert/strict";
 
 import { createGenesisBirthPublicationService } from "../src/genesis-birth-publication-service.mjs";
-import { selectedUrgesForBirth, urgeVariantsFromGenome } from "../../../core/src/inherited-urges.mjs";
+import { URGE_LIBRARIES, selectedUrgesForBirth, urgeVariantsFromGenome } from "../../../core/src/inherited-urges.mjs";
 import { buildDeNovoSymbolicGenome } from "../src/symbolic-genome-domain.mjs";
 import { canonicalJson as birthCenterCanonicalJson } from "../../birth-center/src/state-codec.mjs";
 
@@ -101,7 +102,7 @@ test("Genesis birth publication rejects conflicting civil registration witnesses
   );
 });
 
-test("a canonically stored v2 birth reaches World while a changed urge is rejected",async()=>{
+test("a canonically stored v3 birth reaches World while a changed urge is rejected",async()=>{
   const selected=selectedUrgesForBirth("v2-provisional-canonical-round-trip");
   const genome=buildDeNovoSymbolicGenome({
     threadId:"thr_v2_provisional_round_trip",
@@ -125,9 +126,9 @@ test("a canonically stored v2 birth reaches World while a changed urge is reject
     authority:{publishBirth(b){calls.push("birth:"+b.thread.threadId);return {threadId:b.thread.threadId};}},
   });
   assert.deepEqual(await service.publishBirth(restored),
-    {threadId:bundle.thread.threadId},"canonical v2 birth was rejected");
+    {threadId:bundle.thread.threadId},"canonical v3 birth was rejected");
   assert.deepEqual(calls,["genome:"+genome.header.genomeId,"birth:"+bundle.thread.threadId],
-    "v2 birth did not reach World admission");
+    "v3 birth did not reach World admission");
 
   const changed=structuredClone(restored);
   changed.thread.genome.urgeProjection[0].positions.gain+=0.1;
@@ -135,4 +136,38 @@ test("a canonically stored v2 birth reaches World while a changed urge is reject
     /birth Body projection differs from admitted symbolic urge genome/,
     "changed inherited pressure was accepted");
   assert.equal(calls.length,2,"invalid genome was admitted");
+});
+
+test("World accepts an admitted historical v2 urge library without rewriting it",async()=>{
+  const requestId="v2-provisional-canonical-round-trip";
+  const current=selectedUrgesForBirth(requestId);
+  const historical=URGE_LIBRARIES["2"];
+  const variants=historical.families.map((family,index)=>family.variants.find(
+    v=>v.variantId===current.originMaterial.variantIds[index]));
+  const values=variants.map(v=>v.text);
+  assert.deepEqual(values,current.values,"historical v2 test selected the corrected locus");
+  const originMaterial={
+    ...current.originMaterial,libraryVersion:"2",libraryDigest:historical.digest,
+    selectionDigest:"sha256:"+createHash("sha256").update(JSON.stringify({
+      requestId,libraryId:"fibre_urge_loci",libraryVersion:"2",
+      libraryDigest:historical.digest,variantIds:current.originMaterial.variantIds,values,
+    })).digest("hex"),
+  };
+  const genome=buildDeNovoSymbolicGenome({
+    threadId:"thr_historical_v2_urge",genesisId:"genesis_historical_v2_urge",
+    values,originMaterial,createdAt:"2026-10-28T12:00:00Z",
+  });
+  const bundle=JSON.parse(birthCenterCanonicalJson({
+    manifest:{threadId:"thr_historical_v2_urge",genesisId:"genesis_historical_v2_urge"},
+    thread:{threadId:"thr_historical_v2_urge",genome:{urgeProjection:urgeVariantsFromGenome(genome)}},
+    symbolicGenomes:[genome],
+  }));
+  let admitted=false;
+  const service=createGenesisBirthPublicationService({
+    genomeAuthority:{recordGenome(){admitted=true;}},
+    authority:{publishBirth(){return {threadId:bundle.thread.threadId};}},
+  });
+  assert.deepEqual(await service.publishBirth(bundle),
+    {threadId:bundle.thread.threadId},"historical v2 admission failed");
+  assert.equal(admitted,true,"historical v2 genome was rejected");
 });

@@ -60,8 +60,16 @@ other triggers. The species-standard orientation of triggered families is
 | standing_flare | triggered | public_correction, refusal_by_close_person, exclusion | Directed admitted act; public requires audience, close requires actual relation |
 | mastery_itch | directional | technique, unfinished_work, repeated_practice, interrupted_learning | Supported interrupted/repeated activity with continuing investment |
 
-The 130 immutable authored variants, 10 per family, are the v2 source-of-truth
-catalogue in `core/src/inherited-urges.mjs`. Each entry contains a concrete
+The 130 immutable authored variants, 10 per family, form the v2 historical
+catalogue and v3 current birth catalogue in `core/src/inherited-urges.mjs`.
+**V2 is frozen** (digest `sha256:3f1c2692580b305ee3c3f234a3e02cec820b0b9b33c731077b9864e56cb6e13e`):
+three admitted staging Threads retain that immutable provenance. V3 changes
+**only** the text of `exploration_01`, replacing its semicolon-separated
+sentence with one atomic proposition. Orientation, G/T/P positions,
+all other 129 descriptions and deterministic variant selection are unchanged.
+New births select v3; historical v2 genomes are resolved by their stored
+library version **and digest**, never by the current version alone.
+Each entry contains a concrete
 bodily or attentional description that agrees with its closed orientation.
 Positions are balanced per family without forcing mirrored per-orientation
 patterns: every family spans both sides of ±0.85 on gain, threshold and
@@ -149,12 +157,13 @@ Cross-generation family-keyed recombination involving v1/legacy parents is
 
 Keep the approved per-request deterministic selection, originMaterial
 provenance, request-specific age-22 chronology and fixture-slot removal.
-World admission accepts versioned v2 origin material before Birth Center
-begins births. In S1, publication checks the Thread's declared Body projection
+World admission accepts registered v2 historical and v3 current origin
+material, resolving each genome by its own library version and digest before
+Birth Center begins publication. In S1, publication checks the Thread's declared Body projection
 against the admitted symbolic urge genome using key-order-independent canonical
 JSON. Birth Center persists provisional bundles as canonical JSON; their object
 key ordering must never change admission meaning. Genuinely changed projection
-values still fail publication. Pass A and Pass B are **genome-blind for v2**.
+values still fail publication. Pass A and Pass B are **genome-blind for v2 and v3**.
 Older v1 Pass-B experiments remain historically replayable.
 
 **S1 staging witness, 2026-10-28:** `genesis-birth-mvsm7ujg` published

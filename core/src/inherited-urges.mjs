@@ -1,9 +1,9 @@
 import {createHash} from "node:crypto";
 
-// The versioned v2 library is immutable birth authority. Its orientation is
-// interpreted only by the Body, never supplied as a genomic instruction.
-export const URGE_LIBRARY_VERSION="2";
-export const URGE_FAMILIES=Object.freeze([
+// V2 remains immutable birth authority for admitted Threads. New births use
+// v3; variant selection is unchanged, and only exploration_01 text differs.
+export const URGE_LIBRARY_VERSION="3";
+export const URGE_LIBRARY_V2_FAMILIES=Object.freeze([
   Object.freeze({
     family:"social_contact",kind:"directional",
     orientations:Object.freeze(["ambient_company","familiar_person","conversation","closeness"]),
@@ -213,7 +213,21 @@ export const URGE_FAMILIES=Object.freeze([
     ]),
   }),
 ]);
-export const URGE_LIBRARY_DIGEST="sha256:"+createHash("sha256").update(JSON.stringify(URGE_FAMILIES)).digest("hex");
+export const URGE_FAMILIES=Object.freeze(URGE_LIBRARY_V2_FAMILIES.map(family=>
+  family.family!=="exploration"?family:Object.freeze({
+    ...family,variants:Object.freeze(family.variants.map(variant=>
+      variant.variantId!=="exploration_01"?variant:Object.freeze({
+        ...variant,text:"Familiar paths begin to feel narrow, and attention stretches beyond the usual streets toward an unfamiliar turn.",
+      }))),
+  })));
+const libraryDigest=families=>"sha256:"+createHash("sha256")
+  .update(JSON.stringify(families)).digest("hex");
+export const URGE_LIBRARY_V2_DIGEST=libraryDigest(URGE_LIBRARY_V2_FAMILIES);
+export const URGE_LIBRARY_DIGEST=libraryDigest(URGE_FAMILIES);
+export const URGE_LIBRARIES=Object.freeze({
+  "2":Object.freeze({families:URGE_LIBRARY_V2_FAMILIES,digest:URGE_LIBRARY_V2_DIGEST}),
+  "3":Object.freeze({families:URGE_FAMILIES,digest:URGE_LIBRARY_DIGEST}),
+});
 export const URGE_FAMILY_BY_NAME=new Map(URGE_FAMILIES.map(family=>[family.family,family]));
 export const SPECIES_STANDARD_ORIENTATION=Object.freeze(Object.fromEntries(
   URGE_FAMILIES.map(family=>[family.family,family.kind==="triggered"?"all": "undirected"]),
@@ -241,13 +255,15 @@ export function selectedUrgesForBirth(requestId) {
 export function urgeVariantsFromGenome(genome){
   const origin=genome?.header?.originMaterial;
   if(origin?.kind!=="urge_library")return null;
-  if(origin.libraryDigest!==URGE_LIBRARY_DIGEST||origin.libraryVersion!==URGE_LIBRARY_VERSION
-    ||origin.variantIds?.length!==URGE_FAMILIES.length||genome.loci?.length!==URGE_FAMILIES.length)
-    throw new TypeError("v2 urge genome library mismatch");
-  return Object.freeze(URGE_FAMILIES.map((family,index)=>{
+  const library=Object.hasOwn(URGE_LIBRARIES,origin.libraryVersion)
+    ?URGE_LIBRARIES[origin.libraryVersion]:null;
+  if(!library||origin.libraryDigest!==library.digest
+    ||origin.variantIds?.length!==library.families.length||genome.loci?.length!==library.families.length)
+    throw new TypeError("urge genome library mismatch");
+  return Object.freeze(library.families.map((family,index)=>{
     const variant=family.variants.find(value=>value.variantId===origin.variantIds[index]);
     if(!variant||genome.loci[index].value!==variant.text)
-      throw new TypeError("v2 urge locus does not match frozen library");
+      throw new TypeError("urge locus does not match frozen library");
     return Object.freeze({family:family.family,kind:family.kind,orientation:variant.orientation,positions:variant.positions});
   }));
 }

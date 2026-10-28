@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {URGE_FAMILIES,selectedUrgesForBirth,urgeVariantsFromGenome} from "../src/inherited-urges.mjs";
+import {URGE_FAMILIES,URGE_LIBRARIES,URGE_LIBRARY_V2_DIGEST,URGE_LIBRARY_VERSION,selectedUrgesForBirth,urgeVariantsFromGenome} from "../src/inherited-urges.mjs";
 import {normalizeOrganismPolicy,DEFAULT_ORGANISM_POLICY} from "../src/organism-policy.mjs";
 import {evaluateIntrinsicRegulation,THREAD_SPECIES_PROFILE} from "../src/intrinsic-regulation.mjs";
 import {projectInteroception} from "../../services/world-kernel/src/interoceptive-cognition.mjs";
-import {buildDeNovoSymbolicGenome} from "../../services/world-kernel/src/symbolic-genome-domain.mjs";
+import {assertAtomicGenomeLocus,buildDeNovoSymbolicGenome} from "../../services/world-kernel/src/symbolic-genome-domain.mjs";
 
 const policy=(changes={})=>({...DEFAULT_ORGANISM_POLICY,...changes});
 const frame=(availability={})=>({
@@ -15,7 +15,7 @@ const frame=(availability={})=>({
 });
 const social=reg=>reg.drives.find(d=>d.family==="social_contact");
 
-test("v2 authored urge library binds 13 family kinds, origin provenance and stable replay",()=>{
+test("current authored urge library binds 13 family kinds, origin provenance and stable replay",()=>{
   assert.equal(URGE_FAMILIES.length,13);
   assert.ok(URGE_FAMILIES.every(f=>f.variants.length===10));
   const a=selectedUrgesForBirth("newborn-inherited-urges");
@@ -30,6 +30,34 @@ test("v2 authored urge library binds 13 family kinds, origin provenance and stab
   const tampered=structuredClone(genome);
   tampered.loci[0].value="unrelated bodily urge";
   assert.throws(()=>urgeVariantsFromGenome(tampered),/frozen library/,"origin must bind the actual textual loci");
+});
+
+test("v2 stays frozen while every selectable v3 locus is atomic",()=>{
+  assert.equal(URGE_LIBRARY_VERSION,"3");
+  assert.equal(URGE_LIBRARY_V2_DIGEST,
+    "sha256:3f1c2692580b305ee3c3f234a3e02cec820b0b9b33c731077b9864e56cb6e13e",
+    "historical v2 library changed");
+  const historical=URGE_LIBRARIES["2"].families;
+  const current=URGE_LIBRARIES["3"].families;
+  const changed=[];
+  for(let i=0;i<current.length;i++){
+    assert.deepEqual(current[i].orientations,historical[i].orientations,"family orientation changed");
+    assert.equal(current[i].family,historical[i].family,"urge family changed");
+    for(let j=0;j<current[i].variants.length;j++){
+      const a=historical[i].variants[j],b=current[i].variants[j];
+      assert.equal(a.variantId,b.variantId,"urge identity changed");
+      assert.equal(a.orientation,b.orientation,"urge orientation changed");
+      assert.deepEqual(a.positions,b.positions,"urge positions changed");
+      if(a.text!==b.text)changed.push(a.variantId);
+      assert.doesNotThrow(()=>assertAtomicGenomeLocus(b.text),
+        `${b.variantId} is not an atomic locus`);
+    }
+  }
+  assert.deepEqual(changed,["exploration_01"],"v3 changed more than one text");
+  assert.ok(historical[1].variants[0].text.includes(";"),
+    "historical v2 text was rewritten");
+  assert.notEqual(URGE_LIBRARIES["3"].digest,URGE_LIBRARY_V2_DIGEST,
+    "v3 reused the v2 digest");
 });
 
 test("directional orientation changes felt direction without suppressing pressure for absent targets",()=>{

@@ -1,14 +1,30 @@
 ---
 id: validation-inherited-urges-library-review
-status: proposed
+status: accepted
 last-reviewed: 2026-10-28
 ---
 
-# Inherited Urges v2 — permanent genome library, proposed for approval
+# Inherited Urges — frozen v2 review and v3 correction
 
-**Births remain paused until validation and explicit approval of all 130 records.**
+**S1 was accepted on 2026-10-28.** This table preserves the original v2
+130-variant review as an immutable historical record. The original v2 library
+digest is `sha256:3f1c2692580b305ee3c3f234a3e02cec820b0b9b33c731077b9864e56cb6e13e`.
+Three already-admitted Threads retain this version and digest.
 
-The following records reproduce `core/src/inherited-urges.mjs` without paraphrasing.
+**V3 (current selectable library):** the only change is `exploration_01` text.
+V2: “Familiar paths begin to feel narrow; attention stretches beyond the usual streets toward an unfamiliar turn.”
+V3: “Familiar paths begin to feel narrow, and attention stretches beyond the usual streets toward an unfamiliar turn.”
+
+The semicolon is prohibited by the World's `assertAtomicGenomeLocus` rule.
+V3 retains the original orientation `places`, numeric positions `(0.06, 0.66, 0.43)`,
+other 129 texts, per-family measured statistics, and variant-selection strategy.
+New births use library version 3 and its newly computed digest. Already-admitted
+v2 genomes remain unchanged and are resolved against frozen v2, not v3.
+The table below remains **v2 verbatim**; the single v3 substitution above is
+its complete change log.
+
+The following records reproduce the frozen `URGE_LIBRARY_V2_FAMILIES` from
+`core/src/inherited-urges.mjs` without paraphrasing.
 All inherited experience texts and closed orientations remain unchanged from
 the approved revision. Only the G/T/P numerical positions changed.
 

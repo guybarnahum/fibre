@@ -1,4 +1,4 @@
-import { URGE_FAMILIES, URGE_LIBRARY_DIGEST, urgeVariantsFromGenome } from "../../../core/src/inherited-urges.mjs";
+import { URGE_LIBRARIES, urgeVariantsFromGenome } from "../../../core/src/inherited-urges.mjs";
 import {
   assertExactKeys,
   assertFiniteNumber,
@@ -244,12 +244,14 @@ export function normalizeSymbolicGenomeOriginMaterial(candidate){
     "kind","libraryId","libraryVersion","libraryDigest",
     "selectionPolicy","variantIds","selectionDigest",
   ]);
-  const v2=candidate.kind==="urge_library";
-  if(v2){
-    if(candidate.libraryId!=="fibre_urge_loci"||candidate.libraryVersion!=="2"
+  const urge=candidate.kind==="urge_library";
+  const library=urge&&Object.hasOwn(URGE_LIBRARIES,candidate.libraryVersion)
+    ?URGE_LIBRARIES[candidate.libraryVersion]:null;
+  if(urge){
+    if(candidate.libraryId!=="fibre_urge_loci"
       ||candidate.selectionPolicy!=="sha256_per_family_v2"
-      ||candidate.libraryDigest!==URGE_LIBRARY_DIGEST)
-      throw new TypeError("v2 urge library provenance mismatch");
+      ||candidate.libraryDigest!==library?.digest)
+      throw new TypeError("urge library provenance mismatch");
   }else if(candidate.kind!=="ordinal_library"||candidate.libraryId!=="fibre_symbolic_loci"
     ||candidate.selectionPolicy!=="sha256_per_ordinal_v1"){
     throw new TypeError("symbolic genome origin library identity is invalid");
@@ -258,8 +260,8 @@ export function normalizeSymbolicGenomeOriginMaterial(candidate){
   assertDigest("symbolicGenome.originMaterial.libraryDigest",candidate.libraryDigest);
   assertDigest("symbolicGenome.originMaterial.selectionDigest",candidate.selectionDigest);
   if(!Array.isArray(candidate.variantIds)
-    ||(v2?candidate.variantIds.length!==URGE_FAMILIES.length
-      ||candidate.variantIds.some((id,index)=>!URGE_FAMILIES[index].variants.some(variant=>variant.variantId===id))
+    ||(urge?candidate.variantIds.length!==library.families.length
+      ||candidate.variantIds.some((id,index)=>!library.families[index].variants.some(variant=>variant.variantId===id))
       :candidate.variantIds.length!==6
       ||candidate.variantIds.some((id,index)=>!new RegExp(`^o${index+1}_v(?:0[1-9]|1[0-6])$`,"u").test(id))))
     throw new TypeError("symbolic genome origin must select one variant per ordinal");
