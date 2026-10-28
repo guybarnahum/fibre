@@ -249,6 +249,28 @@ test("recovered birth geography is exposed as one explicit World identity repair
 });
 
 
+
+test("Admin does not offer catalog repair for a complete verified Hilo birthplace", async()=>{
+  const population=await readAdminThreadPopulation({
+    activityLog:{prepare(){return{bind(){return{async all(){return{results:[]};}};}};}},
+    environment:"staging",
+    readRegistry:async()=>[{
+      threadId:"thr_hilo",fibreIdentityNumber:"FIN-HILO",
+      displayName:"Hilo Thread",sex:"female",status:"active",
+      birthDate:"2004-08-20",birthPlace:"Hilo, United States",
+      birthLocation:{
+        displayName:"Hilo, United States",country:"United States",
+        countryCode:"US",city:"Hilo",lat:19.72991,long:-155.09073,
+        source:"thread_identity",
+      },
+      languages:["English"],raisedAs:{languages:["English"]},
+    }],
+  });
+  const findings=population.threads[0].findings;
+  assert.equal(findings.some(f=>f.code==="BIRTH_GEOGRAPHY_RECOVERABLE"),false);
+  assert.equal(findings.find(f=>f.code==="BIRTH_PLACE")?.state,"healthy");
+});
+
 test("Birth Center stillborn disposition replaces generic Activity-only explanation", async () => {
   const activityLog = {
     prepare() {

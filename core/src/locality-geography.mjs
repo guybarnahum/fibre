@@ -235,6 +235,32 @@ export function resolveLocalityGeographyEvidence(values) {
   return unique.length === 1 ? unique[0] : null;
 }
 
+// Catalog positions are lookup aids, not replacements for a verified birthplace.
+export function distanceKm(left,right){
+  const degrees=value=>value*Math.PI/180;
+  const latitude=degrees(right.lat-left.lat);
+  const longitude=degrees(right.long-left.long);
+  const arc=Math.sin(latitude/2)**2+
+    Math.cos(degrees(left.lat))*Math.cos(degrees(right.lat))*
+    Math.sin(longitude/2)**2;
+  return 6371*2*Math.asin(Math.sqrt(arc));
+}
+
+export function birthGeographyNeedsRecovery(place,recovered){
+  if(recovered===null)return false;
+  if(!place||typeof place!=="object"||Array.isArray(place)
+      ||typeof place.country!=="string"||!place.country.trim()
+      ||typeof place.city!=="string"||!place.city.trim()
+      ||!Number.isFinite(place.lat)||!Number.isFinite(place.long)
+      ||Math.abs(place.lat)>90||Math.abs(place.long)>180)return true;
+  if(place.country!==recovered.country)return true;
+  const locality=resolveLocalityGeography(`${place.country}/${place.city}`)
+    ??(typeof place.displayName==="string"
+      ?resolveLocalityGeography(place.displayName):null);
+  return (locality!==null&&locality.place!==recovered.place)
+    ||distanceKm(place,recovered)>30;
+}
+
 export function localityCoordinates(place) {
   const resolved = resolveLocalityGeography(place);
   return resolved === null ? null : Object.freeze({ lat:resolved.lat, long:resolved.long });

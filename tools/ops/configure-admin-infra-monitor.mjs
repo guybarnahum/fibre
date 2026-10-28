@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { RESOURCE_HEALTH_DEFAULT_LIMITS } from "../../infra/providers/cloudflare/resource-health.mjs";
 
 import {
   environmentResourceName,
@@ -37,12 +38,12 @@ export function buildAdminInfraMonitorConfig({ operatorConfig, resourceState } =
     apiToken:nonEmpty("FIBRE_CLOUDFLARE_ANALYTICS_TOKEN", operatorConfig?.FIBRE_CLOUDFLARE_ANALYTICS_TOKEN),
     ttlSeconds,
     limits:Object.freeze({
-      d1RowsReadDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_D1_ROWS_READ_DAILY_WARN") ?? 500_000,
-      d1RowsWrittenDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_D1_ROWS_WRITTEN_DAILY_WARN") ?? 10_000,
-      durableObjectRowsReadDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_DO_ROWS_READ_DAILY_WARN") ?? 5_000_000,
-      durableObjectRowsWrittenDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_DO_ROWS_WRITTEN_DAILY_WARN") ?? 100_000,
-      workerRequests15m:optionalNumber(operatorConfig, "FIBRE_INFRA_WORKER_REQUESTS_15M_WARN") ?? 25_000,
-      workerErrors15m:optionalNumber(operatorConfig, "FIBRE_INFRA_WORKER_ERRORS_15M_WARN") ?? 100,
+      d1RowsReadDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_D1_ROWS_READ_DAILY_WARN") ?? RESOURCE_HEALTH_DEFAULT_LIMITS.d1RowsReadDaily,
+      d1RowsWrittenDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_D1_ROWS_WRITTEN_DAILY_WARN") ?? RESOURCE_HEALTH_DEFAULT_LIMITS.d1RowsWrittenDaily,
+      durableObjectRowsReadDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_DO_ROWS_READ_DAILY_WARN") ?? RESOURCE_HEALTH_DEFAULT_LIMITS.durableObjectRowsReadDaily,
+      durableObjectRowsWrittenDaily:optionalNumber(operatorConfig, "FIBRE_INFRA_DO_ROWS_WRITTEN_DAILY_WARN") ?? RESOURCE_HEALTH_DEFAULT_LIMITS.durableObjectRowsWrittenDaily,
+      workerRequests15m:optionalNumber(operatorConfig, "FIBRE_INFRA_WORKER_REQUESTS_15M_WARN") ?? RESOURCE_HEALTH_DEFAULT_LIMITS.workerRequests15m,
+      workerErrors15m:optionalNumber(operatorConfig, "FIBRE_INFRA_WORKER_ERRORS_15M_WARN") ?? RESOURCE_HEALTH_DEFAULT_LIMITS.workerErrors15m,
     }),
     d1Resources:Object.freeze(d1Resources),
   });

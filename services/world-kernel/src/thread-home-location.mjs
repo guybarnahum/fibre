@@ -1,5 +1,6 @@
 import {
   FIBRE_LOCALITY_GEOGRAPHY,
+  distanceKm,
   countryCodeForCountry,
   resolveLocalityGeography,
   resolveMentionedLocalityGeography,
@@ -8,16 +9,6 @@ import {placeEpisodeRevisionRef} from "./situated-life-evidence.mjs";
 
 function text(value) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-const degrees=value=>value*Math.PI/180;
-function distanceKm(left,right){
-  const latitude=degrees(right.lat-left.lat);
-  const longitude=degrees(right.long-left.long);
-  const arc=Math.sin(latitude/2)**2+
-    Math.cos(degrees(left.lat))*Math.cos(degrees(right.lat))*
-    Math.sin(longitude/2)**2;
-  return 6371*2*Math.asin(Math.sqrt(arc));
 }
 
 function coordinateBirthplace(birth){

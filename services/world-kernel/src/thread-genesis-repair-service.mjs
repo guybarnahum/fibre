@@ -8,7 +8,7 @@ import {
   canonicalVisualSpecificationFromPhysicalGenome,
 } from "./canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "./embodiment-domain.mjs";
-import { countryCodeForCountry, resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
+import { birthGeographyNeedsRecovery, countryCodeForCountry, resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 import {
   appearanceCalibrationDependencies,
   planAppearanceCalibrationMigration,
@@ -47,16 +47,7 @@ function recoveredBirthGeography(identity) {
   ]);
   if (recovered === null) return null;
 
-  const canonical = place
-    && typeof place === "object"
-    && !Array.isArray(place)
-    && birthCity === recovered.displayName
-    && text(place.displayName) === recovered.displayName
-    && text(place.country) === recovered.country
-    && text(place.city) === recovered.city
-    && place.lat === recovered.lat
-    && place.long === recovered.long;
-  if (canonical) return null;
+  if (!birthGeographyNeedsRecovery(place,recovered)) return null;
 
   return Object.freeze({
     displayName:recovered.displayName,

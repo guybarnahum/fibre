@@ -1,5 +1,5 @@
 import { worldTableExists } from "./world-state-storage.mjs";
-import { countryCodeForCountry, resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
+import { birthGeographyNeedsRecovery, countryCodeForCountry, resolveLocalityGeographyEvidence } from "#core/src/locality-geography.mjs";
 import { IntegrityError } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 
@@ -34,16 +34,7 @@ export function projectThreadBirthLocation(identity) {
     clean(identity?.birthCity),
   ]);
 
-  if (recovered !== null) {
-    const canonical = place
-      && typeof place === "object"
-      && !Array.isArray(place)
-      && clean(identity?.birthCity) === recovered.displayName
-      && clean(place.displayName) === recovered.displayName
-      && clean(place.country) === recovered.country
-      && clean(place.city) === recovered.city
-      && place.lat === recovered.lat
-      && place.long === recovered.long;
+  if (birthGeographyNeedsRecovery(place,recovered)) {
     return Object.freeze({
       displayName:recovered.displayName,
       country:recovered.country,
@@ -51,7 +42,7 @@ export function projectThreadBirthLocation(identity) {
       city:recovered.city,
       lat:recovered.lat,
       long:recovered.long,
-      source:canonical ? "thread_identity" : "identity_geography_recovered",
+      source:"identity_geography_recovered",
     });
   }
 

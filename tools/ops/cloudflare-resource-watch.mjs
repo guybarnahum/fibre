@@ -1,4 +1,5 @@
 import { fileURLToPath } from "node:url";
+import { RESOURCE_HEALTH_DEFAULT_LIMITS } from "../../infra/providers/cloudflare/resource-health.mjs";
 
 import {
   normalizeCloudflareEnvironment,
@@ -33,10 +34,10 @@ export function parseResourceWatchArgs(argv) {
 
 function thresholds() {
   return Object.freeze({
-    d1RowsReadDaily: numberEnv("FIBRE_INFRA_D1_ROWS_READ_DAILY_WARN", 500_000),
-    d1RowsWrittenDaily: numberEnv("FIBRE_INFRA_D1_ROWS_WRITTEN_DAILY_WARN", 10_000),
-    workerRequests15m: numberEnv("FIBRE_INFRA_WORKER_REQUESTS_15M_WARN", 25_000),
-    workerErrors15m: numberEnv("FIBRE_INFRA_WORKER_ERRORS_15M_WARN", 100),
+    d1RowsReadDaily: numberEnv("FIBRE_INFRA_D1_ROWS_READ_DAILY_WARN", RESOURCE_HEALTH_DEFAULT_LIMITS.d1RowsReadDaily),
+    d1RowsWrittenDaily: numberEnv("FIBRE_INFRA_D1_ROWS_WRITTEN_DAILY_WARN", RESOURCE_HEALTH_DEFAULT_LIMITS.d1RowsWrittenDaily),
+    workerRequests15m: numberEnv("FIBRE_INFRA_WORKER_REQUESTS_15M_WARN", RESOURCE_HEALTH_DEFAULT_LIMITS.workerRequests15m),
+    workerErrors15m: numberEnv("FIBRE_INFRA_WORKER_ERRORS_15M_WARN", RESOURCE_HEALTH_DEFAULT_LIMITS.workerErrors15m),
   });
 }
 

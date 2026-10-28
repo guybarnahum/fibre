@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { buildAdminInfraMonitorConfig } from "./configure-admin-infra-monitor.mjs";
+import { RESOURCE_HEALTH_DEFAULT_LIMITS } from "../../infra/providers/cloudflare/resource-health.mjs";
 
 test("Admin infra monitor secret contains only read-only analytics config and provisioned resource identities", () => {
   const config = buildAdminInfraMonitorConfig({
@@ -24,6 +25,18 @@ test("Admin infra monitor secret contains only read-only analytics config and pr
     { binding:"PRESENTATION_CATALOG", name:"catalog-staging", id:"catalog-id" },
     { binding:"ACTIVITY_LOG", name:"activity-staging", id:"activity-id" },
   ]);
+});
+
+test("Admin monitor defaults to shared provider health limits",()=>{
+  const config=buildAdminInfraMonitorConfig({
+    operatorConfig:{
+      CLOUDFLARE_ACCOUNT_ID:"account",
+      FIBRE_CLOUDFLARE_ANALYTICS_TOKEN:"analytics-token",
+    },
+    resourceState:{resources:{d1:[{name:"activity",id:"d1"}]}},
+  });
+  assert.deepEqual(config.limits,RESOURCE_HEALTH_DEFAULT_LIMITS,
+    "Admin monitor thresholds diverged from provider limits");
 });
 
 test("Admin infra monitor config requires a dedicated analytics token", () => {

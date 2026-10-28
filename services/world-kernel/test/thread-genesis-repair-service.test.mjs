@@ -7,6 +7,7 @@ import { ACTIVITY_RECORD_VERSION, normalizeActivityRecord } from "#infra/telemet
 import { canonicalVisualSpecificationFromPhysicalGenome } from "../src/canonical-visual-identity-from-physical-genome.mjs";
 import { embodimentSpecificationDigest } from "../src/embodiment-domain.mjs";
 import { createThreadGenesisRepairService } from "../src/thread-genesis-repair-service.mjs";
+import { projectThreadBirthLocation } from "../src/thread-directory-store.mjs";
 
 const SEX_EVIDENCE = Object.freeze({
   sex:"female",
@@ -156,6 +157,34 @@ test("missing authoritative birth city offers a verified operator correction, no
     "a Thread without birth-city evidence cannot be corrected");
   assert.equal(birth.identityAction.input.fields[0].kind,"place_search",
     "birthplace accepted an unverified typed string");
+});
+
+
+test("verified birth coordinates outrank nearby catalog geography; distant or incomplete identity still requires review", async()=>{
+  const {service,thread,threadId}=fixture();
+  thread.identity.birthCity="Hilo, United States";
+  thread.identity.birthPlace={
+    displayName:"Hilo, United States",country:"United States",
+    countryCode:"US",city:"Hilo",lat:19.72991,long:-155.09073,
+  };
+  const healthy=await service.diagnose(threadId);
+  assert.equal(healthy.findings.some(f=>f.code==="BIRTH_GEOGRAPHY_RECOVERABLE"),false,
+    "verified Hilo birth place was mistaken for a catalog repair");
+  assert.equal(healthy.findings.find(f=>f.code==="BIRTH_PLACE")?.state,"healthy");
+  const projected=projectThreadBirthLocation(thread.identity);
+  assert.equal(projected.source,"thread_identity");
+  assert.equal(projected.lat,19.72991,"registry replaced verified birth coordinates");
+
+  thread.identity.birthPlace.long=-156;
+  const distant=await service.diagnose(threadId);
+  assert.equal(distant.findings.find(f=>f.code==="BIRTH_GEOGRAPHY_RECOVERABLE")?.state,
+    "operator_decision_required","distant birthplace mismatch was hidden");
+  assert.equal(projectThreadBirthLocation(thread.identity).source,"identity_geography_recovered");
+
+  delete thread.identity.birthPlace;
+  const missing=await service.diagnose(threadId);
+  assert.equal(missing.findings.find(f=>f.code==="BIRTH_GEOGRAPHY_RECOVERABLE")?.state,
+    "operator_decision_required","missing structured place was treated as complete");
 });
 
 test("R1 diagnoses missing Presentation and unpublished canonical visual without inventing identity", async () => {

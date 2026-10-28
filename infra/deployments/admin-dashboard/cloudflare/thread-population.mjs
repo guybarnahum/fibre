@@ -104,7 +104,10 @@ function registryFindings(entry) {
       }),
     }));
   }
-  if (entry.birthLocation?.source === "identity_geography_recovered") {
+  // World Registry applies the shared 30 km/locality rule before marking
+  // geography recoverable; verified identity coordinates outrank the catalog.
+  const needsBirthGeographyRepair=entry.birthLocation?.source==="identity_geography_recovered";
+  if (needsBirthGeographyRepair) {
     const birthPlace = Object.freeze({
       displayName:entry.birthLocation.displayName,
       country:entry.birthLocation.country,
@@ -134,7 +137,7 @@ function registryFindings(entry) {
     }));
   }
 
-  if(entry.birthLocation?.source!=="identity_geography_recovered"){
+  if(!needsBirthGeographyRepair){
     const known=clean(entry.birthLocation?.displayName)??clean(entry.birthPlace);
     findings.push(Object.freeze({
       code:known===null?"BIRTH_PLACE_MISSING":"BIRTH_PLACE",
