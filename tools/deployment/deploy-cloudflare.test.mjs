@@ -301,3 +301,94 @@ test("deep health failures surface the Fibre state diagnostic", async () => {
     /HTTP 503: Birth Center state could not be opened/,
   );
 });
+
+function schemaGatedStackClient({failInstallAttempts=0}={}){
+  const calls=[];
+  let attempts=0,installed=false;
+  const confirmation=Object.freeze({
+    ok:true,deploymentGitSha:"b".repeat(40),installed:true,
+  });
+  const client={
+    async assertAuthenticated(){return {ok:true};},
+    async listSecretNames(){return allSecrets();},
+    async deployService({serviceId}){
+      calls.push("deploy:"+serviceId);
+      return {output:"Published https://"+serviceId+".account.workers.dev"};
+    },
+    async checkServiceHealth({serviceId,expectedSha}){
+      calls.push("health:"+serviceId);
+      return {ok:true,deploymentGitSha:expectedSha};
+    },
+    async checkStateHealth({serviceId,expectedSha}){
+      calls.push("state:"+serviceId);
+      if(serviceId==="world-kernel"&&!installed)
+        throw new Error("health endpoint failed with HTTP 503");
+      return {ok:true,stateChecked:true,deploymentGitSha:expectedSha};
+    },
+    async migrateWorldOrFid({serviceId,expectedSha}){
+      calls.push("migrate:"+serviceId);
+      if(serviceId==="world-kernel"){
+        attempts++;
+        if(attempts<=failInstallAttempts)
+          throw new Error("previous World schema revision still served");
+        installed=true;
+        return confirmation;
+      }
+      return {ok:true,deploymentGitSha:expectedSha};
+    },
+    async migrateBirthCenter(){return {applied:[]};},
+    async checkBirthCenterRuntime(){return {ok:true,status:404};},
+    async checkPresentationAcceptance(){return {threads:[]};},
+    async checkViewer(){return {ok:true};},
+  };
+  return {client,calls,confirmation};
+}
+
+async function deploySchemaGatedStack(gated){
+  const {root,state}=await fixtureRepo();
+  return deployCloudflareStack({
+    repoRoot:root,environment:"staging",client:gated.client,
+    validateRepository:async()=>{},provision:async()=>state,
+    wait:async()=>{},
+  });
+}
+
+test("full-stack World schema installation precedes its first state-health check",async()=>{
+  const gated=schemaGatedStackClient();
+  const result=await deploySchemaGatedStack(gated);
+  const world=result.deployments.find(item=>item.serviceId==="world-kernel");
+  assert.deepEqual(world.migration,gated.confirmation,
+    "World installed revision was not recorded as migration");
+  assert.equal(gated.calls.filter(call=>call==="migrate:world-kernel").length,1,
+    "World schema installation was repeated");
+  assert.ok(gated.calls.indexOf("migrate:world-kernel")<
+    gated.calls.indexOf("state:world-kernel"),
+    "state health ran before World schema admission");
+});
+
+test("full-stack deployment records the confirmation after transient prior World revision",async()=>{
+  const gated=schemaGatedStackClient({failInstallAttempts:2});
+  const result=await deploySchemaGatedStack(gated);
+  const world=result.deployments.find(item=>item.serviceId==="world-kernel");
+  assert.equal(gated.calls.filter(call=>call==="migrate:world-kernel").length,3,
+    "World installation was not retried after prior revision");
+  assert.deepEqual(world.migration,gated.confirmation,
+    "retry confirmation was replaced by a later migration");
+  assert.ok(gated.calls.indexOf("migrate:world-kernel")<
+    gated.calls.indexOf("state:world-kernel"),
+    "World health acceptance preceded successful installation");
+});
+
+test("unconfirmed World schema fails deployment before any state health",async()=>{
+  const gated=schemaGatedStackClient({failInstallAttempts:8});
+  await assert.rejects(deploySchemaGatedStack(gated),error=>{
+    assert.match(error.message,/World schema installation did not reach the deployed revision/);
+    assert.match(error.cause?.message??"",/previous World schema revision/,
+      "final installation error lost its cause");
+    return true;
+  });
+  assert.equal(gated.calls.filter(call=>call==="migrate:world-kernel").length,8,
+    "World installation exceeded its bounded retry contract");
+  assert.equal(gated.calls.includes("state:world-kernel"),false,
+    "World health was checked without installed schema");
+});

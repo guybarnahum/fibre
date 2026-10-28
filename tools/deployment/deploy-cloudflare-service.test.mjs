@@ -158,3 +158,53 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
   }
 });
 
+
+test("targeted World deploy shares bounded schema-install retry before health acceptance",async()=>{
+  const repoRoot=mkdtempSync(join(tmpdir(),"fibre-world-schema-retry-"));
+  const confirmation={ok:true,deploymentGitSha:SHA,installed:true};
+  let attempts=0;
+  const waits=[],logs=[];
+  try{
+    const result=await deployCloudflareService({
+      repoRoot,environment:"staging",service:"world-kernel",
+      async resolveSource(){return SHA;},
+      async resolveConfig(){
+        return {
+          sourceConfigPath:"infra/deployments/world-kernel/cloudflare/wrangler.jsonc",
+          config:resolvedConfig(),
+        };
+      },
+      async writeFileImpl(){},
+      async ensureD1MigrationsImpl(){},
+      async runner(){return {stdout:"Published https://world.example",stderr:""};},
+      createDeploymentClient(){
+        return {
+          async migrateWorldOrFid({serviceId,expectedSha}){
+            assert.equal(serviceId,"world-kernel");
+            assert.equal(expectedSha,SHA);
+            attempts++;
+            if(attempts<=2)throw new Error("prior World schema revision");
+            return confirmation;
+          },
+        };
+      },
+      wait:async ms=>waits.push(ms),
+      print:line=>logs.push(line),
+      async acceptServiceRevisionImpl(){
+        assert.equal(attempts,3,
+          "health acceptance started before World schema installation");
+        return {baseUrl:"https://world.example"};
+      },
+    });
+    assert.strictEqual(result.schemaAcceptance,confirmation,
+      "targeted deploy lost the confirming World migration payload");
+    assert.equal(attempts,3,"targeted deploy did not reuse bounded install retries");
+    assert.deepEqual(waits,[1_500,3_000],
+      "shared retry lost its existing exponential wait contract");
+    assert.equal(logs.filter(line=>line.startsWith(
+      "STATE SCHEMA REVISION PENDING world-kernel")).length,2,
+      "targeted deploy lost its schema revision diagnostic");
+  }finally{
+    rmSync(repoRoot,{recursive:true,force:true});
+  }
+});

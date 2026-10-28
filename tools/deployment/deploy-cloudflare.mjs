@@ -281,6 +281,25 @@ export async function retryStateHealth({
   throw new Error(`${serviceId} state did not become healthy after deployment: ${lastError?.message}`,{cause:lastError});
 }
 
+// Installation is an explicit deployment step; the running World must never retry it.
+export async function installWorldSchemaWithRetry({
+  client,serviceId,baseUrl,expectedSha,wait=delay,log=console.log,
+}={}){
+  for(let attempt=0;attempt<8;attempt++){
+    try{
+      return await client.migrateWorldOrFid({serviceId,baseUrl,expectedSha});
+    }catch(error){
+      if(attempt===7)throw new Error(
+        "World schema installation did not reach the deployed revision",
+        {cause:error},
+      );
+      const delayMs=Math.min(15_000,1_500*2**attempt);
+      log("STATE SCHEMA REVISION PENDING world-kernel; next check in "+delayMs/1_000+"s");
+      await wait(delayMs);
+    }
+  }
+}
+
 export async function deployCloudflareStack({
   repoRoot,
   environment,
@@ -339,17 +358,23 @@ export async function deployCloudflareStack({
     if(!/^[0-9a-f]{40}$/u.test(expectedSha??"")){
       throw new Error(serviceId+" requires an exact source revision for deployment");
     }
+    // World health is gated by this exact schema revision. Install first.
+    const installedWorldSchema=serviceId==="world-kernel"
+      ?await installWorldSchemaWithRetry({client,serviceId,baseUrl,expectedSha,wait})
+      :null;
     const health=await retryServiceHealth({
       client,serviceId,baseUrl,expectedSha,attempts,wait,
     });
     const stateHealth=STATEFUL_DO_SERVICES.has(serviceId)
       ?await retryStateHealth({client,serviceId,baseUrl,expectedSha,wait})
       :null;
-    const migration=serviceId==="birth-center"
-      ?await client.migrateBirthCenter({baseUrl,expectedSha})
-      :serviceId==="world-kernel"||serviceId==="fibre-identity-authority"
-        ?await client.migrateWorldOrFid({serviceId,baseUrl,expectedSha})
-        :null;
+    const migration=serviceId==="world-kernel"
+      ?installedWorldSchema
+      :serviceId==="birth-center"
+        ?await client.migrateBirthCenter({baseUrl,expectedSha})
+        :serviceId==="fibre-identity-authority"
+          ?await client.migrateWorldOrFid({serviceId,baseUrl,expectedSha})
+          :null;
     const runtimeAcceptance = serviceId === "birth-center"
       ? await retryHealth({
           serviceId,
