@@ -9,6 +9,7 @@ import {
   createWranglerDeploymentClient,
   deployCloudflareStack,
   healthBaseUrlForDeployment,
+  installWorldSchemaWithRetry,
   missingRequiredSecretNames,
   retryStateHealth,
 } from "./deploy-cloudflare.mjs";
@@ -391,4 +392,43 @@ test("unconfirmed World schema fails deployment before any state health",async()
     "World installation exceeded its bounded retry contract");
   assert.equal(gated.calls.includes("state:world-kernel"),false,
     "World health was checked without installed schema");
+});
+
+ 
+test("World deployment waits through revision refusal without accepting stale installation",async()=>{
+  const target="b".repeat(40);
+  const stale="a".repeat(40);
+  const requested=[];
+  const logs=[];
+  const waits=[];
+  const client=createWranglerDeploymentClient({
+    privateToken:"operator-secret",
+    fetchImpl:async(url,options)=>{
+      assert.equal(String(url),"https://world.example/internal/world-schema/migrate");
+      assert.equal(options.method,"POST");
+      assert.equal(options.headers["x-fibre-private-token"],"operator-secret");
+      requested.push(JSON.parse(options.body).expectedGitSha);
+      if(requested.length<=2)
+        return Response.json({
+          ok:false,code:"WORLD_REVISION_NOT_SERVING",deploymentGitSha:stale,
+        },{status:409});
+      return Response.json({
+        ok:true,deploymentGitSha:target,installed:true,already:false,
+      },{headers:{
+        "x-fibre-state-rows-read":"50321",
+        "x-fibre-state-rows-written":"17",
+      }});
+    },
+  });
+  const result=await installWorldSchemaWithRetry({
+    client,serviceId:"world-kernel",baseUrl:"https://world.example",
+    expectedSha:target,wait:async(ms)=>waits.push(ms),log:line=>logs.push(line),
+  });
+  assert.deepEqual(requested,[target,target,target],"deploy sent the wrong source revision");
+  assert.deepEqual(waits,[1500,3000],"old revision did not defer schema installation");
+  assert.equal(result.deploymentGitSha,target);
+  assert.equal(result.rowsRead,50321);
+  assert.equal(result.rowsWritten,17);
+  assert.match(logs.at(-1),/STATE SCHEMA INSTALLED world-kernel after \d+s \(rows read 50321, written 17\)/u,
+    "deployment hid the actual schema installation cost");
 });

@@ -177,16 +177,23 @@ export function createWranglerDeploymentClient({
         throw new TypeError("unsupported World state migration target");
       }
       const response=await fetchImpl(`${baseUrl.replace(/\/$/u,"")}${path}`,{
-        method:"POST",headers:{"x-fibre-private-token":token},
+        method:"POST",
+        headers:{"x-fibre-private-token":token,"content-type":"application/json"},
+        body:JSON.stringify({expectedGitSha:expectedSha}),
       });
       const payload=await response.json();
       if(!response.ok||payload?.ok!==true||payload?.deploymentGitSha!==expectedSha){
         const error=new Error(serviceId+" schema installation did not confirm deployed revision");
         if(typeof payload?.deploymentGitSha==="string")
           error.deploymentGitSha=payload.deploymentGitSha;
+        if(response.status===409&&payload?.code==="WORLD_REVISION_NOT_SERVING")
+          error.code="WORLD_REVISION_NOT_SERVING";
         throw error;
       }
-      return payload;
+      const read=response.headers?.get?.("x-fibre-state-rows-read");
+      const written=response.headers?.get?.("x-fibre-state-rows-written");
+      return read===null||read===undefined||written===null||written===undefined
+        ?payload:{...payload,rowsRead:Number(read),rowsWritten:Number(written)};
     },
     async migrateBirthCenter({ baseUrl, expectedSha }) {
       const token = nonEmpty("FIBRE_PRIVATE_TOKEN", privateToken);
@@ -294,7 +301,9 @@ export async function installWorldSchemaWithRetry({
   for(let attempt=0;attempt<attempts;attempt++){
     try{
       const installed=await client.migrateWorldOrFid({serviceId,baseUrl,expectedSha});
-      log(`STATE SCHEMA INSTALLED world-kernel after ${Math.floor((Date.now()-startedAt)/1_000)}s`);
+      const rows=Number.isFinite(installed?.rowsRead)
+        ?` (rows read ${installed.rowsRead}, written ${installed.rowsWritten})`:"";
+      log(`STATE SCHEMA ${installed?.already===true?"ALREADY INSTALLED":"INSTALLED"} world-kernel after ${Math.floor((Date.now()-startedAt)/1_000)}s${rows}`);
       return installed;
     }catch(error){
       if(attempt===attempts-1)throw new Error(

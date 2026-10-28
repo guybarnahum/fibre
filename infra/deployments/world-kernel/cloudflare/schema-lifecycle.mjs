@@ -30,3 +30,22 @@ export async function resumeAlarmAfterSchemaInstall(storage,at=Date.now()){
     await storage.setAlarm(at);
   }
 }
+
+ 
+// Refuse a stale serving revision before opening World SQL or installing schema.
+export function installWorldSchemaForRevision({
+  expectedGitSha,deploymentGitSha,readInstalledGitSha,install,
+}={}){
+  if(!/^[0-9a-f]{40}$/u.test(expectedGitSha??""))
+    return {status:400,body:{ok:false,code:"WORLD_EXPECTED_REVISION_INVALID"}};
+  if(expectedGitSha!==deploymentGitSha)
+    return {status:409,body:{
+      ok:false,code:"WORLD_REVISION_NOT_SERVING",deploymentGitSha:deploymentGitSha??null,
+    }};
+  const already=readInstalledGitSha()===deploymentGitSha;
+  if(!already)install();
+  return {status:200,body:{
+    ok:true,contract:"fibre-world-schema-installed-v1",
+    deploymentGitSha,installed:!already,already,
+  }};
+}

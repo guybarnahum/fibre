@@ -33,6 +33,7 @@ import {reviveStaleWorldAlarm} from "#services/world-kernel/src/world-reconcilia
 import {
   readWorldSchemaStatus,worldSchemaStatusError,
   deferAlarmForSchemaInstall,resumeAlarmAfterSchemaInstall,
+  installWorldSchemaForRevision,
 } from "./schema-lifecycle.mjs";
 
 const WORLD_SCOPE_ID = "world";
@@ -653,7 +654,8 @@ export class FibreWorldDurableObject extends DurableObject {
       // A private Observatory inspection can measure its own SQL cost
       // without relying on sampled console tails or an extra DB query.
       if (response && (THREAD_OBSERVATORY_ROUTE.test(operation.path ?? "")
-        ||operation.path==="/internal/integrity/audit")) {
+        ||operation.path==="/internal/integrity/audit"
+        ||operation.path==="/internal/world-schema/migrate")) {
         response.headers.set("x-fibre-state-rows-read", String(cost.rowsRead));
         response.headers.set("x-fibre-state-rows-written", String(cost.rowsWritten));
         response.headers.set("x-fibre-state-queries", String(cost.queries));
@@ -744,22 +746,23 @@ export class FibreWorldDurableObject extends DurableObject {
       if(!privateOperatorAuthorized(request,this.env)){
         return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
       }
-      const schemaStorage={
-        infraDriver:this.infraDriver,stateScopeId:WORLD_SCOPE_ID,
-      };
-      installWorldSchemas(schemaStorage,{
-        deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local",
+      const input=await request.json().catch(()=>null);
+      const deploymentGitSha=this.env.FIBRE_DEPLOYMENT_GIT_SHA??null;
+      const result=installWorldSchemaForRevision({
+        expectedGitSha:input?.expectedGitSha,deploymentGitSha,
+        readInstalledGitSha:()=>this.worldSchemaStatus().installedGitSha,
+        install:()=>installWorldSchemas({
+          infraDriver:this.infraDriver,stateScopeId:WORLD_SCOPE_ID,
+        },{deploymentGitSha}),
       });
-      this.schemaStatus=null;
-      await resumeAlarmAfterSchemaInstall(this.ctx.storage);
-      // A running World can now reopen its installed, schema-ready stores.
-      await this.runtime?.close();
-      this.runtime=null;
-      return Response.json({
-        ok:true,
-        contract:"fibre-world-schema-installed-v1",
-        deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
-      });
+      if(result.body.installed){
+        this.schemaStatus=null;
+        await resumeAlarmAfterSchemaInstall(this.ctx.storage);
+        // A running World can now reopen its installed, schema-ready stores.
+        await this.runtime?.close();
+        this.runtime=null;
+      }
+      return Response.json(result.body,{status:result.status});
     }
     if (url.pathname === APPEARANCE_COVERAGE_ROUTE) {
       if (url.search !== "") return Response.json({ error:{ code:"QUERY_NOT_SUPPORTED" } }, { status:400 });
@@ -1040,6 +1043,12 @@ export class FibreWorldDurableObject extends DurableObject {
   }
 
   async fetch(request) {
+    const url=new URL(request.url);
+    // Schema revision refusal must precede all World storage/scheduling work.
+    if(url.pathname==="/internal/world-schema/migrate"
+      &&request.method==="POST")
+      return this.withStateCost({kind:"request",method:"POST",path:url.pathname},
+        ()=>this.fetchWorldRequest(request,url));
     // A stale past-due DO alarm must recover even when the SQL quota has
     // temporarily prevented reconciliation. This uses DO scheduling only.
     const at=Date.now();
@@ -1062,10 +1071,7 @@ export class FibreWorldDurableObject extends DurableObject {
         }));
       }
     }
-    const url = new URL(request.url);
-    const installing=url.pathname==="/internal/world-schema/migrate"
-      &&request.method==="POST";
-    const schema=installing?null:this.worldSchemaStatus();
+    const schema=this.worldSchemaStatus();
     if(schema!==null&&!schema.ready){
       const response={error:worldSchemaStatusError(schema)};
       if(url.pathname.startsWith("/internal/health/")){

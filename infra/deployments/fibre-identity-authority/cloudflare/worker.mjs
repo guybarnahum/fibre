@@ -570,6 +570,14 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
       return Response.json({ error:{ code:"PRIVATE_TOKEN_REQUIRED" } }, { status:403 });
     }
     if(url.pathname==="/internal/migrate" && request.method==="POST"){
+      const input=await request.json().catch(()=>null);
+      if(!/^[0-9a-f]{40}$/u.test(input?.expectedGitSha??""))
+        return Response.json({ok:false,code:"FID_EXPECTED_REVISION_INVALID"},{status:400});
+      if(input.expectedGitSha!==this.env.FIBRE_DEPLOYMENT_GIT_SHA)
+        return Response.json({
+          ok:false,code:"WORLD_REVISION_NOT_SERVING",
+          deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
+        },{status:409});
       installFidSchema(this.ctx);
       return Response.json({
         ok:true,service:"fibre-identity-authority",
