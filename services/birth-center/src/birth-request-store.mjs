@@ -84,6 +84,21 @@ export function createBirthRequestStore(storage, { now = () => new Date().toISOS
     ORDER BY created_at DESC,request_id DESC
     LIMIT ?
   `);
+  // The existing status/created index reaches failed admin births regardless
+  // of age. A settled disposition is never reconsidered.
+  const failedUnsettledQuery = database.prepare(`
+    SELECT b.request_id,b.requested_at,b.requested_location,b.requested_sex,b.selected_location,
+           b.location_source,b.selected_sex,b.status,b.thread_id,b.genesis_id,
+           b.error_text,b.created_at,b.updated_at
+    FROM modern_birth_requests b
+    JOIN genesis_development_requests g ON g.request_id=b.request_id
+    LEFT JOIN genesis_development_dispositions d ON d.request_id=b.request_id
+    WHERE b.status='failed' AND b.thread_id IS NOT NULL
+      AND (b.location_source IS NULL OR b.location_source!='cli')
+      AND d.outcome IS NULL
+    ORDER BY b.created_at ASC,b.request_id ASC
+    LIMIT ?
+  `);
 
   function get(requestId) {
     return normalize(select.get(nonEmpty("birth requestId", requestId)));
@@ -161,6 +176,11 @@ export function createBirthRequestStore(storage, { now = () => new Date().toISOS
     progress,
     fail,
     recent,
+    unsettledFailed({limit=64}={}){
+      if(!Number.isSafeInteger(limit)||limit<1||limit>256)
+        throw new TypeError("failed birth query limit must be 1 through 256");
+      return failedUnsettledQuery.all(limit).map(normalize);
+    },
     isActive(status) { return ACTIVE.has(status); },
     close() { database.close(); },
   });

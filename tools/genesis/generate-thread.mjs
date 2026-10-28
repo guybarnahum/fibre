@@ -16,6 +16,7 @@ import {
   composeBirthSubjectIdentity,
   freshBirthParticipants,
   selectBirthChronology,
+  runPreparedBirth,
 } from "./birth-material.mjs";
 import {
   normalizeGenesisWorldSelector,
@@ -377,15 +378,14 @@ async function main() {
     baseUrl:birthCenter,privateToken,requestId,requestedAt,
     location,sex:options.sex,action:"start",timeoutMs,
   });
+  const {selection,body,plan,birth}=await runPreparedBirth(async()=>{
   requestedAt=preparation.requestedAt;
   const chronology=selectBirthChronology({requestId,requestedAt});
   if(persistedRequestedAt!==null&&persistedRequestedAt!==requestedAt){
     throw new Error("Birth Center preparation time differs from durable Genesis development");
   }
   emit("author_world_and_family",{place:selector.display});
-  let selection;
-  try {
-    selection = await resolveGenesisWorldSelection({
+  const selection = await resolveGenesisWorldSelection({
       selector,
       heritage: options.heritage,
       forceNewWorld: options.forceNewWorld,
@@ -399,12 +399,6 @@ async function main() {
         }
       },
     });
-  }catch(error){
-    await reportPreparation({baseUrl:birthCenter,privateToken,requestId,
-      requestedAt,location,sex:options.sex,action:"fail",
-      error:String(error?.message??error),timeoutMs}).catch(()=>{});
-    throw error;
-  }
   emit("compose_birth_request");
   const body = birthRequest({
     requestId,
@@ -429,6 +423,10 @@ async function main() {
   });
   emit("submit_development",{genesisId:plan.genesisId});
   const birth = (await submit({ baseUrl: birthCenter, privateToken, body, timeoutMs })).development;
+  return {selection,body,plan,birth};
+  },error=>reportPreparation({baseUrl:birthCenter,privateToken,requestId,
+    requestedAt,location,sex:options.sex,action:"fail",
+    error:String(error?.message??error),timeoutMs}));
   if (birth?.status !== "published") {
     emit("await_birth_center_publication");
     await poll(

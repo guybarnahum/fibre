@@ -95,3 +95,12 @@ export function selectBirthChronology({requestId,requestedAt}={}){
     chronologyEndsAt:chronologyEndsAt.toISOString(),
   });
 }
+
+/** Close an accepted CLI preparation on any failure before submission completes. */
+export async function runPreparedBirth(work,reportFailure){
+  try{return await work();}
+  catch(error){
+    try{await reportFailure(error);}catch{}
+    throw error;
+  }
+}

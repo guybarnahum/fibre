@@ -410,3 +410,49 @@ test("queued publication is kicked immediately and leaves scheduling consistent"
   assert.deepEqual(calls, ["publish","schedule"]);
   assert.deepEqual(result, { attempted:1, published:1 });
 });
+
+test("old failed admin birth settles after confirmed World absence despite legacy retryability",async()=>{
+  const old=staleModern({
+    requestId:"admin_birth_legacy_manchester",genesisId:"gen_manchester",
+    threadId:"thr_manchester",location:"United Kingdom/Manchester",
+    status:"failed",error:"replacement Pass-A exhausted 5 generated versions",
+    createdAt:"2026-08-23T00:00:00.000Z",
+    updatedAt:"2026-08-23T00:10:00.000Z",
+  });
+  const development=developmentFor(old);
+  let disposition={outcome:null,failureRetryable:null};
+  let checks=0,settlements=0;
+  const runtime={
+    birthRequestStore:{
+      recent:()=>[old],
+      unsettledFailed:()=>disposition.outcome===null?[old]:[],
+      isActive:()=>false,
+      progress:()=>{throw new Error("absent Thread marked published");},
+    },
+    provisionalBirthStore:{get:()=>null},
+    developmentRequestStore:{
+      recent:()=>[],
+      get:id=>id===old.requestId?development:null,
+      getDisposition:()=>disposition,
+      settleBorn:()=>{throw new Error("absent Thread marked born");},
+      settleStillborn:()=>{settlements++;disposition={outcome:"stillborn"};},
+    },
+  };
+  assert.equal(pendingBirths(runtime,{nowMs:()=>NOW}).length,1,
+    "unsettled legacy failure was not visible");
+  const presence={fetch:async()=>{
+    checks++;
+    return Response.json({presentThreadIds:[]});
+  }};
+  const first=await reconcileStaleBirths(runtime,{
+    worldBinding:presence,privateToken:TOKEN,nowMs:()=>NOW,
+  });
+  assert.equal(first.stillborn,1,"old failure did not settle stillborn");
+  assert.equal(settlements,1);
+  assert.deepEqual(pendingBirths(runtime,{nowMs:()=>NOW}),[],
+    "settled admin failure remained pending");
+  await reconcileStaleBirths(runtime,{
+    worldBinding:presence,privateToken:TOKEN,nowMs:()=>NOW,
+  });
+  assert.equal(checks,1,"settled failure repeated World presence queries");
+});

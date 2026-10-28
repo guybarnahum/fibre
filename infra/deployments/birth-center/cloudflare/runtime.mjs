@@ -92,11 +92,15 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
     // reconcile. Its timeout is visible to Admin, not a World alarm debt.
     if (request.locationSource === "cli" && !request.threadId) continue;
     if (request.status === "published") continue;
+    if (request.status === "failed"
+      && runtime.developmentRequestStore.getDisposition(request.requestId)?.outcome != null) continue;
     if (request.status === "failed" && !request.genesisId && !request.threadId) continue;
     if (runtime.birthRequestStore.isActive(request.status) || request.status === "failed") {
       consider(request);
     }
   }
+  for (const request of runtime.birthRequestStore.unsettledFailed?.({limit:64})??[])
+    consider(request);
   for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
@@ -259,9 +263,9 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
     if (!active && request.status !== "failed") continue;
     if (request.status === "failed" && developmentRequest === null
       && !request.genesisId && !request.threadId && request.locationSource !== "cli") continue;
-    const disposition = developmentRequest === null
-      ? null
-      : runtime.developmentRequestStore.getDisposition(request.requestId);
+    const disposition = request.status === "failed" || developmentRequest !== null
+      ? runtime.developmentRequestStore.getDisposition(request.requestId)
+      : null;
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
 
     const sex = request.sex ?? request.requestedSex;
@@ -379,14 +383,19 @@ export async function reconcileStaleBirths(runtime, {
   const bornRequests = new Set();
   const stillbornRequests = new Set();
   const publishedBirthRequests = new Set();
-  const births = runtime.birthRequestStore.recent({ limit:64 });
+  const failedBirths=runtime.birthRequestStore.unsettledFailed?.({limit:64})??[];
+  const births=[...new Map([
+    ...runtime.birthRequestStore.recent({limit:64}),...failedBirths,
+  ].map(request=>[request.requestId,request])).values()];
   const birthByRequest = new Map(births.map((request) => [request.requestId, request]));
   const birthCandidates = [];
   const developmentCandidates = [];
   const threadIds = new Set();
 
   for (const request of births) {
-    if (request.status === "published") continue;
+    if (request.status === "published"
+      || (request.status === "failed"
+        && runtime.developmentRequestStore.getDisposition(request.requestId)?.outcome != null)) continue;
     if (
       request.genesisId !== null
       && runtime.provisionalBirthStore.get(request.genesisId)?.status === "published"
@@ -402,7 +411,11 @@ export async function reconcileStaleBirths(runtime, {
     threadIds.add(request.threadId);
   }
 
-  for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
+  const developments=[...new Map([
+    ...runtime.developmentRequestStore.recent({limit:32}),
+    ...failedBirths.map(birth=>runtime.developmentRequestStore.get?.(birth.requestId)).filter(Boolean),
+  ].map(request=>[request.requestId,request])).values()];
+  for (const request of developments) {
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
 
@@ -425,7 +438,8 @@ export async function reconcileStaleBirths(runtime, {
     }
 
     const timing = birthTiming(request, nowMs);
-    const terminalFailure = disposition?.failureRetryable === false;
+    const terminalFailure = disposition?.failureRetryable === false
+      || (birthRequest?.status === "failed" && birthRequest.locationSource !== "cli");
     if ((!timing.stale && !terminalFailure) || !request.threadId) continue;
     developmentCandidates.push(Object.freeze({ request, disposition, birthRequest }));
     threadIds.add(request.threadId);
@@ -467,7 +481,8 @@ export async function reconcileStaleBirths(runtime, {
       bornRequests.add(request.requestId);
       continue;
     }
-    if (disposition?.failureRetryable === false) {
+    if (disposition?.failureRetryable === false
+      || (birthRequest?.status === "failed" && birthRequest.locationSource !== "cli")) {
       runtime.developmentRequestStore.settleStillborn(request.requestId);
       stillbornRequests.add(request.requestId);
     }

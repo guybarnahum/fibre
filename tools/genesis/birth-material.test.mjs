@@ -10,6 +10,7 @@ import {
   composeBirthSubjectIdentity,
   freshBirthParticipants,
   selectBirthSlot,
+  runPreparedBirth,
 } from "./birth-material.mjs";
 
 const fixture = JSON.parse(readFileSync(new URL("../../fixtures/genesis/pr39/birth-material-v1.json", import.meta.url), "utf8"));
@@ -107,4 +108,16 @@ test("birth names are deterministic without six-person family-name cycles", () =
   assert.equal(new Set(names).size,names.length,"small birth cohort repeated a full name");
   assert.ok(new Set(names.map(name=>name.split(" ").at(-1))).size>2,"family names still advance in six-person blocks");
   assert.equal(composeBirthSubjectIdentity({requestId:"naming-realism-3",material:naming}).femaleName,names[2],"same birth changed name");
+});
+
+test("CLI preparation reports a compose failure and preserves its cause",async()=>{
+  const reported=[];
+  const failure=new TypeError("genome locus must be one textual proposition");
+  await assert.rejects(runPreparedBirth(
+    async()=>{throw failure;},
+    async error=>{reported.push(error.message);},
+  ),error=>error===failure,"pre-submit failure was masked");
+  assert.deepEqual(reported,[failure.message],"CLI preparation remained started");
+  assert.equal(await runPreparedBirth(async()=>({submitted:true}),async()=>{throw new Error("success reported failed");}).then(x=>x.submitted),
+    true,"successful submission was failed");
 });
