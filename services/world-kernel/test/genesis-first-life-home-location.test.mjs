@@ -14,8 +14,12 @@ function firstLife({home={},existing=null}={}){
   };
   const episode={
     episodeId:"plce_hilo_home",revision:1,threadId,
+    episodeKind:"formative_presence",
     place:{placeId:"plc_hilo",displayName:"A small family home",
-      locality:null,countryCode:null,...home},
+      locality:null,countryCode:null,region:null,precision:"unspecified",...home},
+    startAt:"2026-10-01T00:00:00.000Z",endAt:null,
+    sourceReferences:["evt_hilo_home"],visibility:"private",
+    status:"current",provenance:"genesis_created",recordedAt:AT,
   };
   const events=[];
   let due={thread_id:threadId},admitted=existing,completed=false;
