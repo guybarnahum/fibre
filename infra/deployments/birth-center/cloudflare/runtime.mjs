@@ -379,11 +379,18 @@ export async function reconcileStaleBirths(runtime, {
   worldBinding,
   privateToken,
   nowMs = Date.now,
+  failedCursor = null,
 } = {}) {
   const bornRequests = new Set();
   const stillbornRequests = new Set();
   const publishedBirthRequests = new Set();
-  const failedBirths=runtime.birthRequestStore.unsettledFailed?.({limit:64})??[];
+  const unsettled=after=>runtime.birthRequestStore.unsettledFailed?.({limit:64,after})??[];
+  let failedBirths=unsettled(failedCursor?.after??null);
+  if(failedBirths.length===0 && failedCursor?.after!=null) failedBirths=unsettled(null);
+  if(failedCursor!==null){
+    const last=failedBirths.at(-1);
+    failedCursor.after=last?{createdAt:last.createdAt,requestId:last.requestId}:null;
+  }
   const births=[...new Map([
     ...runtime.birthRequestStore.recent({limit:64}),...failedBirths,
   ].map(request=>[request.requestId,request])).values()];
@@ -439,7 +446,8 @@ export async function reconcileStaleBirths(runtime, {
 
     const timing = birthTiming(request, nowMs);
     const terminalFailure = disposition?.failureRetryable === false
-      || (birthRequest?.status === "failed" && birthRequest.locationSource !== "cli");
+      || (birthRequest?.status === "failed" && birthRequest.locationSource !== "cli"
+        && disposition?.failureRetryable !== true);
     if ((!timing.stale && !terminalFailure) || !request.threadId) continue;
     developmentCandidates.push(Object.freeze({ request, disposition, birthRequest }));
     threadIds.add(request.threadId);
@@ -482,7 +490,8 @@ export async function reconcileStaleBirths(runtime, {
       continue;
     }
     if (disposition?.failureRetryable === false
-      || (birthRequest?.status === "failed" && birthRequest.locationSource !== "cli")) {
+      || (birthRequest?.status === "failed" && birthRequest.locationSource !== "cli"
+        && disposition?.failureRetryable !== true)) {
       runtime.developmentRequestStore.settleStillborn(request.requestId);
       stillbornRequests.add(request.requestId);
     }
@@ -648,11 +657,20 @@ export function createBirthCenterCloudflareRuntime({
     birthService: development.birthService,
     birthApi: development.birthApi,
     publicationApi,
-    reconcileStaleBirths:() => reconcileStaleBirths(runtime, {
-      worldBinding,
-      privateToken,
-      nowMs,
-    }),
+    async reconcileStaleBirths(){
+      const cursorKey="birth-center-failed-birth-cursor-v1";
+      const previous=await storage.get(cursorKey)??null;
+      const failedCursor={after:previous};
+      const result=await reconcileStaleBirths(runtime,{
+        worldBinding,privateToken,nowMs,failedCursor,
+      });
+      const next=failedCursor.after;
+      if(next?.createdAt!==previous?.createdAt||next?.requestId!==previous?.requestId){
+        if(next===null)await storage.delete(cursorKey);
+        else await storage.put(cursorKey,next);
+      }
+      return result;
+    },
     ensureBirthStatusScheduled:({ reconcileStaleNow = false } = {}) =>
       ensureBirthStatusScheduled(runtime, { nowMs, reconcileStaleNow }),
     close() { runtime.close(); },

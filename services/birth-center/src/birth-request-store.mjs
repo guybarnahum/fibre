@@ -95,7 +95,8 @@ export function createBirthRequestStore(storage, { now = () => new Date().toISOS
     LEFT JOIN genesis_development_dispositions d ON d.request_id=b.request_id
     WHERE b.status='failed' AND b.thread_id IS NOT NULL
       AND (b.location_source IS NULL OR b.location_source!='cli')
-      AND d.outcome IS NULL
+      AND d.outcome IS NULL AND (d.failure_retryable IS NULL OR d.failure_retryable=0)
+      AND (b.created_at > ? OR (b.created_at = ? AND b.request_id > ?))
     ORDER BY b.created_at ASC,b.request_id ASC
     LIMIT ?
   `);
@@ -176,10 +177,12 @@ export function createBirthRequestStore(storage, { now = () => new Date().toISOS
     progress,
     fail,
     recent,
-    unsettledFailed({limit=64}={}){
+    unsettledFailed({limit=64,after=null}={}){
       if(!Number.isSafeInteger(limit)||limit<1||limit>256)
         throw new TypeError("failed birth query limit must be 1 through 256");
-      return failedUnsettledQuery.all(limit).map(normalize);
+      const createdAt=after?.createdAt??"";
+      const requestId=after?.requestId??"";
+      return failedUnsettledQuery.all(createdAt,createdAt,requestId,limit).map(normalize);
     },
     isActive(status) { return ACTIVE.has(status); },
     close() { database.close(); },

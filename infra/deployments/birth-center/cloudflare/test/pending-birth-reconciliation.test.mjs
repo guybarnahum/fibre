@@ -456,3 +456,57 @@ test("old failed admin birth settles after confirmed World absence despite legac
   });
   assert.equal(checks,1,"settled failure repeated World presence queries");
 });
+
+test("reconciliation advances beyond 64 old failures and wraps after the last",async()=>{
+  const requests=Array.from({length:70},(_,i)=>staleModern({
+    requestId:"old_"+String(i).padStart(3,"0"),
+    genesisId:"gen_old_"+i,threadId:"thr_old_"+i,status:"failed",
+    error:"legacy permanent failure",
+  }));
+  const byId=new Map(requests.map(request=>[request.requestId,request]));
+  const outcomes=new Set();
+  const cursor={after:null};
+  const runtime={
+    birthRequestStore:{
+      recent:()=>[],
+      unsettledFailed:({limit,after})=>requests.filter(request=>
+        !outcomes.has(request.requestId)
+        &&(after===null||request.createdAt>after.createdAt
+          ||(request.createdAt===after.createdAt&&request.requestId>after.requestId))
+      ).slice(0,limit),
+      progress:()=>{throw new Error("absent Thread marked published");},
+    },
+    provisionalBirthStore:{get:()=>null},
+    developmentRequestStore:{
+      recent:()=>[],
+      get:id=>byId.has(id)?developmentFor(byId.get(id)):null,
+      getDisposition:id=>outcomes.has(id)?{outcome:"stillborn"}:{outcome:null,failureRetryable:null},
+      settleBorn:()=>{throw new Error("absent Thread marked born");},
+      settleStillborn:id=>outcomes.add(id),
+    },
+  };
+  let worldChecks=0;
+  const presence={fetch:async()=>{
+    worldChecks++;
+    return Response.json(worldChecks===1?{ok:false}:{presentThreadIds:[]});
+  }};
+  const first=await reconcileStaleBirths(runtime,{
+    worldBinding:presence,privateToken:TOKEN,nowMs:()=>NOW,failedCursor:cursor,
+  });
+  assert.equal(first.unavailable,64,"first reconciliation exceeded its bounded batch");
+  assert.equal(outcomes.size,0,"uncertain World presence settled a failed birth");
+  assert.equal(cursor.after.requestId,"old_063","failed birth cursor did not advance");
+  const second=await reconcileStaleBirths(runtime,{
+    worldBinding:presence,privateToken:TOKEN,nowMs:()=>NOW,failedCursor:cursor,
+  });
+  assert.equal(second.stillborn,6,"later failures were starved by unresolved oldest 64");
+  const third=await reconcileStaleBirths(runtime,{
+    worldBinding:presence,privateToken:TOKEN,nowMs:()=>NOW,failedCursor:cursor,
+  });
+  assert.equal(third.stillborn,64,"cursor failed to wrap back to unresolved births");
+  assert.equal(outcomes.size,70,"not all old failures settled");
+  await reconcileStaleBirths(runtime,{
+    worldBinding:presence,privateToken:TOKEN,nowMs:()=>NOW,failedCursor:cursor,
+  });
+  assert.equal(cursor.after,null,"cursor did not reset after exhausting eligible failures");
+});

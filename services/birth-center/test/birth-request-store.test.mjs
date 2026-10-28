@@ -77,3 +77,30 @@ test("unsettled failed query reaches an old admin reservation outside recent bir
   assert.deepEqual(store.unsettledFailed({limit:64}),[],
     "settled failure remains eligible for World reconciliation");
 });
+
+test("old failed reservations page fairly beyond 64 without selecting retryable work",t=>{
+  const state=tempBirthState(t);
+  const store=createBirthRequestStore(state.storage());
+  const developments=createGenesisDevelopmentRequestStore(state.storage());
+  t.after(()=>{developments.close();store.close();});
+  const requestedAt="2026-08-01T00:00:00.000Z";
+  for(let i=0;i<70;i++){
+    const requestId="old_failed_"+String(i).padStart(3,"0");
+    store.enqueue({requestId,requestedAt});
+    const genesisId="gen_old_"+i,threadId="thr_old_"+i;
+    developments.reserve({requestId,requestDigest:"digest_"+i,
+      plan:{requestId,requestDigest:"digest_"+i,genesisId,threadId}});
+    store.progress(requestId,{status:"failed",locationSource:"sampled",genesisId,threadId});
+  }
+  const first=store.unsettledFailed({limit:64});
+  assert.equal(first.length,64,"failed reconciliation batch grew without bound");
+  const after={createdAt:first.at(-1).createdAt,requestId:first.at(-1).requestId};
+  const second=store.unsettledFailed({limit:64,after});
+  assert.equal(second.length,6,"failed reconciliation stranded records beyond 64");
+  assert.equal(new Set([...first,...second].map(b=>b.requestId)).size,70,
+    "failed reconciliation revisited the same records");
+  developments.recordFailure(second[0].requestId,Object.assign(new Error("temporary provider failure"),{retryable:true}));
+  assert.ok(!store.unsettledFailed({limit:64,after})
+    .some(b=>b.requestId===second[0].requestId),
+    "retryable failure was considered terminal");
+});
