@@ -1,7 +1,7 @@
 ---
 id: concept-identity-genome
 status: accepted
-last-reviewed: 2026-09-13
+last-reviewed: 2026-10-28
 canonical: true
 ---
 
@@ -41,6 +41,12 @@ loci[] {
 ```
 
 The **value remains natural language**. IDs and provenance exist so Fibre can replay inheritance and explain where each inherited disposition came from.
+Under accepted [ADR-0030](../decisions/ADR-0030-inherited-urges.md), new v2
+births inherit 13 family-keyed textual urge loci (one from each of 13
+families), not the historical six cognitive-style default-birth loci.
+The original six-locus v1 genomes remain valid and immutable. A v2 locus
+binds a frozen closed orientation and bounded gain, felt-threshold and
+persistence positions as its physiological projection, never as personality.
 
 ## Atomicity
 
@@ -171,9 +177,22 @@ Gender identity, pronouns and sexual orientation are distinct concepts. They are
 
 Semantic needs are **not** genome loci. Fibre must not encode a finished conclusion such as `needs recognition`, `needs belonging`, or `must reproduce` as inherited personality authority merely because the conclusion is placed in the genome.
 
-Likewise Fibre must not create a second canonical **numeric drive genome** or a fixed inherited vector of condition gains underneath the textual genome. Such coefficients would be more fate-like than textual loci: a Thread can resist, reinterpret, or reject an inherited textual disposition through life, but it cannot reinterpret a hidden number that directly scales its cognition.
+Fibre must not create a second, independently authored **numeric drive genome**
+underneath the textual genome. For v2 under ADR-0030, the 13 textual urge
+loci are the sole inherited meaning and provenance authority; each selected
+variant comes with a *frozen*, author-reviewed orientation and G/T/P control
+positions. This inseparable projection tunes the **shared species Body**, not
+cognition or personality directly. Gain spans approximately 0.5×–2× by
+species policy; the shared awareness center is 0.05 and shifts
+log-symmetrically by inherited threshold position. Missing evidence still
+means no drive, never a fabricated need. A Thread can resist, redirect or
+reinterpret a felt pull through lived history; physiological modulation is
+not destiny.
 
-If later controlled experiments establish that inherited modulation is necessary, Fibre may derive a bounded temporary numeric runtime control from relevant textual loci through a frozen, versioned, inspectable projection policy. The natural-language locus remains the inherited authority and provenance surface; the derived number is runtime machinery and may never silently overwrite the textual genotype.
+Historical v1 numeric `runtimeBaselines` remain immutable and recognized by
+the common Body at their legacy scale; they are not multiplied into a v2 urge
+projection. S1 proves grounded Body pressure/direction for three families,
+not downstream urge-response decisions, persistence or character formation.
 
 Sex-sensitive physiology is a separate question from inherited personality modulation. If Fibre introduces sex-dependent regulation, it should name the specific biological mechanism and causal path rather than using sex as a generic gain over needs, affect or cognition.
 
@@ -189,7 +208,11 @@ creativity = 0.93
 
 Numbers remain appropriate where they have actual numerical semantics: balances, time, measured frequencies, evidence confidence, memory salience/accessibility, model parameters, experimental effect sizes, and bounded runtime controls.
 
-A runtime may derive temporary numeric controls such as exploration breadth or retry limits from relevant textual genotype, current character, state, and situation. Such controls are implementation projections. They are not the inherited source of truth and must not silently overwrite the textual genome.
+A runtime may derive numeric controls such as exploration breadth or retry
+limits from relevant textual genotype, character, state, and situation.
+The v2 Body projection is specifically the immutable, variant-bound organismic
+control admitted with its textual genome under ADR-0030, not a separate
+numeric personality source. Neither projection may rewrite DNA.
 
 ## Non-interchangeability
 

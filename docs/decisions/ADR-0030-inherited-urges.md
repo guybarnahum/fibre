@@ -1,12 +1,12 @@
 ---
 id: ADR-0030
-status: proposed
+status: accepted
 last-reviewed: 2026-10-28
 ---
 
-# Proposed ADR: Family-keyed inherited urges and one species Body
+# ADR-0030: Family-keyed inherited urges and one species Body
 
-## Decision pending review
+## Decision — accepted 2026-10-28
 
 Replace the v1 six cognitive-style *default birth* loci with 13 immutable
 family-keyed v2 textual urge loci, 10 variants per family. Each author-reviewed
@@ -105,6 +105,19 @@ S1 does not prove individual plans or character development: it establishes
 the limited, evidence-backed Body projection that S2–S5 must connect through
 Thread-authored decisions to lived consequence.
 
-Implementation and the detailed causal-status/cost/differential contracts
-are in `docs/architecture/inherited-urges.md`. Historical accepted doctrine
-remains effective pending explicit acceptance of this proposed ADR.
+**Acceptance evidence, 2026-10-28:** S1 revision 4 passed 1,804/1,804
+local tests, and its 130-variant numerical invariants were independently
+approved. The staging canary `genesis-birth-mvsm7ujg` was admitted with 13
+immutable v2 loci and a matching `urgeProjection`, and first life began.
+This is a birth-and-Body admission proof, not an S2–S5 behavioral proof.
+
+**Amendments:** [Identity and genome](../concepts/identity-and-genome.md),
+[Symbolic Thread Genome](../architecture/symbolic-thread-genome.md),
+[Intrinsic regulation](../architecture/intrinsic-regulation.md),
+[Extensible Body regulation](../architecture/regulation-drive-extensions.md),
+and [ADR-0025](ADR-0025-extensible-body-regulation.md) defer to this
+accepted decision for **v2 inherited urges**. Immutable v1 six-locus genomes
+and their old 0.85–1.15 inherited sensitivities remain historically valid;
+no existing genomic material is rewritten. The detailed S1 causal-status,
+cost, differential and deferral contracts remain in
+[Inherited urges](../architecture/inherited-urges.md).

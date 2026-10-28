@@ -1,7 +1,7 @@
 ---
 id: architecture-intrinsic-regulation
 status: accepted
-last-reviewed: 2026-10-12
+last-reviewed: 2026-10-28
 canonical: true
 ---
 
@@ -25,11 +25,22 @@ World / body / sensory reality
 
 Regulation is private organism-like control state, not semantic self-knowledge. The same lower architecture should support Threads and simpler animals; language and autobiographical interpretation are optional above it.
 
-## Planned extension: sparse social need and reusable drive rules
+## One Body: evidenced social need and inherited urges
 
 The accepted plan and current source implementation are [Extensible Body regulation, social hunger, and considerate contact](regulation-drive-extensions.md) ([ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md)). It keeps one regulator and existing `RegulationFrame` consumers. A new drive should use a small bounded World/body evidence projection and a pure evaluator; a tiny compile-time family list is justified **only** if real additional families need it. Evidence-backed `social_contact` now regulates contact scarcity independently of low-world-stimulation in the existing `exploration` family; both reach shared interoception for Flight Planning and voluntary social initiation. Recipient-local weekday/time and actually enacted sleep/reachability belong to existing social contact judgment, not a new scheduler or a global permission table.
 
-Supported regulator sensitivities now pass through new-birth symbolic-genome authority and deterministic recombination; existing immutable genomes retain their original alleles and species defaults for later traits. No pressure may directly author `loneliness` or compel meeting. **G1/D1 locally passed; D2 source implemented, local and staging acceptance open.** Natural lifelong consequence remains unproven.
+Historical G1 regulator sensitivities pass through v1 symbolic-genome
+inheritance and recombination. Under accepted [ADR-0030](../decisions/ADR-0030-inherited-urges.md),
+new default births instead carry 13 family-keyed v2 authored textual urge
+loci and a frozen Body projection. The original v1 alleles and genome digests
+are not rewritten or reinterpreted. All Threads share **one species Body**.
+S1's v2 birth/World projection was confirmed on staging on 2026-10-28;
+for now, evidence activates only `social_contact`, `exploration`, and `presence`.
+No live caller supplies `previousUrges`, `urgeTriggers`, or `urgeAvailability`,
+so S1 persistence is inert, triggered families are silent, and target
+availability is unknown. No mechanical pressure may author `loneliness`,
+compel a meeting, imply consent or substitute for Thread-owned meaning.
+D2's broader natural-life causal proof and S2–S5 remain open.
 
 ## One engine, layered regulation
 
@@ -274,18 +285,32 @@ Primitive regulation is more uniform across Threads than semantic character.
 
 ```text
 shared species profile
-  + narrow inherited runtime baselines
+  + legacy v1 runtime baselines OR frozen v2 urge-locus projection
   + developmental state
   + learned history / relationships
   + current World context
   -> individual drive state
 ```
 
-Genetics may tune sensitivity, persistence, recovery rate, novelty appetite, threat reactivity, social-proximity sensitivity, sensory-load tolerance and similar control parameters only within bounded plausible ranges.
+Genetics may tune sensitivity, persistence, recovery rate, novelty appetite,
+threat reactivity, social-proximity sensitivity, sensory-load tolerance and
+similar mechanical controls within species-defined bounds. V1 inherited
+`runtimeBaselines` retain their historical 0.85–1.15 sensitivity envelope.
+For v2, the authored urge variant binds orientation plus G/T/P positions;
+its **sole** drive-specific inherited control is the frozen projection:
+`gain = 2^(G × inheritedSpread)` (0.5×–2× at the extremes) and
+`feltThreshold = min(0.85, 0.05 × 2^(-2 × T × inheritedSpread))`.
+The persistence half-life is defined but **not causally wired in S1**.
+Legacy sensitivity must never be multiplied onto a v2 projection;
+with `inheritedSpread=0` both populations return to the shared species
+baseline. Only real World/Body discrepancy evidence activates a family.
 
-A Thread should not genetically have `safety = 0`, `attachment = 20x normal`, or `crowds = bad`. Large individuality should come primarily from learned targets, expectations, relationships, memories, current state and semantic interpretation.
-
-These bounded parameters belong in genome `runtimeBaselines` because they have genuine numeric/control semantics. They are not personality coordinates.
+A Thread should not genetically have `safety = 0`, `attachment = 20x normal`,
+or `crowds = bad`. Individual meaning and later character arise primarily
+from learned targets, expectations, relationships, memory, circumstances and
+self-interpretation. Organismic control positions are **not** personality
+coordinates; v2 positions are inseparable from their textual locus and
+library digest, not a second numerical genome.
 
 ## Regulation output
 
@@ -466,8 +491,8 @@ Thread Editor is the authorized way to inspect this causal stack.
 
 ```text
 DNA / genome
-  symbolic inherited loci
-  regulator runtime baselines + species envelope
+  textual inherited loci (historical v1 or family-keyed v2)
+  legacy runtime baselines OR frozen v2 urge projection + species envelope
 
 Sensorium now
   relevant internal / visual / auditory / environmental / social cues

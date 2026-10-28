@@ -1,7 +1,7 @@
 ---
 id: architecture-regulation-drive-extensions
 status: accepted
-last-reviewed: 2026-10-12
+last-reviewed: 2026-10-28
 canonical: true
 ---
 
@@ -9,7 +9,9 @@ canonical: true
 
 ## Status and intent
 
-**G1/D1 source implemented and locally validated by Guy; staging proof remains open. D2 source implemented; local and staging validation OPEN.** Autonomous encounter triggering, recipient social-time appraisal and long-term consequence remain planned. This plan extends the existing [intrinsic regulator](intrinsic-regulation.md), [symbolic-genome boundaries](symbolic-thread-genome.md), [developmental exploration](developmental-exploration.md), [Interior Cognition](interior-cognition.md), and [live encounters](live-encounters.md). It does not establish a second organism, feelings store, meeting scheduler, or availability authority.
+**G1/D1 source is historically validated locally; v2 S1 genome/Body admission is accepted and staging-confirmed (2026-10-28). D2's broader natural-life causal proof remains open.** Autonomous encounter triggering, recipient social-time appraisal and long-term consequence remain planned. [ADR-0030](../decisions/ADR-0030-inherited-urges.md) amends the inherited-tuning
+rules here for v2 births; the 0.85–1.15 sensitivities below are **v1 legacy**,
+not an additional multiplier for a v2 urge variant. This plan extends the existing [intrinsic regulator](intrinsic-regulation.md), [symbolic-genome boundaries](symbolic-thread-genome.md), [developmental exploration](developmental-exploration.md), [Interior Cognition](interior-cognition.md), and [live encounters](live-encounters.md). It does not establish a second organism, feelings store, meeting scheduler, or availability authority.
 
 The ambition is not to make Threads easier to summon. A Thread whose actual life contains prolonged insufficient connection or stimulation should develop *body-level pressure* that can affect private attention, felt meaning, ordinary planning, and eventually independently chosen circumstances. Different Threads may legitimately seek solitude, company, novelty, rest, or nothing. A powerful desire for company does not entitle its owner to interrupt somebody at 02:00 or oblige the recipient to answer.
 
@@ -17,8 +19,13 @@ The ambition is not to make Threads easier to summon. A Thread whose actual life
 
 ## Current implementation: reuse before adding anything
 
-- `core/src/intrinsic-regulation.mjs` already emits one `RegulationFrame` with `drives[]`, `intrinsicAffect`, and a common `threadRegulatorProfile`. `regulatorSocialSensitivity` and `regulatorExplorationSensitivity` are **optional numeric inputs the core understands**, currently within the Thread species `0.85–1.15` envelope. Social resonance still reacts to *present* observable cues. The new `social_contact` family independently derives bounded pressure from an admitted, time-grounded interval since the latest recorded reciprocal Thread meeting or accepted Human `/meet` encounter; it does not infer the semantic feeling of loneliness or claim complete knowledge of unrecorded Human contact. `exploration` separately responds to grounded repeated sameness.
-- **G1 locally validated:** new genomes generate bounded basal-regulator sensitivities (rest, thermal, energy, sensory, presence, social and exploration). Recombination only inherits present parental alleles. Older genomes remain immutable and use species defaults for absent traits; staging proof remains open.
+- `core/src/intrinsic-regulation.mjs` already emits one `RegulationFrame` with `drives[]`, `intrinsicAffect`, and a common `threadRegulatorProfile`. `regulatorSocialSensitivity` and `regulatorExplorationSensitivity` are **legacy v1 optional numeric inputs the core understands**, within the historical `0.85–1.15` envelope. V2 uses family-keyed gain/threshold/direction instead; never stack the two inherited gains. Social resonance still reacts to *present* observable cues. The new `social_contact` family independently derives bounded pressure from an admitted, time-grounded interval since the latest recorded reciprocal Thread meeting or accepted Human `/meet` encounter; it does not infer the semantic feeling of loneliness or claim complete knowledge of unrecorded Human contact. `exploration` separately responds to grounded repeated sameness.
+- **Historical G1:** v1 genomes generated bounded basal-regulator sensitivities
+(rest, thermal, energy, sensory, presence, social and exploration), with
+recombination of actually present parental alleles. Existing genomes stay
+immutable and use species defaults for absent traits. New v2 default births
+select 13 immutable authored urge loci with frozen controls under ADR-0030;
+the first v2 World birth and projection have been confirmed on staging.
 - `services/world-kernel/src/lived-now-regulation.mjs` combines sparse, evidenced exploration and social-contact signals into one ordinary `RegulationFrame`; existing interoception now supplies the same bounded Body state to real Flight Plan cognition and co-present social salience/initiation. Neither consumer produces feelings, companions or consent.
 - `emotion:loneliness`, `need:connection`, and `need:novelty_growth` are **already registered semantic possibilities**, not automatic labels for mechanical pressure. The developmental-exploration X0–X4 work already connects observed sameness → exploration → planning → experience → later potential meaning.
 - `lived-social-meeting.mjs` already produces co-present Thread opportunities and reuses `formSocialEncounterRequest` / `formMeetingStance`. `thread-contact-process.mjs` and recipient perception own separately delivered addressed contact. `lived-experience-store.mjs` has bounded `listSocialInteractions(threadId,{limit,...})`, whereas `listEncounterStories(threadId)` currently reads an unbounded history; do not put the latter on a new frequent hot path.
@@ -32,7 +39,12 @@ A family definition has only the responsibilities that are actually needed:
 1. **Family and meaning:** stable family identifier, biologically/organismically meaningful discrepancy being regulated, allowed approach/avoid/maintain orientation.
 2. **Bounded evidence:** a small optional input field supplied by an existing World/body adapter. Every factual reading is sourced, time-bounded, and explicit about unknown versus absent. Evaluators never query the World themselves.
 3. **Pure evaluation:** `evaluate(percept, profile, targets) → zero or more existing Drive records`, with pressure/urgency/evidence refs in the shared `RegulationFrame` contract. Shared normalization, generic regulator math, attention, interoception, and diagnostics stay shared.
-4. **Optional inherited tuning:** only when the parameter has real quantitative, species-level semantics. Reuse existing `regulatorSocialSensitivity`/exploration sensitivity for this slice; expose any additional immutable parameter through the authoritative symbolic-genome specification, its bounded recombination/birth/persistence path, and the core regulator profile. A default is a species rule, not an unrecorded genotype.
+4. **Inherited tuning by genome generation:** v1 can use its existing bounded
+`regulatorSocialSensitivity`/exploration baselines. V2 uses **only** the
+frozen projection of the family's authored textual urge locus, not legacy
+sensitivities; missing families use the shared species baseline. Both feed
+the same Body, not a parallel drive or a numeric personality vector. Future
+inheritance or mixed-generation recombination requires an explicit policy.
 
 The first implementation may simply add a `social_contact` evaluator beside the existing small drive functions. **Extract a frozen compile-time `DRIVE_EVALUATORS` array only if the integration would otherwise require repeated switch/case edits or a second concrete new drive needs the same seam.** This preserves the easy one-module-plus-registration growth path without paying for an abstract registry prematurely. No dynamic loading, dependency injection graph, reflection, user-authored expressions, generic rule DSL, per-drive timers, or framework metadata.
 
@@ -71,7 +83,10 @@ Use **one new `social_contact` drive family**, not a new loneliness subsystem. P
 - explicitly known continuous lived interval versus missing event coverage;
 - recent contact fatigue, boundary enforcement, or legitimate preference for solitude, where the Thread's life provides evidence.
 
-The regulator may compute a small saturating pressure from supported time/density evidence, modulated by **existing** social sensitivity and individually learned context. It does not count “fewer than three Stories means lonely,” label a silent Thread deficient, or assume that no recorded events means nothing happened. A Thread born with sparse Fibre-side events can have a rich authoritative pre-birth life.
+The regulator may compute a small saturating pressure from supported
+time/density evidence, modulated by **legacy sensitivity or the v2 frozen
+`social_contact` projection**, as appropriate, and individually learned
+context. It does not count “fewer than three Stories means lonely,” label a silent Thread deficient, or assume that no recorded events means nothing happened. A Thread born with sparse Fibre-side events can have a rich authoritative pre-birth life.
 
 ```text
 bounded admitted contact evidence + individual regulation
@@ -109,17 +124,33 @@ No global `09:00–22:00` policy or deterministic rule that close friends can ca
 ## Bounded implementation order and proof gates
 
 1. **Establish authoritative evidence baseline.** For a few real Threads, inspect admitted contact, world events, pre-birth social history, awake/sleep situation and current provider cost. Identify missing evidence separately from real deprivation. Do not fabricate conversations to make tests pass.
-2. **One `social_contact` Body extension.** Add an optional bounded contact projector into existing LivedNow/Body evaluation; reuse existing social sensitivity and generic Drive output, attention, interoception and organism trace. Retain `exploration` as the World-stimulation family. First causally prove pressure changes without mechanically creating feelings or consent.
+2. **One `social_contact` Body extension.** The existing bounded LivedNow/Body
+contact projector supplies the same generic Drive, attention, interoception
+and organism trace; v1 legacy sensitivity and v2 inherited urge control are
+mutually exclusive. Retain `exploration` as the World-stimulation family. First causally prove pressure changes without mechanically creating feelings or consent.
 3. **D2 source implemented, validation pending.** Shared Body interoception reaches ordinary Flight Planning and socially relevant salience/initiation. Controlled differential tests show inherited social sensitivity can change a selected destination or whether a co-present person earns cognition; neither forces engagement. Natural staging proof of later self-authored choices remains open.
 4. **Social-time projection.** Extend existing `social_initiation` and later-addressed contact concern with recipient-local weekday/time, actual current activity, contact modality and grounded relationship history; do not create a separate meeting-time policy engine. For physically co-present Threads, use the current shared scene rather than invent a remote call. Fix real awake/reachability inconsistencies at World ownership.
-5. **G1 inherited regulation (source implemented, operator acceptance open).** New de-novo genomes now contain bounded response sensitivities already recognized by the common Body; crossover and persisted replay reject fabricated values. Older genomes remain digest-stable and use species defaults for missing later alleles. Any *future* heritable quantity requires a real mechanism, source provenance and a declared birth/lineage policy—not a scalar personality label.
+5. **Inherited regulation:** Historical G1 v1 response sensitivities remain
+valid and genome-digest-stable. Under accepted S1, **new v2 births** carry
+13 family-keyed urge loci and frozen position projections, with a staging
+birth/admission witness. V1/v2 mixed lineage, new heritable mechanisms,
+persistence witnesses, triggered-family activation and learned regulation
+require separate future decisions and real evidence—not scalar personality.
 6. **Generality check with the next *real* drive.** When another evidential drive is required, add its pure evaluator and bounded input without changing meeting, planning, interoception or persistence consumers. Extract a tiny static drive registry if that is then demonstrably simpler than local functions.
 
 **High-value semantic acceptance:** (a) known prolonged insufficient contact increases mechanical social pull while missing records do not; (b) real valued contact can reduce that pull, and one Thread may remain content alone; (c) grounded exploration/social pressure materially bends at least one *later* owned plan/opportunity without forced meeting; (d) urgent close-person contact may be considered at 02:00 but casual no-reason live interruption is ordinarily deferred; (e) weekday/weekend + enacted sleep/awake truth can change appropriateness without creating a universal veto or a fabricated reply. Use a few durable causality-focused tests with short failure messages, plus **one** honest local and one naturally observed staged life sequence. No brittle prose/threshold matrices.
 
 ## Boundaries, explicit status, and stop condition
 
-**Accepted locally for G1/D1; D2 source written but not yet operator validated:** inherited Body response baselines, evidence-derived `social_contact`, and a single shared Body projection for planning and co-present social choice. **Still open:** D2 full local/staging tests and natural-world causal proof, extensibility with a future real drive, recipient social time, long-term consequence, spontaneous meeting triggers and measured cost. Existing `emotion:loneliness` and `need:connection` are vocabulary, not evidence that the new loop is active.
+**Accepted S1 (2026-10-28):** v2 textual family-keyed inheritance and its
+frozen Body projection are staging-proven at birth. For admitted evidence,
+only `social_contact`, `exploration`, and `presence` have live inherited
+gain/threshold/direction. Persistence, target availability, triggered families,
+urge-response records and developed character remain unwired. The existing
+G1/D1 historical controls and shared Body integration are preserved.
+**Still open:** D2 natural-world causal proof, S2–S5, extensibility with
+future evidenced drives, recipient social time, long-term consequence,
+spontaneous meeting triggers and measured cost. Existing `emotion:loneliness` and `need:connection` are vocabulary, not evidence that the new loop is active.
 
 **Deliberately deferred:** generic drive-plugin marketplace, dynamic code loading, per-drive persistence, universal cultural weekend tables, world-wide geography/time-zone inference, always-on physiological simulator, animal/human sensor completeness, automatic memory quota, compulsory mate/romance behavior, token-budget-as-hunger analogy, cross-population scans, new conversation authority, website redesign.
 

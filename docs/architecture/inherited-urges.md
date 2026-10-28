@@ -1,11 +1,11 @@
 ---
 id: architecture-inherited-urges
-status: proposed
+status: accepted
 last-reviewed: 2026-10-28
-canonical: false
+canonical: true
 ---
 
-# Inherited urges — proposed
+# Inherited urges — accepted S1 foundation
 
 ## Thesis and authority
 
@@ -24,7 +24,11 @@ immutable family-keyed text + frozen orientation/gain/threshold/persistence
   -> admitted reflection / character -> different future decisions
 ```
 
-This is a proposal governing the S1 source foundation; S2–S5 are not yet implemented.
+Accepted 2026-10-28 under [ADR-0030](../decisions/ADR-0030-inherited-urges.md).
+S1 birth material and the evidenced Body projection are operational. A v2 staging
+canary was successfully admitted into World and began its first life. This is
+not evidence that S2–S5 have been implemented: urge-response recording,
+triggered families, lived persistence and character formation remain deferred.
 
 ## Family kinds and direction/trigger semantics
 
@@ -152,6 +156,13 @@ JSON. Birth Center persists provisional bundles as canonical JSON; their object
 key ordering must never change admission meaning. Genuinely changed projection
 values still fail publication. Pass A and Pass B are **genome-blind for v2**.
 Older v1 Pass-B experiments remain historically replayable.
+
+**S1 staging witness, 2026-10-28:** `genesis-birth-mvsm7ujg` published
+as `thr_d3977d9a86304fc4b7bb79796cb1d02781128f68` with 13 v2 urge
+loci (library digest prefix `sha256:3f1c26`, selection digest prefix
+`sha256:63e160a9`). The persisted Body projection matches the immutable v2 library;
+the Thread is in Jerusalem and first life has begun. This proves the
+birth/admission path, not later urge-driven choices or character.
 
 **Felt Childhood — deferred, not permanently prohibited:** a later
 developmentally appropriate Body-style projection over historically admitted
