@@ -176,7 +176,7 @@ test("targeted World deploy shares bounded schema-install retry before health ac
       },
       async writeFileImpl(){},
       async ensureD1MigrationsImpl(){},
-      async runner(){return {stdout:"Published https://world.example",stderr:""};},
+      async runner(){return {stdout:"Published https://fibre-world-kernel-staging.account.workers.dev",stderr:""};},
       createDeploymentClient(){
         return {
           async migrateWorldOrFid({serviceId,expectedSha}){
