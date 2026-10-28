@@ -2,97 +2,9 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  resolveLocalityGeography,
-  resolveMentionedLocalityGeography,
-} from "../../core/src/locality-geography.mjs";
-import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
+import {planThreadLocation} from "../../services/world-kernel/src/thread-home-location.mjs";
 import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
 import { topology } from "../validation/encounter-autonomy-probe.mjs";
-
-function text(value) {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-// Location repair is an operator attestation about the present, not a
-// retrospective journey or a mutation of an inherited birthplace.
-export function planThreadLocation(thread, livedNow) {
-  const current = livedNow?.currentSituation;
-  if (thread.currentLocation?.kind === "place" || livedNow?.privatelyKnownCurrentPlace) {
-    return { state:"already_located" };
-  }
-  if (!current) return { state:"awaiting_first_life" };
-  if (current.phase !== "at_place" || current.location?.kind !== "place") {
-    return { state:"not_at_place" };
-  }
-  const placeRef = current.location.placeRef;
-  const legacyContext=(livedNow.worldPlaces??[]).find(place=>place.ref===placeRef
-    &&place.authority==="live-world-place-admission-v1"
-    &&!place.physicalVenue)??null;
-  const episode = (livedNow.placeEpisodes ?? [])
-    .find(item => placeEpisodeRevisionRef(item) === placeRef);
-  if(!episode&&!legacyContext){
-    return {state:placeRef.startsWith("per:")
-      ?"missing_situated_place":"unresolved_shared_world_place",placeRef};
-  }
-
-  const birth = thread.birthLocation;
-  const known = episode?.place??{
-    displayName:legacyContext.displayName,
-    locality:null,countryCode:null,
-  };
-  const birthplace = text(birth?.city) && text(birth?.country)
-    ? resolveLocalityGeography(`${birth.country}/${birth.city}`) : null;
-  const mentioned = resolveMentionedLocalityGeography(known.displayName);
-  const locality = text(known.locality);
-  const code = text(known.countryCode)?.toUpperCase() ?? null;
-  const explicit = locality === null ? null
-    : resolveLocalityGeography(locality)
-      ?? (text(birth?.city) === locality && birth?.countryCode === code ? birthplace : null);
-
-  // An attested named locality outranks birthplace. Contradictory named
-  // localities never silently fall back to the person's birthplace.
-  if (locality !== null && !explicit) {
-    return { state:"review_locality", placeRef, locality };
-  }
-  const grounded = explicit ?? mentioned;
-  const fallback = grounded === null;
-  if (fallback && (birthplace === null || text(birth?.countryCode) !== birthplace.countryCode)) {
-    return { state:"review_birthplace", placeRef };
-  }
-  const location = grounded ?? birthplace;
-  if (code !== null && code !== location.countryCode) {
-    return { state:"conflicting_country", placeRef };
-  }
-  if (grounded !== null && birthplace !== null
-      && grounded.countryCode !== birthplace.countryCode) {
-    // Genesis World time zones cannot be projected into another country.
-    return { state:"review_time_zone", placeRef };
-  }
-  const timeZone = text(livedNow.worldContext?.timeZone);
-  if (!timeZone) return { state:"missing_time_zone", placeRef };
-
-  return {
-    state:"ready",
-    threadId:thread.threadId,
-    name:thread.displayName,
-    currentPlaceRef:placeRef,
-    basis:fallback?"birth_city_operator_default":"situated_place_evidence",
-    place:{
-      threadId:thread.threadId,placeRef,
-      specificPlace:legacyContext
-        ?`Genesis ${legacyContext.placeKind} context`
-        :known.displayName,
-      streetAddress:null,locality:location.city,
-      country:location.country,countryCode:location.countryCode,
-      lat:null,long:null,timeZone,
-      evidenceRef:fallback
-        ?`operator_birth_city_default:${thread.threadId}`
-        :placeRef,
-      publicGranularity:"city",
-    },
-  };
-}
 
 function options(args) {
   let env=null, plan=false, applyFile=null;
@@ -110,7 +22,8 @@ function options(args) {
 
 async function main(args) {
   const opts=options(args);
-  const token=text(process.env.FIBRE_PRIVATE_TOKEN);
+  const token=typeof process.env.FIBRE_PRIVATE_TOKEN==="string"
+    &&process.env.FIBRE_PRIVATE_TOKEN.trim()?process.env.FIBRE_PRIVATE_TOKEN.trim():null;
   if(!token)throw new Error("FIBRE_PRIVATE_TOKEN is required");
   const base=topology(opts.env).worldBaseUrl;
   const headers={Accept:"application/json","x-fibre-private-token":token};

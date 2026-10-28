@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { planThreadLocation } from "./thread-locations.mjs";
+import {planThreadLocation} from "../../services/world-kernel/src/thread-home-location.mjs";
 import { resolveLocalityGeography } from "../../core/src/locality-geography.mjs";
 
 const thread={
