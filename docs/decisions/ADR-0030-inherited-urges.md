@@ -46,6 +46,29 @@ exploration and presence enabled, and character reflection gate 2 salient
 responses. An invalid policy blocks deployment acceptance. Replayed
 consequential regulation records carry the policy version/digest.
 
+**One species awareness boundary:** `THREAD_SPECIES_PROFILE` defines the
+felt-threshold center `0.05`, variation span `0.15`, clamp `[0.01, 0.85]`,
+and planned residual persistence half-life `3600` seconds. Legacy/default
+drives use the same center as v2 with threshold position zero;
+`inheritedSpread=0` returns both to that shared center. The center is
+chosen from existing World-lived pressure: the first admissible two-hour
+social-scarcity interval gives `0.8 × 2/24 ≈ 0.067`; sustained sameness
+can yield `0.5` exploration pressure. Thus genuine low-pressure contact
+scarcity remains perceptible in both generations without making every
+positive numeric signal felt. It is a calibration choice, not a measured
+production response curve.
+
+**Accurate S1 causal scope:** only `social_contact`, `exploration`,
+and `presence` currently have admitted live discrepancy evidence.
+For those families, frozen v2 gain and felt threshold alter Body pressure
+and interoception, and orientation alters the *direction of the felt pull*.
+No live World caller supplies `previousUrges`, `urgeTriggers` or
+`urgeAvailability`: persistence is inert, every triggered family remains
+silent, and all directional target availability is `unknown`.
+S2/S3 must provide those witnesses; S1 does not claim them.
+The numeric library was rebalanced so each family and orientation spans
+physiological variation independently of orientation.
+
 New v2 Genesis Pass A **and Pass B** are genome-blind. Preserve historical
 v1 Pass-B evidence. **Felt Childhood is deferred, not forbidden:** inherited
 urges may later color childhood attention and autobiographical retention
@@ -68,9 +91,11 @@ Current Character View remains evidence-backed, derived and reconstructable.
 Reject a numeric personality vector with cosmetic prose, orientations that
 silence directional drives, inheriting only one triggered event reaction,
 reading genome text in ordinary cognition, retroactive DNA migration, and
-unconditional per-Thread model invocations. S1 does not prove character
-development; it establishes the causal Body projection that S2–S5 must
-connect through Thread-authored decisions to lived consequence.
+unconditional per-Thread model invocations. The library's descriptions
+must evoke embodied experience, not restate evidence-admission rules.
+S1 does not prove individual plans or character development: it establishes
+the limited, evidence-backed Body projection that S2–S5 must connect through
+Thread-authored decisions to lived consequence.
 
 Implementation and the detailed causal-status/cost/differential contracts
 are in `docs/architecture/inherited-urges.md`. Historical accepted doctrine

@@ -77,11 +77,26 @@ parsed before deploy and once at Worker initialization.
 ```
 
 V2 gain is `2^(position × inheritedSpread)`: the default spreads from
-0.5× to 2× species gain. The frozen felt threshold and persistence positions
-project through versioned species constants; the S1 default threshold is
-`clamp(0.35 - 0.15 × position × inheritedSpread, 0.10, 0.85)` and
-partial-satisfaction residual half-life is `3600 × 2^(position × inheritedSpread)`
-seconds, only when supported by a prior witnessed episode.
+0.5× to 2× species gain. **All Threads** share one species awareness threshold.
+`THREAD_SPECIES_PROFILE` declares `speciesFeltThreshold=0.05`,
+`speciesFeltThresholdSpan=0.15`, `speciesFeltThresholdFloor=0.01`,
+`speciesFeltThresholdCeiling=0.85` and
+`speciesPersistenceHalfLifeSeconds=3600`. The felt mapping is
+`clamp(0.05 - 0.15 × position × inheritedSpread, 0.01, 0.85)`.
+Legacy/default drives use exactly the same center as v2 position zero.
+The choice is calibrated to existing lived inputs: 2 hours of evidenced
+social scarcity yield `0.8 × 2/24 ≈ 0.067` Body pressure, and the current
+World observer requires at least 2 hours; `0.05` admits that real signal
+while suppressing weaker unevidenced-by-living-time noise. Sustained
+sameness can yield `0.5` exploration pressure. These are design
+calibrations rather than production measurements.
+
+The planned partial-satisfaction residual half-life maps to
+`3600 × 2^(persistencePosition × inheritedSpread)` seconds, but
+**persistence is not live in S1**: callers do not yet provide
+`previousUrges`. Both threshold and gain are live for currently evidenced,
+enabled families; orientation is live as a felt direction, not a proven
+different plan.
 
 V2 locus projections are the *sole* drive-specific inherited controls: never
 multiply their gain by legacy 0.85–1.15 sensitivities. No separate numeric
@@ -90,6 +105,17 @@ its textual variant and library digest.
 
 A disabled family, a missing discrepancy, or a triggered kind without evidence
 is silent. Silent future families cost no runtime SQL or model call.
+
+**S1 evidence wiring limit:** the existing World callers supply discrepancy
+evidence for `social_contact`, `exploration` and `presence`, plus v2
+genome projection and organism policy. They **do not supply**
+`previousUrges`, `urgeTriggers` or `urgeAvailability`.
+Consequently, inherited gain, felt threshold and directional orientation
+are live for those three families; persistence is **inert**, the three
+triggered families **cannot fire**, and all directional target availability
+is `unknown`. The Body API already accepts those fields for testable
+future integration; their live evidence and persistence sources are part
+of S2/S3, not silently implemented by S1.
 
 ## Legacy Organism Profile and genome-off ablation
 
@@ -163,9 +189,12 @@ downstream consequence under the standing differential gate.
 | Mechanism | After S1 | After S2 | After S4 | S5 proof required |
 |---|---|---|---|---|
 | Text and provenance | Stored-only | Stored-only | Stored-only | Origin trace |
-| Orientation | Mechanically causal: changes felt target/kind | Context-only unless acted upon | Same | Qualitative swap changes action |
-| Gain, threshold, persistence | Mechanically causal in Body | Context-only until response changes | Same | Quantitative swap with effect |
-| Legacy species defaults | Mechanically causal with evidence | Felt context | Personal response history | Genome-off equivalence |
+| Orientation | Live felt direction for evidenced social_contact, exploration, presence; no target-availability evidence yet; triggered kinds dormant | Context-only unless acted upon | Same | Qualitative swap changes action |
+| Gain and felt threshold | Live in Body for three evidenced families; identical species center for legacy and position-zero v2 | Felt context until response changes | Same | Quantitative swap with effect |
+| Persistence | Inert: no live caller supplies previousUrges | Previous urge evidence proposed | Potentially felt history | Witnessed persistence difference |
+| Trigger kinds | Inert: no live caller supplies urgeTriggers; all three triggered families silent | Deferred | Deferred until S3 evidence | Baseline response to all kinds |
+| Target availability | Always unknown: no live caller supplies urgeAvailability | Deferred | Available/absent/unknown after S3 | No invented targets |
+| Legacy species defaults | Mechanically causal with evidence under shared threshold | Felt context | Personal response history | Genome-off equivalence |
 | Response records | Not built | Stored-only | Character evidence | History changes choice |
 | Character | Not built | Not built | Derived, context-only until proven | Memory-backed consequence |
 | Sleep reflection | Not built | Not built | Gated new call | Durable self-model effect |

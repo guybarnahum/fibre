@@ -116,3 +116,29 @@ test("disabled and unevidenced families are silent, and organism policy is valid
   assert.equal(disabled.drives.length,0,"disabled family generated pressure");
   assert.throws(()=>normalizeOrganismPolicy(policy({inheritedSpread:4})),/out of bounds/);
 });
+
+test("the inherited library separates qualitative orientation from numerical intensity",()=>{
+  const mean=(values)=>values.reduce((total,value)=>total+value,0)/values.length;
+  for(const family of URGE_FAMILIES){
+    const variants=family.variants;
+    for(const parameter of ["gain","feltThreshold","persistence"]){
+      assert.ok(Math.abs(mean(variants.map(v=>v.positions[parameter])))<=0.1+1e-9,
+        `${family.family}: family ${parameter} bias`);
+    }
+    const byOrientation=Object.groupBy(variants,v=>v.orientation);
+    for(const [orientation,group] of Object.entries(byOrientation)){
+      assert.ok(Math.abs(mean(group.map(v=>v.positions.gain)))<=0.25+1e-9,
+        `${family.family}/${orientation}: orientation gain bias`);
+      for(const parameter of ["gain","feltThreshold","persistence"]){
+        assert.ok(group.some(v=>v.positions[parameter]>0)
+          &&group.some(v=>v.positions[parameter]<0),
+        `${family.family}/${orientation}: missing ${parameter} range`);
+      }
+    }
+    assert.ok(variants.some((first,i)=>variants.slice(i+1).some(second=>
+      first.orientation!==second.orientation
+      &&["gain","feltThreshold","persistence"].every(key=>
+        first.positions[key]===second.positions[key]))),
+    `${family.family}: direction confounded with positions`);
+  }
+});

@@ -203,38 +203,42 @@ test("R3 the same regulation can become different semantic experience for differ
   );
 });
 
-test("species-default low pressure retains its life evidence; unfelt v2 pressure stays private to Body",async()=>{
-  const perceptFrame={
-    asOf:"2026-10-28T12:00:00Z",
-    evidenceRefs:["sit_current"],
-    contact:{observedUnmetHours:2,evidenceRefs:["sit_prior"]},
-  };
-  const legacy=evaluateIntrinsicRegulation({
-    perceptFrame,organismPolicy:DEFAULT_ORGANISM_POLICY,
+test("legacy and position-zero newborn feel the same evidence at the species threshold",async()=>{
+  const species=(observedUnmetHours,urgeProjection=null)=>evaluateIntrinsicRegulation({
+    perceptFrame:{
+      asOf:"2026-10-28T12:00:00Z",
+      evidenceRefs:["sit_current"],
+      contact:{observedUnmetHours,evidenceRefs:["sit_prior"]},
+    },
+    organismPolicy:DEFAULT_ORGANISM_POLICY,
+    urgeProjection,
   });
-  const defaultInteroception=projectInteroception(legacy);
-  assert.equal(defaultInteroception.drives.some(d=>d.family==="social_contact"),true,
-    "the new threshold suppressed existing legacy interoception");
-  assert.ok(defaultInteroception.evidenceRefs.includes("sit_prior"),
-    "legacy social need lost its lived source");
+  const v2=[{family:"social_contact",kind:"directional",
+    orientation:"ambient_company",
+    positions:{gain:0,feltThreshold:0,persistence:0}}];
 
-  const variant=URGE_FAMILIES.find(f=>f.family==="social_contact").variants[1];
-  const newborn=evaluateIntrinsicRegulation({
-    perceptFrame,organismPolicy:DEFAULT_ORGANISM_POLICY,
-    urgeProjection:[{
-      family:"social_contact",kind:"directional",
-      orientation:variant.orientation,positions:variant.positions,
-    }],
-  });
-  assert.equal(newborn.drives[0].felt,false,"v2 threshold did not hold a subthreshold urge");
-  assert.equal(projectInteroception(newborn).drives.length,0,
-    "unfelt inherited pressure leaked its direction to cognition");
-  const cognition=model(()=>{throw new Error("unfelt urge must not call cognition");});
-  const interpretation=await interpretIntrinsicRegulation({
-    thread:thread("thr_subthreshold","I carry my own meaning."),
-    regulationFrame:newborn,semanticStateStore:semanticStore(),
+  // 2 hours of witnessed scarcity gives 0.067 pressure, above the 0.05
+  // species threshold; 1 hour gives 0.033, below it.
+  for(const hours of [1,2]){
+    const legacy=species(hours);
+    const newborn=species(hours,v2);
+    const l=legacy.drives.find(d=>d.family==="social_contact");
+    const n=newborn.drives.find(d=>d.family==="social_contact");
+    assert.equal(l.pressure,n.pressure,"birth version changed species pressure");
+    assert.equal(l.felt,n.felt,"birth version changed species awareness");
+    assert.equal(l.felt,hours===2,"species threshold lost grounded social need");
+    assert.deepEqual(projectInteroception(legacy).evidenceRefs,
+      projectInteroception(newborn).evidenceRefs,
+      "birth version changed evidence reaching cognition");
+  }
+
+  const below=species(1,v2);
+  const cognition=model(()=>{throw new Error("unfelt urge invoked cognition");});
+  const result=await interpretIntrinsicRegulation({
+    thread:thread("thr_below_species_threshold","My life has its own meaning."),
+    regulationFrame:below,semanticStateStore:semanticStore(),
     modelAdapter:cognition.adapter,
   });
-  assert.equal(interpretation.cognition,null);
+  assert.equal(result.cognition,null);
   assert.equal(cognition.invocations.length,0);
 });

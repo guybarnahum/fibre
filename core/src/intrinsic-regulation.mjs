@@ -35,6 +35,13 @@ export const THREAD_SPECIES_PROFILE = Object.freeze({
     opennessMin: 0.08,
   }),
   explorationNoveltyFloor: 0.35,
+  // At the earliest grounded 2-hour social gap pressure is 0.8*2/24 = 0.0667.
+  // The same 0.05 awareness baseline applies to every Thread, regardless of birth version.
+  speciesFeltThreshold: 0.05,
+  speciesFeltThresholdSpan: 0.15,
+  speciesFeltThresholdFloor: 0.01,
+  speciesFeltThresholdCeiling: 0.85,
+  speciesPersistenceHalfLifeSeconds: 3600,
   sensitivityEnvelope: Object.freeze([0.85, 1.15]),
 });
 
@@ -188,8 +195,13 @@ function feltUrges({drives,policy,urgeProjection,previousUrges=[],asOf}){
     const matched=inherited&&(family.kind==="directional"||gene.orientation===triggerKind);
     const position=matched?gene.positions:null;
     const gain=position===null?1:2**(position.gain*policy.inheritedSpread);
-    const threshold=Math.min(.85,Math.max(.10,.35-(position?.feltThreshold??0)*.15*policy.inheritedSpread));
-    const halfLife=3600*(2**((position?.persistence??0)*policy.inheritedSpread));
+    const species=THREAD_SPECIES_PROFILE;
+    const threshold=Math.min(species.speciesFeltThresholdCeiling,
+      Math.max(species.speciesFeltThresholdFloor,
+        species.speciesFeltThreshold-(position?.feltThreshold??0)
+          *species.speciesFeltThresholdSpan*policy.inheritedSpread));
+    const halfLife=species.speciesPersistenceHalfLifeSeconds
+      *(2**((position?.persistence??0)*policy.inheritedSpread));
     const previous=previousUrges.find(w=>w.family===item.family
       &&(w.triggerKind??null)===triggerKind
       &&w.targetRef===item.targetRef
@@ -201,11 +213,9 @@ function feltUrges({drives,policy,urgeProjection,previousUrges=[],asOf}){
     const pressure=round(Math.max(item.pressure*gain,residual));
     const direction=family.kind==="triggered"?(matched?gene.orientation:"all"):
       inherited?gene.orientation:SPECIES_STANDARD_ORIENTATION[item.family];
-    // Species-default/legacy drives retain the established lived-evidence
-    // interoception behavior. Only an active v2 locus changes felt threshold.
-    const felt=position===null
-      ?pressure>0||item.attained||item.progressError!==0||item.predictionError!==0
-      :pressure>=threshold;
+    // One species threshold: position zero and genome-off match legacy
+    // exactly. Attainment remains a positive signal even at zero pressure.
+    const felt=pressure>=threshold||item.attained;
     return {...item,pressure,urgency:Math.max(item.urgency,pressure),
       inheritedDirection:direction,
       targetAvailability:family.kind==="directional"?"unknown":"available",
