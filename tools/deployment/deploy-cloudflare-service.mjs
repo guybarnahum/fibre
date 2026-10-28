@@ -224,7 +224,7 @@ export async function deployCloudflareService({
       });
     }))({prepared,serviceRevision})
     :null;
-  if(schemaAcceptance!==null)print("STATE SCHEMA INSTALLED "+serviceId);
+  if(schemaAcceptance!==null&&preinstalledWorldSchema===null)print("STATE SCHEMA INSTALLED "+serviceId);
   return Object.freeze({
     environment: env,
     serviceId,

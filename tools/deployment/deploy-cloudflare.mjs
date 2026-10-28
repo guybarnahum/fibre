@@ -181,7 +181,10 @@ export function createWranglerDeploymentClient({
       });
       const payload=await response.json();
       if(!response.ok||payload?.ok!==true||payload?.deploymentGitSha!==expectedSha){
-        throw new Error(serviceId+" schema installation did not confirm deployed revision");
+        const error=new Error(serviceId+" schema installation did not confirm deployed revision");
+        if(typeof payload?.deploymentGitSha==="string")
+          error.deploymentGitSha=payload.deploymentGitSha;
+        throw error;
       }
       return payload;
     },
@@ -263,18 +266,19 @@ export async function retryStateHealth({
   client,serviceId,baseUrl,expectedSha,wait=delay,attempts=15,
 }={}){
   let lastError;
+  const startedAt=Date.now();
   for(let attempt=0;attempt<attempts;attempt++){
     try{
       return await client.checkStateHealth({serviceId,baseUrl,expectedSha});
     }catch(error){
       lastError=error;
-      if(attempt===attempts-1)break;
       // Cloudflare may continue serving the prior Durable Object code for
       // minutes after the Worker deploy. Probe sparingly, never redeploy.
       const pause=Math.min(30_000,1_500*2**attempt);
-      if(attempt===0||attempt>=4){
-        console.log(`STATE REVISION PENDING ${serviceId} (${error.message}); next check in ${pause/1_000}s`);
-      }
+      const elapsed=Math.floor((Date.now()-startedAt)/1_000);
+      console.log(`STATE REVISION PENDING ${serviceId}: ${error.message} (attempt ${attempt+1}/${attempts}, ${elapsed}s); `+
+        (attempt===attempts-1?"no further retries":`next check in ${pause/1_000}s`));
+      if(attempt===attempts-1)break;
       await wait(pause);
     }
   }
@@ -285,16 +289,24 @@ export async function retryStateHealth({
 export async function installWorldSchemaWithRetry({
   client,serviceId,baseUrl,expectedSha,wait=delay,log=console.log,
 }={}){
-  for(let attempt=0;attempt<8;attempt++){
+  const startedAt=Date.now();
+  const attempts=16;
+  for(let attempt=0;attempt<attempts;attempt++){
     try{
-      return await client.migrateWorldOrFid({serviceId,baseUrl,expectedSha});
+      const installed=await client.migrateWorldOrFid({serviceId,baseUrl,expectedSha});
+      log(`STATE SCHEMA INSTALLED world-kernel after ${Math.floor((Date.now()-startedAt)/1_000)}s`);
+      return installed;
     }catch(error){
-      if(attempt===7)throw new Error(
+      if(attempt===attempts-1)throw new Error(
         "World schema installation did not reach the deployed revision",
         {cause:error},
       );
       const delayMs=Math.min(15_000,1_500*2**attempt);
-      log("STATE SCHEMA REVISION PENDING world-kernel; next check in "+delayMs/1_000+"s");
+      const revision=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim()
+        ?error.deploymentGitSha.slice(0,7):"unknown";
+      const elapsed=Math.floor((Date.now()-startedAt)/1_000);
+      log(`STATE SCHEMA REVISION PENDING world-kernel: Cloudflare still serving previous World revision ${revision} `+
+        `(attempt ${attempt+1}/${attempts}, ${elapsed}s); next check in ${delayMs/1_000}s`);
       await wait(delayMs);
     }
   }

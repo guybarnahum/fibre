@@ -380,14 +380,14 @@ test("full-stack deployment records the confirmation after transient prior World
 });
 
 test("unconfirmed World schema fails deployment before any state health",async()=>{
-  const gated=schemaGatedStackClient({failInstallAttempts:8});
+  const gated=schemaGatedStackClient({failInstallAttempts:16});
   await assert.rejects(deploySchemaGatedStack(gated),error=>{
     assert.match(error.message,/World schema installation did not reach the deployed revision/);
     assert.match(error.cause?.message??"",/previous World schema revision/,
       "final installation error lost its cause");
     return true;
   });
-  assert.equal(gated.calls.filter(call=>call==="migrate:world-kernel").length,8,
+  assert.equal(gated.calls.filter(call=>call==="migrate:world-kernel").length,16,
     "World installation exceeded its bounded retry contract");
   assert.equal(gated.calls.includes("state:world-kernel"),false,
     "World health was checked without installed schema");

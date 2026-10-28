@@ -275,17 +275,23 @@ async function reportPreparation({baseUrl,privateToken,requestId,requestedAt,loc
 }
 
 async function main() {
-  let activeStage="starting",stageStart=Date.now(),birthRequestId=null;
+  const startedAt=Date.now();
+  let activeStage="starting",stageStart=startedAt,birthRequestId=null,birthThreadId=null;
+  const progress=(detail={})=>{
+    const now=Date.now();
+    const fields={
+      ...(birthRequestId===null?{}:{requestId:birthRequestId}),
+      ...(birthThreadId===null?{}:{threadId:birthThreadId}),
+      ...detail,
+    };
+    process.stderr.write(`BIRTH ${activeStage} (${Math.floor((now-stageStart)/1000)}s in stage, ${Math.floor((now-startedAt)/1000)}s total)`+
+      Object.entries(fields).map(([key,value])=>` ${key}=${value}`).join("")+"\n");
+  };
   const emit=(stage,detail={})=>{
     activeStage=stage;stageStart=Date.now();
-    process.stdout.write(JSON.stringify({event:"thread-birth-progress",stage,
-      requestId:birthRequestId,...detail})+"\n");
+    progress(detail);
   };
-  const heartbeat=setInterval(()=>{
-    process.stdout.write(JSON.stringify({event:"thread-birth-progress",
-      stage:activeStage,requestId:birthRequestId,
-      elapsedSeconds:Math.floor((Date.now()-stageStart)/1000)})+"\n");
-  },10_000);
+  const heartbeat=setInterval(()=>progress(),10_000);
   heartbeat.unref?.();
   try {
   emit("inspect_deployment");
@@ -374,11 +380,8 @@ async function main() {
       baseSlotOrdinal,
       onProgress:event=>{
         if(event.type==="model_attempt"||event.type==="operational_failure"){
-          process.stdout.write(JSON.stringify({event:"thread-birth-model",
-            requestId,kind:event.type,attempt:event.attempt,
-            maximumAttempts:event.maximumAttempts,
-            ...(event.failure?{failureCode:event.failure.code,retrying:event.retrying}:{}),
-          })+"\n");
+          progress({model:event.type,attempt:`${event.attempt}/${event.maximumAttempts}`,
+            ...(event.failure?{failureCode:event.failure.code,retrying:event.retrying}:{})});
         }
       },
     });
@@ -403,23 +406,15 @@ async function main() {
     throw new Error(`existing Genesis request ${requestId} does not match the supplied sex/place/heritage inputs`);
   }
 
-  process.stdout.write(`${JSON.stringify({
-    event: "thread-birth-start",
-    requestId,
-    requestMode: existing === null ? "new" : "resume",
-    sexSelection: options.sex ?? "derived",
-    placeSelection: selection.selector?.display ?? null,
-    heritageSelection: selection.heritage?.display ?? null,
-    worldMode: selection.mode,
-    worldSpecId: body.worldSpec.worldSpecId,
-    genomeSlot: selection.slotOrdinal,
-    worldSlot: selection.worldSlotOrdinal ?? null,
-    genesisId: plan.genesisId,
-    threadId: plan.threadId,
-    identityMode: "fresh_birth_composition",
-  })}\n`);
-
-  emit("submit_development",{genesisId:plan.genesisId,threadId:plan.threadId});
+  birthThreadId=plan.threadId;
+  emit("birth_prepared",{
+    requestMode:existing===null?"new":"resume",
+    place:selection.selector?.display??"sampled",
+    worldMode:selection.mode,worldSpecId:body.worldSpec.worldSpecId,
+    genomeSlot:selection.slotOrdinal,worldSlot:selection.worldSlotOrdinal??"none",
+    genesisId:plan.genesisId,
+  });
+  emit("submit_development",{genesisId:plan.genesisId});
   const birth = (await submit({ baseUrl: birthCenter, privateToken, body, timeoutMs })).development;
   if (birth?.status !== "published") {
     emit("await_birth_center_publication");
