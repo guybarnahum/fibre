@@ -388,20 +388,41 @@ test("full-stack deployment records the confirmation after transient prior World
     "World health acceptance preceded successful installation");
 });
 
-test("unconfirmed World schema fails deployment before any state health",async()=>{
+test("World schema confirmation can arrive after the former retry limit",async()=>{
   const gated=schemaGatedStackClient({failInstallAttempts:16});
-  await assert.rejects(deploySchemaGatedStack(gated),error=>{
-    assert.match(error.message,/World schema installation did not reach the deployed revision/);
-    assert.match(error.cause?.message??"",/previous World schema revision/,
-      "final installation error lost its cause");
-    assert.match(error.message,/previous World schema revision/,
-      "final installation reason missing");
+  const result=await deploySchemaGatedStack(gated);
+  assert.equal(gated.calls.filter(call=>call==="migrate:world-kernel").length,17,
+    "late World revision was abandoned");
+  assert.equal(result.deployments.find(item=>item.serviceId==="world-kernel").migration,
+    gated.confirmation,"late World schema confirmation lost");
+});
+
+test("World schema timeout is bounded by elapsed time and names the serving revision",async()=>{
+  const target="b".repeat(40),stale="a".repeat(40);
+  let clock=0,attempts=0;
+  const waits=[],logs=[];
+  await assert.rejects(installWorldSchemaWithRetry({
+    client:{async migrateWorldOrFid(){
+      attempts++;
+      const error=new Error("prior World revision still served");
+      error.deploymentGitSha=stale;
+      throw error;
+    }},
+    serviceId:"world-kernel",baseUrl:"https://world.example",
+    expectedSha:target,now:()=>clock,
+    wait:async ms=>{waits.push(ms);clock+=ms;},
+    log:line=>logs.push(line),
+  }),error=>{
+    assert.match(error.message,/not installed for bbbbbbb.*serving aaaaaaa/u,
+      "World timeout lost revision identity");
+    assert.match(error.message,/last: prior World revision still served/u,
+      "World timeout lost the last reason");
     return true;
   });
-  assert.equal(gated.calls.filter(call=>call==="migrate:world-kernel").length,16,
-    "World installation exceeded its bounded retry contract");
-  assert.equal(gated.calls.includes("state:world-kernel"),false,
-    "World health was checked without installed schema");
+  assert.equal(clock,600_000,"World retry exceeded ten-minute budget");
+  assert.ok(attempts>16,"World retained a fixed retry-count limit");
+  assert.ok(waits.every(ms=>ms<=15_000),"World retry exceeded its backoff cap");
+  assert.equal(logs.length,attempts,"World retry lost attempt progress");
 });
 
  
@@ -440,8 +461,8 @@ test("World deployment waits through revision refusal without accepting stale in
   assert.equal(result.rowsRead,50321);
   assert.equal(result.rowsWritten,17);
   assert.equal(logs.length,3,"schema retry diagnostics missing");
-  assert.ok(logs.slice(0,-1).every(line=>/STATE SCHEMA REVISION PENDING world-kernel: Cloudflare still serving previous World revision aaaaaaa/u
-    .test(progressDetailFromLine(line)??"")),"schema retry reason missing");
+  assert.ok(logs.slice(0,-1).every(line=>/^World serving aaaaaaa · waiting for bbbbbbb \(attempt \d+, \d+s\)$/u
+    .test(progressDetailFromLine(line)??"")),"schema retry progress lost revision identity");
   assert.equal(progressDetailFromLine(logs.at(-1)),null,
     "schema installation outcome became progress");
   assert.match(logs.at(-1),/STATE SCHEMA INSTALLED world-kernel after \d+s \(rows read 50321, written 17\)/u,

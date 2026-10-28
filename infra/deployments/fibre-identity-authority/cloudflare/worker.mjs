@@ -573,11 +573,15 @@ export class FibreIdentityAuthorityDurableObject extends DurableObject {
       const input=await request.json().catch(()=>null);
       if(!/^[0-9a-f]{40}$/u.test(input?.expectedGitSha??""))
         return Response.json({ok:false,code:"FID_EXPECTED_REVISION_INVALID"},{status:400});
-      if(input.expectedGitSha!==this.env.FIBRE_DEPLOYMENT_GIT_SHA)
+      if(input.expectedGitSha!==this.env.FIBRE_DEPLOYMENT_GIT_SHA){
+        // Answer with the existing 409, then release obsolete instance code.
+        this.ctx.waitUntil(new Promise(resolve=>setTimeout(resolve,0))
+          .then(()=>this.ctx.abort(`superseded by ${input.expectedGitSha.slice(0,7)}`)));
         return Response.json({
           ok:false,code:"WORLD_REVISION_NOT_SERVING",
           deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
         },{status:409});
+      }
       installFidSchema(this.ctx);
       return Response.json({
         ok:true,service:"fibre-identity-authority",

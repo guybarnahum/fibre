@@ -294,29 +294,32 @@ export async function retryStateHealth({
 
 // Installation is an explicit deployment step; the running World must never retry it.
 export async function installWorldSchemaWithRetry({
-  client,serviceId,baseUrl,expectedSha,wait=delay,log=console.log,
+  client,serviceId,baseUrl,expectedSha,wait=delay,log=console.log,now=Date.now,
 }={}){
-  const startedAt=Date.now();
-  const attempts=16;
-  for(let attempt=0;attempt<attempts;attempt++){
+  const startedAt=now();
+  const budgetMs=10*60_000;
+  let lastError=null;
+  let serving="unknown";
+  const timeout=()=>new Error(
+    `World schema not installed for ${expectedSha.slice(0,7)} after 10 minutes; serving ${serving}; last: ${lastError?.message??"no confirmation"}`,
+    {cause:lastError},
+  );
+  for(let attempt=1;;attempt++){
+    if(attempt>1&&now()-startedAt>=budgetMs)throw timeout();
     try{
       const installed=await client.migrateWorldOrFid({serviceId,baseUrl,expectedSha});
       const rows=Number.isFinite(installed?.rowsRead)
         ?` (rows read ${installed.rowsRead}, written ${installed.rowsWritten})`:"";
-      log(`STATE SCHEMA ${installed?.already===true?"ALREADY INSTALLED":"INSTALLED"} world-kernel after ${Math.floor((Date.now()-startedAt)/1_000)}s${rows}`);
+      log(`STATE SCHEMA ${installed?.already===true?"ALREADY INSTALLED":"INSTALLED"} world-kernel after ${Math.floor((now()-startedAt)/1_000)}s${rows}`);
       return installed;
     }catch(error){
-      if(attempt===attempts-1)throw new Error(
-        `World schema installation did not reach the deployed revision: ${error.message}`,
-        {cause:error},
-      );
-      const delayMs=Math.min(15_000,1_500*2**attempt);
-      const revision=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim()
+      lastError=error;
+      serving=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim()
         ?error.deploymentGitSha.slice(0,7):"unknown";
-      const elapsed=Math.floor((Date.now()-startedAt)/1_000);
-      log(JSON.stringify({progress:`STATE SCHEMA REVISION PENDING world-kernel: Cloudflare still serving previous World revision ${revision} `+
-        `(attempt ${attempt+1}/${attempts}, ${elapsed}s); next check in ${delayMs/1_000}s`}));
-      await wait(delayMs);
+      const elapsed=now()-startedAt;
+      if(elapsed>=budgetMs)throw timeout();
+      log(JSON.stringify({progress:`World serving ${serving} · waiting for ${expectedSha.slice(0,7)} (attempt ${attempt}, ${Math.floor(elapsed/1_000)}s)`}));
+      await wait(Math.min(15_000,1_500*2**(attempt-1),budgetMs-elapsed));
     }
   }
 }

@@ -49,6 +49,7 @@ export async function runWithProgress({
   spawnImpl = spawn,
   now = Date.now,
   interactive = process.stdout.isTTY === true,
+  columns = process.stdout.columns,
   write = (text) => process.stdout.write(text),
   writeError = (text) => process.stderr.write(text),
 } = {}) {
@@ -91,7 +92,11 @@ export async function runWithProgress({
         return;
       }
       if (!atLineBoundary) return;
-      write(`${CLEAR_LINE}${currentStatus}`);
+      const maxWidth=Number.isSafeInteger(columns)&&columns>0?Math.max(1,columns-2):null;
+      const glyphs=[...currentStatus];
+      const visible=maxWidth!==null&&glyphs.length>maxWidth
+        ?glyphs.slice(0,maxWidth-1).join("")+"…":currentStatus;
+      write(`${CLEAR_LINE}${visible}`);
       transientVisible = true;
     };
     const forward = (target) => (chunk) => {

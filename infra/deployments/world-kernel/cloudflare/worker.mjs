@@ -750,6 +750,10 @@ export class FibreWorldDurableObject extends DurableObject {
       const deploymentGitSha=this.env.FIBRE_DEPLOYMENT_GIT_SHA??null;
       const result=installWorldSchemaForRevision({
         expectedGitSha:input?.expectedGitSha,deploymentGitSha,
+        // Yield the 409 before aborting this obsolete in-memory instance.
+        // Storage and its durable alarm are intentionally untouched.
+        onSuperseded:expected=>this.ctx.waitUntil(new Promise(resolve=>
+          setTimeout(resolve,0)).then(()=>this.ctx.abort(`superseded by ${expected.slice(0,7)}`))),
         readInstalledGitSha:()=>this.worldSchemaStatus().installedGitSha,
         install:()=>installWorldSchemas({
           infraDriver:this.infraDriver,stateScopeId:WORLD_SCOPE_ID,

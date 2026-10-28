@@ -104,3 +104,25 @@ test("cloud operator progress reports child failure and rejects", async () => {
   await assert.rejects(started, /failed with code=7/u);
   assert.match(output.at(-1), /^PROGRESS cloud:deploy failed/u);
 });
+
+test("interactive progress fits terminal columns without truncating ordinary output",async()=>{
+  const child=fakeChild({streams:true});
+  const output=[];
+  const running=runWithProgress({
+    label:"cloud:deploy",command:"node",args:["deploy.mjs"],
+    interactive:true,columns:34,intervalMs:1_000,
+    spawnImpl:()=>child,write:text=>output.push(text),
+  });
+  child.stdout.emit("data",Buffer.from(
+    JSON.stringify({progress:"World serving 06bce4b · waiting for 962637f (attempt 22, 420s)"})+"\n"));
+  child.stdout.emit("data",Buffer.from("STATE SCHEMA INSTALLED world-kernel (rows read 15, written 3)\n"));
+  child.emit("close",0,null);
+  await running;
+  const transient=output.filter(value=>value.startsWith("\r\u001b[2K")&&value.length>5)
+    .map(value=>value.slice(5));
+  assert.ok(transient.length>0,"no transient progress");
+  assert.ok(transient.every(value=>[...value].length<=32),"progress exceeded terminal width");
+  assert.ok(transient.some(value=>value.endsWith("…")),"long progress lacked ellipsis");
+  assert.ok(output.includes("STATE SCHEMA INSTALLED world-kernel (rows read 15, written 3)\n"),
+    "installation outcome was truncated");
+});
