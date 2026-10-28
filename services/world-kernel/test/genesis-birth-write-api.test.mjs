@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createGenesisBirthWriteApi } from "../src/genesis-birth-write-api.mjs";
+import {GenesisConflictError} from "../src/genesis-store.mjs";
 
 const TOKEN = "slice-c-private-token-123";
 
@@ -77,3 +78,17 @@ test("malformed activity correlation is ignored rather than blocking authoritati
   assert.deepEqual(options, { activityContext: {} });
 });
 
+
+test("World reports a conflicting WorldSpec as a permanent publication conflict",async()=>{
+  const api=createGenesisBirthWriteApi({
+    privateToken:TOKEN,
+    birthPublisher:{publishBirth(){
+      throw new GenesisConflictError("WorldSpec world_modern_jerusalem already exists with different content");
+    }},
+  });
+  const response=await api.fetch(request());
+  assert.equal(response.status,409,"World retried a permanent WorldSpec conflict");
+  const payload=await response.json();
+  assert.equal(payload.error.code,"GENESIS_RECORD_CONFLICT","World lost the conflict identity");
+  assert.match(payload.error.message,/WorldSpec .*different content/u);
+});

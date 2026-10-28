@@ -7,7 +7,8 @@ function terminalWorldRejection(error) {
   const status=error?.status;
   return error?.name==="WorldKernelBirthPublicationError"
     &&Number.isInteger(status)&&status>=400&&status<=499
-    &&status!==408&&status!==409&&status!==429;
+    &&status!==408&&status!==429
+    &&(status!==409||error.code==="GENESIS_RECORD_CONFLICT");
 }
 
 function nonEmpty(name, value) {

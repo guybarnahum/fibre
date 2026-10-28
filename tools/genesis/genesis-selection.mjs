@@ -198,7 +198,8 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
     throw new TypeError("authored raised languages must be included in the subject's eventual spoken languages");
   }
   const sourceDigest = digest({ selector, heritage, authored, familyProfileId:family.id }).slice(0, 12);
-  const worldSpecId = `world_modern_${selector.slug}_${heritage?.slug ?? "default"}_${sourceDigest}`;
+  const worldSpecDigest = digest({selector,heritage,authored,familyProfileId:family.id,bornAt,chronologyEndsAt}).slice(0,12);
+  const worldSpecId = `world_modern_${selector.slug}_${heritage?.slug ?? "default"}_${worldSpecDigest}`;
   const place = (kind) => `place_${selector.slug}_${sourceDigest}_${kind}`;
   const heritageLabel = heritage?.display ?? null;
   const familyOriginContext = nonEmpty("authored world familyOriginContext", family.familyOriginContext);

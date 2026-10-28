@@ -8,8 +8,13 @@ import {WorldKernelBirthPublicationError} from "../../../infra/deployments/birth
 import {migrateBirthState} from "../src/birth-state-migrations.mjs";
 import {createBirthCenterRuntime} from "../src/runtime.mjs";
 
-for(const status of [400,503]){
-  test(`World ${status} ${status===400?"terminates a rejected birth":"preserves its retry"}`,async(t)=>{
+for(const {status,code,terminal} of [
+  {status:400,code:"BODY_PROJECTION_MISMATCH",terminal:true},
+  {status:409,code:"GENESIS_RECORD_CONFLICT",terminal:true},
+  {status:409,code:"WORLD_REVISION_NOT_SERVING",terminal:false},
+  {status:503,code:"WORLD_UNAVAILABLE",terminal:false},
+]){
+  test(`World ${status} ${code} ${terminal?"ends publication":"remains retryable"}`,async(t)=>{
     const root=mkdtempSync(join(tmpdir(),"fibre-world-birth-retry-"));
     t.after(()=>rmSync(root,{recursive:true,force:true}));
     const infraDriver=createLocalInfraDriver({
@@ -18,9 +23,9 @@ for(const status of [400,503]){
     });
     const storage={infraDriver,stateScopeId:"birth"};
     migrateBirthState(storage);
-    const genesisId=`genesis_world_error_${status}`;
-    const threadId=`thr_world_error_${status}`;
-    const requestId=`request_world_error_${status}`;
+    const genesisId=`genesis_world_error_${code}`;
+    const threadId=`thr_world_error_${code}`;
+    const requestId=`request_world_error_${code}`;
     let attempts=0;
     const runtime=createBirthCenterRuntime({
       storage,now:()=>"2026-10-28T12:00:00Z",nowMs:()=>10000,
@@ -28,8 +33,8 @@ for(const status of [400,503]){
         publishBirth(){
           attempts++;
           if(attempts===1)throw new WorldKernelBirthPublicationError(
-            status===400?"birth Body projection differs from admitted symbolic urge genome":"World unavailable",
-            {status,code:status===400?"BODY_PROJECTION_MISMATCH":"WORLD_UNAVAILABLE"},
+            terminal?(status===409?"WorldSpec already exists with different content":"birth Body projection differs from admitted symbolic urge genome"):"World unavailable",
+            {status,code},
           );
           return {thread:{threadId}};
         },
@@ -41,14 +46,14 @@ for(const status of [400,503]){
       plan:{requestId,requestDigest:"digest_test",genesisId,threadId},
     });
     await runtime.submitBirth({manifest:{genesisId,threadId},thread:{threadId}});
-    if(status===400){
+    if(terminal){
       assert.deepEqual(await runtime.handleWake(),{attempted:1,published:0});
       assert.equal(runtime.provisionalBirthStore.get(genesisId).status,"failed",
         "rejected birth remained retryable");
       const disposition=runtime.developmentRequestStore.getDisposition(requestId);
       assert.equal(disposition.failureRetryable,false,"rejected birth remained retryable");
-      assert.equal(disposition.failureCode,"BODY_PROJECTION_MISMATCH");
-      assert.match(disposition.failureMessage,/birth Body projection differs/);
+      assert.equal(disposition.failureCode,code);
+      assert.match(disposition.failureMessage,status===409?/WorldSpec already exists/:/birth Body projection differs/);
       assert.equal(runtime.status().pendingBirthCount,0,"rejected birth remained queued");
       await runtime.ensureScheduled();
       assert.equal(await infraDriver.scheduler.get("birth"),null,

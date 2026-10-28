@@ -274,8 +274,21 @@ async function reportPreparation({baseUrl,privateToken,requestId,requestedAt,loc
 async function main() {
   const startedAt=Date.now();
   let activeStage="starting",stageStart=startedAt,birthRequestId=null,birthThreadId=null;
+  const interactive=process.stderr.isTTY===true;
+  let transientVisible=false;
   const progress=(detail={})=>{
     const now=Date.now();
+    if(interactive){
+      const status=`BIRTH ${activeStage} · ${Math.floor((now-stageStart)/1000)}s (total ${Math.floor((now-startedAt)/1000)}s)`;
+      const width=Number.isSafeInteger(process.stderr.columns)
+        ?Math.max(1,process.stderr.columns-2):null;
+      const characters=[...status];
+      const line=width!==null&&characters.length>width
+        ?characters.slice(0,width-1).join("")+"…":status;
+      process.stderr.write("\r\u001b[2K"+line);
+      transientVisible=true;
+      return;
+    }
     const fields={
       ...(birthRequestId===null?{}:{requestId:birthRequestId}),
       ...(birthThreadId===null?{}:{threadId:birthThreadId}),
@@ -285,8 +298,23 @@ async function main() {
       Object.entries(fields).map(([key,value])=>` ${key}=${value}`).join("")+"\n");
   };
   const emit=(stage,detail={})=>{
+    const changed=stage!==activeStage;
+    if(interactive&&transientVisible){
+      process.stderr.write("\r\u001b[2K");
+      transientVisible=false;
+    }
     activeStage=stage;stageStart=Date.now();
-    progress(detail);
+    if(interactive){
+      if(changed){
+        const fields={
+          ...(birthRequestId===null?{}:{requestId:birthRequestId}),
+          ...(birthThreadId===null?{}:{threadId:birthThreadId}),
+          ...detail,
+        };
+        process.stderr.write(`BIRTH ${stage}`+
+          Object.entries(fields).map(([key,value])=>` ${key}=${value}`).join("")+"\n");
+      }
+    }else progress(detail);
   };
   const heartbeat=setInterval(()=>progress(),10_000);
   heartbeat.unref?.();
@@ -464,7 +492,10 @@ async function main() {
     worldSpecId: body.worldSpec.worldSpecId,
     identityMode: "fresh_birth_composition",
   })}\n`);
-  } finally { clearInterval(heartbeat); }
+  } finally {
+    clearInterval(heartbeat);
+    if(interactive&&transientVisible)process.stderr.write("\r\u001b[2K");
+  }
 }
 
 main().catch((error) => {

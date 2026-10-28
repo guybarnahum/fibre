@@ -1,3 +1,5 @@
+import {GenesisConflictError} from "./genesis-store.mjs";
+
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const TOKEN_ENCODER = new TextEncoder();
 export const DEFAULT_GENESIS_BIRTH_MAX_BODY_BYTES = 1024 * 1024;
@@ -98,8 +100,9 @@ export function createGenesisBirthWriteApi({
         const result = await birthPublisher.publishBirth(bundle, { activityContext });
         return json(result?.idempotent === true ? 200 : 201, result, id);
       } catch (error) {
-        const status = error instanceof TypeError ? (error.httpStatus ?? 400) : 500;
-        const code = error instanceof TypeError ? (error.httpCode ?? "INVALID_REQUEST") : "INTERNAL_ERROR";
+        const conflict=error instanceof GenesisConflictError;
+        const status=conflict?409:error instanceof TypeError?(error.httpStatus??400):500;
+        const code=conflict?"GENESIS_RECORD_CONFLICT":error instanceof TypeError?(error.httpCode??"INVALID_REQUEST"):"INTERNAL_ERROR";
         const message = status >= 500
           ? "The world-kernel could not publish the Genesis birth"
           : error.message;

@@ -123,6 +123,18 @@ test("Genesis keys create and reuse a place plus heritage World", async (t) => {
   });
   assert.equal(reused.mode, "cached");
   assert.equal(reused.worldSpec.worldSpecId, created.worldSpec.worldSpecId);
+  const shifted=await resolveGenesisWorldSelection({
+    selector,heritage,repoRoot:root,requestId:"birth-jerusalem-1",
+    bornAt:new Date(Date.parse(cohort.entry.bornAt)+86_400_000).toISOString(),
+    chronologyEndsAt:new Date(Date.parse(cohort.entry.chronologyEndsAt)+86_400_000).toISOString(),
+    authorWorld:async()=>{throw new Error("cached World was re-authored");},
+  });
+  assert.equal(shifted.material.familyProfileId,created.material.familyProfileId,
+    "chronology test changed the family");
+  assert.notEqual(shifted.worldSpec.worldSpecId,created.worldSpec.worldSpecId,
+    "different birth chronology reused a WorldSpec identity");
+  assert.deepEqual(shifted.worldSpec.places,created.worldSpec.places,
+    "chronology changed shared place identity");
   assert.equal(authoredCalls, 1);
 });
 
