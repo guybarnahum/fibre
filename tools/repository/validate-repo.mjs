@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFile,execFileSync } from "node:child_process";
 import { existsSync, lstatSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
@@ -143,6 +143,29 @@ if (manifest) {
       report(`Unable to validate generated context packs: ${error.message}`);
     }
   }
+}
+
+// Syntax-check tracked operator entrypoints, which are not imported by the test suite.
+try {
+  const operatorTools=execFileSync("git",["ls-files","-z","--","tools"],{
+    encoding:"utf8",
+  }).split("\0").filter(path=>path.endsWith(".mjs")
+    &&!/\.(?:test|spec)\.mjs$/u.test(path)
+    &&!/(?:^|\/)(?:test|tests|__tests__)\//u.test(path));
+  let next=0;
+  const broken=[];
+  await Promise.all(Array.from({length:Math.min(4,operatorTools.length)},async()=>{
+    while(next<operatorTools.length){
+      const path=operatorTools[next++];
+      const parses=await new Promise(resolve=>{
+        execFile(process.execPath,["--check",path],error=>resolve(error===null));
+      });
+      if(!parses)broken.push(path);
+    }
+  }));
+  for(const path of broken.sort())report(`operator tool does not parse: ${path}`);
+}catch(error){
+  report(`Unable to check operator tool syntax: ${error.message}`);
 }
 
 if (failed) process.exit(1);

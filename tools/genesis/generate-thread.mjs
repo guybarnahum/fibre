@@ -443,14 +443,14 @@ async function main() {
   );
   const validated = assertGenesisReference({ body, plan, world, presentation });
   emit("birth_verified");
-  let location;
+  let newbornLocation;
   try{
-    location=await poll(async()=>{
+    newbornLocation=await poll(async()=>{
       const observation=await inspectWorldObservatory({
         baseUrl:worldKernel,privateToken,threadId:plan.threadId,timeoutMs,
       });
       return newbornLocationStatus(observation.observatory);
-    },result=>result.state==="located",{timeoutMs});
+    },result=>result.state==="located",{timeoutMs,intervalMs:15_000});
   }catch(error){
     if(error?.code!=="THREAD_BIRTH_CONVERGENCE_TIMEOUT")throw error;
     process.stdout.write(JSON.stringify({
@@ -479,8 +479,8 @@ async function main() {
     sex: validated.expectedSex,
     birthDate: validated.identity.birthDate,
     birthCity: validated.identity.birthCity,
-    locality:location.location.locality,
-    countryCode:location.location.countryCode,
+    locality:newbornLocation.location.locality,
+    countryCode:newbornLocation.location.countryCode,
     languages: validated.identity.languages,
     memoryRefCount: world.inspection.authoritativeThread.memoryRefCount,
     worldSpecId: body.worldSpec.worldSpecId,
