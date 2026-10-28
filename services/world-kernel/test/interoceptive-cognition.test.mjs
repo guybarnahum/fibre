@@ -1,3 +1,5 @@
+import {URGE_FAMILIES} from "../../../core/src/inherited-urges.mjs";
+import {DEFAULT_ORGANISM_POLICY} from "../../../core/src/organism-policy.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -199,4 +201,40 @@ test("R3 the same regulation can become different semantic experience for differ
     projectInteroception(frame),
     projectInteroception(structuredClone(frame)),
   );
+});
+
+test("species-default low pressure retains its life evidence; unfelt v2 pressure stays private to Body",async()=>{
+  const perceptFrame={
+    asOf:"2026-10-28T12:00:00Z",
+    evidenceRefs:["sit_current"],
+    contact:{observedUnmetHours:2,evidenceRefs:["sit_prior"]},
+  };
+  const legacy=evaluateIntrinsicRegulation({
+    perceptFrame,organismPolicy:DEFAULT_ORGANISM_POLICY,
+  });
+  const defaultInteroception=projectInteroception(legacy);
+  assert.equal(defaultInteroception.drives.some(d=>d.family==="social_contact"),true,
+    "the new threshold suppressed existing legacy interoception");
+  assert.ok(defaultInteroception.evidenceRefs.includes("sit_prior"),
+    "legacy social need lost its lived source");
+
+  const variant=URGE_FAMILIES.find(f=>f.family==="social_contact").variants[1];
+  const newborn=evaluateIntrinsicRegulation({
+    perceptFrame,organismPolicy:DEFAULT_ORGANISM_POLICY,
+    urgeProjection:[{
+      family:"social_contact",kind:"directional",
+      orientation:variant.orientation,positions:variant.positions,
+    }],
+  });
+  assert.equal(newborn.drives[0].felt,false,"v2 threshold did not hold a subthreshold urge");
+  assert.equal(projectInteroception(newborn).drives.length,0,
+    "unfelt inherited pressure leaked its direction to cognition");
+  const cognition=model(()=>{throw new Error("unfelt urge must not call cognition");});
+  const interpretation=await interpretIntrinsicRegulation({
+    thread:thread("thr_subthreshold","I carry my own meaning."),
+    regulationFrame:newborn,semanticStateStore:semanticStore(),
+    modelAdapter:cognition.adapter,
+  });
+  assert.equal(interpretation.cognition,null);
+  assert.equal(cognition.invocations.length,0);
 });

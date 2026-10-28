@@ -76,11 +76,11 @@ export function projectInteroception(regulationFrame) {
   if (!Array.isArray(regulationFrame.drives)) throw new TypeError("regulationFrame.drives must be an array");
   assertPlainObject("regulationFrame.intrinsicAffect", regulationFrame.intrinsicAffect);
 
-  const drives = regulationFrame.drives
-    .filter((drive) => (drive.felt===undefined
-      ?drive.pressure > 0 || drive.attained || drive.progressError !== 0 || drive.predictionError !== 0
-      :drive.felt===true))
-    .map(driveContext);
+  const felt=(drive)=>drive.felt===undefined
+    ?drive.pressure>0||drive.attained||drive.progressError!==0||drive.predictionError!==0
+    :drive.felt===true;
+  const visible=regulationFrame.drives.filter(felt);
+  const drives=visible.map(driveContext);
   const resonance = regulationFrame.intrinsicAffect.socialResonance ?? {
     activation: 0,
     affiliative: 0,
@@ -88,24 +88,24 @@ export function projectInteroception(regulationFrame) {
     evidenceRefs: [],
   };
   const evidenceRefs = new Set();
-  for (const drive of regulationFrame.drives) {
-    if ((drive.felt===undefined
-      ?drive.pressure > 0 || drive.attained || drive.progressError !== 0 || drive.predictionError !== 0
-      :drive.felt===true)) {
-      for (const ref of drive.evidenceRefs ?? []) evidenceRefs.add(ref);
-    }
+  for (const drive of visible) {
+    for (const ref of drive.evidenceRefs ?? []) evidenceRefs.add(ref);
   }
   for (const ref of resonance.evidenceRefs ?? []) evidenceRefs.add(ref);
 
+  // Unfelt v2 pressure remains in the Body, not in private cognition.
+  // Project only affect attributable to felt drives (or social evidence).
+  const hidden=visible.length!==regulationFrame.drives.length;
+  const maximum=(items)=>items.reduce((value,item)=>Math.max(value,item.pressure),0);
   return {
     asOf: regulationFrame.asOf,
     drives,
     affect: {
-      activation: regulationFrame.intrinsicAffect.activation,
-      sensoryLoad: regulationFrame.intrinsicAffect.sensoryLoad,
-      approachPull: regulationFrame.intrinsicAffect.approachPull,
-      avoidancePush: regulationFrame.intrinsicAffect.avoidancePush,
-      attainment: regulationFrame.intrinsicAffect.attainment,
+      activation:hidden?Math.max(maximum(visible),resonance.activation):regulationFrame.intrinsicAffect.activation,
+      sensoryLoad:hidden?maximum(visible.filter(item=>item.family==="sensory_load")):regulationFrame.intrinsicAffect.sensoryLoad,
+      approachPull:hidden?maximum(visible.filter(item=>item.orientation==="approach")):regulationFrame.intrinsicAffect.approachPull,
+      avoidancePush:hidden?maximum(visible.filter(item=>item.orientation==="avoid")):regulationFrame.intrinsicAffect.avoidancePush,
+      attainment:hidden?Number(visible.some(item=>item.attained)):regulationFrame.intrinsicAffect.attainment,
       socialResonance: {
         activation: resonance.activation,
         affiliative: resonance.affiliative,

@@ -201,10 +201,15 @@ function feltUrges({drives,policy,urgeProjection,previousUrges=[],asOf}){
     const pressure=round(Math.max(item.pressure*gain,residual));
     const direction=family.kind==="triggered"?(matched?gene.orientation:"all"):
       inherited?gene.orientation:SPECIES_STANDARD_ORIENTATION[item.family];
+    // Species-default/legacy drives retain the established lived-evidence
+    // interoception behavior. Only an active v2 locus changes felt threshold.
+    const felt=position===null
+      ?pressure>0||item.attained||item.progressError!==0||item.predictionError!==0
+      :pressure>=threshold;
     return {...item,pressure,urgency:Math.max(item.urgency,pressure),
       inheritedDirection:direction,
       targetAvailability:family.kind==="directional"?"unknown":"available",
-      felt:pressure>=threshold,
+      felt,
     };
   });
 }
