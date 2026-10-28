@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {planThreadLocation} from "../../services/world-kernel/src/thread-home-location.mjs";
+import {planThreadLocation as operatorPlanThreadLocation} from "./thread-locations.mjs";
 import { resolveLocalityGeography } from "../../core/src/locality-geography.mjs";
 
 const thread={
@@ -116,4 +117,21 @@ test("legacy London and Tokyo births resolve to current-city geography without i
     assert.deepEqual([resolved.lat,resolved.long],[lat,long],
       "city center was not grounded in the shared locality catalogue");
   }
+});
+
+test("operator plan and World home rule agree on Hilo's canonical city",()=>{
+  const hilo={
+    ...thread,
+    birthLocation:{city:"Hilo",country:"United States",countryCode:"US"},
+  };
+  const present={
+    ...life({}),
+    worldContext:{timeZone:"Pacific/Honolulu"},
+  };
+  const shared=planThreadLocation(hilo,present);
+  const operator=operatorPlanThreadLocation(hilo,present);
+  assert.deepEqual(operator,shared,
+    "operator repair and newborn home attestation diverged");
+  assert.equal(shared.state,"ready");
+  assert.equal(shared.place.locality,"Hilo, Hawaii");
 });

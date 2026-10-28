@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {planThreadLocation} from "../../services/world-kernel/src/thread-home-location.mjs";
+export {planThreadLocation};
 import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
 import { topology } from "../validation/encounter-autonomy-probe.mjs";
 
