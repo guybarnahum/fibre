@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { shortSha } from "../shared/repo-root.mjs";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -52,7 +53,7 @@ async function main() {
   baseUrl.hash = "";
 
   console.log(`THREAD RECOVERY env=${args.environment} thread=${args.threadId}`);
-  console.log(`DEPLOYMENT ${record.sourceGitSha ?? "unknown"} evidence=${path}`);
+  console.log(`DEPLOYMENT ${shortSha(record.sourceGitSha) ?? "unknown"} evidence=${path}`);
   console.log(`RECOVERY KEY ${args.recoveryKey}`);
 
   const response = await fetch(baseUrl, {

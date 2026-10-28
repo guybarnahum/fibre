@@ -1,4 +1,5 @@
 import { execFile as execFileCallback } from "node:child_process";
+import { shortSha } from "../shared/repo-root.mjs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -256,7 +257,7 @@ async function main(argv) {
   const repoRoot = repoRootFrom(import.meta.url);
   const result = await deployCloudflareService({ repoRoot, environment, service });
   console.log(`Cloudflare service deployed: ${result.serviceId} -> ${result.workerName}`);
-  console.log(`SOURCE  ${result.sourceGitSha}`);
+  console.log(`SOURCE  ${shortSha(result.sourceGitSha)}`);
   const output = `${result.stdout}\n${result.stderr}`.trim();
   if (output) console.log(output);
 }

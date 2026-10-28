@@ -4,6 +4,7 @@ import { dirname,resolve } from "node:path";
 import { fileURLToPath,pathToFileURL } from "node:url";
 
 import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
+import { shortSha } from "../shared/repo-root.mjs";
 import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
 import {
   privateGet,publicThreads,requireRuntimeAncestor,topology,validatorGitSha,
@@ -320,7 +321,7 @@ export function formatWorldSocialReport(evidence,evidencePath){
     "Observatories: "+evidence.availableThreadCount+"/"+evidence.scannedThreadCount+
       " read"+(evidence.unavailableThreadIds.length
         ?" ("+evidence.unavailableThreadIds.length+" unavailable)":""),
-    "Runtime: "+short(evidence.deployedGitSha?.slice(0,7)??null)+
+    "Runtime: "+short(shortSha(evidence.deployedGitSha)??null)+
       (evidence.runtimeSourceMatches
         ?" · source matches checkout"
         :" · checkout includes later runtime changes; observations are from deployed World"),

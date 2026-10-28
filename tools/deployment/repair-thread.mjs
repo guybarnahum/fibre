@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { shortSha } from "../shared/repo-root.mjs";
 import { resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -107,7 +108,7 @@ async function main() {
   const token = nonEmpty("FIBRE_PRIVATE_TOKEN", process.env.FIBRE_PRIVATE_TOKEN);
   const repairing = args.repairKey !== null;
   console.log(`THREAD ${repairing ? "REPAIR" : "DIAGNOSE"} env=${args.environment} thread=${args.threadId}`);
-  console.log(`DEPLOYMENT ${record.sourceGitSha ?? "unknown"} evidence=${path}`);
+  console.log(`DEPLOYMENT ${shortSha(record.sourceGitSha) ?? "unknown"} evidence=${path}`);
 
   const payload = await requestJson(url, token, { repairKey:args.repairKey });
   console.log(JSON.stringify(payload, null, 2));

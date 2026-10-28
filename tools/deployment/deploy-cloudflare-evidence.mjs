@@ -1,4 +1,5 @@
 import { execFile as execFileCallback } from "node:child_process";
+import { shortSha } from "../shared/repo-root.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -180,7 +181,7 @@ async function main() {
     }),
   });
   console.log(`Cloudflare deployment accepted: ${result.deployment.environment}`);
-  console.log(`SOURCE  ${result.source.gitSha}`);
+  console.log(`SOURCE  ${shortSha(result.source.gitSha)}`);
   for (const item of result.deployment.deployments) console.log(`HEALTH  ${item.serviceId} ${item.baseUrl}`);
   console.log(`VIEWER  ${result.deployment.externalViewerOrigin}`);
   console.log(`EVIDENCE ${result.evidencePath}`);

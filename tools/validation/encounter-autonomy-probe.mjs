@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
+import { shortSha } from "../shared/repo-root.mjs";
 
 const REPO_ROOT=fileURLToPath(new URL("../../",import.meta.url));
 const READ_TIMEOUT_MS=15_000;
@@ -46,7 +47,7 @@ export function requireRuntimeAncestor(runtimeSha,validatorSha){
       cwd:REPO_ROOT,stdio:"ignore",
     });
   }catch{
-    throw new Error(`deployed world-kernel ${runtimeSha} is not in validator checkout history ${validatorSha}`);
+    throw new Error(`deployed world-kernel ${shortSha(runtimeSha)} is not in validator checkout history ${shortSha(validatorSha)}`);
   }
 }
 

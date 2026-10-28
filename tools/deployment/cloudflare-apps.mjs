@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { shortSha } from "../shared/repo-root.mjs";
 import { dirname, relative, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -279,9 +280,12 @@ export function createWranglerAppDeploymentClient({
         const received=payload?.deploymentGitSha;
         const available=payload&&typeof payload==="object"
           ?Object.keys(payload).join(", "):typeof payload;
-        throw new Error("App revision not ready: received "
-          +String(received)+"; expected "+expectedSha
+        const error=new Error("App revision not ready: received "
+          +(shortSha(received)??"unknown")+"; expected "+shortSha(expectedSha)
           +(received===undefined?" (response fields: "+available+")":""));
+        error.servingGitSha=received;
+        error.expectedGitSha=expectedSha;
+        throw error;
       }
       return payload;
     },
@@ -453,7 +457,7 @@ async function main(argv) {
   const result = await deployCloudflareApps({ repoRoot, environment: parsed.environment, operatorConfig, dryRun: parsed.dryRun, app: parsed.app, client });
   if (result.evidence.access) console.log(`ACCESS ${result.evidence.access.domain} policies=${result.evidence.access.policyCount} allow=${result.evidence.access.allowPolicyCount}`);
   for (const deployment of result.evidence.deployments) console.log(`${parsed.dryRun ? "DRY" : "DEPLOY"} ${deployment.appId} https://${deployment.domain}`);
-  console.log(`SOURCE ${result.evidence.sourceGitSha}`);
+  console.log(`SOURCE ${shortSha(result.evidence.sourceGitSha)}`);
   console.log(`EVIDENCE ${result.evidencePath}`);
 }
 

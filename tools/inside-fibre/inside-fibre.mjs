@@ -6,6 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { projectDailyRhythm } from "../../services/world-kernel/src/daily-rhythm.mjs";
 import { INSIDE_FIBRE_VISITOR_WORK } from "../../services/world-kernel/src/inside-fibre-work.mjs";
 import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operator.mjs";
+import { shortSha } from "../shared/repo-root.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REQUEST_TIMEOUT_MS = 180_000;
@@ -621,7 +622,7 @@ export async function scanInsideFibre({
   );
 
   process.stdout.write(
-    `Inside Fibre · ${targetEnvironment} · operator ${formatOperatorTime(at)} · deployed ${context.deployment.sourceGitSha?.slice(0, 8) ?? "unknown"}\n`,
+    `Inside Fibre · ${targetEnvironment} · operator ${formatOperatorTime(at)} · deployed ${shortSha(context.deployment.sourceGitSha) ?? "unknown"}\n`,
   );
   printSection("AVAILABLE NOW", available, (entry) => entry.available, at);
   printSection("SCHEDULED", scheduled, (entry) => entry.scheduled, at);

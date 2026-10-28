@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { shortSha } from "../shared/repo-root.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -52,7 +53,7 @@ function deployment(){
   const status=execFileSync("git",["status","--porcelain","--untracked-files=all"],{cwd:REPO_ROOT,encoding:"utf8"}).trim();
   if(status!=="")throw new Error("country-code migration requires a clean working tree");
   if(record.sourceTreeClean!==true||record.sourceGitSha!==head){
-    throw new Error("staging deployment "+(record.sourceGitSha??"unknown")+" does not match current clean checkout "+head);
+    throw new Error("staging deployment "+(shortSha(record.sourceGitSha)??"unknown")+" does not match current clean checkout "+shortSha(head));
   }
   return record;
 }

@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { shortSha } from "../shared/repo-root.mjs";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -561,7 +562,7 @@ async function runStaging({ environment, fetchImpl, sleep, emit, sourceResolver,
     path: environment.FIBRE_CLOUDFLARE_DEPLOYMENT_RECORD?.trim() || null,
   });
   if (deploymentEvidence.record.sourceGitSha !== currentSource.gitSha) {
-    throw new Error(`staging deployment SHA ${deploymentEvidence.record.sourceGitSha} does not match current checkout ${currentSource.gitSha}`);
+    throw new Error(`staging deployment SHA ${shortSha(deploymentEvidence.record.sourceGitSha)} does not match current checkout ${shortSha(currentSource.gitSha)}`);
   }
   const deployment = deploymentEvidence.record;
 

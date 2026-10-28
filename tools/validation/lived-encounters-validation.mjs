@@ -9,6 +9,7 @@ import { threadJournalPresentationModel } from "../../apps/admin-dashboard/threa
 import { planEncounterPresentationAssetSlot } from "../../services/world-kernel/src/encounter-presentation-asset-planner.mjs";
 import { reconcilePresentationAssets } from "../../services/world-kernel/src/presentation-asset-demand.mjs";
 import { placeEpisodeRevisionRef } from "../../services/world-kernel/src/situated-life-evidence.mjs";
+import { shortSha } from "../shared/repo-root.mjs";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -59,7 +60,7 @@ function requireRuntimeAncestor(runtimeGitSha, validatorGitSha) {
     );
   } catch {
     throw new Error(
-      `deployed world-kernel ${runtimeGitSha} is not in validator checkout history ${validatorGitSha}`,
+      `deployed world-kernel ${shortSha(runtimeGitSha)} is not in validator checkout history ${shortSha(validatorGitSha)}`,
     );
   }
 }

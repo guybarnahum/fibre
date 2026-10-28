@@ -15,6 +15,7 @@ import {
 } from "./deploy-cloudflare.mjs";
 import { CLOUDFLARE_SERVICE_CONFIGS, parseJsonc } from "./cloudflare-operator.mjs";
 import { progressDetailFromLine } from "./run-with-progress.mjs";
+import { shortSha } from "../shared/repo-root.mjs";
 
 const sourceRoot = resolve(new URL("../..", import.meta.url).pathname);
 
@@ -98,7 +99,9 @@ test("state health keeps non-revision diagnostics readable while retrying",async
   }
 });
 
-test("state revision progress shows short SHAs; final failure preserves full revisions",async()=>{
+test("state revision progress uses short SHAs with exact revision metadata",async()=>{
+  assert.equal(shortSha(null),null);
+  assert.equal(shortSha("unknown"),"unknown");
   const serving="a".repeat(40),expected="b".repeat(40);
   for(const serviceId of ["world-kernel","fibre-identity-authority","birth-center"]){
     const log=[];
@@ -111,8 +114,9 @@ test("state revision progress shows short SHAs; final failure preserves full rev
       client,serviceId,baseUrl:"https://state.example",expectedSha:expected,
       attempts:2,wait:async()=>{},log:line=>log.push(line),
     }),error=>{
-      assert.ok(error.message.includes(serving)&&error.message.includes(expected),
-        "final revision diagnostic lost full SHAs");
+      assert.ok(error.message.includes(shortSha(serving))&&error.message.includes(shortSha(expected))
+        &&!error.message.includes(serving)&&!error.message.includes(expected),
+        "final revision message exposed a full SHA");
       assert.equal(error.cause?.servingGitSha,serving);
       assert.equal(error.cause?.expectedGitSha,expected);
       return true;

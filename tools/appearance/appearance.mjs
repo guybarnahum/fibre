@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { shortSha } from "../shared/repo-root.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -86,7 +87,7 @@ function deployment({ diagnose = false, ignoreMismatch = false } = {}) {
   }
   if (record.sourceGitSha !== head) {
     if (!diagnose && !ignoreMismatch) {
-      throw new Error(`staging deployment ${record.sourceGitSha ?? "unknown"} does not match current clean checkout ${head}; deploy matching Core or explicitly pass --ignore-mismatch`);
+      throw new Error(`staging deployment ${shortSha(record.sourceGitSha) ?? "unknown"} does not match current clean checkout ${shortSha(head)}; deploy matching Core or explicitly pass --ignore-mismatch`);
     }
     progress(diagnose ? "read_only_deployment_revision" : "ignored_deployment_revision_mismatch", {
       deployedGitSha:record.sourceGitSha ?? null,

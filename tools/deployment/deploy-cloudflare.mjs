@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { shortSha } from "../shared/repo-root.mjs";
 import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 
@@ -108,7 +109,7 @@ async function fetchJson(fetchImpl, url) {
 
 function requireDeployedRevision(payload,expectedSha,serviceId){
   if(expectedSha&&payload?.deploymentGitSha!==expectedSha){
-    const error=new Error(`${serviceId} deployed revision not ready: ${String(payload?.deploymentGitSha)}; expected ${expectedSha}`);
+    const error=new Error(`${serviceId} deployed revision not ready: ${shortSha(payload?.deploymentGitSha) ?? "unknown"}; expected ${shortSha(expectedSha)}`);
     error.servingGitSha=payload?.deploymentGitSha;
     error.expectedGitSha=expectedSha;
     throw error;
@@ -290,7 +291,7 @@ export async function retryStateHealth({
         &&typeof error?.expectedGitSha==="string"&&error.expectedGitSha.length>=7;
       const reason=String(error?.message??error);
       const detail=revisionMismatch
-        ?`${serviceId} serving ${error.servingGitSha.slice(0,7)} · waiting for ${error.expectedGitSha.slice(0,7)}`
+        ?`${serviceId} serving ${shortSha(error.servingGitSha)} · waiting for ${shortSha(error.expectedGitSha)}`
         :`${serviceId} not healthy: ${reason.length>60?reason.slice(0,59)+"…":reason}`;
       log(JSON.stringify({progress:`${detail} (attempt ${attempt+1}/${attempts}, ${elapsed}s)`}));
       if(attempt===attempts-1)break;
@@ -309,7 +310,7 @@ export async function installWorldSchemaWithRetry({
   let lastError=null;
   let serving="unknown";
   const timeout=()=>new Error(
-    `World schema not installed for ${expectedSha.slice(0,7)} after 10 minutes; serving ${serving}; last: ${lastError?.message??"no confirmation"}`,
+    `World schema not installed for ${shortSha(expectedSha)} after 10 minutes; serving ${serving}; last: ${lastError?.message??"no confirmation"}`,
     {cause:lastError},
   );
   for(let attempt=1;;attempt++){
@@ -323,10 +324,10 @@ export async function installWorldSchemaWithRetry({
     }catch(error){
       lastError=error;
       serving=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim()
-        ?error.deploymentGitSha.slice(0,7):"unknown";
+        ?shortSha(error.deploymentGitSha):"unknown";
       const elapsed=now()-startedAt;
       if(elapsed>=budgetMs)throw timeout();
-      log(JSON.stringify({progress:`World serving ${serving} · waiting for ${expectedSha.slice(0,7)} (attempt ${attempt}, ${Math.floor(elapsed/1_000)}s)`}));
+      log(JSON.stringify({progress:`World serving ${serving} · waiting for ${shortSha(expectedSha)} (attempt ${attempt}, ${Math.floor(elapsed/1_000)}s)`}));
       await wait(Math.min(15_000,1_500*2**(attempt-1),budgetMs-elapsed));
     }
   }

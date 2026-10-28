@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { shortSha } from "../shared/repo-root.mjs";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
@@ -40,7 +41,7 @@ function deployment(repoRoot, environment) {
   if (record?.environment !== target) throw new Error("deployment evidence environment mismatch");
   const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).trim();
   if (record.sourceGitSha !== head) {
-    throw new Error(`${target} deployment ${record.sourceGitSha} does not match current checkout ${head}`);
+    throw new Error(`${target} deployment ${shortSha(record.sourceGitSha)} does not match current checkout ${shortSha(head)}`);
   }
   return record;
 }

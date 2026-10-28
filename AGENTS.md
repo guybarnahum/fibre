@@ -37,6 +37,8 @@ For public progress, milestone summaries, website status, or claims about what F
 
 ## Operator CLI snippets
 
+- Human-readable operator output (console, progress, errors) shows 7-character Git SHAs; use the shared `shortSha` helper. Machine-readable evidence, stdout JSON result events, World schema stamps, HTTP headers/payloads, stored records and structured Worker telemetry retain full 40-character SHAs. Always compare full SHAs.
+
 - Commands intended for Guy to paste into `zsh` must contain **only executable shell commands**. Do not include `#` comment lines (including inline comments), prose, prompts, or illustrative output inside a command block. Put explanation outside the block. Guy's interactive shell rejects pasted comment lines.
 - Favor exact commands on `main`; Guy performs local validation and deployment. Never instruct creating a branch.
 
