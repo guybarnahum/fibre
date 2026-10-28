@@ -70,6 +70,7 @@ export function createBirthCenterRuntime({
         infraDriver,
         stateScopeId,
         provisionalBirthStore,
+        developmentRequestStore,
         worldPublisher,
         activityRecorder: activity,
         activityContextForBirth(birth) {

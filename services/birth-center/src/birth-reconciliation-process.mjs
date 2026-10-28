@@ -3,6 +3,13 @@ import { requireInfraCapabilities } from "#infra";
 export const BIRTH_RECONCILIATION_PROCESS_VERSION = "fibre-birth-reconciliation-process-v1";
 const DEFAULT_RETRY_MS = 5_000;
 
+function terminalWorldRejection(error) {
+  const status=error?.status;
+  return error?.name==="WorldKernelBirthPublicationError"
+    &&Number.isInteger(status)&&status>=400&&status<=499
+    &&status!==408&&status!==409&&status!==429;
+}
+
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} is required`);
   return value;
@@ -42,6 +49,7 @@ export function createBirthReconciliationRuntime({
   infraDriver,
   stateScopeId = "birth",
   provisionalBirthStore,
+  developmentRequestStore = null,
   worldPublisher,
   activityRecorder = null,
   activityContextForBirth = null,
@@ -54,6 +62,8 @@ export function createBirthReconciliationRuntime({
   if (!provisionalBirthStore || typeof provisionalBirthStore.accept !== "function" || typeof provisionalBirthStore.pending !== "function") {
     throw new TypeError("Birth reconciliation requires a provisional birth store");
   }
+  if(developmentRequestStore!==null && typeof developmentRequestStore.recordFailure!=="function")
+    throw new TypeError("Birth reconciliation requires a development failure recorder");
   publisher(worldPublisher);
   const activity = optionalActivityRecorder(activityRecorder);
   if (activityContextForBirth !== null && typeof activityContextForBirth !== "function") {
@@ -136,6 +146,23 @@ export function createBirthReconciliationRuntime({
         });
         published += 1;
       } catch (error) {
+        if(terminalWorldRejection(error)){
+          const failure=new Error(error.message);
+          failure.code=error.code??null;
+          failure.retryable=false;
+          if(context.requestId!==null && developmentRequestStore!==null)
+            developmentRequestStore.recordFailure(context.requestId,failure);
+          provisionalBirthStore.markFailed(birth.genesisId,{
+            code:error.code??null,message:error.message,
+          });
+          await bestEffortRecord(activity,{
+            ...context,stage:"birth.publish.reconcile",status:"failed",attempt:1,
+            message:"World rejected this birth; no retry scheduled",
+            error:{category:"reconciliation",code:error.code??"WORLD_PUBLICATION_REJECTED",retryable:false},
+          });
+          try{onError(error,birth);}catch{}
+          continue;
+        }
         await bestEffortRecord(activity, {
           ...context,
           stage: "birth.publish.reconcile",

@@ -1,4 +1,5 @@
 import {urgeVariantsFromGenome} from "../../../core/src/inherited-urges.mjs";
+import {canonicalJson} from "./persistence-common.mjs";
 function assertAuthority(authority) {
   if (authority === null || typeof authority !== "object" || typeof authority.publishBirth !== "function") {
     throw new TypeError("Genesis birth publication authority must expose publishBirth(bundle)");
@@ -28,7 +29,7 @@ async function runActivityStage(activity, metadata, operation) {
 }
 
 function sameJson(left, right) {
-  return JSON.stringify(left) === JSON.stringify(right);
+  return canonicalJson(left) === canonicalJson(right);
 }
 
 function attachCivilRegistration(bundle) {

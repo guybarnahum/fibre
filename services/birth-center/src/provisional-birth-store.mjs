@@ -36,7 +36,7 @@ function normalize(row) {
     threadId: row.thread_id,
     bundleDigest: row.bundle_digest,
     bundle: parseJson("provisional birth bundle", row.bundle_json),
-    status: row.status,
+    status: row.status === "pending" && row.world_result_json !== null ? "failed" : row.status,
     worldResult: row.world_result_json === null ? null : parseJson("provisional birth World result", row.world_result_json),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -64,14 +64,21 @@ export function createProvisionalBirthStore(storage, {
     SELECT genesis_id, thread_id, bundle_digest, bundle_json, status,
            world_result_json, created_at, updated_at
     FROM provisional_births
-    WHERE status = 'pending'
+    WHERE status = 'pending' AND world_result_json IS NULL
     ORDER BY created_at, genesis_id
     LIMIT ?
   `);
   const updatePublished = session.prepare(`
     UPDATE provisional_births
     SET status = 'published', world_result_json = ?, updated_at = ?
-    WHERE genesis_id = ? AND status = 'pending'
+    WHERE genesis_id = ? AND status = 'pending' AND world_result_json IS NULL
+  `);
+  // The existing World result column also persists an authoritative terminal
+  // rejection. A failed projection is never sent to World again.
+  const updateFailed = session.prepare(`
+    UPDATE provisional_births
+    SET world_result_json = ?, updated_at = ?
+    WHERE genesis_id = ? AND status = 'pending' AND world_result_json IS NULL
   `);
 
   function get(genesisId) {
@@ -129,13 +136,29 @@ export function createProvisionalBirthStore(storage, {
         }
         return existing;
       }
+      if(existing.status==="failed")throw new ProvisionalBirthConflictError(
+        `provisional birth ${genesisId} has a terminal World rejection`);
       updatePublished.run(canonicalJson(worldResult), now(), genesisId);
       return get(genesisId);
     });
   }
 
+  function markFailed(genesisId, {code=null,message}) {
+    nonEmpty("genesisId",genesisId);
+    const result={error:{code,message:nonEmpty("World publication failure message",message),retryable:false}};
+    return session.transaction(()=>{
+      const existing=get(genesisId);
+      if(existing===null)throw new Error(`provisional birth ${genesisId} does not exist`);
+      if(existing.status==="published")throw new ProvisionalBirthConflictError(
+        `provisional birth ${genesisId} is already published`);
+      if(existing.status==="failed")return existing;
+      updateFailed.run(canonicalJson(result),now(),genesisId);
+      return get(genesisId);
+    });
+  }
+
   function countPending() {
-    return session.prepare("SELECT COUNT(*) AS count FROM provisional_births WHERE status = 'pending'").get().count;
+    return session.prepare("SELECT COUNT(*) AS count FROM provisional_births WHERE status = 'pending' AND world_result_json IS NULL").get().count;
   }
 
   return Object.freeze({
@@ -145,6 +168,7 @@ export function createProvisionalBirthStore(storage, {
     accept,
     pending,
     markPublished,
+    markFailed,
     countPending,
     close() { session.close(); },
   });

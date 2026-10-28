@@ -146,7 +146,11 @@ Cross-generation family-keyed recombination involving v1/legacy parents is
 Keep the approved per-request deterministic selection, originMaterial
 provenance, request-specific age-22 chronology and fixture-slot removal.
 World admission accepts versioned v2 origin material before Birth Center
-begins births. Pass A and Pass B are **genome-blind for v2**.
+begins births. In S1, publication checks the Thread's declared Body projection
+against the admitted symbolic urge genome using key-order-independent canonical
+JSON. Birth Center persists provisional bundles as canonical JSON; their object
+key ordering must never change admission meaning. Genuinely changed projection
+values still fail publication. Pass A and Pass B are **genome-blind for v2**.
 Older v1 Pass-B experiments remain historically replayable.
 
 **Felt Childhood — deferred, not permanently prohibited:** a later
