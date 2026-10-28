@@ -46,11 +46,14 @@ exploration and presence enabled, and character reflection gate 2 salient
 responses. An invalid policy blocks deployment acceptance. Replayed
 consequential regulation records carry the policy version/digest.
 
-**One species awareness boundary:** `THREAD_SPECIES_PROFILE` defines the
-felt-threshold center `0.05`, variation span `0.15`, clamp `[0.01, 0.85]`,
-and planned residual persistence half-life `3600` seconds. Legacy/default
-drives use the same center as v2 with threshold position zero;
-`inheritedSpread=0` returns both to that shared center. The center is
+**One species awareness boundary:** `THREAD_SPECIES_PROFILE` defines
+the felt-threshold center `0.05`, `speciesFeltThresholdOctaves=2`,
+upper guard `0.85`, and planned residual persistence half-life
+`3600` seconds. V2 uses
+`min(0.85, 0.05 × 2^(-2 × T × inheritedSpread))`, allowing the full
+approximately `0.0125–0.2` range without a collapsing linear floor.
+Legacy/default drives use the same center as v2 with threshold position
+zero; `inheritedSpread=0` returns both to that shared center. The center is
 chosen from existing World-lived pressure: the first admissible two-hour
 social-scarcity interval gives `0.8 × 2/24 ≈ 0.067`; sustained sameness
 can yield `0.5` exploration pressure. Thus genuine low-pressure contact
@@ -66,8 +69,13 @@ No live World caller supplies `previousUrges`, `urgeTriggers` or
 `urgeAvailability`: persistence is inert, every triggered family remains
 silent, and all directional target availability is `unknown`.
 S2/S3 must provide those witnesses; S1 does not claim them.
-The numeric library was rebalanced so each family and orientation spans
-physiological variation independently of orientation.
+The permanent numeric library has independent variation in gain,
+felt threshold and persistence in every family (each reaches ±0.85 or more).
+Every orientation contains both positive and negative gain, with mean
+within ±0.25, and each family mean is within ±0.10 for all three positions.
+Exactly one cross-orientation matched-position pair remains per family;
+every other triple is unique. No exact mirror pairs were deliberately
+constructed. The complete measured audit accompanies the 130-variant review.
 
 New v2 Genesis Pass A **and Pass B** are genome-blind. Preserve historical
 v1 Pass-B evidence. **Felt Childhood is deferred, not forbidden:** inherited

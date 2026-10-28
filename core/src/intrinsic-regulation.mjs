@@ -38,8 +38,7 @@ export const THREAD_SPECIES_PROFILE = Object.freeze({
   // At the earliest grounded 2-hour social gap pressure is 0.8*2/24 = 0.0667.
   // The same 0.05 awareness baseline applies to every Thread, regardless of birth version.
   speciesFeltThreshold: 0.05,
-  speciesFeltThresholdSpan: 0.15,
-  speciesFeltThresholdFloor: 0.01,
+  speciesFeltThresholdOctaves: 2,
   speciesFeltThresholdCeiling: 0.85,
   speciesPersistenceHalfLifeSeconds: 3600,
   sensitivityEnvelope: Object.freeze([0.85, 1.15]),
@@ -197,9 +196,8 @@ function feltUrges({drives,policy,urgeProjection,previousUrges=[],asOf}){
     const gain=position===null?1:2**(position.gain*policy.inheritedSpread);
     const species=THREAD_SPECIES_PROFILE;
     const threshold=Math.min(species.speciesFeltThresholdCeiling,
-      Math.max(species.speciesFeltThresholdFloor,
-        species.speciesFeltThreshold-(position?.feltThreshold??0)
-          *species.speciesFeltThresholdSpan*policy.inheritedSpread));
+      species.speciesFeltThreshold*2**(-species.speciesFeltThresholdOctaves
+        *(position?.feltThreshold??0)*policy.inheritedSpread));
     const halfLife=species.speciesPersistenceHalfLifeSeconds
       *(2**((position?.persistence??0)*policy.inheritedSpread));
     const previous=previousUrges.find(w=>w.family===item.family

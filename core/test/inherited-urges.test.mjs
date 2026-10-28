@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {URGE_FAMILIES,selectedUrgesForBirth,urgeVariantsFromGenome} from "../src/inherited-urges.mjs";
 import {normalizeOrganismPolicy,DEFAULT_ORGANISM_POLICY} from "../src/organism-policy.mjs";
-import {evaluateIntrinsicRegulation} from "../src/intrinsic-regulation.mjs";
+import {evaluateIntrinsicRegulation,THREAD_SPECIES_PROFILE} from "../src/intrinsic-regulation.mjs";
 import {projectInteroception} from "../../services/world-kernel/src/interoceptive-cognition.mjs";
 import {buildDeNovoSymbolicGenome} from "../../services/world-kernel/src/symbolic-genome-domain.mjs";
 
@@ -117,28 +117,41 @@ test("disabled and unevidenced families are silent, and organism policy is valid
   assert.throws(()=>normalizeOrganismPolicy(policy({inheritedSpread:4})),/out of bounds/);
 });
 
-test("the inherited library separates qualitative orientation from numerical intensity",()=>{
-  const mean=(values)=>values.reduce((total,value)=>total+value,0)/values.length;
+test("inherited positions span the species range without orientation or duplicate-allele bias",()=>{
+  const mean=(values)=>values.reduce((sum,value)=>sum+value,0)/values.length;
+  const keys=["gain","feltThreshold","persistence"];
+  const species=THREAD_SPECIES_PROFILE;
   for(const family of URGE_FAMILIES){
     const variants=family.variants;
-    for(const parameter of ["gain","feltThreshold","persistence"]){
-      assert.ok(Math.abs(mean(variants.map(v=>v.positions[parameter])))<=0.1+1e-9,
-        `${family.family}: family ${parameter} bias`);
+    for(const key of keys){
+      const values=variants.map(v=>v.positions[key]);
+      assert.ok(Math.min(...values)<=-0.85&&Math.max(...values)>=0.85,
+        `${family.family}: ${key} range`);
+      assert.ok(Math.abs(mean(values))<=0.1+1e-9,
+        `${family.family}: ${key} mean`);
     }
-    const byOrientation=Object.groupBy(variants,v=>v.orientation);
-    for(const [orientation,group] of Object.entries(byOrientation)){
-      assert.ok(Math.abs(mean(group.map(v=>v.positions.gain)))<=0.25+1e-9,
-        `${family.family}/${orientation}: orientation gain bias`);
-      for(const parameter of ["gain","feltThreshold","persistence"]){
-        assert.ok(group.some(v=>v.positions[parameter]>0)
-          &&group.some(v=>v.positions[parameter]<0),
-        `${family.family}/${orientation}: missing ${parameter} range`);
-      }
+    for(const [orientation,group] of Object.entries(Object.groupBy(variants,v=>v.orientation))){
+      const values=group.map(v=>v.positions.gain);
+      assert.ok(values.some(v=>v<0)&&values.some(v=>v>0),
+        `${family.family}/${orientation}: gain signs`);
+      assert.ok(Math.abs(mean(values))<=0.25+1e-9,
+        `${family.family}/${orientation}: gain mean`);
     }
-    assert.ok(variants.some((first,i)=>variants.slice(i+1).some(second=>
-      first.orientation!==second.orientation
-      &&["gain","feltThreshold","persistence"].every(key=>
-        first.positions[key]===second.positions[key]))),
-    `${family.family}: direction confounded with positions`);
+    const pairs=variants.flatMap((left,i)=>variants.slice(i+1)
+      .filter(right=>keys.every(k=>left.positions[k]===right.positions[k]))
+      .map(right=>[left,right]));
+    assert.equal(pairs.length,1,`${family.family}: matched triple count`);
+    assert.notEqual(pairs[0][0].orientation,pairs[0][1].orientation,
+      `${family.family}: matched direction`);
+    assert.equal(new Set(variants.map(v=>keys.map(k=>v.positions[k]).join(","))).size,9,
+      `${family.family}: duplicate triple`);
+    assert.equal(variants.flatMap((left,i)=>variants.slice(i+1)
+      .filter(right=>keys.every(k=>left.positions[k]===-right.positions[k]))).length,0,
+      `${family.family}: mirror triples`);
+    const uniqueT=[...new Set(variants.map(v=>v.positions.feltThreshold))];
+    const effectiveT=uniqueT.map(t=>Math.min(species.speciesFeltThresholdCeiling,
+      species.speciesFeltThreshold*2**(-species.speciesFeltThresholdOctaves*t)));
+    assert.equal(new Set(effectiveT).size,uniqueT.length,
+      `${family.family}: threshold collision`);
   }
 });

@@ -131,6 +131,7 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
     validateRepository:async () => calls.push("validate"),
     provision:async () => { calls.push("provision"); return state; },
     wait:async () => {},
+    log:()=>{},
   });
 
   assert.deepEqual(CLOUDFLARE_DEPLOY_ORDER, [
@@ -350,7 +351,7 @@ async function deploySchemaGatedStack(gated){
   return deployCloudflareStack({
     repoRoot:root,environment:"staging",client:gated.client,
     validateRepository:async()=>{},provision:async()=>state,
-    wait:async()=>{},
+    wait:async()=>{},log:()=>{},
   });
 }
 

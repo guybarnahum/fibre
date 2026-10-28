@@ -59,6 +59,12 @@ other triggers. The species-standard orientation of triggered families is
 The 130 immutable authored variants, 10 per family, are the v2 source-of-truth
 catalogue in `core/src/inherited-urges.mjs`. Each entry contains a concrete
 bodily or attentional description that agrees with its closed orientation.
+Positions are balanced per family without forcing mirrored per-orientation
+patterns: every family spans both sides of ±0.85 on gain, threshold and
+persistence; each orientation has mixed-sign gain and a modest mean; the only
+repeated triple per family is one deliberately matched cross-orientation
+comparison. The measured values and effective thresholds appear in
+`docs/validation/inherited-urges-library-review.md`.
 Textual nuances beyond the orientation/positions remain meaning-bearing source
 but **are not claimed as additional operational differences**. Frozen parameters
 are author-reviewed, not inferred by a model at runtime. No sex, ancestry,
@@ -79,10 +85,12 @@ parsed before deploy and once at Worker initialization.
 V2 gain is `2^(position × inheritedSpread)`: the default spreads from
 0.5× to 2× species gain. **All Threads** share one species awareness threshold.
 `THREAD_SPECIES_PROFILE` declares `speciesFeltThreshold=0.05`,
-`speciesFeltThresholdSpan=0.15`, `speciesFeltThresholdFloor=0.01`,
-`speciesFeltThresholdCeiling=0.85` and
-`speciesPersistenceHalfLifeSeconds=3600`. The felt mapping is
-`clamp(0.05 - 0.15 × position × inheritedSpread, 0.01, 0.85)`.
+`speciesFeltThresholdOctaves=2`, `speciesFeltThresholdCeiling=0.85`
+(as a guard), and `speciesPersistenceHalfLifeSeconds=3600`.
+The log-symmetric felt mapping is
+`min(0.85, 0.05 × 2^(-2 × feltThresholdPosition × inheritedSpread))`.
+It ranges from `0.0125` to `0.2` at spread 1 and positions ±1:
+no artificial floor collapses distinct positions.
 Legacy/default drives use exactly the same center as v2 position zero.
 The choice is calibrated to existing lived inputs: 2 hours of evidenced
 social scarcity yield `0.8 × 2/24 ≈ 0.067` Body pressure, and the current

@@ -328,6 +328,7 @@ export async function deployCloudflareStack({
   provision,
   client,
   wait = delay,
+  log = console.log,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (typeof validateRepository !== "function") throw new TypeError("validateRepository callback is required");
@@ -381,7 +382,7 @@ export async function deployCloudflareStack({
     }
     // World health is gated by this exact schema revision. Install first.
     const installedWorldSchema=serviceId==="world-kernel"
-      ?await installWorldSchemaWithRetry({client,serviceId,baseUrl,expectedSha,wait})
+      ?await installWorldSchemaWithRetry({client,serviceId,baseUrl,expectedSha,wait,log})
       :null;
     const health=await retryServiceHealth({
       client,serviceId,baseUrl,expectedSha,attempts,wait,
