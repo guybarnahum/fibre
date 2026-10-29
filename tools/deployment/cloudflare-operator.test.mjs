@@ -223,6 +223,7 @@ test("Slice E secret configuration uploads only each service subset and persists
     "FIBRE_PRIVATE_TOKEN=secret-private",
     "FIA_ISSUER_JWK=secret-fia-jwk",
     "FIA_CREDENTIAL_KEY_BASE64=secret-fid-key",
+    "GEONAMES_USERNAME=secret-geonames",
   ].join("\n"));
 
   const uploads = [];
@@ -248,7 +249,7 @@ test("Slice E secret configuration uploads only each service subset and persists
   );
   assert.deepEqual(
     uploadedSecretKeys(uploads, "birth-center"),
-    ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN"],
+    ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN", "GEONAMES_USERNAME"],
   );
   assert.deepEqual(
     uploadedSecretKeys(uploads, "fibre-identity-authority"),
