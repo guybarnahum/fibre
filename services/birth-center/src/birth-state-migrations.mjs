@@ -192,8 +192,10 @@ function migrateToV4(session) {
       PRIMARY KEY(place_key,version)
     ) STRICT;
     CREATE INDEX IF NOT EXISTS idx_birth_place_latest ON birth_place_records(place_key,created_at DESC,version DESC);
-    PRAGMA user_version = 4;
   `);
+  // Cloudflare's transactional-state port virtualizes PRAGMA user_version.
+  // It must be issued alone, not embedded in a multi-statement exec.
+  session.exec("PRAGMA user_version = 4");
 }
 
 export function migrateBirthState(storage) {

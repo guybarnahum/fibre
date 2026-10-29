@@ -30,6 +30,10 @@ async function checkedResponse(response,what){
   return data;
 }
 function journalError(error){return error instanceof TypeError && error?.retryable!==true;}
+function birthPlaceKey(birth,chronology){
+  const heritage=birth.input.heritage===null?"default":normalizeHeritage(birth.input.heritage).key;
+  return birth.data.selector.key+":"+chronology.bornAt.slice(0,3)+"0:"+heritage;
+}
 function selectionFromBirth(birth,place){
   const selector=birth.data.selector;
   const chronology=birth.data.chronology;
@@ -171,7 +175,7 @@ export function createBirthLifecycle({
     }
     if(stage==="place_resolved"){
       const {selector}=birth.data;
-      const key=selector.key+":"+chronology.bornAt.slice(0,3)+"0";
+      const key=birthPlaceKey(birth,chronology);
       const chosenVersion=birth.data.chosenPlaceVersion;
       const existing=chosenVersion?store.place(key,chosenVersion)
         :birth.input.forceNewWorld?null:store.place(key);
@@ -181,7 +185,7 @@ export function createBirthLifecycle({
         // yet be sampled from one shared prior. Never silently ignore a filter.
         const savedHeritage=existing.authored.heritage??null;
         if(savedHeritage!==(birth.input.heritage??null)){
-          const error=new Error("This Place version was authored for another heritage; use --new-world until parent-driven population sampling lands");
+          const error=new Error("Pinned Place material does not match its heritage");
           error.retryable=false;
           throw error;
         }
@@ -344,7 +348,7 @@ export function createBirthLifecycle({
         // One unsuccessful call must not admit a second call in this alarm.
         const enteringAuthor=birth.stage==="place_resolved" && canAuthor && !usedAuthor
           && (birth.data.chosenPlaceVersion===undefined
-            || store.place(birth.data.selector.key+":"+birth.data.chronology.bornAt.slice(0,3)+"0",
+            || store.place(birthPlaceKey(birth,birth.data.chronology),
               birth.data.chosenPlaceVersion)===null);
         if(enteringAuthor)usedAuthor=true;
         const action=await advance(birth,{canAuthor:canAuthor&&!usedAuthor||enteringAuthor});

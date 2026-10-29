@@ -66,6 +66,7 @@ function allSecrets() {
     "FIBRE_PRIVATE_TOKEN",
     "FIA_ISSUER_JWK",
     "FIA_CREDENTIAL_KEY_BASE64",
+    "GEONAMES_USERNAME",
   ]);
 }
 

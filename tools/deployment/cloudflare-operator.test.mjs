@@ -259,7 +259,7 @@ test("Slice E secret configuration uploads only each service subset and persists
   assertTextDoesNotMatch(asset, /secret-openai|secret-bfl|secret-private|secret-signer/, "generated asset-generator Wrangler config");
 
   const runtimeConfigText = await readFile(resolve(repoRoot, ".fibre/cloudflare/staging/runtime-config.json"), "utf8");
-  assertTextDoesNotMatch(runtimeConfigText, /secret-openai|secret-bfl|secret-private|test-signer-token|test-cert-b64|test-key-b64/, "persisted runtime config");
+  assertTextDoesNotMatch(runtimeConfigText, /secret-openai|secret-bfl|secret-private|secret-geonames|test-signer-token|test-cert-b64|test-key-b64/, "persisted runtime config");
 
 });
 

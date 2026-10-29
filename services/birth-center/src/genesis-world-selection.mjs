@@ -251,7 +251,8 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
 
 
 export function composeGenesisWorldSelection({selector,heritage=null,authored,requestId,bornAt,chronologyEndsAt,createdAt}) {
-  return buildAuthoredWorld({selector,heritage,authored,requestId,bornAt,chronologyEndsAt,createdAt});
+  const composed=buildAuthoredWorld({selector,heritage,authored,requestId,bornAt,chronologyEndsAt,createdAt});
+  return Object.freeze({...composed,selector,heritage});
 }
 
 export async function authorGenesisPlace({adapter,selector,heritage=null,placeKey,version,repair=null}) {

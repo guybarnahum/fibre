@@ -105,7 +105,7 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
   for (const request of runtime.birthRequestStore.unsettledFailed?.({limit:64})??[])
     consider(request);
   for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
-    if (runtime.birthRequestStore.get(request.requestId)?.locationSource==="birth-center") continue;
+    if (runtime.birthRequestStore.get?.(request.requestId)?.locationSource==="birth-center") continue;
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
     const birthRequest = birthByRequest.get(request.requestId);
@@ -434,7 +434,7 @@ export async function reconcileStaleBirths(runtime, {
     ...failedBirths.map(birth=>runtime.developmentRequestStore.get?.(birth.requestId)).filter(Boolean),
   ].map(request=>[request.requestId,request])).values()];
   for (const request of developments) {
-    if (runtime.birthRequestStore.get(request.requestId)?.locationSource==="birth-center") continue;
+    if (runtime.birthRequestStore.get?.(request.requestId)?.locationSource==="birth-center") continue;
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
 

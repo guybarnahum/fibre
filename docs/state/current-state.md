@@ -86,9 +86,10 @@ the old Admin initiation and direct development routes intentionally
 remain until Slice 3. Existing births and Threads are not rewritten.
 ADR-0032's Place Population, named parents and lazy naming traditions
 remain unimplemented, and the older family-profile model remains the
-transitional source of parent and household material. A Place authored
-for a different explicit heritage needs a forced new version until
-ADR-0032 enables population-level heritage filtering.
+transitional source of parent and household material. Slice 1's
+transitional authored Place cache is scoped by place, decade and explicit
+heritage; ADR-0032 will replace that conditioning with the shared
+population prior.
 
 ## Identity, Genesis and embodiment
 

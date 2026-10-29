@@ -269,6 +269,8 @@ export function resolveWranglerConfig(baseConfig, { environment, resourceState, 
   if(config.vars?.FIBRE_ORGANISM_POLICY!==undefined)
     normalizeOrganismPolicy(config.vars.FIBRE_ORGANISM_POLICY);
   if (config.vars?.VIEWER_ORIGIN && env === "staging") config.vars.VIEWER_ORIGIN = "https://staging.insidefibre.com";
+  if (config.vars?.FIBRE_BIRTH_VIEWER_ORIGIN && env === "staging")
+    config.vars.FIBRE_BIRTH_VIEWER_ORIGIN = "https://staging.insidefibre.com";
   return config;
 }
 

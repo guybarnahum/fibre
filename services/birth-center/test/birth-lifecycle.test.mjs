@@ -181,3 +181,33 @@ test("Birth Center preserves the CLI's fixed authored-place and birth material",
     "Moving birth authoring changed genetic inheritance",
   );
 });
+
+test("the transitional Place cache keeps explicit heritages distinct",async(t)=>{
+  const state=tempBirthState(t),storage=state.storage();
+  let time=Date.parse(AT),calls=0;
+  const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  const lifecycle=lifecycleFor(store,storage,{nowMs:()=>time,invoke:async()=>{
+    calls++;return {output:authored};
+  }});
+  const selector={
+    country:"Israel",city:"Jerusalem",display:"Israel/Jerusalem",
+    key:"israel/jerusalem",slug:"israel_jerusalem",birthCity:"Jerusalem, Israel",
+  };
+  const chronology={
+    bornAt:"2004-01-01T00:00:00.000Z",
+    chronologyEndsAt:"2026-01-01T00:00:00.000Z",
+  };
+  for(const [id,heritage] of [["family-a","Yemeni Jewish"],["family-b","Moroccan Jewish"]]){
+    store.enqueue(input(id,{place:"Israel/Jerusalem",heritage}));
+    store.progress(id,{
+      stage:"place_resolved",status:"authoring",nextAttemptAt:time,
+      data:{selector,chronology},
+    });
+    await lifecycle.handleWake();
+    time+=1000;
+  }
+  assert.notEqual(store.get("family-a").data.placeKey,store.get("family-b").data.placeKey,
+    "one heritage polluted another Place variant");
+  assert.equal(calls,2,"different explicit heritages silently reused one model-authored Place");
+});
