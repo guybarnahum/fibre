@@ -9,12 +9,14 @@ export function composeGenesisBirthRequest({
   sexSelection,
   calibrationModel,
   canonicalPlace = null,
+  parentage = null,
 }) {
   const symbolicBirth=selectedUrgesForBirth(requestId);
   const composedIdentity = composeBirthSubjectIdentity({
     requestId,
     material:selection.material,
     calibrationModel,
+    explicitNames:parentage===null?null:{femaleName:parentage.femaleName,maleName:parentage.maleName},
   });
   const subjectIdentity = Object.freeze({
     ...composedIdentity,
@@ -36,7 +38,7 @@ export function composeGenesisBirthRequest({
     subjectIdentity,
     genomeValues:symbolicBirth.values,
     originMaterial:symbolicBirth.originMaterial,
-    participants: freshBirthParticipants({ requestId, participants: selection.participants }),
+    participants: freshBirthParticipants({ requestId, participants: parentage?.participants??selection.participants }),
     placeAffordances: selection.placeAffordances,
     bornAt:selection.worldSpec.timeFrame.startAt,
     chronologyEndsAt:selection.worldSpec.timeFrame.endAt,

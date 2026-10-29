@@ -40,7 +40,7 @@ export function selectBirthNameParts({ requestId, material }) {
   });
 }
 
-export function composeBirthSubjectIdentity({ requestId, material, calibrationModel = null }) {
+export function composeBirthSubjectIdentity({ requestId, material, calibrationModel = null, explicitNames = null }) {
   if (!material || typeof material !== "object") throw new TypeError("birth material is required");
   if (!Array.isArray(material.languages) || material.languages.length === 0) throw new TypeError("birth requires eventual spoken languages");
   if (!Array.isArray(material.raisedLanguages) || material.raisedLanguages.length === 0) throw new TypeError("birth requires raised languages");
@@ -54,8 +54,8 @@ export function composeBirthSubjectIdentity({ requestId, material, calibrationMo
     calibrationModel,
   });
   return Object.freeze({
-    femaleName: fullName(femaleGiven, family, material.nameOrder),
-    maleName: fullName(maleGiven, family, material.nameOrder),
+    femaleName: explicitNames?.femaleName??fullName(femaleGiven, family, material.nameOrder),
+    maleName: explicitNames?.maleName??fullName(maleGiven, family, material.nameOrder),
     birthCity: material.birthCity,
     languages: Object.freeze([...material.languages]),
     raisedLanguages: Object.freeze([...material.raisedLanguages]),

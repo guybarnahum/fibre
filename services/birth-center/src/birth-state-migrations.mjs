@@ -1,6 +1,6 @@
 import { openBirthStateDatabase } from "./birth-state-storage.mjs";
 
-export const BIRTH_STATE_SCHEMA_VERSION = 4;
+export const BIRTH_STATE_SCHEMA_VERSION = 5;
 
 function schemaVersion(session) {
   const row = session.prepare("PRAGMA user_version").get();
@@ -198,6 +198,34 @@ function migrateToV4(session) {
   session.exec("PRAGMA user_version = 4");
 }
 
+function migrateToV5(session) {
+  session.exec(`
+    CREATE TABLE IF NOT EXISTS birth_naming_records (
+      place_key TEXT NOT NULL,
+      origin_id TEXT NOT NULL,
+      child_decade TEXT NOT NULL,
+      version TEXT NOT NULL,
+      authored_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY(place_key,origin_id,child_decade,version)
+    ) STRICT;
+    CREATE TABLE IF NOT EXISTS birth_name_seeds (
+      place_id TEXT PRIMARY KEY,
+      seeded_at TEXT NOT NULL
+    ) STRICT;
+    CREATE TABLE IF NOT EXISTS birth_issued_names (
+      place_id TEXT NOT NULL,
+      name_key TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      request_id TEXT,
+      PRIMARY KEY(place_id,name_key)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS birth_issued_names_request
+      ON birth_issued_names(request_id) WHERE request_id IS NOT NULL;
+  `);
+  session.exec("PRAGMA user_version = 5");
+}
+
 export function migrateBirthState(storage) {
   const session = openBirthStateDatabase(storage, { storeName:"Birth Center state migration" });
   try {
@@ -224,6 +252,10 @@ export function migrateBirthState(storage) {
       session.transaction(() => migrateToV4(session));
       applied.push(4);
     }
+    if (schemaVersion(session) < 5) {
+      session.transaction(() => migrateToV5(session));
+      applied.push(5);
+    }
     const toVersion = schemaVersion(session);
     if (toVersion !== BIRTH_STATE_SCHEMA_VERSION) {
       throw new Error(
@@ -232,7 +264,8 @@ export function migrateBirthState(storage) {
     }
     for(const table of [
       "provisional_births","modern_birth_requests","genesis_development_requests",
-      "genesis_development_dispositions","birth_model_invocations","birth_place_records",
+      "genesis_development_dispositions","birth_model_invocations","birth_place_records","birth_naming_records",
+      "birth_name_seeds","birth_issued_names",
     ]){
       session.prepare(`SELECT 1 FROM ${table} LIMIT 1`).get();
     }

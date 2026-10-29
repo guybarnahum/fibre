@@ -79,6 +79,69 @@ export function createBirthLifecycleStore(storage, {
     "INSERT INTO birth_place_records(place_key,version,authored_json,created_at) VALUES (?,?,?,?)"
   );
 
+  const namingByVersion=db.prepare(
+    "SELECT * FROM birth_naming_records WHERE place_key=? AND origin_id=? AND child_decade=? AND version=?");
+  const namingLatest=db.prepare(
+    "SELECT * FROM birth_naming_records WHERE place_key=? AND origin_id=? AND child_decade=? "+
+    "ORDER BY created_at DESC,version DESC LIMIT 1");
+  const addNaming=db.prepare(
+    "INSERT INTO birth_naming_records(place_key,origin_id,child_decade,version,authored_json,created_at) VALUES (?,?,?,?,?,?)");
+  const nameSeed=db.prepare("SELECT 1 AS present FROM birth_name_seeds WHERE place_id=?");
+  const insertSeed=db.prepare("INSERT INTO birth_name_seeds(place_id,seeded_at) VALUES (?,?)");
+  const existingName=db.prepare(
+    "SELECT request_id FROM birth_issued_names WHERE place_id=? AND name_key=?");
+  const addName=db.prepare(
+    "INSERT INTO birth_issued_names(place_id,name_key,display_name,request_id) VALUES (?,?,?,?)");
+  const releaseNames=db.prepare(
+    "DELETE FROM birth_issued_names WHERE request_id=?");
+  function nameKey(value){
+    if(typeof value!=="string"||!value.trim())throw new TypeError("Issued name is required");
+    return value.normalize("NFC").trim().replace(/\\s+/gu," ").toLocaleLowerCase("en-US");
+  }
+  function naming(placeKey,originId,childDecade,version=null){
+    const row=version===null?namingLatest.get(placeKey,originId,childDecade)
+      :namingByVersion.get(placeKey,originId,childDecade,version);
+    return row?Object.freeze({placeKey,originId,childDecade,version:row.version,
+      authored:decode(row.authored_json),createdAt:row.created_at}):null;
+  }
+  function saveNaming(placeKey,originId,childDecade,version,authored){
+    const body=canonicalJson(authored);
+    return db.transaction(()=>{
+      const prior=naming(placeKey,originId,childDecade,version);
+      if(prior){
+        if(canonicalJson(prior.authored)!==body)throw new Error("Naming tradition version conflict");
+        return prior;
+      }
+      addNaming.run(placeKey,originId,childDecade,version,body,now());
+      return naming(placeKey,originId,childDecade,version);
+    });
+  }
+  function nameIndexSeeded(placeId){return nameSeed.get(placeId)!==undefined;}
+  function seedNames(placeId,names){
+    if(!Array.isArray(names))throw new TypeError("World issued names must be an array");
+    return db.transaction(()=>{
+      if(nameIndexSeeded(placeId))return false;
+      for(const fullName of names){
+        if(typeof fullName!=="string"||!fullName.trim())continue;
+        if(existingName.get(placeId,nameKey(fullName))===undefined)
+          addName.run(placeId,nameKey(fullName),fullName,null);
+      }
+      insertSeed.run(placeId,now());
+      return true;
+    });
+  }
+  function reserveName(placeId,fullName,requestId){
+    return db.transaction(()=>{
+      const present=existingName.get(placeId,nameKey(fullName));
+      if(present!==undefined)return present.request_id===requestId;
+      addName.run(placeId,nameKey(fullName),fullName,requestId);
+      return true;
+    });
+  }
+  function releaseName(requestId){
+    return releaseNames.run(name(requestId)).changes;
+  }
+
   function get(requestId) {
     const row=getRow.get(name(requestId));
     return row?.lifecycle_input_json == null ? null : fromRow(row);
@@ -165,7 +228,8 @@ export function createBirthLifecycleStore(storage, {
     });
   }
   return Object.freeze({
-    get,enqueue,progress,list,place,savePlace,
+    get,enqueue,progress,list,place,savePlace,naming,saveNaming,
+    nameIndexSeeded,seedNames,reserveName,releaseName,
     due({limit=2}={}){return due.all(nowMs(),limit).map(fromRow);},
     nextDueAt(){return nextDue.get().at??null;},
     isTerminal(stage){return TERMINAL.has(stage);},

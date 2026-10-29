@@ -5,10 +5,14 @@ import { selectBirthChronology } from "./birth-material.mjs";
 import { composeGenesisBirthRequest } from "./genesis-birth-authoring.mjs";
 import { newbornLocationStatus } from "./birth-location-verification.mjs";
 import {
-  authorGenesisPlace, composeGenesisWorldSelection, normalizeGenesisWorldSelector,
+  composeGenesisWorldSelection, normalizeGenesisWorldSelector,
   normalizeHeritage, selectDefaultBirthplace,
 } from "./genesis-world-selection.mjs";
 import { sha256 } from "./state-codec.mjs";
+import {
+  authorPlacePopulation,authorNamingTradition,
+} from "./place-population.mjs";
+import {selectedOrigins,requiredNamingOrigins,composeParentage,birthSex} from "./birth-parentage.mjs";
 
 const OBSERVE_LIMIT_MS=2*60*60_000;
 const OBSERVE_FIRST_MS=15_000;
@@ -31,8 +35,9 @@ async function checkedResponse(response,what){
 }
 function journalError(error){return error instanceof TypeError && error?.retryable!==true;}
 function birthPlaceKey(birth,chronology){
-  const heritage=birth.input.heritage===null?"default":normalizeHeritage(birth.input.heritage).key;
-  return birth.data.selector.key+":"+chronology.bornAt.slice(0,3)+"0:"+heritage;
+  // Preserve the old key for an already pinned Slice 1 birth; new Places
+  // are shared across heritage filters within the same child-birth decade.
+  return birth.data.placeKey??(birth.data.selector.key+":"+chronology.bornAt.slice(0,3)+"0");
 }
 function selectionFromBirth(birth,place){
   const selector=birth.data.selector;
@@ -44,6 +49,29 @@ function selectionFromBirth(birth,place){
     ...chronology,createdAt:place.createdAt,
   });
 }
+function namingRequirement(birth,store){
+  if(birth.stage!=="parents_selected")return null;
+  const place=store.place(birth.data.placeKey,birth.placeVersion);
+  if(!place?.authored?.originGroups)return null;
+  const selected=selectedOrigins({
+    place:place.authored,requestId:birth.requestId,heritage:birth.input.heritage,
+  });
+  const decade=birth.data.chronology.bornAt.slice(0,3)+"0";
+  for(const originId of requiredNamingOrigins(selected)){
+    const record=store.naming(place.key,originId,decade,birth.data.namingVersions?.[originId]??null);
+    if(record===null)return {place,selected,originId,decade};
+  }
+  return {place,selected,originId:null,decade};
+}
+async function worldNamesForPlace(world,selector){
+  const data=await world("/internal/thread-directory/search?limit=5000");
+  if(!Array.isArray(data?.threads)||data.threads.length>=5000)
+    throw new Error("World directory name seed is incomplete");
+  return data.threads.filter(entry=>
+    entry.birthPlace?.toLocaleLowerCase("en-US")===selector.birthCity.toLocaleLowerCase("en-US")
+  ).map(entry=>entry.displayName).filter(name=>typeof name==="string"&&name.trim());
+}
+
 function projection(birth){
   const data=birth.data;
   return Object.freeze({
@@ -180,14 +208,12 @@ export function createBirthLifecycle({
       const existing=chosenVersion?store.place(key,chosenVersion)
         :birth.input.forceNewWorld?null:store.place(key);
       if(existing){
-        // Slice 1 still uses a family-profile model conditioned on heritage.
-        // Unlike Slice 2's Place Population, its other heritage paths cannot
-        // yet be sampled from one shared prior. Never silently ignore a filter.
-        const savedHeritage=existing.authored.heritage??null;
-        if(savedHeritage!==(birth.input.heritage??null)){
-          const error=new Error("Pinned Place material does not match its heritage");
-          error.retryable=false;
-          throw error;
+        // A pinned transitional Slice 1 record remains readable, but new
+        // Place versions share one population across heritage filters.
+        if(!existing.authored.originGroups &&
+          (existing.authored.heritage??null)!==(birth.input.heritage??null)){
+          const error=new Error("Pinned Slice 1 Place material does not match its heritage");
+          error.retryable=false;throw error;
         }
         store.progress(requestId,{
           stage:"place_authored",status:"authoring",placeVersion:existing.version,
@@ -202,14 +228,13 @@ export function createBirthLifecycle({
         return "deferred";
       }
       const version=chosenVersion??"place_"+sha256(key+":"+requestId).slice(0,16);
-      const heritage=birth.input.heritage===null?null:normalizeHeritage(birth.input.heritage);
       try{
-        const authored=await authorGenesisPlace({
-          adapter:author,selector,heritage,placeKey:key,version,
+        const authored=await authorPlacePopulation({
+          adapter:author,selector,placeKey:key,version,
           repair:birth.data.authoringRepair??null,
         });
         if(!active(requestId))return "complete";
-        store.savePlace(key,version,{material:authored,heritage:heritage?.display??null});
+        store.savePlace(key,version,authored);
         store.progress(requestId,{
           stage:"place_authored",status:"authoring",placeVersion:version,attemptCount:0,
           data:{...birth.data,placeKey:key,chosenPlaceVersion:version,
@@ -218,20 +243,22 @@ export function createBirthLifecycle({
           error:null,failureRetryable:null,nextAttemptAt:at,
         });
       }catch(error){
-        // A journaled structurally invalid model response must be repaired with
-        // a different invocation ID, never replayed forever as the same call.
-        if(journalError(error) && !birth.data.authoringRepair){
+        if(journalError(error)&&!birth.data.authoringRepair){
           store.progress(requestId,{data:{...birth.data,placeKey:key,
             chosenPlaceVersion:version,authoringRepair:message(error)},
             attemptCount:birth.attemptCount+1,
             error:message(error),failureRetryable:true,nextAttemptAt:at+5_000});
-        }else throw error;
+        }else{
+          if(journalError(error))error.retryable=false;
+          throw error;
+        }
       }
       return "authored";
     }
     if(stage==="place_authored"){
       const place=store.place(birth.data.placeKey,birth.placeVersion);
       if(!place)throw Object.assign(new Error("Pinned birth Place is missing"),{retryable:false});
+      // Parent choices are pure functions of requestId and this pinned Place.
       store.progress(requestId,{stage:"parents_selected",status:"authoring",
         attemptCount:0,error:null,failureRetryable:null,nextAttemptAt:at});
       return "continue";
@@ -239,7 +266,97 @@ export function createBirthLifecycle({
     if(stage==="parents_selected"){
       const place=store.place(birth.data.placeKey,birth.placeVersion);
       if(!place)throw Object.assign(new Error("Pinned birth Place is missing"),{retryable:false});
-      const selection=selectionFromBirth(birth,place);
+      let parentage=null,selection;
+      if(place.authored.originGroups){
+        const needed=namingRequirement(birth,store);
+        const {selected,decade}=needed;
+        if(needed.originId!==null){
+          if(!canAuthor){
+            store.progress(requestId,{nextAttemptAt:at+5_000});
+            return "deferred";
+          }
+          const origin=place.authored.originGroups.find(group=>group.originId===needed.originId);
+          const version="names_"+sha256(place.version+":"+needed.originId+":"+decade).slice(0,16);
+          const repair=birth.data.namingRepair?.originId===needed.originId
+            ?birth.data.namingRepair.reason:null;
+          try{
+            const authored=await authorNamingTradition({
+              adapter:author,place:{...place,selector:birth.data.selector},
+              origin,childDecade:decade,placeVersion:place.version,repair,
+            });
+            if(!active(requestId))return "complete";
+            store.saveNaming(place.key,needed.originId,decade,version,authored);
+            store.progress(requestId,{
+              data:{...birth.data,namingVersions:{...birth.data.namingVersions,
+                [needed.originId]:version},namingRepair:null},
+              attemptCount:0,error:null,failureRetryable:null,nextAttemptAt:at,
+            });
+          }catch(error){
+            if(journalError(error)&&repair===null){
+              store.progress(requestId,{
+                data:{...birth.data,namingRepair:{originId:needed.originId,reason:message(error)}},
+                attemptCount:birth.attemptCount+1,
+                error:message(error),failureRetryable:true,nextAttemptAt:at+5_000,
+              });
+            }else{
+              if(journalError(error))error.retryable=false;
+              throw error;
+            }
+          }
+          return "authored";
+        }
+        const traditions={};
+        for(const id of requiredNamingOrigins(selected)){
+          traditions[id]=store.naming(place.key,id,decade,
+            birth.data.namingVersions?.[id]??null).authored;
+        }
+        if(!store.nameIndexSeeded(birth.data.selector.key)){
+          const existingNames=await worldNamesForPlace(world,birth.data.selector);
+          if(!active(requestId))return "complete";
+          store.seedNames(birth.data.selector.key,existingNames);
+        }
+        const selectedSex=birthSex(requestId,birth.input.sex);
+        const calibration=await appearanceCalibration();
+        for(let redraw=0;redraw<16;redraw++){
+          parentage=composeParentage({
+            requestId,chronology,selector:birth.data.selector,
+            place:place.authored,selected,traditions,sex:selectedSex,redraw,
+          });
+          selection=composeGenesisWorldSelection({
+            selector:birth.data.selector,
+            heritage:birth.input.heritage===null?null:normalizeHeritage(birth.input.heritage),
+            authored:place.authored,familyOverride:parentage.family,
+            requestId,...chronology,createdAt:place.createdAt,
+          });
+          const request=composeGenesisBirthRequest({
+            requestId,requestedAt:birth.requestedAt,
+            selection,sexSelection:selectedSex,calibrationModel:calibration,
+            canonicalPlace:birth.data.canonicalPlace,parentage,
+          });
+          const plan=buildGenesisDevelopmentPlan(request);
+          if(!store.reserveName(birth.data.selector.key,parentage.issuedName,requestId))
+            continue;
+          if(!active(requestId))return "complete";
+          store.progress(requestId,{
+            stage:"genome_selected",threadId:plan.threadId,genesisId:plan.genesisId,
+            sex:selectedSex,status:"developing",attemptCount:0,
+            data:{...birth.data,developmentRequest:request,
+              namingVersions:Object.fromEntries(requiredNamingOrigins(selected).map(id=>
+                [id,store.naming(place.key,id,decade,birth.data.namingVersions?.[id]??null).version])),
+              parentage:{
+                mother:parentage.mother,father:parentage.father,
+                couple:{motherOriginId:selected.mother.originId,fatherOriginId:selected.father.originId},
+                childOriginId:selected.childOriginId,issuedName:parentage.issuedName,
+              }},
+            error:null,failureRetryable:null,nextAttemptAt:at,
+          });
+          return "continue";
+        }
+        const exhausted=new Error("All bounded child-name redraws collided in this Place");
+        exhausted.retryable=false;throw exhausted;
+      }
+      // Existing pinned Slice 1 births retain their historic family-profile material.
+      selection=selectionFromBirth(birth,place);
       const calibration=await appearanceCalibration();
       const request=composeGenesisBirthRequest({
         requestId,requestedAt:birth.requestedAt,
@@ -249,7 +366,6 @@ export function createBirthLifecycle({
       const plan=buildGenesisDevelopmentPlan(request);
       if(!active(requestId))return "complete";
       const sex=birth.input.sex??(plan.subjectIdentity?.sex??null);
-      // The actual derived sex belongs to the existing Genesis contract.
       const selectedSex=sex??genesisSexForThread({threadId:plan.threadId});
       store.progress(requestId,{
         stage:"genome_selected",threadId:plan.threadId,genesisId:plan.genesisId,
@@ -346,10 +462,13 @@ export function createBirthLifecycle({
       try{
         // Reserve the authoring budget before a possible provider failure.
         // One unsuccessful call must not admit a second call in this alarm.
-        const enteringAuthor=birth.stage==="place_resolved" && canAuthor && !usedAuthor
-          && (birth.data.chosenPlaceVersion===undefined
-            || store.place(birthPlaceKey(birth,birth.data.chronology),
-              birth.data.chosenPlaceVersion)===null);
+        const placeMissing=birth.stage==="place_resolved"
+          && (birth.input.forceNewWorld&&!birth.data.chosenPlaceVersion ||
+            store.place(birthPlaceKey(birth,birth.data.chronology),
+              birth.data.chosenPlaceVersion??null)===null);
+        const requirement=birth.stage==="parents_selected"?namingRequirement(birth,store):null;
+        const missingNaming=requirement!==null&&requirement.originId!==null;
+        const enteringAuthor=(placeMissing||missingNaming)&&canAuthor&&!usedAuthor;
         if(enteringAuthor)usedAuthor=true;
         const action=await advance(birth,{canAuthor:canAuthor&&!usedAuthor||enteringAuthor});
         if(action==="deferred")return {usedAuthor};
@@ -410,6 +529,7 @@ export function createBirthLifecycle({
     if(!birth)throw new Error("Birth not found");
     if(store.isTerminal(birth.stage))return projection(birth);
     if(birth.threadId===null){
+      store.releaseName(requestId);
       return projection(store.progress(requestId,{stage:"cancelled",nextAttemptAt:null,
         data:{...birth.data,abandonReason:reason.trim()}}));
     }
@@ -434,6 +554,7 @@ export function createBirthLifecycle({
     const development=runtime.developmentRequestStore.get(requestId);
     if(development)
       runtime.developmentRequestStore.settleStillborn(requestId);
+    store.releaseName(requestId);
     return projection(store.progress(requestId,{stage:"stillborn",status:"failed",
       nextAttemptAt:null,error:reason.trim(),failureRetryable:false,
       data:{...birth.data,abandonReason:reason.trim()}}));

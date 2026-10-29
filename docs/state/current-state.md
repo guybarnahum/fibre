@@ -97,13 +97,7 @@ and distinct World/Presentation/location checks. The older Admin
 initiation route intentionally remains until Slice 3. Existing born
 Threads and pinned Slice 1 Place records are never rewritten.
 
-**ADR-0032 Slice 2 is authorized but not yet staging verified.** It
-replaces new births' transitional family-profile Place material with
-one shared civic/population Place per canonical place × child's birth
-decade, mixed-parent class selection, lazily authored naming traditions
-and named biological parents. Previously pinned Slice 1 Place versions
-continue through their original birth stages. Population editing remains
-deferred; Admin's read-only inspection is Slice 3.
+**ADR-0032 Slice 2 is implemented in source, pending local and staging verification.** New births use a shared Place Population per place and birth decade, an authored mixed-parent share and weighted couple selection. Naming traditions are journaled on first use for each drawn origin, with era-specific parent and child names. Named mother and father shape ancestry, names, upbringing languages and historical Genesis participants. Schema v5 adds naming versions and a per-place name index covering in-flight births, seeded once from World. These remain source claims, not deployed evidence. Old pinned Slice 1 births retain their original Place versions. Admin unification and read-only Place inspection remain Slice 3; editing is deferred.
 
 ## Identity, Genesis and embodiment
 

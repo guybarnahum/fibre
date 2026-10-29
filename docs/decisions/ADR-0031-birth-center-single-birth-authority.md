@@ -7,7 +7,7 @@ last-reviewed: 2026-10-29
 
 # ADR-0031 — Birth Center as the single birth authority
 
-**Accepted 2026-10-29; implementation pending.** Birth Center owns the full *prospective birth request*. World Kernel alone admits a living Thread, FIN and authoritative history. Thread Presentation owns public projection. Neither the CLI nor Admin authors a separate birth.
+**Accepted 2026-10-29; Slice 1 staging-verified at `66da96e`. Slice 2 is implemented in source, pending validation and staging. Admin unification and count waves remain future slices.** Birth Center owns the full *prospective birth request*. World Kernel alone admits a living Thread, FIN and authoritative history. Thread Presentation owns public projection. Neither the CLI nor Admin authors a separate birth.
 
 ## One request, one lifecycle
 

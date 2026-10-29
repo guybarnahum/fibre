@@ -36,7 +36,48 @@ const authored={
   intellectualEnvironment:"Books and conversations offer opportunities.",
 };
 
-function lifecycleFor(store,storage,{nowMs=()=>Date.parse(AT),invoke=async()=>({output:authored})}={}){
+const populationAuthored={
+  timeZone:"UTC",homeDescription:authored.homeDescription,
+  schoolDescription:authored.schoolDescription,
+  transitDescription:authored.transitDescription,
+  learningDescription:authored.learningDescription,
+  commerceDescription:authored.commerceDescription,
+  mobilityPattern:authored.mobilityPattern,
+  schoolingOrCommunityContext:authored.schoolingOrCommunityContext,
+  culturalContext:authored.culturalContext,
+  availableInstitutions:authored.availableInstitutions,
+  intellectualEnvironment:authored.intellectualEnvironment,
+  schoolingLanguages:["English"],
+  localNamingOriginId:"origin-0",
+  mixedParentShare:0.2,
+  originGroups:Array.from({length:8},(_,i)=>({
+    originId:"origin-"+i,label:"Origin "+i,share:1/8,
+    heritageTags:["Origin "+i],
+    referencePopulations:[{population:"Lineage "+i,share:1,referencePopulation:"eur_north"}],
+    heritageLanguages:["English"],householdRetentionRate:1,
+  })),
+  couples:[
+    {motherOriginId:"origin-0",fatherOriginId:"origin-0",weight:8,
+      childGivenNameTradition:{mother:1,father:0,local:0}},
+    {motherOriginId:"origin-0",fatherOriginId:"origin-1",weight:2,
+      childGivenNameTradition:{mother:1,father:0,local:0}},
+  ],
+};
+
+const namingAuthored={
+  parentNamesByDecade:[1960,1970,1980].map(decade=>({
+    decade,
+    femaleGivenNames:Array.from({length:24},(_,i)=>"Mother"+decade+i),
+    maleGivenNames:Array.from({length:24},(_,i)=>"Father"+decade+i),
+  })),
+  childFemaleGivenNames:Array.from({length:24},(_,i)=>"Female"+i),
+  childMaleGivenNames:Array.from({length:24},(_,i)=>"Male"+i),
+  familyNames:Array.from({length:24},(_,i)=>"Family"+i),
+  transmission:"father",nameOrder:"given_family",joiner:"-",
+  patronymicMaleSuffix:"",patronymicFemaleSuffix:"",
+};
+
+function lifecycleFor(store,storage,{nowMs=()=>Date.parse(AT),invoke=async()=>({output:populationAuthored})}={}){
   const runtime={
     stateScopeId:"birth",infraDriver:storage.infraDriver,
     durableAdapter:adapter=>adapter,
@@ -89,7 +130,7 @@ test("an interrupted Place save replays the committed authoring call",async(t)=>
     if(durableInvocations.has(args.clientRequestId))
       return durableInvocations.get(args.clientRequestId);
     modelCalls++;
-    const result={output:authored};
+    const result={output:populationAuthored};
     durableInvocations.set(args.clientRequestId,result);
     return result;
   }};
@@ -182,32 +223,34 @@ test("Birth Center preserves the CLI's fixed authored-place and birth material",
   );
 });
 
-test("the transitional Place cache keeps explicit heritages distinct",async(t)=>{
+test("new births reuse one civic Place across heritage filters",async(t)=>{
   const state=tempBirthState(t),storage=state.storage();
   let time=Date.parse(AT),calls=0;
   const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
   t.after(()=>store.close());
-  const lifecycle=lifecycleFor(store,storage,{nowMs:()=>time,invoke:async()=>{
-    calls++;return {output:authored};
+  const lifecycle=lifecycleFor(store,storage,{nowMs:()=>time,invoke:async args=>{
+    if(args.clientRequestId.startsWith("birth_population_")){
+      calls++;return {output:populationAuthored};
+    }
+    return {output:namingAuthored};
   }});
   const selector={
     country:"Israel",city:"Jerusalem",display:"Israel/Jerusalem",
     key:"israel/jerusalem",slug:"israel_jerusalem",birthCity:"Jerusalem, Israel",
   };
-  const chronology={
-    bornAt:"2004-01-01T00:00:00.000Z",
-    chronologyEndsAt:"2026-01-01T00:00:00.000Z",
-  };
-  for(const [id,heritage] of [["family-a","Yemeni Jewish"],["family-b","Moroccan Jewish"]]){
-    store.enqueue(input(id,{place:"Israel/Jerusalem",heritage}));
-    store.progress(id,{
-      stage:"place_resolved",status:"authoring",nextAttemptAt:time,
-      data:{selector,chronology},
-    });
-    await lifecycle.handleWake();
-    time+=1000;
-  }
-  assert.notEqual(store.get("family-a").data.placeKey,store.get("family-b").data.placeKey,
-    "one heritage polluted another Place variant");
-  assert.equal(calls,2,"different explicit heritages silently reused one model-authored Place");
+  const chronology={bornAt:"2004-01-01T00:00:00.000Z",
+    chronologyEndsAt:"2026-01-01T00:00:00.000Z"};
+  store.enqueue(input("first-family",{place:"Israel/Jerusalem",heritage:"Origin 0"}));
+  store.progress("first-family",{stage:"place_resolved",status:"authoring",nextAttemptAt:time,
+    data:{selector,chronology}});
+  await lifecycle.handleWake();
+  assert.equal(store.get("first-family").stage,"place_authored");
+  store.progress("first-family",{nextAttemptAt:null});
+  store.enqueue(input("second-family",{place:"Israel/Jerusalem",heritage:"Origin 1"}));
+  store.progress("second-family",{stage:"place_resolved",status:"authoring",nextAttemptAt:time,
+    data:{selector,chronology}});
+  await lifecycle.handleWake();
+  assert.equal(store.get("second-family").placeVersion,store.get("first-family").placeVersion,
+    "Different heritage filters reauthored the same civic Place");
+  assert.equal(calls,1,"Reused Place caused another model call");
 });

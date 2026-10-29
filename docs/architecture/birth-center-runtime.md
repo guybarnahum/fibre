@@ -84,7 +84,7 @@ FIBRE_BIRTH_CENTER_STATE
 
 The Cloudflare deployment uses a private Worker plus one named SQLite-backed Durable Object scope for Birth state and alarm scheduling. A private birth request durably records provisional publication work; the Durable Object alarm resumes pending World handoff after Worker disposal/restart.
 
-## Proposed single-authority birth lifecycle (not implemented)
+## Single-authority birth lifecycle (Slice 1 staging verified; Slice 2 source pending validation)
 
 [ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md)
 and [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
@@ -123,6 +123,8 @@ reservation means **cancelled**; after reservation but before admission,
 **stillborn(reason)**; after admission it stops observation only.
 It cannot erase a living Thread. `genesis:birth` retains its flags/events
 and adds resume/abandon; `genesis:births` lists requests.
+
+**Implementation checkpoint (October 29):** Slice 1 ran two completed births on staging at `66da96e` (London 2m57s; Manchester 3m14s) with about 100 DO rows read and 130 written per birth, no retries. Slice 2 now has source for shared population Places, per-place `mixedParentShare`, parent-decade naming traditions, named parents and an issued-name index. It requires Birth Center schema v5 and fresh local and staging validation. The older speculative paragraphs below preserve the design contract and should not be mistaken for completed Slice 3 Admin unification or Slice 4 count waves.
 
 **Cost:** awaiting a model in a Durable Object alarm consumes wall time.
 Genesis development may make many calls within its one lifecycle stage.

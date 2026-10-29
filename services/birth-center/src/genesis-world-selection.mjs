@@ -160,8 +160,8 @@ function subjectLanguages(value) {
   return Object.freeze(languages);
 }
 
-function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, chronologyEndsAt, createdAt }) {
-  const family = sampleFamilyProfile({ profiles:authored.familyProfiles, requestId });
+function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, chronologyEndsAt, createdAt, familyOverride=null }) {
+  const family = familyOverride ?? sampleFamilyProfile({ profiles:authored.familyProfiles, requestId });
   const timeZone = assertTimeZone(nonEmpty("authored world timeZone", authored.timeZone));
   const languages = subjectLanguages(family.languages);
   const raisedLanguages = subjectLanguages(family.raisedLanguages);
@@ -180,7 +180,7 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
     : `Two caregivers, the subject and one sibling share a household in ${selector.city}. The household carries ${heritageLabel} heritage; other relatives or community ties may participate in ordinary visits, language, food, celebrations and family logistics without prescribing the subject's beliefs or personality.`;
   const culturalContext = [
     authored.culturalContext,
-    ...(heritageLabel === null ? [] : [`Household heritage: ${heritageLabel}. ${authored.heritageContext}`]),
+    ...(heritageLabel === null ? [] : [`Household heritage: ${heritageLabel}. ${authored.heritageContext??"Parentage and upbringing are specific to the selected family."}`]),
     "The sampled family profile constrains names, household/upbringing languages and physical inheritance. Its free-form family-origin explanation is provenance only and must not be treated as biography, occupation, class, religion, personality, values or lifestyle.",
   ].join("\n");
   const worldSpec = Object.freeze({
@@ -250,8 +250,8 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
 }
 
 
-export function composeGenesisWorldSelection({selector,heritage=null,authored,requestId,bornAt,chronologyEndsAt,createdAt}) {
-  const composed=buildAuthoredWorld({selector,heritage,authored,requestId,bornAt,chronologyEndsAt,createdAt});
+export function composeGenesisWorldSelection({selector,heritage=null,authored,requestId,bornAt,chronologyEndsAt,createdAt,familyOverride=null}) {
+  const composed=buildAuthoredWorld({selector,heritage,authored,requestId,bornAt,chronologyEndsAt,createdAt,familyOverride});
   return Object.freeze({...composed,selector,heritage});
 }
 
