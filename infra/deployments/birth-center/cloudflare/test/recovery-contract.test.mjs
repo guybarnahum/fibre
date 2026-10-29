@@ -345,8 +345,22 @@ test("a publication-only retry wake never invokes stale World presence",async()=
     await cloud.runtime.submitBirth({
       manifest:{genesisId:"gen_pub_only",threadId:"thr_pub_only"},
     });
-    assert.deepEqual(await cloud.runtime.handleWake(),{attempted:1,published:0},
-      "retryable publication interrupted the alarm");
+    // Use the same console-error capture as the lost-acknowledgement test above.
+    const diagnostics = [];
+    const originalConsoleError = console.error;
+    console.error = (...args) => { diagnostics.push(args.join(" ")); };
+    try {
+      assert.deepEqual(await cloud.runtime.handleWake(),{attempted:1,published:0},
+        "retryable publication interrupted the alarm");
+    } finally {
+      console.error = originalConsoleError;
+    }
+    assert.deepEqual(diagnostics.map((line) => JSON.parse(line)), [{
+      event:"birth-center-reconciliation-failed",
+      genesisId:"gen_pub_only",
+      threadId:"thr_pub_only",
+      message:"World temporarily unavailable",
+    }]);
     assert.equal(cloud.runtime.provisionalBirthStore.get("gen_pub_only").nextAttemptAt,15_000);
     assert.equal(cloud.birthStatusCheckDue(),false,
       "publication alone scheduled stale status reconciliation");
