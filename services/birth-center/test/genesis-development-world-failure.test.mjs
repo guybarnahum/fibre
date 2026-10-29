@@ -222,11 +222,14 @@ test("failed authoritative World birth may retain prerequisites but never leaks 
   assert.equal(saved.admission.symbolicGenomes.length, 1);
   const genomeId = saved.admission.symbolicGenomes[0].header.genomeId;
 
-  await assert.rejects(
-    runtime.handleWake(),
-    /simulated Slice-A publication failure/,
-  );
+  assert.deepEqual(await runtime.handleWake(),{attempted:1,published:0},
+    "retryable World failure escaped the Birth Center alarm");
   assert.equal(errors.length, 1);
+  const provisional=runtime.provisionalBirthStore.get(first.genesisId);
+  assert.equal(provisional.status,"pending","failed publication erased the reserved birth");
+  assert.equal(provisional.attemptCount,1,"retryable failure was not durably recorded");
+  assert.match(provisional.lastRetryableError,/simulated Slice-A publication failure/u);
+  assert.equal(provisional.nextAttemptAt,1_788_218_265_000,"retry not scheduled after failure");
   assert.equal(runtime.provisionalBirthStore.countPending(), 1);
   assert.equal(genesisStore.getWorldSpec(request.worldSpec.worldSpecId).record.worldSpecId, request.worldSpec.worldSpecId);
   assert.equal(genomeStore.getGenome(genomeId).header.genomeId, genomeId);

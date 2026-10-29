@@ -169,15 +169,21 @@ test("CLI preparation is visible, then durable Genesis takes over once without a
     "durable Genesis lost its eventual reconciliation opportunity");
 });
 
-test("pending births is local observation", () => {
+test("pending births reads durable retry state without changing birth authority", () => {
   const request = staleModern();
+  const retry = {attemptCount:2,nextAttemptAt:NOW+30_000,lastRetryableError:"World unavailable"};
   const runtime = {
     birthRequestStore:{
       recent:() => [request],
       isActive:(status) => status === "developing",
       progress:() => { throw new Error("pending read mutated birth state"); },
     },
-    provisionalBirthStore:{ get:() => { throw new Error("pending read inspected publication state"); } },
+    provisionalBirthStore:{
+      get:genesisId=>{
+        assert.equal(genesisId,request.genesisId,"retry state belongs to another birth");
+        return retry;
+      },
+    },
     developmentRequestStore:{
       recent:() => [developmentFor(request)],
       getDisposition:() => null,
@@ -190,6 +196,9 @@ test("pending births is local observation", () => {
   assert.equal(births[0].classification, "stale_unresolved", "stale birth was presented as reconciled");
   assert.equal(births[0].requestedAt, request.requestedAt, "birth replay time was lost");
   assert.equal(births[0].name, "Nino Beridze", "pending birth hid its already-authored name");
+  assert.equal(births[0].attemptCount,2,"Admin lost retry attempt count");
+  assert.equal(births[0].nextAttemptAt,retry.nextAttemptAt,"Admin lost next retry time");
+  assert.equal(births[0].lastRetryableError,retry.lastRetryableError,"Admin lost publication failure");
 });
 
 test("one World check settles duplicate stale birth records as born", async () => {
