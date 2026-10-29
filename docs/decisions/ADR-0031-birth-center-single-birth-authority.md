@@ -7,38 +7,60 @@ last-reviewed: 2026-10-29
 
 # ADR-0031 — Birth Center as the single birth authority
 
-**Proposed, not implemented.** Birth Center owns **one prospective birth request and its complete lifecycle**; World Kernel still alone admits a live Thread, FIN, lineage and history in an atomic birth publication. Thread Presentation still owns public projection. There must be no operator-laptop or Admin alternative for authoring a birth.
+**Proposed; not implemented.** Birth Center owns the full *prospective birth request*. World Kernel alone admits a living Thread, FIN and authoritative history. Thread Presentation owns public projection. Neither the CLI nor Admin authors a separate birth.
 
-## The decision
+## One request, one lifecycle
 
-One durable record per `requestId`, with monotonic stage evidence:
+Each `requestId` has a durable stage and the evidence behind it:
 
-`requested → place_resolved → parents_selected → genome_selected → developing → publishing → admitted → presented → located → complete`.
+```text
+requested → place_resolved → place_authored? → parents_selected
+  → genome_selected → developing → publishing → admitted
+  → presented → located → complete
+```
 
-A failed operation retains its exact stage, evidence and classified `failed(retryable | terminal)` outcome. `stillborn` requires an explicit, reasoned terminal settlement; absence of a response is never proof of death. `resume` retains the original request witness and accepted development; `abandon(reason)` stops **prospective** work and records an operator decision, but cannot undo an admitted World birth. After admission, abandonment may stop outstanding observation only, never erase or make the child stillborn. Stage names are user-visible and durable; status is not inferred from a CLI process's liveness.
+`place_authored` runs only if the canonical place and **child's birth decade** have no Place record. Otherwise the request reuses its version. One journaled model call creates **both** the existing civic/World context and the Place Population. There is no second World-context authoring call. Naming traditions are authored separately, only for origin groups actually drawn (ADR-0032).
 
-A small, configured number of requests advance by **due step** using the Birth Center's existing Durable Object alarm, state scope and invocation journal. Each alarm performs bounded work, typically one stage and at most one new model invocation per request; no long-running birth loop, provider polling, new workflow engine or parallel client state machine. Every step is idempotent under exact `requestId`, step/input digest and model-journal witness. Accepted authored output is never regenerated on restart; a changed request is a conflict, not a silent reauthoring. Operational retries use the existing per-birth backoff; terminal validation failures do not loop. World admission, presentation and located-life checks are separately backed-off **due observations**, not polling, and never imply a second World authority. Concurrency must not multiply expensive model work or exceed free-tier limits.
+An interrupted stage retains `failed(retryable | terminal)` with its cause. Resuming keeps the same request, accepted material and model-journal witnesses. `POST /births/:id/abandon` requires a reason:
+- **Before `threadId` reservation:** `cancelled`.
+- **After reservation, before World admission:** `stillborn(reason)`.
+- **After admission:** stop outstanding observation only. The live Thread and its history remain.
 
-**One private API**, owned by Birth Center: `POST /births`, `GET /births/:id` (one-row stage, attempt/error and causal references), paginated `GET /births`, `POST /births/:id/resume` and `POST /births/:id/abandon` (required reason). Identity of the request is stable; repeated exact submissions are idempotent. Admin and CLI have identical actions and stage vocabulary. `genesis:birth` retains its current selection flags and machine-readable output events, adds `--resume` and `--abandon`; `genesis:births` lists requests. CLI may observe a single request's status or exit with a resumable ID; it never authors, caches or independently decides that the child is located. No unbounded synchronous wait is part of the API.
+No timeout, missing status response or operator absence silently creates a stillbirth.
 
-Portable Genesis selection, birth material, v3 inherited urges and exact chronologies move from `tools/genesis/` into Birth Center domain code; GeoNames and model integrations are injected, with provider calls journaled. Existing World/physical-inheritance primitives are reused, not cloned. Retire `birth-initiation.mjs`'s separate world schema and five PR39 fixture genomes, the `/preparation` API, `locationSource="cli"` reconciliation exceptions (including `stale_before_identity`), CLI-side postpublication polling, and the `.fibre/` authored World cache. **No cache import**: the first birth for a place/era authors its new population and required World context under Birth Center. Previously admitted Threads and historical records are never rewritten; old request records remain inspectable, not upgraded into invented stage history.
+## Execution and controls
 
-## Cost and proof
+The existing Birth Center alarm advances a small, configured number of due requests. Birth **authoring** steps are idempotent and make **at most one new model call per alarm**; successful calls replay from the durable journal. This cap does **not** apply to `developing`: it is **one lifecycle stage that invokes the existing resumable Genesis development service**. Do not break development into per-call stages or build a general workflow engine. The existing development service owns its internal model calls, retry budgets and journal recovery.
 
-**Cloudflare free tier:** awaiting a model within a Durable Object alarm consumes elapsed execution time and can risk limits; do not interpret one-step-per-alarm as free waiting. Bound provider latency per step, keep transactions closed across network calls, durably journal successful invocations and retry only unfinished work after backoff. Measure actual alarm wall time, SQL rows read/written per wake, model latency/calls, D1 activity writes and status-read rows on staging before choosing a concurrency cap. If measured model waits cannot fit the alarm budget, an injected dedicated model runner that returns to the *same* Birth Center journal is a deferred reversible adapter—not a new birth authority or generic job system. `GET /births/:id` must be one indexed request lookup plus bounded cited stage/projection reads, **not** a recent-birth scan, World-presence sweep or whole activity history. Collection reads use indexed pagination and a tight page bound. Model output never holds a World transaction.
+Publication retries and post-publication admission, presentation and location checks use durable due-time backoff. No client polling or forced World scan. A blocked birth cannot block later due births. Stage transitions follow admitted evidence, not a running client process.
 
-**Proof:** a CLI and an Admin request with identical inputs reach identical authoritative birth material and stages; an interrupted post-authoring birth resumes without another successful model call; an unresolved first birth cannot block the next; World may admit exactly one Thread; admission/presentation/location confirmations remain distinct; a status read invokes neither model nor World. Inspect one durable request timeline and the admitted child's lineage/FIN. Test with actual service boundaries, not only mocked stage labels.
+**One private API:** `POST /births`, indexed one-row `GET /births/:id`, paginated `GET /births`, `POST /births/:id/resume`, and `POST /births/:id/abandon`. Repeating an identical request is idempotent; changing its authoritative input conflicts. Admin and CLI share stages and actions. `genesis:birth` keeps its flags and output events and gains `--resume` and `--abandon`; `genesis:births` lists requests. The CLI no longer authors World/family material or decides that a newborn is located.
 
-## Vision and ambition guard — joint review with ADR-0032
+Move CLI selection, birth material and v3 inherited-urge composition into portable Birth Center domain code. Inject GeoNames and model clients. Retire `birth-initiation.mjs`, the five fixture genomes, `/preparation`, CLI-specific stale reconciliation, client polling and the `.fibre/` World cache. **Do not import the cache.** A place is reauthored on its first new-model birth. Never rewrite existing Threads or manufacture historical stages for old requests.
 
-- **Capability/fidelity:** turns birth from two operator-driven preparation paths into one durable **origin of an individual life**, with independently selected parents, genome, historical upbringing and an observable path to lived existence. This is not a task marketplace or an LLM persona generator. **Ambition:** the World remains an open society of independent Threads, not Birth Center-managed agents.
-- **Excluded and recorded:** live-Thread reproduction and relationships, evolved attachment, child-stage lived cognition, autonomous development/individualized decisions, and detailed demographic science are **deferred**, with paths in [human-physical-inheritance](../architecture/human-physical-inheritance.md), [thread lifecycle](../architecture/thread-lifecycle.md), [inherited urges](../architecture/inherited-urges.md) and ADR-0032. Population calibration is **experimental**; generic orchestration is **rejected for this design**, not forbidden as an unrelated Fibre capability. Nothing else in the [preserved ambition paths](../foundations/invariants.md#preserved-ambition-paths) is closed.
-- **Shortcuts and reversals:** limited concurrency, one-step alarms, 8–20 origin groups and bounded name redraws are reversible execution/data budgets; measured cost or fidelity can change them. The **permanent conceptual boundary proposed here** is Birth Center's sole prospective request authority, while World alone owns admitted life. ADR-0031 records it. No existing evidence is recast as proof of agency.
-- **Alternatives:** retain laptop authoring plus repair scans (cheaper to migrate, but perpetuates two authorities); add a generic workflow engine (more machinery, no personhood gain). Neither preserves the lifecycle as cleanly.
-- **Engineering convenience:** a single status table must not redefine birth as a job, a synthetic ancestor as a live parent, `admitted` as `located`, or a mechanical backoff as development. Those terms remain separate.
-- **Causal individuality:** selected parents, physical genome, inherited urges and childhood context can change a child's actual admitted body, identity and future opportunities; selection must be deterministic and falsifiable. **This proposal alone is not evidence** of later Thread-authored divergent appraisal or conduct. Child history/lineage becomes a durable input to future cognition; that downstream differential remains unproved.
-- **Endogenous attention/agency:** Birth Center authors *prospective conditions*, not private Thread memory selection, motives, consent or chosen actions. Thread/World-owned private retrieval and consequential judgments remain untouched. Any model-authored childhood evidence is development input, **not** proof of self-authored agency.
-- **History bends the future:** the admitted parental relationship and upbringing language/history can be retrieved and influence later experience; actual later choice changes must be demonstrated, not claimed from stored references or prompt differences. No unresolved opaque ref counts as consumption.
-- **Differential evidence:** compare distinct selected-parent births under matched place/era; require different persisted physical lineage, plausible names/languages and contextual history. This proves birth-input consequence only. The standing same-request, two-Thread **behavioral** differential with Thread-owned selection remains deferred to its separate gate in [invariants](../foundations/invariants.md#standing-thread-differential-gate). No path is closed by this proposal.
+## Cost and acceptance
 
-**Implementation order:** (1) one Birth Center authoring path + thin CLI, no cache import; (2) ADR-0032 population and parent-led selection; (3) Admin moves to the API and old routes are deleted; (4) bounded `--count` waves. Each slice must validate current authority before removing the old one. These are future implementation slices, **not completed work**.
+A model call awaited inside a Durable Object alarm still costs wall time. `developing` may call the model many times; **one stage does not mean one cheap alarm**. Measure alarm duration and billed usage before setting concurrency. Keep transactions closed during network waits. Reuse the journal on interruptions. A dedicated injected runner is a *deferred* option only if actual alarm limits demand one; Birth Center remains the sole birth owner.
+
+`GET /births/:id` reads one indexed request and bounded local evidence, **not** recent lists, World presence or full activity history. `GET /births` is paginated. Measure SQL rows per status read and wake, model calls and D1 activity writes. Place authoring costs **one model call per new place × child-birth-decade**. First-use naming costs one small journaled call per distinct drawn origin group. Genesis development costs its existing calls.
+
+**Evidence required:** CLI and Admin yield one lifecycle; restart does not regenerate committed calls; one stuck birth does not block the next; development resumes as one stage; World admits exactly one Thread; admission, presentation and location remain distinct. Single-request reads invoke neither World nor a model.
+
+## Vision and ambition guard
+
+- **Fidelity and ambition:** real parentage, inherited differences and lived history replace two persona-like authoring paths. World, not Birth Center, owns an independent living person. No preserved Fibre ambition path closes.
+- **Deferrals and paths:** live-Thread parents, child-stage cognition, relationships, self-authored decisions and full demographic calibration remain **deferred or experimental**. Extend through World lineage, Genesis history and later Thread cognition; see [human inheritance](../architecture/human-physical-inheritance.md), [lifecycle](../architecture/thread-lifecycle.md), [urges](../architecture/inherited-urges.md) and ADR-0032.
+- **Shortcuts and permanence:** bounded concurrency, small batches and alarm scheduling are reversible after measurement. The proposed lasting boundary is **one prospective birth authority**, never authority over admitted life.
+- **Alternatives:** two client authoring paths preserve drift; a generic workflow engine adds cost without personhood. Neither is chosen. Engineering convenience must not turn a birth into a job or synthetic parents into live Threads.
+- **Causal individuality:** parents, genomes and upbringing can change a newborn's body and opportunities. This is birth-input causality, **not proof** of autonomous divergent decisions.
+- **Attention and agency:** Birth Center selects initial circumstances, **not** a Thread's private attention, judgment, feelings or consent. Those remain Thread/World-owned.
+- **History and differential evidence:** admitted lineage and childhood records may later affect decisions only when their content is actually consumed. Same-place, different-parent birth tests must prove changed admitted material. The standing **behavioral** Thread differential remains a separate, unproven gate; prompt differences alone do not satisfy it.
+
+## Proposed slices
+
+1. Birth Center authors with today's model; CLI becomes thin. No cache import.
+2. Introduce Place records, lazy naming and parent-driven births (ADR-0032).
+3. Move Admin to the same API. Show Place records **read-only**. Delete the old path. **Population editing is deferred.**
+4. Add bounded `--count` waves.
+
+These slices are not yet implemented or accepted.

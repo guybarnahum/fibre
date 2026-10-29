@@ -86,42 +86,57 @@ The Cloudflare deployment uses a private Worker plus one named SQLite-backed Dur
 
 ## Proposed single-authority birth lifecycle (not implemented)
 
-[ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md) and
-[ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
-are **proposals**, not accepted or deployed changes. They retain the existing
-authority rule: **Birth Center owns all prospective birth requests; World alone
-admits a living Thread.** Today's Genesis CLI still authors location, World,
-family and inherited urges on the operator machine, while Admin Births uses
-`birth-initiation.mjs` with a separate World schema and PR39 fixture genomes.
-The CLI posts a preparation witness and polls admission/presentation/location.
-These are two active authoring paths, not an intended enduring architecture.
+[ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md)
+and [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
+remain **Proposed**. Today's CLI still authors World/family context and urges
+outside Birth Center and reports `/preparation`; Admin uses a separate
+`birth-initiation.mjs` schema and fixture genomes. These are current
+limitations, not the desired authority model.
 
-The proposed replacement is one Birth Center request ID and authoritative
-stage timeline: requested → place_resolved → parents_selected →
-genome_selected → developing → publishing → admitted → presented → located →
-complete, with explicit retryable/terminal failure and stillborn outcomes.
-An alarm advances a bounded, idempotent step using the durable model journal;
-postpublication observations use due-time backoff, never polling.
-Admin and `genesis:birth` become thin clients of the same five-route Birth
-API, including resume and reasoned abandon. A single canonical place/era
-Place Population is authored once and versioned, not reauthored per birth
-or per heritage filter. Parent and child name/lineage/language choices are
-deterministic, locally computed from that version and carried into Genesis.
+**One Birth Center request** would own the stages:
 
-**Cost boundary:** a long external model wait can consume Durable Object wall
-time even for one alarm. Measure duration, model invocations, SQL rows/wake,
-status-read rows and activity writes before raising concurrency. A one-row
-status lookup must avoid status-list scans, World presence calls and extra
-model calls. A provider runner is a reversible adapter only if measured
-alarm wait cost requires it; it cannot become another birth authority.
-World birth publication remains atomic and existing admitted identities
-and historical records remain untouched.
+```text
+requested → place_resolved → place_authored? → parents_selected
+  → genome_selected → developing → publishing → admitted
+  → presented → located → complete
+```
 
-**Implementation slices, proposed:** (1) Birth Center authors today's-model
-births; CLI becomes thin; no `.fibre/` World-cache import, (2) Place Population
-and parents, (3) Admin/API convergence, retire old CLI/preparation/fixture
-path, (4) bounded `--count` waves. No slice is complete merely because
-these documents describe it.
+`place_authored` runs only for a missing **canonical place × child's birth
+decade**. One journaled model call creates a versioned Place record with
+**both** civic/World context and the Place Population. No second World-context
+call and no import of the CLI's `.fibre/` cache. Naming traditions are
+authored lazily, one journaled call for each origin group when first drawn.
+They carry parent- and child-decade given names, family names, and the
+transmission, order and joiner rules. The Place Population itself has no
+name lists. Every birth pins its Place/naming versions.
+
+The existing alarm advances bounded due requests. **Authoring** uses at most
+one new model call per alarm; `developing` is **one stage** that runs the
+existing Genesis development service with its own durable model journal.
+It is not split into per-call stages. Publication and later confirmations
+use backoff. One blocked request never blocks another.
+
+`POST /births`, `GET /births/:id`, paginated `GET /births`,
+`POST /births/:id/resume` and `POST /births/:id/abandon` are the
+proposed common API for the CLI and Admin. Abandon before `threadId`
+reservation means **cancelled**; after reservation but before admission,
+**stillborn(reason)**; after admission it stops observation only.
+It cannot erase a living Thread. `genesis:birth` retains its flags/events
+and adds resume/abandon; `genesis:births` lists requests.
+
+**Cost:** awaiting a model in a Durable Object alarm consumes wall time.
+Genesis development may make many calls within its one lifecycle stage.
+Measure alarm duration and free-tier cost before increasing concurrency.
+An indexed `GET /births/:id` reads one row plus bounded local evidence,
+not all recent births or World presence. Initial Place creation costs one
+model call per place/decade; lazy naming costs one small call per origin
+group used. No model calls for deterministic parent sampling or inheritance.
+
+**Proposed slices:** (1) single Birth Center authoring path and thin CLI,
+(2) versioned Place Population and parents, (3) Admin moves to the same API
+with **read-only Place inspection** and old routes retire; editing is
+**deferred**, (4) bounded `--count` waves. Existing born Threads and
+historical records are never rewritten. World alone admits the live birth.
 
 ## Current development boundary
 

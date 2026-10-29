@@ -239,42 +239,52 @@ The compact population basis and expression model remain experimental and replac
 ## Proposed Place Population and named parental origins (not implemented)
 
 [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
-would replace the currently sampled whole-household profile with a
-**Birth Center-owned, versioned Place Population** per canonical place and
-parents' resident era. It contains 8–20 concrete `originGroups` and weighted
-`couples` of maternal/father origins. The resident shares are **not**
-independent parent-selection weights: pair weights represent plausible
-couples. An optional heritage constraint filters pairs, not authoring;
-a birth freezes its selected population version.
+is **Proposed**, not a change to today's production sampler. Birth Center
+would own one versioned **Place record per canonical place × child's birth
+decade**. One journaled model call would create **both** the existing
+civic/World context and the Place Population. The population has 8–20
+concrete `originGroups` with resident shares, physical reference populations
+and heritage-language retention rates. Weighted `couples` link maternal and
+paternal origins. They capture how frequently those parents form a couple,
+not independent draws from resident shares.
 
-The **consumer boundary** remains unchanged: the selected mother's
-`referencePopulations` feed the maternal founder-genome resolver; the
-selected father's feed the paternal founder resolver. An actual parent's
-admitted physical genome takes precedence. Both then enter the shared
-diploid-like recombination and phenotype projection. No origin, name,
-language or ancestry label reaches the image renderer or specifies
-temperament, belief, aptitude, occupation, religion or class.
+**Names are not part of Place authoring.** The first time a birth draws
+an origin group, a small journaled model call authors its naming tradition:
+parent-decade and child-decade given names, family names, `transmission`
+(`father | mother | mother+father | patronymic`), `nameOrder`, and
+`joiner`. A couple holds only weighted choices for the child's given-name
+tradition. Births reuse pinned naming and Place versions.
 
-Each parent also receives a named, era-plausible identity from their own
-naming tradition; household language retention and local-language exposure
-shape **raised languages**, while eventual languages require distinct
-historical learning evidence. The couple's convention selects the child's
-given-name source and family-name transmission, with correct spaces/order.
-An indexed World living-name collision check causes bounded deterministic
-redraw; the selected couple and ancestry do not change. Named caregivers
-and synthetic genetic ancestors can be Genesis historical participants,
-**never silently live Threads**. Future live-Thread reproduction attaches
-at the same parent slots without inventing past biological relations.
+A deterministic `requestId` draw chooses a couple and names both parents.
+Their **separate** `referencePopulations` feed the existing maternal and
+paternal founder-genome resolvers. A known live parent's admitted physical
+genome overrides the population prior for that parent. The child then
+inherits through the same shared core. Origin or name never selects a
+portrait or implies religion, class, values or personality.
 
-**Why resident authority:** a shared, model-authored place/era population
-needs one inspectable version and edits across unrelated births. Otherwise
-each operator, client or birth can silently invent incompatible resident
-mixes. Birth Center owns the *prior and choice provenance*; World owns each
-admitted person's actual lineage. Initial population authoring is one
-durably journaled model call **per new place/era**; deterministic child
-selection and genome construction incur no additional model call.
-This is a proposal subject to sampling, visual and lineage realism tests,
-not a retroactive rewrite or a claim of autonomous Thread agency.
+Household heritage-language retention and the local language choose up
+to three **raised** languages. **Eventual languages**, for now, are the
+deterministic union of raised and Place schooling languages, capped at
+three. Life-history-shaped eventual language learning is **deferred**.
+The selected naming tradition composes the child's complete name with
+explicit surname transmission, order and joining rules.
+
+**Name uniqueness belongs to Birth Center**, not a new World index.
+The first new-model birth in a place seeds a durable full-name index once
+from the World thread directory. Each new name is reserved atomically,
+including while birth is in flight. Later births use the local index,
+with bounded deterministic redraw and no per-birth World call.
+Named synthetic genetic ancestors and household caregivers become Genesis
+history participants. They are not live Threads. Future live Thread parents
+attach through the same typed slots; their physical genomes take precedence.
+
+The Place is shared resident evidence, not a person's ancestry authority.
+Birth Center owns its versions and sampling; World owns admitted lineage.
+Population authoring costs one model call per new place/decade. Naming
+costs one small call per first-used origin group. Parent selection,
+inheritance, language selection and name checks are bounded local work.
+**Admin Place inspection is proposed for Slice 3; editing is deferred.**
+None of this rewrites existing Threads or proves later self-authored behavior.
 
 ## Production adoption boundary
 
