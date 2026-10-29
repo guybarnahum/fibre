@@ -77,19 +77,33 @@ and [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
 were accepted by the owner on October 29. They establish one prospective
 birth authority in Birth Center, and a shared place/era population prior
 whose parents shape the newborn. World retains exclusive authority over
-admitted Threads and their history. **ADR-0031 Slice 1 is now
-source-implemented, awaiting Guy's local validation and first staging
-birth/cost measurement.** New CLI births use Birth Center's durable
-request lifecycle, journaled place/family authoring, inherited-urge
-selection, development and separate World/Presentation/located checks;
-the old Admin initiation and direct development routes intentionally
-remain until Slice 3. Existing births and Threads are not rewritten.
-ADR-0032's Place Population, named parents and lazy naming traditions
-remain unimplemented, and the older family-profile model remains the
-transitional source of parent and household material. Slice 1's
-transitional authored Place cache is scoped by place, decade and explicit
-heritage; ADR-0032 will replace that conditioning with the shared
-population prior.
+admitted Threads and their history. **ADR-0031 Slice 1 is staging verified at deployed `66da96e`.**
+The operator reports two complete Birth Center → World → Presentation →
+located lifecycles: **Joanna Lewandowski, London, 2m57s**, and
+**Aaron Kelly, Manchester, 3m14s**, each with a newly authored Place.
+The measured birth lifecycle overhead was approximately **100 Durable
+Object rows read and 130 written per birth**: Place authoring used
+**one model call, 38.6 seconds, 22 reads / 12 writes**; the Genesis
+development stage took **106 seconds, 57 reads / 109 writes**;
+publication and each of the three observation wakes used **fewer than
+15 rows**. There were **no retries or stray wakes** in these two runs.
+Concurrency remains bounded to **two due requests per wake**.
+These measurements are a two-birth staging observation, not a production
+cost, throughput or recovery benchmark.
+
+New CLI births are solely orchestrated by Birth Center's durable
+request lifecycle and journaled authoring, existing Genesis development,
+and distinct World/Presentation/location checks. The older Admin
+initiation route intentionally remains until Slice 3. Existing born
+Threads and pinned Slice 1 Place records are never rewritten.
+
+**ADR-0032 Slice 2 is authorized but not yet staging verified.** It
+replaces new births' transitional family-profile Place material with
+one shared civic/population Place per canonical place × child's birth
+decade, mixed-parent class selection, lazily authored naming traditions
+and named biological parents. Previously pinned Slice 1 Place versions
+continue through their original birth stages. Population editing remains
+deferred; Admin's read-only inspection is Slice 3.
 
 ## Identity, Genesis and embodiment
 
