@@ -90,7 +90,8 @@ export function createBirthReconciliationRuntime({
 
   async function acceptBirth(bundle) {
     const accepted = provisionalBirthStore.accept(bundle);
-    if (accepted.status === "pending") await requestWake();
+    if (accepted.status === "pending"
+      && (accepted.nextAttemptAt === null || accepted.nextAttemptAt <= nowMs())) await requestWake();
     return accepted;
   }
 
@@ -106,15 +107,16 @@ export function createBirthReconciliationRuntime({
   }
 
   async function reconcile() {
-    const pending = provisionalBirthStore.pending();
+    const pending = provisionalBirthStore.pending({nowMs:nowMs()});
     let published = 0;
     for (const birth of pending) {
       const context = activityContext(birth);
+      const attempt=birth.attemptCount+1;
       try {
         await runActivityStage(activity, {
           ...context,
           stage: "birth.publish.world",
-          attempt: 1,
+          attempt,
         }, async ({ operationId: publicationOperationId }) => {
           const publicationContext = publicationOperationId === null
             ? context
@@ -123,7 +125,7 @@ export function createBirthReconciliationRuntime({
           const result = await runActivityStage(activity, {
             ...publicationContext,
             stage: "birth.publish.world_submit",
-            attempt: 1,
+            attempt,
           }, async ({ operationId }) => {
             submitOperationId = operationId;
             const worldContext = operationId === null
@@ -135,13 +137,13 @@ export function createBirthReconciliationRuntime({
             ...publicationContext,
             parentOperationId: submitOperationId,
             stage: "birth.publish.world_ack",
-            attempt: 1,
+            attempt,
             evidence: finalWorldEventEvidence(result),
           }, async () => provisionalBirthStore.markPublished(birth.genesisId, result));
           await runActivityStage(activity, {
             ...publicationContext,
             stage: "birth.publish.complete",
-            attempt: 1,
+            attempt,
             evidence: finalWorldEventEvidence(result),
           }, async () => result);
         });
@@ -157,7 +159,7 @@ export function createBirthReconciliationRuntime({
             code:error.code??null,message:error.message,
           });
           await bestEffortRecord(activity,{
-            ...context,stage:"birth.publish.reconcile",status:"failed",attempt:1,
+            ...context,stage:"birth.publish.reconcile",status:"failed",attempt,
             message:"World rejected this birth; no retry scheduled",
             error:{category:"reconciliation",code:error.code??"WORLD_PUBLICATION_REJECTED",retryable:false},
           });
@@ -168,7 +170,7 @@ export function createBirthReconciliationRuntime({
           ...context,
           stage: "birth.publish.reconcile",
           status: "retrying",
-          attempt: 1,
+          attempt,
           message: "World publication will be retried after reconciliation failure",
           error: {
             category: "reconciliation",
@@ -177,15 +179,17 @@ export function createBirthReconciliationRuntime({
           },
         });
         try { onError(error, birth); } catch {}
-        await scheduleAt(nowMs() + retryMs);
-        throw error;
+        const backoffMs=Math.min(15*60_000,retryMs*2**Math.min(attempt-1,20));
+        provisionalBirthStore.markRetryable(birth.genesisId,{
+          nextAttemptAt:nowMs()+backoffMs,
+          error:String(error?.message??error),
+        });
+        continue;
       }
     }
-    if (provisionalBirthStore.countPending() > 0) {
-      await scheduleAt(nowMs() + retryMs);
-    } else {
-      await infra.scheduler.cancel(scopeId);
-    }
+    const next=provisionalBirthStore.nextPendingAt();
+    if(next!==null)await scheduleAt(Math.max(nowMs(),next));
+    else await infra.scheduler.cancel(scopeId);
     return Object.freeze({ attempted: pending.length, published });
   }
 
@@ -197,9 +201,9 @@ export function createBirthReconciliationRuntime({
   }
 
   async function ensureScheduled() {
-    if (provisionalBirthStore.countPending() > 0 && await infra.scheduler.get(scopeId) === null) {
-      await requestWake();
-    }
+    const next=provisionalBirthStore.nextPendingAt();
+    if(next!==null && await infra.scheduler.get(scopeId) === null)
+      await scheduleAt(Math.max(nowMs(),next));
   }
 
   return Object.freeze({

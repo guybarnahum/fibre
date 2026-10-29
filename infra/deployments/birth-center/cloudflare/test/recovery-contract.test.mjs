@@ -8,7 +8,7 @@ import { migrateBirthState } from "#services/birth-center/src/birth-state-migrat
 import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
 import { attachTestCivilRegistration } from "#services/world-kernel/test/support/civil-registration-fixture.mjs";
 import { createWorldCloudflareRuntime } from "../../../world-kernel/cloudflare/runtime.mjs";
-import { createBirthCenterCloudflareRuntime } from "../runtime.mjs";
+import { createBirthCenterCloudflareRuntime, reconcileStaleWhenDue } from "../runtime.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -226,7 +226,8 @@ test("Cloudflare Birth Center survives lost World acknowledgement and converges 
   const originalConsoleError = console.error;
   console.error = (...args) => { diagnostics.push(args.join(" ")); };
   try {
-    await assert.rejects(first.runtime.handleWake(), /simulated World acknowledgement loss/);
+    assert.deepEqual(await first.runtime.handleWake(),{attempted:1,published:0},
+      "lost World acknowledgement failed the Durable Object alarm");
   } finally {
     console.error = originalConsoleError;
   }
@@ -316,5 +317,46 @@ test("Cloudflare Birth Center keeps operator progress separate from provisional 
   } finally {
     runtime.close();
     birthStorage.closeDatabase();
+  }
+});
+
+test("a publication-only retry wake never invokes stale World presence",async()=>{
+  const storage=durableStorage();
+  migrateBirthState({
+    infraDriver:createCloudflareInfraDriver({stateScopes:{birth:storage}}),
+    stateScopeId:"birth",
+  });
+  let clock=10_000,publicationCalls=0,presenceCalls=0;
+  const cloud=createBirthCenterCloudflareRuntime({
+    storage,nowMs:()=>clock,now:()=>new Date(clock).toISOString(),
+    env:{
+      FIBRE_PRIVATE_TOKEN:PRIVATE_TOKEN,
+      WORLD_KERNEL:{async fetch(request){
+        if(new URL(request.url).pathname.includes("presence")){
+          presenceCalls++;
+          return Response.json({presentThreadIds:[]});
+        }
+        publicationCalls++;
+        return Response.json({error:{code:"WORLD_UNAVAILABLE",message:"World temporarily unavailable"}},{status:503});
+      }},
+    },
+  });
+  try{
+    await cloud.runtime.submitBirth({
+      manifest:{genesisId:"gen_pub_only",threadId:"thr_pub_only"},
+    });
+    assert.deepEqual(await cloud.runtime.handleWake(),{attempted:1,published:0},
+      "retryable publication interrupted the alarm");
+    assert.equal(cloud.runtime.provisionalBirthStore.get("gen_pub_only").nextAttemptAt,15_000);
+    assert.equal(cloud.birthStatusCheckDue(),false,
+      "publication alone scheduled stale status reconciliation");
+    const stale=reconcileStaleWhenDue(cloud,()=>cloud.reconcileStaleBirths());
+    assert.equal(stale,null,"publication retry launched stale reconciliation");
+    await cloud.ensureBirthStatusScheduled();
+    assert.equal(publicationCalls,1);
+    assert.equal(presenceCalls,0,"publication-only wake contacted World presence");
+  }finally{
+    cloud.close();
+    storage.closeDatabase();
   }
 });

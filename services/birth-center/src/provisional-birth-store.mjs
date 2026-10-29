@@ -38,6 +38,9 @@ function normalize(row) {
     bundle: parseJson("provisional birth bundle", row.bundle_json),
     status: row.status === "pending" && row.world_result_json !== null ? "failed" : row.status,
     worldResult: row.world_result_json === null ? null : parseJson("provisional birth World result", row.world_result_json),
+    attemptCount:row.attempt_count,
+    nextAttemptAt:row.next_attempt_at,
+    lastRetryableError:row.last_retryable_error,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   });
@@ -50,7 +53,7 @@ export function createProvisionalBirthStore(storage, {
   const session = openBirthStateDatabase(storage, { storeName: "Birth Center provisional birth store" });
   const selectByGenesis = session.prepare(`
     SELECT genesis_id, thread_id, bundle_digest, bundle_json, status,
-           world_result_json, created_at, updated_at
+           world_result_json, attempt_count, next_attempt_at, last_retryable_error, created_at, updated_at
     FROM provisional_births
     WHERE genesis_id = ?
   `);
@@ -62,11 +65,21 @@ export function createProvisionalBirthStore(storage, {
   `);
   const selectPending = session.prepare(`
     SELECT genesis_id, thread_id, bundle_digest, bundle_json, status,
-           world_result_json, created_at, updated_at
+           world_result_json, attempt_count, next_attempt_at, last_retryable_error, created_at, updated_at
     FROM provisional_births
     WHERE status = 'pending' AND world_result_json IS NULL
+      AND (next_attempt_at IS NULL OR next_attempt_at <= ?)
     ORDER BY created_at, genesis_id
     LIMIT ?
+  `);
+  const selectNextAttempt = session.prepare(`
+    SELECT MIN(COALESCE(next_attempt_at,0)) AS next_at
+    FROM provisional_births WHERE status='pending' AND world_result_json IS NULL
+  `);
+  const updateRetryable = session.prepare(`
+    UPDATE provisional_births
+    SET attempt_count=attempt_count+1, next_attempt_at=?, last_retryable_error=?, updated_at=?
+    WHERE genesis_id=? AND status='pending' AND world_result_json IS NULL
   `);
   const updatePublished = session.prepare(`
     UPDATE provisional_births
@@ -113,11 +126,22 @@ export function createProvisionalBirthStore(storage, {
     });
   }
 
-  function pending({ limit = 16 } = {}) {
+  function pending({ limit = 16, nowMs = Date.now() } = {}) {
     if (!Number.isSafeInteger(limit) || limit < 1 || limit > 256) {
       throw new TypeError("provisional birth pending limit must be an integer from 1 through 256");
     }
-    return selectPending.all(limit).map(normalize);
+    return selectPending.all(nowMs,limit).map(normalize);
+  }
+
+  function nextPendingAt() {
+    return selectNextAttempt.get().next_at ?? null;
+  }
+
+  function markRetryable(genesisId,{nextAttemptAt,error}) {
+    if(!Number.isSafeInteger(nextAttemptAt))throw new TypeError("retry time must be an integer");
+    updateRetryable.run(nextAttemptAt,nonEmpty("retryable World error",error),now(),
+      nonEmpty("genesisId",genesisId));
+    return get(genesisId);
   }
 
   function markPublished(genesisId, worldResult) {
@@ -167,6 +191,8 @@ export function createProvisionalBirthStore(storage, {
     get,
     accept,
     pending,
+    nextPendingAt,
+    markRetryable,
     markPublished,
     markFailed,
     countPending,

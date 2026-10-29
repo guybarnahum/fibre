@@ -197,6 +197,7 @@ function pendingProjection(request, {
   failureCode = null,
   failureRetryable = null,
   terminalFailure = false,
+  publication = null,
 }) {
   const operational = birthOperationalState(request, timing, { terminalFailure });
   return Object.freeze({
@@ -212,7 +213,11 @@ function pendingProjection(request, {
     sex,
     name,
     status,
-    error,
+    error:error??(publication?.lastRetryableError
+      ?`World retry ${publication.attemptCount}: ${publication.lastRetryableError}`:null),
+    attemptCount:publication?.attemptCount??0,
+    nextAttemptAt:publication?.nextAttemptAt??null,
+    lastRetryableError:publication?.lastRetryableError??null,
     failureCode,
     failureRetryable,
     stage,
@@ -279,6 +284,7 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
       sex,
       name:birthSubjectName(identity, sex),
       timing:birthTiming(request, nowMs),
+      publication:request.genesisId?(runtime.provisionalBirthStore?.get?.(request.genesisId)??null):null,
       terminalFailure:request.status === "failed" && request.locationSource !== "cli",
     }));
   }
@@ -305,6 +311,7 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
       sex:identity?.sex ?? null,
       name:birthSubjectName(identity, identity?.sex ?? null),
       timing:birthTiming(request, nowMs),
+      publication:runtime.provisionalBirthStore?.get?.(request.genesisId)??null,
       error:disposition?.failureMessage ?? null,
       failureCode:disposition?.failureCode ?? null,
       failureRetryable:disposition?.failureRetryable ?? null,
@@ -505,6 +512,11 @@ export async function reconcileStaleBirths(runtime, {
   });
 }
 
+// Publication alarms do not imply a stale birth-status reconciliation.
+export function reconcileStaleWhenDue(cloud,run) {
+  return cloud.birthStatusCheckDue()?run():null;
+}
+
 export async function publishQueuedBirths(cloud) {
   if (!cloud?.runtime || typeof cloud.runtime.handleWake !== "function") {
     throw new TypeError("Birth Center cloud runtime must expose runtime.handleWake()");
@@ -670,6 +682,10 @@ export function createBirthCenterCloudflareRuntime({
         else await storage.put(cursorKey,next);
       }
       return result;
+    },
+    birthStatusCheckDue(){
+      const next=nextBirthStatusCheckAt(runtime,nowMs,{reconcileStaleNow:true});
+      return next!==null && next<=nowMs();
     },
     ensureBirthStatusScheduled:({ reconcileStaleNow = false } = {}) =>
       ensureBirthStatusScheduled(runtime, { nowMs, reconcileStaleNow }),

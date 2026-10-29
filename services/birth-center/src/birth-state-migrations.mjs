@@ -1,6 +1,6 @@
 import { openBirthStateDatabase } from "./birth-state-storage.mjs";
 
-export const BIRTH_STATE_SCHEMA_VERSION = 2;
+export const BIRTH_STATE_SCHEMA_VERSION = 3;
 
 function schemaVersion(session) {
   const row = session.prepare("PRAGMA user_version").get();
@@ -149,6 +149,18 @@ function migrateToV2(session) {
   session.exec("PRAGMA user_version = 2");
 }
 
+function migrateToV3(session) {
+  const columns=new Set(session.prepare("PRAGMA table_info(provisional_births)")
+    .all().map(row=>row.name));
+  if(!columns.has("attempt_count"))
+    session.exec("ALTER TABLE provisional_births ADD COLUMN attempt_count INTEGER NOT NULL DEFAULT 0");
+  if(!columns.has("next_attempt_at"))
+    session.exec("ALTER TABLE provisional_births ADD COLUMN next_attempt_at INTEGER");
+  if(!columns.has("last_retryable_error"))
+    session.exec("ALTER TABLE provisional_births ADD COLUMN last_retryable_error TEXT");
+  session.exec("PRAGMA user_version = 3");
+}
+
 export function migrateBirthState(storage) {
   const session = openBirthStateDatabase(storage, { storeName:"Birth Center state migration" });
   try {
@@ -166,6 +178,10 @@ export function migrateBirthState(storage) {
     if (schemaVersion(session) < 2) {
       session.transaction(() => migrateToV2(session));
       applied.push(2);
+    }
+    if (schemaVersion(session) < 3) {
+      session.transaction(() => migrateToV3(session));
+      applied.push(3);
     }
     const toVersion = schemaVersion(session);
     if (toVersion !== BIRTH_STATE_SCHEMA_VERSION) {

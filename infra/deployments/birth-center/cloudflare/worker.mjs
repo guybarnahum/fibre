@@ -6,7 +6,7 @@ import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
-import { createBirthCenterCloudflareRuntime, publishQueuedBirths } from "./runtime.mjs";
+import { createBirthCenterCloudflareRuntime, publishQueuedBirths, reconcileStaleWhenDue } from "./runtime.mjs";
 
 const BIRTH_SCOPE_ID = "birth";
 const DEPLOYMENT = resolveServiceDeployment(
@@ -67,12 +67,16 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     })());
   }
 
-  startStaleReconciliation(cloud, { force = false } = {}) {
+  startStaleReconciliation(cloud, { onlyWhenDue = false } = {}) {
     const now = Date.now();
     if (this.staleReconciliation !== null) return this.staleReconciliation;
-    if (!force && now < this.nextStaleReconcileAt) return null;
+    if (now < this.nextStaleReconcileAt) return null;
     this.nextStaleReconcileAt = now + (5 * 60 * 1000);
-    const work = cloud.reconcileStaleBirths().finally(() => {
+    const reconciliation=onlyWhenDue
+      ?reconcileStaleWhenDue(cloud,()=>cloud.reconcileStaleBirths())
+      :cloud.reconcileStaleBirths();
+    if(reconciliation===null)return null;
+    const work = reconciliation.finally(() => {
       this.staleReconciliation = null;
     });
     this.staleReconciliation = work;
@@ -161,7 +165,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       publication = await cloud.runtime.handleWake();
     } finally {
       try {
-        await (this.startStaleReconciliation(cloud, { force:true }) ?? Promise.resolve());
+        await (this.startStaleReconciliation(cloud, { onlyWhenDue:true }) ?? Promise.resolve());
       } finally {
         await cloud.ensureBirthStatusScheduled();
       }
