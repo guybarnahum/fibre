@@ -239,7 +239,7 @@ The compact population basis and expression model remain experimental and replac
 ## Proposed Place Population and named parental origins (not implemented)
 
 [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
-is **Proposed**, not a change to today's production sampler. Birth Center
+is **accepted design, not yet implemented in today's production sampler**. Birth Center
 would own one versioned **Place record per canonical place × child's birth
 decade**. One journaled model call would create **both** the existing
 civic/World context and the Place Population. The population has 8–20
@@ -283,7 +283,7 @@ Birth Center owns its versions and sampling; World owns admitted lineage.
 Population authoring costs one model call per new place/decade. Naming
 costs one small call per first-used origin group. Parent selection,
 inheritance, language selection and name checks are bounded local work.
-**Admin Place inspection is proposed for Slice 3; editing is deferred.**
+**Admin Place inspection is planned for Slice 3; editing is deferred.**
 None of this rewrites existing Threads or proves later self-authored behavior.
 
 ## Production adoption boundary

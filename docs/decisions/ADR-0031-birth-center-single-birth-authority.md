@@ -1,13 +1,13 @@
 ---
 id: ADR-0031
-status: proposed
-canonical: false
+status: accepted
+canonical: true
 last-reviewed: 2026-10-29
 ---
 
 # ADR-0031 — Birth Center as the single birth authority
 
-**Proposed; not implemented.** Birth Center owns the full *prospective birth request*. World Kernel alone admits a living Thread, FIN and authoritative history. Thread Presentation owns public projection. Neither the CLI nor Admin authors a separate birth.
+**Accepted 2026-10-29; implementation pending.** Birth Center owns the full *prospective birth request*. World Kernel alone admits a living Thread, FIN and authoritative history. Thread Presentation owns public projection. Neither the CLI nor Admin authors a separate birth.
 
 ## One request, one lifecycle
 
@@ -56,11 +56,11 @@ A model call awaited inside a Durable Object alarm still costs wall time. `devel
 - **Attention and agency:** Birth Center selects initial circumstances, **not** a Thread's private attention, judgment, feelings or consent. Those remain Thread/World-owned.
 - **History and differential evidence:** admitted lineage and childhood records may later affect decisions only when their content is actually consumed. Same-place, different-parent birth tests must prove changed admitted material. The standing **behavioral** Thread differential remains a separate, unproven gate; prompt differences alone do not satisfy it.
 
-## Proposed slices
+## Implementation slices
 
 1. Birth Center authors with today's model; CLI becomes thin. No cache import.
 2. Introduce Place records, lazy naming and parent-driven births (ADR-0032).
 3. Move Admin to the same API. Show Place records **read-only**. Delete the old path. **Population editing is deferred.**
 4. Add bounded `--count` waves.
 
-These slices are not yet implemented or accepted.
+These slices are authorized but not yet implemented.

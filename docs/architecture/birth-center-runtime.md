@@ -88,7 +88,7 @@ The Cloudflare deployment uses a private Worker plus one named SQLite-backed Dur
 
 [ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md)
 and [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
-remain **Proposed**. Today's CLI still authors World/family context and urges
+are **accepted design decisions, not a claim of completed implementation**. Today's CLI still authors World/family context and urges
 outside Birth Center and reports `/preparation`; Admin uses a separate
 `birth-initiation.mjs` schema and fixture genomes. These are current
 limitations, not the desired authority model.
@@ -132,7 +132,7 @@ not all recent births or World presence. Initial Place creation costs one
 model call per place/decade; lazy naming costs one small call per origin
 group used. No model calls for deterministic parent sampling or inheritance.
 
-**Proposed slices:** (1) single Birth Center authoring path and thin CLI,
+**Authorized implementation slices:** (1) single Birth Center authoring path and thin CLI,
 (2) versioned Place Population and parents, (3) Admin moves to the same API
 with **read-only Place inspection** and old routes retire; editing is
 **deferred**, (4) bounded `--count` waves. Existing born Threads and

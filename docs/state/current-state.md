@@ -70,6 +70,20 @@ purpose do not prove loneliness, boredom or City Guide causation.
 The view must explicitly distinguish input exposure, reported reason,
 deterministic mechanism and tested behavioral influence.
 
+## Accepted Birth Center decisions — October 29, 2026
+
+[ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md)
+and [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
+were accepted by the owner on October 29. They establish one prospective
+birth authority in Birth Center, and a shared place/era population prior
+whose parents shape the newborn. World retains exclusive authority over
+admitted Threads and their history. **Acceptance is not implementation:**
+the CLI and Admin currently still author through separate paths; the
+Place Population and lazy naming model are not live. ADR-0031 Slice 1
+moves today's existing family-profile model into Birth Center; ADR-0032
+population sampling belongs to later Slice 2. No historical births or
+existing Threads are rewritten by this decision.
+
 ## Identity, Genesis and embodiment
 
 Genesis produces an individual born into the same durable Fibre World used by later life. Its prior-life evidence remains historically grounded and distinguishable from events after `THREAD_SEEDED`. **Raised languages** describe Genesis upbringing; later/current **Spoken languages** are separately developed and are not backfilled as childhood.

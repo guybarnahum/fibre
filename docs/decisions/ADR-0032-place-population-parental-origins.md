@@ -1,13 +1,13 @@
 ---
 id: ADR-0032
-status: proposed
-canonical: false
+status: accepted
+canonical: true
 last-reviewed: 2026-10-29
 ---
 
 # ADR-0032 — Place Population: parents' origins drive the newborn
 
-**Proposed; not implemented.** A place is not one household. Birth Center owns a shared **versioned Place record** for each canonical place × **child's birth decade**. It describes that era's civic World context and the origins of parents living there. A birth draws a couple, not a prewritten family profile. [ADR-0031](ADR-0031-birth-center-single-birth-authority.md) owns the lifecycle.
+**Accepted 2026-10-29; implementation pending.** A place is not one household. Birth Center owns a shared **versioned Place record** for each canonical place × **child's birth decade**. It describes that era's civic World context and the origins of parents living there. A birth draws a couple, not a prewritten family profile. [ADR-0031](ADR-0031-birth-center-single-birth-authority.md) owns the lifecycle.
 
 ## One Place record; lazy names
 
