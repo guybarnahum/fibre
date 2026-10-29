@@ -16,13 +16,13 @@ test("Birth Center state is migrated explicitly and runtime schema checks are re
 
   assert.throws(
     () => requireCurrentBirthState(storage),
-    /deploy migration 3 before starting runtime/u,
+    /deploy migration 4 before starting runtime/u,
   );
 
   assert.deepEqual(migrateBirthState(storage), {
     fromVersion:0,
     toVersion:BIRTH_STATE_SCHEMA_VERSION,
-    applied:[1,2,3],
+    applied:[1,2,3,4],
   });
   assert.equal(requireCurrentBirthState(storage), BIRTH_STATE_SCHEMA_VERSION);
 
@@ -43,6 +43,7 @@ test("Birth Center state is migrated explicitly and runtime schema checks are re
       "genesis_development_requests",
       "genesis_development_dispositions",
       "birth_model_invocations",
+      "birth_place_records",
     ]) {
       assert.equal(tables.has(table), true, `missing migrated table ${table}`);
     }
@@ -70,8 +71,8 @@ test("schema v1 upgrades historical unmappable births to terminal", (t) => {
 
   assert.deepEqual(migrateBirthState(storage), {
     fromVersion:1,
-    toVersion:3,
-    applied:[2,3],
+    toVersion:4,
+    applied:[2,3,4],
   });
 
   const session = storage.infraDriver.state.open(storage.stateScopeId, { readOnly:true });

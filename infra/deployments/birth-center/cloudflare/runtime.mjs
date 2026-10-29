@@ -5,6 +5,9 @@ import { createGenesisDevelopmentInspectionService } from "#services/birth-cente
 import { createGenesisDevelopmentService } from "#services/birth-center/src/genesis-development-service.mjs";
 import { createBirthInitiationService } from "#services/birth-center/src/birth-initiation.mjs";
 import { createBirthInitiationApi } from "#services/birth-center/src/birth-api.mjs";
+import { createBirthLifecycleStore } from "#services/birth-center/src/birth-lifecycle-store.mjs";
+import { createBirthLifecycle } from "#services/birth-center/src/birth-lifecycle.mjs";
+import { createBirthLifecycleApi } from "#services/birth-center/src/birth-lifecycle-api.mjs";
 import { BIRTHPLACES } from "#services/birth-center/src/birthplace-sampler.mjs";
 import { genesisSexForThread } from "#services/birth-center/src/genesis-sex.mjs";
 import { createBirthCenterRuntime } from "#services/birth-center/src/runtime.mjs";
@@ -102,6 +105,7 @@ export function nextBirthStatusCheckAt(runtime, nowMs, { reconcileStaleNow = fal
   for (const request of runtime.birthRequestStore.unsettledFailed?.({limit:64})??[])
     consider(request);
   for (const request of runtime.developmentRequestStore.recent({ limit:32 })) {
+    if (runtime.birthRequestStore.get(request.requestId)?.locationSource==="birth-center") continue;
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
     const birthRequest = birthByRequest.get(request.requestId);
@@ -430,6 +434,7 @@ export async function reconcileStaleBirths(runtime, {
     ...failedBirths.map(birth=>runtime.developmentRequestStore.get?.(birth.requestId)).filter(Boolean),
   ].map(request=>[request.requestId,request])).values()];
   for (const request of developments) {
+    if (runtime.birthRequestStore.get(request.requestId)?.locationSource==="birth-center") continue;
     const disposition = runtime.developmentRequestStore.getDisposition(request.requestId);
     if (disposition?.outcome === "born" || disposition?.outcome === "stillborn") continue;
 
@@ -655,6 +660,22 @@ export function createBirthCenterCloudflareRuntime({
     randomIntFn,
   });
   const publicationApi = createBirthCenterWriteApi({ runtime, privateToken });
+  const lifecycleStore = createBirthLifecycleStore(birthStorage,{now,nowMs});
+  const presentationFetch = env?.THREAD_PRESENTATION?.fetch
+    ? bindingFetch(env.THREAD_PRESENTATION)
+    : async()=>Response.json({error:"presentation_binding_missing"},{status:503});
+  const lifecycle = reasoningAdapters === null ? null : createBirthLifecycle({
+    store:lifecycleStore,runtime,
+    developmentService:development.developmentService,
+    authorAdapter:reasoningAdapters.worldAuthoringAdapter??development.creativeAdapter,
+    worldFetch:bindingFetch(worldBinding),
+    presentationFetch,privateToken,
+    geoNamesUsername:env?.GEONAMES_USERNAME??null,
+    viewerOrigin:env?.FIBRE_BIRTH_VIEWER_ORIGIN??"https://insidefibre.com",
+    nowMs,
+    onWake:event=>console.log(JSON.stringify(event)),
+  });
+  const lifecycleApi = lifecycle===null?null:createBirthLifecycleApi({lifecycle,privateToken});
 
   return Object.freeze({
     infraDriver,
@@ -669,6 +690,8 @@ export function createBirthCenterCloudflareRuntime({
     birthService: development.birthService,
     birthApi: development.birthApi,
     publicationApi,
+    lifecycle,
+    lifecycleApi,
     async reconcileStaleBirths(){
       const cursorKey="birth-center-failed-birth-cursor-v1";
       const previous=await storage.get(cursorKey)??null;
@@ -689,6 +712,6 @@ export function createBirthCenterCloudflareRuntime({
     },
     ensureBirthStatusScheduled:({ reconcileStaleNow = false } = {}) =>
       ensureBirthStatusScheduled(runtime, { nowMs, reconcileStaleNow }),
-    close() { runtime.close(); },
+    close() { lifecycleStore.close(); runtime.close(); },
   });
 }

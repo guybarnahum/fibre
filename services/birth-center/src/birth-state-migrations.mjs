@@ -1,6 +1,6 @@
 import { openBirthStateDatabase } from "./birth-state-storage.mjs";
 
-export const BIRTH_STATE_SCHEMA_VERSION = 3;
+export const BIRTH_STATE_SCHEMA_VERSION = 4;
 
 function schemaVersion(session) {
   const row = session.prepare("PRAGMA user_version").get();
@@ -161,6 +161,41 @@ function migrateToV3(session) {
   session.exec("PRAGMA user_version = 3");
 }
 
+function migrateToV4(session) {
+  const columns=new Set(session.prepare("PRAGMA table_info(modern_birth_requests)")
+    .all().map(row=>row.name));
+  for(const [column,spec] of [
+    ["lifecycle_input_json","TEXT"],
+    ["lifecycle_input_digest","TEXT"],
+    ["lifecycle_stage","TEXT"],
+    ["lifecycle_data_json","TEXT"],
+    ["place_version","TEXT"],
+    ["attempt_count","INTEGER NOT NULL DEFAULT 0"],
+    ["next_attempt_at","INTEGER"],
+    ["failure_retryable","INTEGER CHECK (failure_retryable IS NULL OR failure_retryable IN (0,1))"],
+    ["observation_started_at","INTEGER"],
+    ["lifecycle_result_json","TEXT"],
+  ]){
+    if(!columns.has(column))
+      session.exec(`ALTER TABLE modern_birth_requests ADD COLUMN ${column} ${spec}`);
+  }
+  session.exec(`
+    CREATE INDEX IF NOT EXISTS idx_modern_birth_requests_due ON modern_birth_requests(next_attempt_at,request_id)
+      WHERE lifecycle_input_json IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_modern_birth_requests_created ON modern_birth_requests(created_at DESC,request_id DESC)
+      WHERE lifecycle_input_json IS NOT NULL;
+    CREATE TABLE IF NOT EXISTS birth_place_records (
+      place_key TEXT NOT NULL,
+      version TEXT NOT NULL,
+      authored_json TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY(place_key,version)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_birth_place_latest ON birth_place_records(place_key,created_at DESC,version DESC);
+    PRAGMA user_version = 4;
+  `);
+}
+
 export function migrateBirthState(storage) {
   const session = openBirthStateDatabase(storage, { storeName:"Birth Center state migration" });
   try {
@@ -183,6 +218,10 @@ export function migrateBirthState(storage) {
       session.transaction(() => migrateToV3(session));
       applied.push(3);
     }
+    if (schemaVersion(session) < 4) {
+      session.transaction(() => migrateToV4(session));
+      applied.push(4);
+    }
     const toVersion = schemaVersion(session);
     if (toVersion !== BIRTH_STATE_SCHEMA_VERSION) {
       throw new Error(
@@ -191,7 +230,7 @@ export function migrateBirthState(storage) {
     }
     for(const table of [
       "provisional_births","modern_birth_requests","genesis_development_requests",
-      "genesis_development_dispositions","birth_model_invocations",
+      "genesis_development_dispositions","birth_model_invocations","birth_place_records",
     ]){
       session.prepare(`SELECT 1 FROM ${table} LIMIT 1`).get();
     }

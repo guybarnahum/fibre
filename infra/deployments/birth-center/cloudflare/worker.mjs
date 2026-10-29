@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
+import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { migrateBirthState } from "#services/birth-center/src/birth-state-migrations.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
@@ -23,9 +24,28 @@ function reasoningProfile(name) {
 }
 
 function createReasoningAdapters(env) {
+  const creative=reasoningProfile("creative");
+  // The family-profile structured output can be much larger than ordinary
+  // cognition; retain the former CLI's bounded authoring configuration.
+  const worldAuthoringAdapter=createOpenAIModelAdapter({
+    environment:env,
+    modelId:creative.config.model,
+    reasoningEffort:"low",
+    maxOutputTokens:16_000,
+    timeoutMs:180_000,
+    retryLimit:0,
+    fetchImpl:async(input,init)=>{
+      if(typeof init?.body!=="string")return fetch(input,init);
+      const body=JSON.parse(init.body);
+      delete body.temperature;
+      delete body.top_p;
+      return fetch(input,{...init,body:JSON.stringify(body)});
+    },
+  });
   return Object.freeze({
-    creativeAdapter: selectReasoningIntegration(reasoningProfile("creative"), { environment: env }),
+    creativeAdapter: selectReasoningIntegration(creative, { environment: env }),
     repairAdapter: selectReasoningIntegration(reasoningProfile("repair"), { environment: env }),
+    worldAuthoringAdapter,
   });
 }
 
@@ -56,6 +76,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     this.ctx.waitUntil((async () => {
       try {
         await cloud.runtime.ensureScheduled();
+        await cloud.lifecycle?.ensureScheduled();
         await cloud.ensureBirthStatusScheduled({ reconcileStaleNow:true });
       } catch (error) {
         console.error(JSON.stringify({
@@ -112,7 +133,22 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       }, { status:health.level === "normal" ? 200 : 503 });
     }
     const cloud = this.runtimeForRequest();
+    // A lifecycle status read is one indexed local row; a cold read must not
+    // bootstrap the legacy stale-birth scanner or touch World.
+    if(request.method==="GET" && (url.pathname==="/births" ||
+      /^\/births\/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(url.pathname))){
+      const response=await cloud.lifecycleApi?.fetch(request);
+      if(response!==null&&response!==undefined)return response;
+    }
     this.ensureSchedulerForStatefulRequest(cloud);
+    if (cloud.lifecycleApi !== null) {
+      const lifecycleResponse=await cloud.lifecycleApi.fetch(request);
+      if(lifecycleResponse!==null){
+        if(request.method==="POST"&&lifecycleResponse.ok)
+          this.ctx.waitUntil(cloud.lifecycle.ensureScheduled());
+        return lifecycleResponse;
+      }
+    }
     if (cloud.birthApi !== null) {
       const birthResponse = await cloud.birthApi.fetch(request, {
         defer:(promise) => this.ctx.waitUntil(promise),
@@ -163,11 +199,13 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     let publication = null;
     try {
       publication = await cloud.runtime.handleWake();
+      await cloud.lifecycle?.handleWake();
     } finally {
       try {
         await (this.startStaleReconciliation(cloud, { onlyWhenDue:true }) ?? Promise.resolve());
       } finally {
         await cloud.ensureBirthStatusScheduled();
+        await cloud.lifecycle?.ensureScheduled();
       }
     }
     return publication;

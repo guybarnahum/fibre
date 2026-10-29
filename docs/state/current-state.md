@@ -77,12 +77,18 @@ and [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
 were accepted by the owner on October 29. They establish one prospective
 birth authority in Birth Center, and a shared place/era population prior
 whose parents shape the newborn. World retains exclusive authority over
-admitted Threads and their history. **Acceptance is not implementation:**
-the CLI and Admin currently still author through separate paths; the
-Place Population and lazy naming model are not live. ADR-0031 Slice 1
-moves today's existing family-profile model into Birth Center; ADR-0032
-population sampling belongs to later Slice 2. No historical births or
-existing Threads are rewritten by this decision.
+admitted Threads and their history. **ADR-0031 Slice 1 is now
+source-implemented, awaiting Guy's local validation and first staging
+birth/cost measurement.** New CLI births use Birth Center's durable
+request lifecycle, journaled place/family authoring, inherited-urge
+selection, development and separate World/Presentation/located checks;
+the old Admin initiation and direct development routes intentionally
+remain until Slice 3. Existing births and Threads are not rewritten.
+ADR-0032's Place Population, named parents and lazy naming traditions
+remain unimplemented, and the older family-profile model remains the
+transitional source of parent and household material. A Place authored
+for a different explicit heritage needs a forced new version until
+ADR-0032 enables population-level heritage filtering.
 
 ## Identity, Genesis and embodiment
 

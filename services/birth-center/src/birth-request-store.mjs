@@ -73,6 +73,7 @@ export function createBirthRequestStore(storage, { now = () => new Date().toISOS
     SELECT request_id,requested_at,requested_location,requested_sex,selected_location,location_source,
            selected_sex,status,thread_id,genesis_id,error_text,created_at,updated_at
     FROM modern_birth_requests
+    WHERE lifecycle_input_json IS NULL
     ORDER BY created_at DESC,request_id DESC
     LIMIT ?
   `);
@@ -80,7 +81,7 @@ export function createBirthRequestStore(storage, { now = () => new Date().toISOS
     SELECT request_id,requested_at,requested_location,requested_sex,selected_location,location_source,
            selected_sex,status,thread_id,genesis_id,error_text,created_at,updated_at
     FROM modern_birth_requests
-    WHERE status IN ('queued','authoring','developing','publishing')
+    WHERE lifecycle_input_json IS NULL AND status IN ('queued','authoring','developing','publishing')
     ORDER BY created_at DESC,request_id DESC
     LIMIT ?
   `);
@@ -93,7 +94,7 @@ export function createBirthRequestStore(storage, { now = () => new Date().toISOS
     FROM modern_birth_requests b
     JOIN genesis_development_requests g ON g.request_id=b.request_id
     LEFT JOIN genesis_development_dispositions d ON d.request_id=b.request_id
-    WHERE b.status='failed' AND b.thread_id IS NOT NULL
+    WHERE b.lifecycle_input_json IS NULL AND b.status='failed' AND b.thread_id IS NOT NULL
       AND (b.location_source IS NULL OR b.location_source!='cli')
       AND d.outcome IS NULL AND (d.failure_retryable IS NULL OR d.failure_retryable=0)
       AND (b.created_at > ? OR (b.created_at = ? AND b.request_id > ?))

@@ -12,10 +12,11 @@
   ],
   "vars": {
     "FIBRE_DEPLOYMENT_ENV": "cloudflare",
-    "FIBRE_BIRTH_RECONCILIATION_MS": "5000"
+    "FIBRE_BIRTH_RECONCILIATION_MS": "5000",
+    "FIBRE_BIRTH_VIEWER_ORIGIN": "https://insidefibre.com"
   },
   "secrets": {
-    "required": ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN"]
+    "required": ["OPENAI_API_KEY", "FIBRE_PRIVATE_TOKEN", "GEONAMES_USERNAME"]
   },
   "d1_databases": [
     {
@@ -35,6 +36,10 @@
     {
       "binding": "WORLD_KERNEL",
       "service": "fibre-world-kernel"
+    },
+    {
+      "binding": "THREAD_PRESENTATION",
+      "service": "fibre-thread-presentation"
     }
   ],
   "exports": {
