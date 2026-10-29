@@ -96,7 +96,7 @@ export function createBirthLifecycleStore(storage, {
     "DELETE FROM birth_issued_names WHERE request_id=?");
   function nameKey(value){
     if(typeof value!=="string"||!value.trim())throw new TypeError("Issued name is required");
-    return value.normalize("NFC").trim().replace(/\\s+/gu," ").toLocaleLowerCase("en-US");
+    return value.normalize("NFC").trim().replace(/\s+/gu," ").toLocaleLowerCase("en-US");
   }
   function naming(placeKey,originId,childDecade,version=null){
     const row=version===null?namingLatest.get(placeKey,originId,childDecade)
