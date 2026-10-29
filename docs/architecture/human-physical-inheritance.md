@@ -180,13 +180,13 @@ Genesis persists the physical genome as private inherited Thread state, canonica
 
 ## Remaining Population Realism capabilities
 
-### Population & Family Sampling — focused validated
+### Population & Family Sampling — current focused validation; proposed replacement
 
-A cached place/era authoring result now carries a bounded weighted distribution of plausible family-origin profiles rather than forcing every birth through one household ancestry. Each birth deterministically samples one profile from that cached distribution using the shared population-family sampler. The selected profile changes both maternal/paternal physical ancestry and the causal family-origin context used by Genesis, while the expensive World authoring call remains once per cached place/heritage context. This is deliberately not a demographic quota system and does not use a race switch.
+**Current implementation (not the proposed authority):** a cached place/era authoring result now carries a bounded weighted distribution of plausible family-origin profiles rather than forcing every birth through one household ancestry. Each birth deterministically samples one profile from that cached distribution using the shared population-family sampler. The selected profile changes both maternal/paternal physical ancestry and the causal family-origin context used by Genesis, while the expensive World authoring call remains once per cached place/heritage context. This is deliberately not a demographic quota system and does not use a race switch.
 
-### Naming Realism — focused validated
+### Naming Realism — current focused validation; proposed replacement
 
-Naming and personal language paths now belong to the sampled family profile rather than the place-level World. Each cached profile carries its own naming order plus bounded female, male and family-name material; a birth deterministically selects from that material without another model call. The former six-birth family-name stepping is gone, so nearby births do not mechanically move through tiny surname blocks. The family profile, not physical ancestry alone and not birthplace directly, is the causal naming authority. Names remain consequences of family/lived context, never ancestry inference from a person.
+**Current implementation:** naming and personal language paths now belong to the sampled family profile rather than the place-level World. Each cached profile carries its own naming order plus bounded female, male and family-name material; a birth deterministically selects from that material without another model call. The former six-birth family-name stepping is gone, so nearby births do not mechanically move through tiny surname blocks. The family profile, not physical ancestry alone and not birthplace directly, is the causal naming authority. Names remain consequences of family/lived context, never ancestry inference from a person.
 
 ### Population Calibration — closed
 
@@ -235,6 +235,46 @@ Rejected: birthplace-to-appearance rules, ancestry labels as renderer instructio
 
 The compact population basis and expression model remain experimental and replaceable. The durable contract is two parental genomes -> recombination -> child genome -> phenotype.
 
+
+## Proposed Place Population and named parental origins (not implemented)
+
+[ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
+would replace the currently sampled whole-household profile with a
+**Birth Center-owned, versioned Place Population** per canonical place and
+parents' resident era. It contains 8–20 concrete `originGroups` and weighted
+`couples` of maternal/father origins. The resident shares are **not**
+independent parent-selection weights: pair weights represent plausible
+couples. An optional heritage constraint filters pairs, not authoring;
+a birth freezes its selected population version.
+
+The **consumer boundary** remains unchanged: the selected mother's
+`referencePopulations` feed the maternal founder-genome resolver; the
+selected father's feed the paternal founder resolver. An actual parent's
+admitted physical genome takes precedence. Both then enter the shared
+diploid-like recombination and phenotype projection. No origin, name,
+language or ancestry label reaches the image renderer or specifies
+temperament, belief, aptitude, occupation, religion or class.
+
+Each parent also receives a named, era-plausible identity from their own
+naming tradition; household language retention and local-language exposure
+shape **raised languages**, while eventual languages require distinct
+historical learning evidence. The couple's convention selects the child's
+given-name source and family-name transmission, with correct spaces/order.
+An indexed World living-name collision check causes bounded deterministic
+redraw; the selected couple and ancestry do not change. Named caregivers
+and synthetic genetic ancestors can be Genesis historical participants,
+**never silently live Threads**. Future live-Thread reproduction attaches
+at the same parent slots without inventing past biological relations.
+
+**Why resident authority:** a shared, model-authored place/era population
+needs one inspectable version and edits across unrelated births. Otherwise
+each operator, client or birth can silently invent incompatible resident
+mixes. Birth Center owns the *prior and choice provenance*; World owns each
+admitted person's actual lineage. Initial population authoring is one
+durably journaled model call **per new place/era**; deterministic child
+selection and genome construction incur no additional model call.
+This is a proposal subject to sampling, visual and lineage realism tests,
+not a retroactive rewrite or a claim of autonomous Thread agency.
 
 ## Production adoption boundary
 

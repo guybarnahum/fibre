@@ -84,6 +84,45 @@ FIBRE_BIRTH_CENTER_STATE
 
 The Cloudflare deployment uses a private Worker plus one named SQLite-backed Durable Object scope for Birth state and alarm scheduling. A private birth request durably records provisional publication work; the Durable Object alarm resumes pending World handoff after Worker disposal/restart.
 
+## Proposed single-authority birth lifecycle (not implemented)
+
+[ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md) and
+[ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
+are **proposals**, not accepted or deployed changes. They retain the existing
+authority rule: **Birth Center owns all prospective birth requests; World alone
+admits a living Thread.** Today's Genesis CLI still authors location, World,
+family and inherited urges on the operator machine, while Admin Births uses
+`birth-initiation.mjs` with a separate World schema and PR39 fixture genomes.
+The CLI posts a preparation witness and polls admission/presentation/location.
+These are two active authoring paths, not an intended enduring architecture.
+
+The proposed replacement is one Birth Center request ID and authoritative
+stage timeline: requested → place_resolved → parents_selected →
+genome_selected → developing → publishing → admitted → presented → located →
+complete, with explicit retryable/terminal failure and stillborn outcomes.
+An alarm advances a bounded, idempotent step using the durable model journal;
+postpublication observations use due-time backoff, never polling.
+Admin and `genesis:birth` become thin clients of the same five-route Birth
+API, including resume and reasoned abandon. A single canonical place/era
+Place Population is authored once and versioned, not reauthored per birth
+or per heritage filter. Parent and child name/lineage/language choices are
+deterministic, locally computed from that version and carried into Genesis.
+
+**Cost boundary:** a long external model wait can consume Durable Object wall
+time even for one alarm. Measure duration, model invocations, SQL rows/wake,
+status-read rows and activity writes before raising concurrency. A one-row
+status lookup must avoid status-list scans, World presence calls and extra
+model calls. A provider runner is a reversible adapter only if measured
+alarm wait cost requires it; it cannot become another birth authority.
+World birth publication remains atomic and existing admitted identities
+and historical records remain untouched.
+
+**Implementation slices, proposed:** (1) Birth Center authors today's-model
+births; CLI becomes thin; no `.fibre/` World-cache import, (2) Place Population
+and parents, (3) Admin/API convergence, retire old CLI/preparation/fixture
+path, (4) bounded `--count` waves. No slice is complete merely because
+these documents describe it.
+
 ## Current development boundary
 
 The completed Genesis memory/meaning selectivity and scientific-diagnostic bridge is recorded in [its outcome](../history/genesis-selectivity-scientific-hardening.md). That work did not move authoritative birth state into the Birth Center or earn a Whole-Person standing increase.
