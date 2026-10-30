@@ -154,7 +154,7 @@ export function normalizePlacePopulation(output){
     value.localNamingOriginId=[...origins].sort((a,b)=>b.share-a.share)[0]?.originId;
     note(changes,"localNamingOriginId",before,value.localNamingOriginId);
   }
-  value.normalizations=changes;
+  value.provenance={normalizations:changes};
   return value;
 }
 export function normalizeNamingTradition(output){
@@ -175,7 +175,7 @@ export function normalizeNamingTradition(output){
     });
     note(changes,path,existing,owner[field]);
   }
-  value.normalizations=changes;
+  value.provenance={normalizations:changes};
   return value;
 }
 
