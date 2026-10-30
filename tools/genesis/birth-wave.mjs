@@ -22,7 +22,7 @@ export async function runGenesisBirthWave({
       }});
       if(result.birth?.requestId!==requestId)
         throw new Error("Birth Center did not acknowledge wave request "+requestId);
-      births.set(requestId,{stage:"queued",done:false,observed:false});
+      births.set(requestId,{stage:"queued",done:false});
     }
     let cursor=null,failedPolls=0,lastLine="";
     while([...births.values()].some(item=>!item.done)){
@@ -43,7 +43,6 @@ export async function runGenesisBirthWave({
         const state=births.get(birth.requestId);
         if(!state||state.done)continue;
         state.stage=birth.stage;
-        state.observed=true;
         const outcome=["complete","unpresented","unlocated"].includes(birth.stage);
         if(outcome){
           state.done=true;
@@ -76,7 +75,9 @@ export async function runGenesisBirthWave({
       if(states.every(s=>s.done))break;
       // One page per interval, even if the wave has shifted beyond page 1.
       // Cycle the cursor to discover displaced births without per-birth reads.
-      cursor=states.every(s=>s.observed)?null:page.nextCursor??null;
+      const onPage=new Set(page.births.map(b=>b.requestId));
+      cursor=[...births].every(([id,state])=>state.done||onPage.has(id))
+        ?null:page.nextCursor??null;
       await sleep(5_000);
     }
     if(stderr.isTTY)stderr.write("\n");
