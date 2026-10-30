@@ -7,7 +7,7 @@ last-reviewed: 2026-10-29
 
 # ADR-0032 — Place Population: parents' origins drive the newborn
 
-**Accepted 2026-10-29; Slice 2 source implementation pending local and staging verification.** A place is not one household. Birth Center owns a shared **versioned Place record** for each canonical place × **child's birth decade**. It describes that era's civic World context and the origins of parents living there. A birth draws a couple, not a prewritten family profile. [ADR-0031](ADR-0031-birth-center-single-birth-authority.md) owns the lifecycle.
+**Accepted 2026-10-29; Slice 2 staging verified at `6831f3b`, with language atomicity correction awaiting fresh validation.** A place is not one household. Birth Center owns a shared **versioned Place record** for each canonical place × **child's birth decade**. It describes that era's civic World context and the origins of parents living there. A birth draws a couple, not a prewritten family profile. [ADR-0031](ADR-0031-birth-center-single-birth-authority.md) owns the lifecycle.
 
 ## One Place record; lazy names
 
@@ -87,6 +87,13 @@ child naming tradition; the drawn caregivers and named siblings with sex,
 relative age and year gap; and the pinned Place's `mixedParentShare`.
 `GET /births/:id` and `genesis:births` expose these without further
 World or model reads or fetching an entire Place record.
+
+**Atomic language evidence:** `heritageLanguages` and
+`schoolingLanguages` each contain only bare language names, never dialect
+descriptions or parenthetical varieties. Place validation reuses the
+family-profile language validator. Birth composition merges household and
+school language evidence without counting regional varieties twice and
+reserves room for a plausible school-taught language.
 
 **Naming is lazy.** The first time a birth draws an origin group, Birth Center obtains one small **journaled naming-tradition model call** for that group. It records given-name pools for the parents' birth decade and for the child's birth decade, plus family names. It also owns the naming rules: `transmission ∈ {father, mother, mother+father, patronymic}`, `nameOrder` and `joiner`. Reuse that version for subsequent births; author missing decade material under the same journaled first-use rule. Parents' birth decades need not equal the child's decade. Authored naming data must be large enough to permit individual variation; names are not a code for religion or personality.
 

@@ -1,5 +1,6 @@
 import { sha256 } from "./state-codec.mjs";
 import { referencePopulationIds } from "../../../core/src/human-appearance/index.mjs";
+import {validateLanguages} from "../../../core/src/population-context/family-profile.mjs";
 
 // A Place is a shared civic/population prior, never a pre-authored person.
 const textField = {type:"string",minLength:1};
@@ -74,7 +75,8 @@ export function validatePlacePopulation(value){
   if(!value||typeof value!=="object"||Array.isArray(value))bad("missing Place");
   if(!Number.isFinite(value.mixedParentShare)||value.mixedParentShare<0||value.mixedParentShare>1)
     bad("mixedParentShare must be between 0 and 1");
-  if(!validList(value.schoolingLanguages,1,3))bad("schooling languages must contain 1–3 names");
+  try{validateLanguages(value.schoolingLanguages,"schoolingLanguages");}
+  catch(error){bad(error.message);}
   if(!Array.isArray(value.householdPatterns)||value.householdPatterns.length<3||value.householdPatterns.length>6)
     bad("householdPatterns must contain 3–6 weighted entries");
   const householdKeys=new Set();
@@ -99,8 +101,9 @@ export function validatePlacePopulation(value){
     if(!nonEmpty(group?.originId)||!nonEmpty(group.label)||origins.has(group.originId))
       bad("origin IDs must be distinct and named");
     if(!Number.isFinite(group.share)||group.share<=0)bad("origin share must be positive");
-    if(!validList(group.heritageTags)||!validList(group.heritageLanguages,1,3))
-      bad("origin heritage and language evidence are required");
+    if(!validList(group.heritageTags))bad("origin heritage evidence is required");
+    try{validateLanguages(group.heritageLanguages,"heritageLanguages");}
+    catch(error){bad(error.message);}
     if(!Number.isFinite(group.householdRetentionRate)||group.householdRetentionRate<0||group.householdRetentionRate>1)
       bad("household retention rate must be between 0 and 1");
     if(!Array.isArray(group.referencePopulations)||group.referencePopulations.length<1)
@@ -184,7 +187,8 @@ export async function authorPlacePopulation({adapter,selector,placeKey,version,r
     "mixedParentShare is the estimated share of children in this exact place and child's birth decade with different mother/father originId values, not a worldwide constant. It may be high in Hilo and low in Chengdu. A group with internally mixed ancestry paired with itself counts as same-origin.",
     "If mixedParentShare > 0 include a different-origin couple; if < 1 include a same-origin couple. Couple's childGivenNameTradition gives nonnegative weights for mother, father or local mainstream naming source. No name lists in the Place record.",
     "A heritage filter selects existing couples, never reauthors a place. Do not assign religion, ability, character, class, work, political orientation, trauma or interests to an individual from a group.",
-    "Use a valid IANA time zone and ordinary plausible school language exposure. Avoid claims of census precision.",
+    "Every schoolingLanguages and heritageLanguages entry must be one bare language name (e.g. Arabic, English, Hawaiian), not a dialect, regional variety, list, or parenthetical explanation. Do not list multiple varieties of the same language.",
+    "Include at least one language commonly taught in local schools, including a foreign language where appropriate (e.g. English in Egypt). Use a valid IANA time zone. Avoid claims of census precision.",
   ].join("\n");
   const result=await adapter.invoke({
     clientRequestId:"birth_population_"+sha256(placeKey+":"+version).slice(0,24)+(repair===null?"_author":"_repair"),

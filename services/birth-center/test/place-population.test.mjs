@@ -80,6 +80,26 @@ test("all schema-permitted physical origins produce valid founder genomes",()=>{
   }
 });
 
+test("Place languages are atomic and one language never appears as multiple varieties",()=>{
+  const invalid={...place,schoolingLanguages:["Arabic","Saidi Arabic dialects (Upper Egyptian Arabic)","English"]};
+  assert.throws(()=>validatePlacePopulation(invalid),/bare language/,
+    "Dialect descriptions were accepted as individual languages");
+  const withVarieties={...place,schoolingLanguages:["Arabic","English"],
+    originGroups:place.originGroups.map((group,index)=>({
+      ...group,heritageLanguages:index===0?["Egyptian Arabic","Arabic"]:["Arabic"],
+    }))};
+  // Historic pinned records can contain varieties; new authoring cannot.
+  assert.throws(()=>validatePlacePopulation(withVarieties),/bare language/);
+  const selected={mother:withVarieties.originGroups[0],father:withVarieties.originGroups[1],
+    couple:withVarieties.couples[1],childOriginId:"a"};
+  const birth=composeParentage({requestId:"atomic-languages",chronology,selector,
+    place:withVarieties,selected,traditions:{a:names("A"),b:names("B")},sex:"female"});
+  assert.deepEqual(birth.family.languages,["Arabic","English"],
+    "Arabic varieties consumed multiple spoken-language slots or excluded school English");
+  assert.deepEqual(birth.family.raisedLanguages,["Arabic"],
+    "Regional varieties became independent household languages");
+});
+
 test("a Place's mixed-parent frequency and sampled couples follow its own authored evidence",()=>{
   validatePlacePopulation(place);
   const known=new Set(place.couples.map(c=>c.motherOriginId+"|"+c.fatherOriginId));

@@ -45,11 +45,11 @@ export function normalizeFamilyProfiles(profiles){
   }));
 }
 
-function validateLanguages(values,label){
+export function validateLanguages(values,label){
   if(!Array.isArray(values)||values.length<1||values.length>3)throw new TypeError(`${label} must contain 1 to 3 languages`);
   const clean=values.map(value=>String(value??"").trim());
   if(clean.some(value=>!value))throw new TypeError(`${label} contains an empty language`);
-  if(clean.some(value=>value.length>48||/[;,|\n]|」「/u.test(value)||value.includes("/")||/\s(?:and|or)\s/iu.test(value))){
+  if(clean.some(value=>value.length>48||/[;,|\n()]|」「/u.test(value)||value.includes("/")||/\s(?:and|or|dialects?|varieties|variety)\s/iu.test(value)||/^(?:Egyptian|Saidi|Upper Egyptian|Levantine|Gulf|Moroccan|Modern Standard) Arabic$/iu.test(value))){
     throw new TypeError(`${label} must contain one bare language name per item`);
   }
   return clean;

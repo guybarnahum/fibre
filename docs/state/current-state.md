@@ -112,6 +112,20 @@ parental age of 18 at that sibling's birth. These corrections have not yet
 been validated in staging. Re-run with fresh birth request IDs; do not infer
 success from the two failed attempts.
 
+**Slice 2 staging verified at `6831f3b` (October 29):**
+Hilo's Kalani Ladia was admitted with a mixed local mixed-heritage mother
+and Filipino American father, Hawaiian given-name tradition and paternal
+surname, an older sister, and `mixedParentShare=0.65`. Aswan's Tasneem
+Jundī was admitted with a same-origin Upper Egyptian Arab couple,
+no siblings and `mixedParentShare=0.22`. These are observed
+individual outcomes, not a representative statistical sample.
+Tasneem's recorded `["Arabic","Saidi Arabic dialects (Upper Egyptian Arabic)","Egyptian Arabic"]`
+revealed a language-atomicity regression: Place Population had not reused
+the family-profile bare-language validator. New Place material now
+validates atomic languages, requires plausible school-taught languages
+such as English in Egypt, and birth composition collapses varieties
+without counting one language twice.
+
 **October 29 staging — Slice 2 births actually completed at `6831f3b`:**
 Birth Center's authoritative CLI lifecycle confirmed Hilo (Kalani Ladia,
 `genesis-birth-mvuc83el`) and Aswan (Tasneem Jundī,

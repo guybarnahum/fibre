@@ -17,8 +17,24 @@ function fullName(given,surname,convention){
   return convention.nameOrder==="family_given"
     ? surname+" "+given : given+" "+surname;
 }
+const baseLanguages=["Arabic","English","Chinese","Spanish","German","French",
+  "Portuguese","Persian","Hindi","Russian"];
+function languageName(value){
+  const name=value.trim();
+  // Old pinned Places may contain dialect labels. Do not propagate varieties
+  // as additional spoken languages into a new person's identity.
+  const root=baseLanguages.find(base=>name.toLowerCase()===base.toLowerCase()
+    ||(name.toLowerCase().endsWith(" "+base.toLowerCase())
+      &&!/\b(?:creole|sign)\b/iu.test(name)));
+  return root??name;
+}
 function distinct(value){
-  return [...new Set(value.map(text=>text.trim()).filter(Boolean))];
+  const seen=new Set(),out=[];
+  for(const item of value){
+    const text=languageName(item),key=text.toLocaleLowerCase("en-US");
+    if(!seen.has(key)){seen.add(key);out.push(text);}
+  }
+  return out;
 }
 
 // The planned Thread ID depends only on requestId, not the child's chosen name.
@@ -105,8 +121,10 @@ export function composeParentage({
     }
   }
   if(raised.length===0)raised.push(place.schoolingLanguages[0]);
-  const raisedLanguages=distinct(raised).slice(0,3);
-  const languages=distinct([...raisedLanguages,...place.schoolingLanguages]).slice(0,3);
+  const homeLanguages=distinct(raised);
+  const schoolLanguages=distinct(place.schoolingLanguages);
+  const languages=distinct([...homeLanguages.slice(0,2),...schoolLanguages,...homeLanguages]).slice(0,3);
+  const raisedLanguages=homeLanguages.filter(lang=>languages.includes(lang)).slice(0,3);
   const lineage={
     maternal:selected.mother.referencePopulations,
     paternal:selected.father.referencePopulations,
