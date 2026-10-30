@@ -255,6 +255,14 @@ export function validatePlacePopulation(value){
       bad("child naming source weights must be nonnegative with a positive total");
     if(couple.motherOriginId===couple.fatherOriginId)same++;else mixed++;
   }
+  // Normalization may discard dangling couples, but it must not silently
+  // contradict the authored mixed-parent rate or invent missing pairings.
+  if(value.mixedParentShare>0&&mixed===0)
+    bad("mixedParentShare > 0 requires a different-origin couple",{
+      mixedParentShare:value.mixedParentShare,couples:value.couples});
+  if(value.mixedParentShare<1&&same===0)
+    bad("mixedParentShare < 1 requires a same-origin couple",{
+      mixedParentShare:value.mixedParentShare,couples:value.couples});
   try { new Intl.DateTimeFormat("en-US",{timeZone:value.timeZone}).format(new Date(0)); }
   catch {bad("time zone is invalid");}
   return value;

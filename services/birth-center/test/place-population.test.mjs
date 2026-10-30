@@ -120,6 +120,9 @@ test("a Place's mixed-parent frequency and sampled couples follow its own author
       ...place.couples[0],motherOriginId:"b",fatherOriginId:"b",
     }]}),/mixedParentShare/,
     "Place authoring accepted an impossible mixed-parent fraction");
+  assert.throws(()=>validatePlacePopulation({...place,mixedParentShare:0,
+    couples:[place.couples[1]]}),/mixedParentShare/,
+    "Place authoring accepted a zero mixed-parent rate with no same-origin couples");
 });
 
 test("a perturbed authored family remains valid through real World Genesis validators",()=>{
