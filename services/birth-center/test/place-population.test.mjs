@@ -128,7 +128,7 @@ test("zero heritage retention still gives every child a validated home language"
       householdOverride:{...parentage.household,participants:parentage.participants},
     });
     const request=composeGenesisBirthRequest({
-      requestId,requestedAt:chronology.bornAt,selection,sexSelection:"female",
+      requestId,requestedAt:"2026-10-29T18:00:00Z",selection,sexSelection:"female",
       calibrationModel:null,parentage,
     });
     preflightGenesisAdmission(request);
