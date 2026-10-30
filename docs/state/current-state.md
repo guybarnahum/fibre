@@ -126,6 +126,20 @@ validates atomic languages, requires plausible school-taught languages
 such as English in Egypt, and birth composition collapses varieties
 without counting one language twice.
 
+**Slice 3 operator cost and authority source change (not yet staging
+validated):** Admin's birth view now uses the same
+`GET/POST /births` lifecycle as the CLI, with indexed 32-row pages,
+on-demand parentage and read-only Place inspection, and Resume/Abandon
+actions. Browser polling stops without active births or when the tab is
+hidden; while active it runs no more often than every 30 seconds.
+The older Admin `/internal/births/pending` path previously scanned
+roughly 770 DO rows every 3.7 seconds (approximately 700k/hour
+with the page open); new GETs never reconcile or contact World.
+The old initiation and laptop cached-World code were retired;
+legacy records remain inspectable as historical evidence without
+backfilled lifecycle stages. This is a source claim pending operator
+validation and staging cost measurement.
+
 **October 29 staging — Slice 2 births actually completed at `6831f3b`:**
 Birth Center's authoritative CLI lifecycle confirmed Hilo (Kalani Ladia,
 `genesis-birth-mvuc83el`) and Aswan (Tasneem Jundī,
@@ -134,7 +148,7 @@ World admission, Presentation and `complete`. Their admitted Threads
 were visible in World. The earlier London (Joanna Lewandowski) and
 Manchester (Aaron Kelly) births were also independently complete.
 
-**Operator display mismatch:** Admin's legacy
+**Operator display mismatch (resolved in Slice 3 source):** Admin's legacy
 `/internal/births/pending` read development reservations and mistakenly
 classified all four as stale `emerging`, even though
 `GET /births/:id` was complete. The modern lifecycle intentionally

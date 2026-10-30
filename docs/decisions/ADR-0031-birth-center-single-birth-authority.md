@@ -7,7 +7,18 @@ last-reviewed: 2026-10-29
 
 # ADR-0031 — Birth Center as the single birth authority
 
-**Accepted 2026-10-29; Slice 1 staging-verified at `66da96e`. Slice 2 is implemented in source, pending validation and staging. Admin unification and count waves remain future slices.** Birth Center owns the full *prospective birth request*. World Kernel alone admits a living Thread, FIN and authoritative history. Thread Presentation owns public projection. Neither the CLI nor Admin authors a separate birth.
+**Accepted 2026-10-29; Slice 1 staging-verified at `66da96e`, Slice 2 staging-verified at `6831f3b`. Slice 3 lifecycle Admin unification is committed but requires local validation and redeployment. Count waves remain deferred.** Birth Center owns the full *prospective birth request*. World Kernel alone admits a living Thread, FIN and authoritative history. Thread Presentation owns public projection. Neither the CLI nor Admin authors a separate birth.
+
+**Operator cost boundary (Slice 3):** Admin and CLI both submit directly to
+`POST /births`; Admin lists one cursor-paged `GET /births?limit=32`
+with at most 33 indexed lifecycle rows touched, details via `GET /births/:id`,
+pinned Place via `GET /births/:id/place`, and `resume`/`abandon` actions
+on that same request. Only an active visible Admin births view schedules
+a poll, no faster than every 30 seconds. GET routes are storage-only and
+never wake legacy stale reconciliation or World. Legacy development
+records remain unchanged and independently inspectable; they are not
+assigned fabricated lifecycle states. The old initiate, preparation,
+pending-scans and laptop World cache are retired.
 
 ## One request, one lifecycle
 

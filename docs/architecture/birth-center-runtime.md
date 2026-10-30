@@ -84,7 +84,7 @@ FIBRE_BIRTH_CENTER_STATE
 
 The Cloudflare deployment uses a private Worker plus one named SQLite-backed Durable Object scope for Birth state and alarm scheduling. A private birth request durably records provisional publication work; the Durable Object alarm resumes pending World handoff after Worker disposal/restart.
 
-## Single-authority birth lifecycle (Slice 1 staging verified; Slice 2 source pending validation)
+## Single-authority birth lifecycle (Slice 2 staging verified; Slice 3 source pending validation)
 
 [ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md)
 and [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
@@ -145,3 +145,19 @@ historical records are never rewritten. World alone admits the live birth.
 The completed Genesis memory/meaning selectivity and scientific-diagnostic bridge is recorded in [its outcome](../history/genesis-selectivity-scientific-hardening.md). That work did not move authoritative birth state into the Birth Center or earn a Whole-Person standing increase.
 
 Production persistence remains governed separately by [`production-persistence.md`](production-persistence.md): semantic stores own Fibre meaning, while provider-neutral `InfraDriver` capabilities own production persistence guarantees. Authoritative World relational state and Birth Center provisional/provider-call durability now cross `InfraDriver.state`; local `.fibre` development artifacts are fixtures/validation artifacts rather than production persistence precedent.
+
+
+## Operator lifecycle unification (Slice 3)
+
+Admin and the CLI now use `/births` as the single prospective-birth
+authority. `GET /births?limit=32` reads at most 33 indexed lifecycle
+rows, never World or model; `GET /births/:id` projects pinned
+parentage and household; `GET /births/:id/place` reads its versioned
+Place on explicit inspection. Admin creates, resumes and abandons the
+same lifecycle requests as CLI. The browser polls only when some
+birth is active and the tab is visible, at 30-second intervals.
+The obsolete `/internal/births/initiate`, `/preparation`, and
+`/pending` handlers, their separate Genesis initiation fixture
+and the laptop `.fibre` World cache are retired. Historic development
+inspection and stored outcomes remain available without invented
+lifecycle stages; Place editing remains deferred.

@@ -8,7 +8,7 @@ import { migrateBirthState } from "#services/birth-center/src/birth-state-migrat
 import { publicationValidatorSetWitness } from "#services/world-kernel/src/genesis-domain.mjs";
 import { attachTestCivilRegistration } from "#services/world-kernel/test/support/civil-registration-fixture.mjs";
 import { createWorldCloudflareRuntime } from "../../../world-kernel/cloudflare/runtime.mjs";
-import { createBirthCenterCloudflareRuntime, reconcileStaleWhenDue } from "../runtime.mjs";
+import { createBirthCenterCloudflareRuntime } from "../runtime.mjs";
 
 const mina = JSON.parse(
   readFileSync(new URL("../../../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"),
@@ -276,7 +276,7 @@ test("Cloudflare Birth Center survives lost World acknowledgement and converges 
 });
 
 
-test("Cloudflare Birth Center keeps operator progress separate from provisional publication", async () => {
+test("Birth Center retains historical outcome inspection without old birth creation routes", async () => {
   const birthStorage = durableStorage();
   migrateBirthState({
     infraDriver:createCloudflareInfraDriver({ stateScopes:{ birth:birthStorage } }),
@@ -300,20 +300,17 @@ test("Cloudflare Birth Center keeps operator progress separate from provisional 
 
   try {
     assert.notEqual(runtime.birthApi, runtime.publicationApi);
-    const pending = await runtime.birthApi.fetch(new Request(
+    const old=await runtime.birthApi.fetch(new Request(
       "https://birth-center.internal/internal/births/pending",
-      { headers:{ "x-fibre-private-token":PRIVATE_TOKEN } },
+      {headers:{"x-fibre-private-token":PRIVATE_TOKEN}},
     ));
-    assert.equal(pending.status, 200);
-    assert.deepEqual(await pending.json(), { ok:true, births:[], recentBirths:[] });
-
-    assert.equal(
-      await runtime.publicationApi.fetch(new Request(
-        "https://birth-center.internal/internal/births/pending",
-        { headers:{ "x-fibre-private-token":PRIVATE_TOKEN } },
-      )),
-      null,
-    );
+    assert.equal(old,null,"Legacy pending scan remained reachable");
+    const stillborn=await runtime.birthApi.fetch(new Request(
+      "https://birth-center.internal/internal/births/stillborn",
+      {headers:{"x-fibre-private-token":PRIVATE_TOKEN}},
+    ));
+    assert.equal(stillborn.status,200);
+    assert.deepEqual((await stillborn.json()).births,[]);
   } finally {
     runtime.close();
     birthStorage.closeDatabase();
@@ -362,11 +359,6 @@ test("a publication-only retry wake never invokes stale World presence",async()=
       message:"World temporarily unavailable",
     }]);
     assert.equal(cloud.runtime.provisionalBirthStore.get("gen_pub_only").nextAttemptAt,15_000);
-    assert.equal(cloud.birthStatusCheckDue(),false,
-      "publication alone scheduled stale status reconciliation");
-    const stale=reconcileStaleWhenDue(cloud,()=>cloud.reconcileStaleBirths());
-    assert.equal(stale,null,"publication retry launched stale reconciliation");
-    await cloud.ensureBirthStatusScheduled();
     assert.equal(publicationCalls,1);
     assert.equal(presenceCalls,0,"publication-only wake contacted World presence");
   }finally{

@@ -7,7 +7,7 @@ import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
-import { createBirthCenterCloudflareRuntime, publishQueuedBirths, reconcileStaleWhenDue } from "./runtime.mjs";
+import { createBirthCenterCloudflareRuntime, publishQueuedBirths } from "./runtime.mjs";
 
 const BIRTH_SCOPE_ID = "birth";
 const DEPLOYMENT = resolveServiceDeployment(
@@ -53,8 +53,6 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     super(ctx, env);
     this.runtime = null;
     this.schedulerBootstrapped = false;
-    this.staleReconciliation = null;
-    this.nextStaleReconcileAt = 0;
     this.health = createCloudflareInfraDriver({ stateScopes:{ [BIRTH_SCOPE_ID]:ctx.storage } }).health;
   }
 
@@ -76,7 +74,6 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       try {
         await cloud.runtime.ensureScheduled();
         await cloud.lifecycle?.ensureScheduled();
-        await cloud.ensureBirthStatusScheduled({ reconcileStaleNow:true });
       } catch (error) {
         console.error(JSON.stringify({
           event:"birth-center-scheduler-bootstrap-failed",
@@ -85,22 +82,6 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         this.schedulerBootstrapped = false;
       }
     })());
-  }
-
-  startStaleReconciliation(cloud, { onlyWhenDue = false } = {}) {
-    const now = Date.now();
-    if (this.staleReconciliation !== null) return this.staleReconciliation;
-    if (now < this.nextStaleReconcileAt) return null;
-    this.nextStaleReconcileAt = now + (5 * 60 * 1000);
-    const reconciliation=onlyWhenDue
-      ?reconcileStaleWhenDue(cloud,()=>cloud.reconcileStaleBirths())
-      :cloud.reconcileStaleBirths();
-    if(reconciliation===null)return null;
-    const work = reconciliation.finally(() => {
-      this.staleReconciliation = null;
-    });
-    this.staleReconciliation = work;
-    return work;
   }
 
   async fetch(request) {
@@ -135,7 +116,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     // A lifecycle status read is one indexed local row; a cold read must not
     // bootstrap the legacy stale-birth scanner or touch World.
     if(request.method==="GET" && (url.pathname==="/births" ||
-      /^\/births\/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/u.test(url.pathname))){
+      /^\/births\/[A-Za-z0-9][A-Za-z0-9._:-]{0,127}(?:\/place)?$/u.test(url.pathname))){
       const response=await cloud.lifecycleApi?.fetch(request);
       if(response!==null&&response!==undefined)return response;
     }
@@ -149,28 +130,8 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       }
     }
     if (cloud.birthApi !== null) {
-      const birthResponse = await cloud.birthApi.fetch(request, {
-        defer:(promise) => this.ctx.waitUntil(promise),
-      });
+      const birthResponse = await cloud.birthApi.fetch(request);
       if (birthResponse !== null) {
-        if (request.method === "POST") {
-          this.ctx.waitUntil(cloud.ensureBirthStatusScheduled().catch((error) => {
-            console.error(JSON.stringify({
-              event:"birth-center-status-schedule-failed",
-              message:error instanceof Error ? error.message : String(error),
-            }));
-          }));
-        } else if (url.pathname === "/internal/births/pending") {
-          const reconciliation = this.startStaleReconciliation(cloud);
-          if (reconciliation !== null) {
-            this.ctx.waitUntil(reconciliation.catch((error) => {
-              console.error(JSON.stringify({
-                event:"birth-center-stale-reconciliation-failed",
-                message:error instanceof Error ? error.message : String(error),
-              }));
-            }));
-          }
-        }
         return birthResponse;
       }
     }
@@ -193,21 +154,14 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     return Response.json({ error: "not_found" }, { status: 404 });
   }
 
-  async alarm() {
-    const cloud = this.runtimeForRequest();
-    let publication = null;
-    try {
-      publication = await cloud.runtime.handleWake();
+  async alarm(){
+    const cloud=this.runtimeForRequest();
+    try{
+      await cloud.runtime.handleWake();
       await cloud.lifecycle?.handleWake();
-    } finally {
-      try {
-        await (this.startStaleReconciliation(cloud, { onlyWhenDue:true }) ?? Promise.resolve());
-      } finally {
-        await cloud.ensureBirthStatusScheduled();
-        await cloud.lifecycle?.ensureScheduled();
-      }
+    }finally{
+      await cloud.lifecycle?.ensureScheduled();
     }
-    return publication;
   }
 }
 

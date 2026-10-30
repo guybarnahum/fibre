@@ -319,40 +319,6 @@ test("a failed birth cannot block another due birth",async(t)=>{
 });
 
 
-test("Birth Center preserves the CLI's fixed authored-place and birth material",async(t)=>{
-  const state=tempBirthState(t);
-  const {resolveGenesisWorldSelection}=await import("../../../tools/genesis/genesis-selection.mjs");
-  const {composeGenesisWorldSelection,normalizeGenesisWorldSelector}=
-    await import("../src/genesis-world-selection.mjs");
-  const {composeGenesisBirthRequest}=await import("../src/genesis-birth-authoring.mjs");
-  const {composeBirthSubjectIdentity}=await import("../src/birth-material.mjs");
-  const {selectedUrgesForBirth}=await import("../../../core/src/inherited-urges.mjs");
-  const selector=normalizeGenesisWorldSelector("United Kingdom/London");
-  const birth={requestId:"birth-parity-fixed",requestedAt:AT,
-    bornAt:"2004-02-08T00:00:00.000Z",chronologyEndsAt:"2026-02-08T00:00:00.000Z"};
-  const old=await resolveGenesisWorldSelection({
-    selector,heritage:null,forceNewWorld:true,repoRoot:state.root,
-    ...birth,now:()=>AT,authorWorld:async()=>authored,
-  });
-  const current=composeGenesisWorldSelection({
-    selector,heritage:null,authored,
-    ...birth,createdAt:AT,
-  });
-  for(const key of ["worldSpec","material","timeZone","participants","placeAffordances"])
-    assert.deepEqual(current[key],old[key],"Birth Center changed CLI "+key);
-  const request=composeGenesisBirthRequest({
-    requestId:birth.requestId,requestedAt:AT,
-    selection:current,sexSelection:"female",calibrationModel:null,
-  });
-  assert.deepEqual(request.worldSpec,old.worldSpec);
-  assert.deepEqual(request.genomeValues,selectedUrgesForBirth(birth.requestId).values);
-  assert.deepEqual(
-    request.subjectIdentity.physicalGenome,
-    composeBirthSubjectIdentity({requestId:birth.requestId,material:old.material}).physicalGenome,
-    "Moving birth authoring changed genetic inheritance",
-  );
-});
-
 test("new births reuse one civic Place across heritage filters",async(t)=>{
   const state=tempBirthState(t),storage=state.storage();
   let time=Date.parse(AT),calls=0;
