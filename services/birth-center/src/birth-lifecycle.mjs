@@ -199,7 +199,13 @@ export function createBirthLifecycle({
     if(stage==="requested"){
       let selector,canonicalPlace=null;
       if(birth.input.place){
-        const requested=normalizeGenesisWorldSelector(birth.input.place);
+        let requested;
+        try{requested=normalizeGenesisWorldSelector(birth.input.place);}
+        catch(error){
+          error.retryable=false;
+          error.code="BIRTH_INVALID_OPERATOR_INPUT";
+          throw error;
+        }
         if(!geoNamesUsername)throw Object.assign(new Error("Birth Center GEONAMES_USERNAME is required"),{retryable:false});
         canonicalPlace=await resolveGeoNamesPlace({
           country:requested.country,city:requested.city,
@@ -520,8 +526,7 @@ export function createBirthLifecycle({
       }catch(error){
         if(!active(original.requestId))return {usedAuthor};
         const attempt=birth.attemptCount+1;
-        const retryable=error?.retryable!==false &&
-          !(birth.stage==="requested"&&error instanceof TypeError);
+        const retryable=error?.retryable!==false;
         store.progress(original.requestId,{
           status:"failed",error:message(error),failureRetryable:retryable,
           data:{...birth.data,errorCode:String(error?.code??error?.constructor?.name??"BIRTH_FAILED")},
