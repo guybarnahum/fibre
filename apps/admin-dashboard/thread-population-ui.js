@@ -77,6 +77,7 @@ let selectedBirthplace = null;
 let birthSearchSequence = 0;
 let pendingBirthSnapshot = [];
 let pendingBirthTimer = null;
+let pendingBirthNextCursor = null;
 let birthCenterInitialized = false;
 let birthLoading = false;
 let active = false;
@@ -697,20 +698,16 @@ function mapCoordinates(event) {
   };
 }
 
-function birthStage(birth) {
-  if (birth?.stage === "failed" || birth?.status === "failed") return "failed";
-  if (birth?.stage === "stillborn" || birth?.status === "stillborn") return "stillborn";
-  if (["genesis","developing","emerging","in-world"].includes(birth?.stage)) return birth.stage;
-  return ({
-    queued:"genesis",
-    authoring:"genesis",
-    reserved:"developing",
-    ready:"developing",
-    developing:"developing",
-    submitted:"emerging",
-    publishing:"emerging",
-    published:"in-world",
-  })[birth?.status] ?? "genesis";
+function birthStage(birth){
+  if(["complete","unlocated"].includes(birth?.stage))return "in-world";
+  if(birth?.stage==="stillborn")return "stillborn";
+  if(birth?.stage==="cancelled"||birth?.status==="failed")return "failed";
+  if(["admitted","presented","located","publishing"].includes(birth?.stage))return "emerging";
+  if(["genome_selected","developing"].includes(birth?.stage))return "developing";
+  return "genesis";
+}
+function activeBirth(birth){
+  return !["in-world","stillborn","failed"].includes(birthStage(birth));
 }
 
 function birthplaceForBirth(birth) {
@@ -1147,8 +1144,98 @@ function renderPendingBirths(births) {
         const inspect=document.createElement("a");
         inspect.className="button-link secondary thread-birth-investigate";
         inspect.href="/life?birth="+encodeURIComponent(birth.requestId);
-        inspect.textContent="Inspect birth →";
+        inspect.textContent="Inspect life →";
         statuses.append(inspect);
+      }
+      if(birth.requestId){
+        const actions=document.createElement("div");
+        actions.className="thread-birth-pending-status";
+        const details=document.createElement("details");
+        const summary=document.createElement("summary");
+        summary.textContent="Family & Place";
+        details.append(summary);
+        const content=document.createElement("div");
+        content.className="thread-birth-family-detail";
+        details.append(content);
+        let loaded=false;
+        details.addEventListener("toggle",async()=>{
+          if(!details.open||loaded)return;
+          loaded=true;
+          content.textContent="Reading pinned birth…";
+          try{
+            const id=encodeURIComponent(birth.requestId);
+            const response=await fetch("/api/threads/births/"+id,{cache:"no-store"});
+            const payload=await response.json();
+            if(!response.ok||!payload?.birth)throw Error(payload?.detail??"Birth unavailable");
+            const p=payload.birth.parentage;
+            if(p){
+              const siblingText=(p.household?.siblings??[]).map(item=>
+                [item.name,item.sex,item.relativeAge,item.gapYears+"y gap"].filter(Boolean).join(" · "));
+              const lines=[
+                "Mother: "+[p.mother?.name,p.mother?.originLabel,p.mother?.birthDecade].filter(Boolean).join(" · "),
+                "Father: "+[p.father?.name,p.father?.originLabel,p.father?.birthDecade].filter(Boolean).join(" · "),
+                "Couple: "+(p.mixed?"mixed origin":"same origin")+" · mixedParentShare "+p.mixedParentShare,
+                "Child naming: "+(p.childGivenNameTradition?.originLabel??"—"),
+                "Caregivers: "+(p.household?.caregivers??[]).join(", "),
+                "Siblings: "+(siblingText.join("; ")||"none"),
+              ];
+              content.textContent=lines.join("\n");
+            }else content.textContent="Historical birth: family details unavailable.";
+            if(payload.birth.placeVersion){
+              const placeButton=document.createElement("button");
+              placeButton.type="button";
+              placeButton.textContent="View pinned Place";
+              placeButton.addEventListener("click",async()=>{
+                placeButton.disabled=true;
+                try{
+                  const res=await fetch("/api/threads/births/"+id+"/place",{cache:"no-store"});
+                  const body=await res.json();
+                  if(!res.ok||!body?.place)throw Error(body?.detail??"Place unavailable");
+                  const authored=body.place.authored;
+                  const pre=document.createElement("pre");
+                  pre.textContent=JSON.stringify({
+                    placeKey:body.place.key,version:body.place.version,
+                    originGroups:authored.originGroups,
+                    couples:authored.couples,
+                    mixedParentShare:authored.mixedParentShare,
+                    householdPatterns:authored.householdPatterns,
+                  },null,2);
+                  content.append(pre);
+                }catch(error){content.append(document.createTextNode(String(error.message??error)));}
+              });
+              content.append(placeButton);
+            }
+          }catch(error){content.textContent=String(error.message??error);}
+        });
+        actions.append(details);
+        if(activeBirth(birth)){
+          for(const action of ["resume","abandon"]){
+            if(action==="resume"&&!(birth.status==="failed"&&birth.failureRetryable!==false))continue;
+            const button=document.createElement("button");
+            button.type="button";
+            button.textContent=action==="resume"?"Resume":"Abandon";
+            button.addEventListener("click",async()=>{
+              let reason=null;
+              if(action==="abandon"){
+                reason=window.prompt("Why abandon this birth?");
+                if(!reason?.trim())return;
+              }
+              button.disabled=true;
+              try{
+                const response=await fetch("/api/threads/births/"+
+                  encodeURIComponent(birth.requestId)+"/"+action,{
+                    method:"POST",headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify(action==="abandon"?{reason}:{})});
+                const payload=await response.json();
+                if(!response.ok)throw Error(payload?.detail??payload?.error??"Birth action failed");
+                await loadPendingBirths();
+              }catch(error){window.alert(String(error.message??error));}
+              finally{button.disabled=false;}
+            });
+            actions.append(button);
+          }
+        }
+        statuses.append(actions);
       }
       row.append(copy, statuses);
       birthPending.append(row);
@@ -1160,67 +1247,53 @@ function renderPendingBirths(births) {
     $("#chain-summary").textContent = birthCenterSummaryText();
   }
 }
-async function loadPendingBirths({ quiet = false } = {}) {
-  if (!quiet) {
-    setRefreshButtonState(birthPendingRefresh,true,{
-      tooltip:"Refresh pending births",
-      busyTooltip:"Refreshing Birth Center activity",
-    });
-    if (pendingBirthSnapshot.length === 0) {
-      setWaitingContent(birthPending, "Loading births");
-      birthPendingCount.textContent = "";
+async function loadPendingBirths({ quiet=false,older=false }={}){
+  if(!quiet)setRefreshButtonState(birthPendingRefresh,true,{
+    tooltip:"Refresh births",busyTooltip:"Reading Birth Center",
+  });
+  try{
+    const query=new URLSearchParams({limit:"32"});
+    if(older&&pendingBirthNextCursor)query.set("after",pendingBirthNextCursor);
+    const response=await fetch("/api/threads/births?"+query,{cache:"no-store"});
+    const payload=await response.json();
+    if(!response.ok||!Array.isArray(payload?.births))
+      throw Error(payload?.detail??payload?.error??"Birth list unavailable");
+    pendingBirthNextCursor=payload.nextCursor??null;
+    renderPendingBirths(older?[...pendingBirthSnapshot,...payload.births]:payload.births);
+    if(pendingBirthNextCursor){
+      const button=document.createElement("button");
+      button.type="button";
+      button.textContent="Older births";
+      button.addEventListener("click",()=>void loadPendingBirths({older:true}));
+      birthPending.append(button);
     }
-  }
-  try {
-    const response = await fetch("/api/threads/births/pending", {
-      headers:{ Accept:"application/json" },
-      cache:"no-store",
-    });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || payload?.ok !== true || !Array.isArray(payload.births)) {
-      throw new Error(payload?.detail ?? payload?.error ?? `HTTP ${response.status}`);
-    }
-    renderPendingBirths(Array.isArray(payload.recentBirths)?payload.recentBirths:payload.births);
-  } catch (error) {
-    if (!quiet) {
-      birthPending.textContent = `Pending births unavailable: ${error instanceof Error ? error.message : String(error)}`;
-      birthPendingCount.textContent = "";
-    }
-  } finally {
-    if (!quiet) {
-      setRefreshButtonState(birthPendingRefresh,false,{
-        tooltip:"Refresh pending births",
-      });
-    }
-  }
-}
-
-function pendingPollDelay() {
-  if (pendingBirthSnapshot.some((birth) => ["genesis","developing","emerging"].includes(birthStage(birth)) && birth.stale !== true)) return 2000;
-  if (pendingBirthSnapshot.length > 0) return 10000;
-  return 30000;
-}
-
-function schedulePendingPoll() {
-  stopPendingPolling();
-  if (!active || populationMode !== "birth-center") return;
-  pendingBirthTimer = window.setTimeout(async () => {
-    pendingBirthTimer = null;
-    if (!active || populationMode !== "birth-center") return;
-    if (pendingBirthSnapshot.length > 0) renderPendingBirths(pendingBirthSnapshot);
-    await loadPendingBirths({ quiet:true });
     schedulePendingPoll();
-  }, pendingPollDelay());
+  }catch(error){
+    if(!quiet)birthPending.textContent="Births unavailable: "+String(error.message??error);
+  }finally{
+    if(!quiet)setRefreshButtonState(birthPendingRefresh,false,{tooltip:"Refresh births"});
+  }
 }
-
-function startPendingPolling() {
-  schedulePendingPoll();
+function schedulePendingPoll(){
+  stopPendingPolling();
+  if(!active||populationMode!=="birth-center"||document.hidden
+    ||!pendingBirthSnapshot.some(activeBirth))return;
+  pendingBirthTimer=window.setTimeout(async()=>{
+    pendingBirthTimer=null;
+    if(!active||populationMode!=="birth-center"||document.hidden)return;
+    await loadPendingBirths({quiet:true});
+  },30000);
 }
-
-function stopPendingPolling() {
-  if (pendingBirthTimer !== null) window.clearTimeout(pendingBirthTimer);
-  pendingBirthTimer = null;
+function startPendingPolling(){schedulePendingPoll();}
+function stopPendingPolling(){
+  if(pendingBirthTimer!==null)window.clearTimeout(pendingBirthTimer);
+  pendingBirthTimer=null;
 }
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden)stopPendingPolling();
+  else if(active&&populationMode==="birth-center"&&pendingBirthSnapshot.some(activeBirth))
+    void loadPendingBirths({quiet:true});
+});
 
 async function chooseFromMap(event) {
   const coordinates = mapCoordinates(event);
@@ -1285,7 +1358,7 @@ async function submitBirth(event) {
   const requests = Array.from({ length:count }, () => ({
     requestId:`admin_birth_${crypto.randomUUID().replaceAll("-", "")}`,
     requestedAt,
-    location:location === "" ? null : location,
+    place:location===null?null:location.country+"/"+location.city,
     sex:sex === "" ? null : sex,
   }));
 
@@ -1303,7 +1376,7 @@ async function submitBirth(event) {
   let failed = 0;
   await Promise.all(requests.map(async (request) => {
     try {
-      const response = await fetch("/api/threads/birth", {
+      const response = await fetch("/api/threads/births", {
         method:"POST",
         headers:{ Accept:"application/json", "content-type":"application/json" },
         body:JSON.stringify(request),
@@ -1317,7 +1390,6 @@ async function submitBirth(event) {
       failed += 1;
     } finally {
       renderBirthBatchProgress({ total:count, accepted, failed });
-      void loadPendingBirths({ quiet:true });
     }
   }));
 

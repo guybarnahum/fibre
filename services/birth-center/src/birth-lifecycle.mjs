@@ -86,6 +86,7 @@ function projection(birth){
     location:birth.location,sex:birth.sex,
     result:birth.result,createdAt:birth.createdAt,updatedAt:birth.updatedAt,
     parentage:data?.parentage??null,
+    placeKey:data?.placeKey??null,
     name:data?.developmentRequest?.subjectIdentity?.[
       birth.sex==="male"?"maleName":"femaleName"
     ]??null,
@@ -587,6 +588,11 @@ export function createBirthLifecycle({
   return Object.freeze({
     enqueue:input=>projection(store.enqueue(input)),
     get:requestId=>{const row=store.get(requestId);return row?projection(row):null;},
+    place:requestId=>{
+      const birth=store.get(requestId);
+      return birth?.data?.placeKey&&birth.placeVersion
+        ?store.place(birth.data.placeKey,birth.placeVersion):null;
+    },
     list:options=>{const page=store.list(options);return {
       births:page.births.map(projection),nextCursor:page.nextCursor};},
     resume,abandon,handleWake,ensureScheduled,

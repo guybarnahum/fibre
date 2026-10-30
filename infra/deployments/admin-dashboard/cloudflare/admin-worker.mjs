@@ -81,8 +81,8 @@ const APPEARANCE_EXPERIMENT_APPROVAL_ROUTE = /^\/api\/appearance\/experiments\/(
 const APPEARANCE_EXPERIMENT_ADMISSION_ROUTE = /^\/api\/appearance\/experiments\/([^/]+)\/admission$/u;
 const THREAD_LABELS_ROUTE = "/api/threads/labels";
 const THREAD_POPULATION_ENTRY_ROUTE = /^\/api\/threads\/([^/]+)\/population$/u;
-const THREAD_BIRTH_ROUTE = "/api/threads/birth";
-const THREAD_PENDING_BIRTHS_ROUTE = "/api/threads/births/pending";
+const THREAD_BIRTH_ROUTE = "/api/threads/births";
+const THREAD_BIRTH_ITEM_ROUTE = /^\/api\/threads\/births\/([A-Za-z0-9][A-Za-z0-9._:-]{0,127})(?:\/(resume|abandon|place))?$/u;
 const THREAD_STILLBORN_BIRTHS_ROUTE = "/api/threads/births/stillborn";
 const THREAD_BIRTH_INSPECTION_ROUTE = /^\/api\/threads\/births\/develop\/([A-Za-z0-9][A-Za-z0-9._:-]{0,127})\/inspection$/u;
 const THREAD_BIRTHPLACES_ROUTE = "/api/threads/births/places";
@@ -441,47 +441,21 @@ async function searchBirthPlaces(request, env) {
   }
 }
 
-async function proxyThreadBirth(request, env) {
-  let input;
-  try { input = await request.json(); }
-  catch { return json(400, { error:"invalid_thread_birth", detail:"Thread birth request must be JSON" }); }
-  if (!input || typeof input !== "object" || Array.isArray(input)) {
-    return json(400, { error:"invalid_thread_birth", detail:"Thread birth request must be an object" });
-  }
-  const allowed = new Set(["location","sex","requestId","requestedAt"]);
-  for (const key of Object.keys(input)) {
-    if (!allowed.has(key)) return json(400, { error:"invalid_thread_birth", detail:`Thread birth request.${key} is not allowed` });
-  }
-  const requestId = typeof input.requestId === "string" && input.requestId.trim() !== ""
-    ? input.requestId.trim()
-    : `admin_birth_${crypto.randomUUID().replaceAll("-", "")}`;
-  const requestedAt = typeof input.requestedAt === "string" && input.requestedAt.trim() !== ""
-    ? input.requestedAt.trim()
-    : new Date().toISOString();
-  const location = input.location === null || input.location === undefined || input.location === ""
-    ? null
-    : input.location;
-  if (location !== null && (!location || typeof location !== "object" || Array.isArray(location))) {
-    return json(400, { error:"invalid_thread_birth", detail:"Thread birth request.location must be canonical geography or null" });
-  }
-  const sex = input.sex === null || input.sex === undefined || input.sex === ""
-    ? null
-    : input.sex;
-  const upstream = await serviceBinding(env, "BIRTH_CENTER").fetch(new Request(
-    "https://birth-center.internal/internal/births/initiate",
-    {
-      method:"POST",
-      headers:{
-        Accept:"application/json",
-        "Content-Type":"application/json",
-        "x-fibre-private-token":privateToken(env),
-      },
-      body:JSON.stringify({ requestId, requestedAt, location, sex }),
-    },
-  ));
-  const payload = await upstream.json().catch(() => null);
-  if (payload === null) return json(502, { error:"thread_birth_invalid_response" });
-  return json(upstream.status, payload);
+async function proxyBirthCenter(request,env,path){
+  const method=request.method;
+  const upstream=await serviceBinding(env,"BIRTH_CENTER").fetch(new Request(
+    "https://birth-center.internal"+path,{
+      method,
+      headers:{Accept:"application/json",
+        ...(method==="POST"?{"Content-Type":"application/json"}:{}),
+        "x-fibre-private-token":privateToken(env)},
+      ...(method==="POST"?{body:await request.text()}:{}),
+    }));
+  return new Response(await upstream.text(),{
+    status:upstream.status,
+    headers:{"Content-Type":"application/json; charset=utf-8",
+      "Cache-Control":"no-store"},
+  });
 }
 
 async function proxyBirthCenterGet(env, pathname) {
@@ -613,16 +587,16 @@ export default {
     const threadLabels = url.pathname === THREAD_LABELS_ROUTE;
     const threadPopulationEntryMatch = THREAD_POPULATION_ENTRY_ROUTE.exec(url.pathname);
     const threadBirth = url.pathname === THREAD_BIRTH_ROUTE;
-    const pendingBirths = url.pathname === THREAD_PENDING_BIRTHS_ROUTE;
+    const birthItem=THREAD_BIRTH_ITEM_ROUTE.exec(url.pathname);
     const stillbornBirthsRequest = url.pathname === THREAD_STILLBORN_BIRTHS_ROUTE;
     const birthInspectionMatch = THREAD_BIRTH_INSPECTION_ROUTE.exec(url.pathname);
     const birthplaces = url.pathname === THREAD_BIRTHPLACES_ROUTE;
     const birthPlaceSearch = url.pathname === THREAD_BIRTH_PLACE_SEARCH_ROUTE;
     const infraMonitor = url.pathname === INFRA_MONITOR_ROUTE;
     const adminLive = url.pathname === ADMIN_LIVE_ROUTE;
-    const adminGet = request.method === "GET" && (ageAnchorsMatch || ageAnchorCanonicalMatch || ageAnchorCandidateMatch || ageAnchorPortraitMatch || worldEvents || identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || pendingBirths || stillbornBirthsRequest || birthInspectionMatch || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
+    const adminGet = request.method === "GET" && (ageAnchorsMatch || ageAnchorCanonicalMatch || ageAnchorCandidateMatch || ageAnchorPortraitMatch || worldEvents || identityMatch || canonicalPhotoMatch || observatoryMatch || journalMatch || repairMatch || fidPhotoCorrectionMatch || assetMatch || threadPopulation || threadPopulationEntryMatch || appearanceCoverageRequest || appearanceExperimentsRequest || appearanceExperimentMatch || appearanceExperimentReportMatch || appearanceExperimentCompareMatch || appearanceExperimentImageMatch || appearanceExperimentReviewMatch || appearanceExperimentApprovalMatch || threadBirth || birthItem || stillbornBirthsRequest || birthInspectionMatch || birthplaces || birthPlaceSearch || infraMonitor || adminLive);
     const finVerify = url.pathname === FIN_VERIFY_ROUTE;
-    const adminPost = request.method === "POST" && (ageAnchorCleanupMatch || ageAnchorCandidateMatch || repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
+    const adminPost = request.method === "POST" && (ageAnchorCleanupMatch || ageAnchorCandidateMatch || repairMatch || fidReissueMatch || fidPhotoCorrectionMatch || meetingMatch || finVerify || threadBirth || birthItem || infraMonitor || threadLabels || appearanceExperimentsRequest || appearanceExperimentVisualMatch || appearanceExperimentReviewMatch || appearanceExperimentReviewDecisionMatch || appearanceExperimentReviewReopenMatch || appearanceExperimentAlignmentMatch || appearanceExperimentRerunMatch || appearanceExperimentShadowMatch || appearanceExperimentCandidateMatch || appearanceExperimentApprovalMatch || appearanceExperimentAdmissionMatch);
     const adminDelete = request.method === "DELETE" && (appearanceExperimentMatch || appearanceExperimentAlignmentMatch);
     if (adminGet || adminPost || adminDelete) {
       const gate = await adminPrincipal(request, env);
@@ -862,8 +836,9 @@ export default {
             ? json(404,{error:"experiment_not_found"})
             : json(200,{contract:"fibre-admin-population-lab-experiment-v0.1",experiment});
         }
-        if (threadBirth) return proxyThreadBirth(request, env);
-        if (pendingBirths) return proxyBirthCenterGet(env, "/internal/births/pending");
+        if (threadBirth) return proxyBirthCenter(request,env,"/births"+url.search);
+        if (birthItem) return proxyBirthCenter(request,env,
+          "/births/"+birthItem[1]+(birthItem[2]?"/"+birthItem[2]:""));
         if (stillbornBirthsRequest) return proxyBirthCenterGet(env, "/internal/births/stillborn");
         if (birthInspectionMatch) return proxyBirthCenterGet(env,
           "/internal/births/develop/"+birthInspectionMatch[1]+"/inspection");
@@ -1053,7 +1028,7 @@ export default {
         if (infraMonitor) return json(503, { error:"infra_monitor_unavailable", detail:error.message });
         if (threadLabels) return json(error instanceof TypeError ? 400 : 503, { error:"thread_labels_unavailable", detail:error.message });
         if (threadBirth) return json(error instanceof TypeError ? 400 : 503, { error:"thread_birth_unavailable", detail:error.message });
-        if (pendingBirths || stillbornBirthsRequest || birthInspectionMatch || birthplaces) {
+        if (threadBirth || birthItem || stillbornBirthsRequest || birthInspectionMatch || birthplaces) {
           return json(503, {error:"thread_birth_data_unavailable",detail:error.message});
         }
         if (threadPopulation || threadPopulationEntryMatch) return json(503, { error:"thread_population_unavailable", detail:error.message });

@@ -1,4 +1,4 @@
-const ITEM=/^\/births\/([A-Za-z0-9][A-Za-z0-9._:-]{0,127})(?:\/(resume|abandon))?$/u;
+const ITEM=/^\/births\/([A-Za-z0-9][A-Za-z0-9._:-]{0,127})(?:\/(resume|abandon|place))?$/u;
 
 function json(status,payload){
   return Response.json(payload,{status,headers:{"cache-control":"no-store"}});
@@ -26,7 +26,11 @@ export function createBirthLifecycleApi({lifecycle,privateToken}={}){
       try{
         if(url.pathname==="/births"){
           if(request.method==="GET"){
+            if([...url.searchParams.keys()].some(key=>!["limit","after"].includes(key)))
+              return json(400,{error:"invalid_birth_list_query"});
             const limit=url.searchParams.has("limit")?Number(url.searchParams.get("limit")):32;
+            if(!Number.isSafeInteger(limit)||limit<1||limit>40)
+              return json(400,{error:"invalid_birth_list_limit"});
             const result=lifecycle.list({limit,after:cursor(url.searchParams.get("after"))});
             return json(200,{ok:true,...result,
               nextCursor:result.nextCursor===null?null:
@@ -50,6 +54,12 @@ export function createBirthLifecycleApi({lifecycle,privateToken}={}){
           if(request.method!=="GET")return json(405,{error:"method_not_allowed"});
           const birth=lifecycle.get(id);
           return birth?json(200,{ok:true,birth}):json(404,{error:"birth_not_found"});
+        }
+        if(action==="place"){
+          if(request.method!=="GET")return json(405,{error:"method_not_allowed"});
+          if(!lifecycle.get(id))return json(404,{error:"birth_not_found"});
+          const place=lifecycle.place(id);
+          return place?json(200,{ok:true,place}):json(404,{error:"birth_place_not_found"});
         }
         if(request.method!=="POST")return json(405,{error:"method_not_allowed"});
         if(!lifecycle.get(id))return json(404,{error:"birth_not_found"});

@@ -99,6 +99,44 @@ function lifecycleFor(store,storage,{nowMs=()=>Date.parse(AT),invoke=async()=>({
   });
 }
 
+test("Admin and CLI share one indexed lifecycle with bounded, World-free page reads",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  const store=createBirthLifecycleStore(storage);
+  t.after(()=>store.close());
+  let modelCalls=0,worldCalls=0;
+  const runtime={stateScopeId:"birth",infraDriver:storage.infraDriver,
+    durableAdapter:adapter=>adapter,
+    provisionalBirthStore:{get:()=>null},developmentRequestStore:{get:()=>null}};
+  const lifecycle=createBirthLifecycle({
+    store,runtime,
+    developmentService:{develop:()=>{throw Error("unexpected development");}},
+    authorAdapter:{invoke:async()=>{modelCalls++;throw Error("unexpected authoring");}},
+    worldFetch:async()=>{worldCalls++;throw Error("unexpected World read");},
+    presentationFetch:async()=>{throw Error("unexpected Presentation");},
+    privateToken:"private-test-token-123456",
+  });
+  const api=createBirthLifecycleApi({lifecycle,privateToken:"private-test-token-123456"});
+  const headers={"x-fibre-private-token":"private-test-token-123456",
+    "content-type":"application/json"};
+  const shared={requestId:"same-birth-adm-cli",requestedAt:AT,
+    place:"United States/Hilo",sex:"male",heritage:null,forceNewWorld:false};
+  const submit=()=>new Request("https://birth.local/births",{
+    method:"POST",headers,body:JSON.stringify(shared)});
+  const admin=await api.fetch(submit()),cli=await api.fetch(submit());
+  assert.equal(admin.status,202);
+  assert.equal(cli.status,202);
+  assert.deepEqual((await admin.json()).birth,(await cli.json()).birth,
+    "Admin and CLI created different birth authorities");
+  for(let i=0;i<65;i++)store.enqueue(input("page-birth-"+i));
+  const page=await api.fetch(new Request("https://birth.local/births?limit=32",{headers}));
+  assert.equal(page.status,200);
+  const listed=await page.json();
+  assert.equal(listed.births.length,32,"Birth list scanned past its page bound");
+  assert.ok(listed.nextCursor,"Births lost cursor pagination");
+  assert.equal(worldCalls+modelCalls,0,
+    "Birth list read contacted World or a model");
+});
+
 test("birth status and listing expose pinned family facts without World reads",async t=>{
   const state=tempBirthState(t),storage=state.storage();
   const store=createBirthLifecycleStore(storage);
