@@ -7,6 +7,7 @@ import { createBirthCatalogApi } from "#services/birth-center/src/birth-catalog-
 import { createBirthLifecycleStore } from "#services/birth-center/src/birth-lifecycle-store.mjs";
 import { createBirthLifecycle } from "#services/birth-center/src/birth-lifecycle.mjs";
 import { createBirthLifecycleApi } from "#services/birth-center/src/birth-lifecycle-api.mjs";
+import {compactBirthActivity} from "#services/birth-center/src/birth-activity.mjs";
 import { BIRTHPLACES } from "#services/birth-center/src/birthplace-sampler.mjs";
 import { createBirthCenterRuntime } from "#services/birth-center/src/runtime.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
@@ -145,7 +146,7 @@ export function createBirthCenterCloudflareRuntime({
   }
   const privateToken = nonEmpty("FIBRE_PRIVATE_TOKEN", env?.FIBRE_PRIVATE_TOKEN);
   const worldBinding = serviceBinding(env, "WORLD_KERNEL");
-  const activityRecorder = createCloudflareActivityRecorder({ env, service: "birth-center" });
+  const activityRecorder = compactBirthActivity(createCloudflareActivityRecorder({ env, service: "birth-center" }));
   const infraDriver = createCloudflareInfraDriver({
     stateScopes: { [BIRTH_SCOPE_ID]: storage },
     schedulerScopes: { [BIRTH_SCOPE_ID]: storage },

@@ -143,3 +143,22 @@ test("Thread destination geography requires exact city and verified timezone",as
     city:"Nonexistent",country:"Portugal",username:"fibre-test",fetchImpl:lookup,
   }),null,"unmatched geographical name must not silently use a nearby city");
 });
+
+test("GeoNames distinguishes bad operator places from exhausted provider credits",async()=>{
+  const lookup=fetchImpl=>resolveGeoNamesPlace({
+    city:"Unlisted City",country:"Egypt",username:"fibre-test",fetchImpl,
+  });
+  await assert.rejects(lookup(async()=>response([])),error=>
+    error.retryable===false&&error.code==="GEONAMES_PLACE_NOT_FOUND",
+    "Unknown location consumed the retry budget");
+  for(const code of [18,19,20]){
+    await assert.rejects(lookup(async()=>new Response(JSON.stringify({
+      status:{value:code,message:"GeoNames account limit"},
+    }),{status:200})),error=>
+      error.retryable===true&&error.code==="GEONAMES_STATUS_"+code,
+      "GeoNames quota exhaustion was marked permanent");
+  }
+  await assert.rejects(lookup(async()=>new Response("{}",{status:503})),
+    error=>error.retryable===true&&error.code==="GEONAMES_HTTP_503",
+    "GeoNames server failure was mistaken for bad place input");
+});

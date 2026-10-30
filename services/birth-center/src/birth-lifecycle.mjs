@@ -14,6 +14,7 @@ import {
 } from "./place-population.mjs";
 import {selectedOrigins,requiredNamingOrigins,composeParentage,birthSex} from "./birth-parentage.mjs";
 
+const AUTHOR_EXHAUSTED_BACKOFF_MS=6*60*60_000;
 const OBSERVE_LIMIT_MS=2*60*60_000;
 const OBSERVE_FIRST_MS=15_000;
 const OBSERVE_MAX_MS=5*60_000;
@@ -81,11 +82,13 @@ function projection(birth){
     requestId:birth.requestId,requestedAt:birth.requestedAt,
     inputDigest:birth.inputDigest,status:birth.status,stage:birth.stage,
     attemptCount:birth.attemptCount,nextAttemptAt:birth.nextAttemptAt,
-    error:birth.error,failureRetryable:birth.failureRetryable,
+    error:birth.error,errorCode:birth.error?(data?.errorCode??"BIRTH_FAILED"):null,
+    failureRetryable:birth.failureRetryable,
     placeVersion:birth.placeVersion,genesisId:birth.genesisId,threadId:birth.threadId,
     location:birth.location,sex:birth.sex,
     result:birth.result,createdAt:birth.createdAt,updatedAt:birth.updatedAt,
     parentage:data?.parentage??null,
+    reconciliationNote:data?.reconciliationNote??null,
     placeKey:data?.placeKey??null,
     name:data?.developmentRequest?.subjectIdentity?.[
       birth.sex==="male"?"maleName":"femaleName"
@@ -96,13 +99,17 @@ function birthFinalResult(birth,identity,worldInspection){
   const request=birth.data.developmentRequest;
   const chosen=birth.sex;
   const name=chosen==="female"?request.subjectIdentity.femaleName:request.subjectIdentity.maleName;
-  if(identity?.name!==name || identity?.sex!==chosen ||
-    identity?.birthDate!==request.bornAt.slice(0,10) ||
-    identity?.birthCity!==request.subjectIdentity.birthCity) {
-    const error=new Error("World admitted a different birth identity");
-    error.retryable=false;
-    throw error;
-  }
+  const norm=value=>String(value??"").normalize("NFC").trim().replace(/\s+/gu," ");
+  const differences=[];
+  if(norm(identity?.name)!==norm(name))differences.push({field:"name",expected:name,actual:identity?.name??null});
+  if(identity?.sex!==chosen)differences.push({field:"sex",expected:chosen,actual:identity?.sex??null});
+  if(identity?.birthDate!==request.bornAt.slice(0,10))
+    differences.push({field:"birthDate",expected:request.bornAt.slice(0,10),actual:identity?.birthDate??null});
+  if(norm(identity?.birthCity)!==norm(request.subjectIdentity.birthCity))
+    differences.push({field:"birthCity",expected:request.subjectIdentity.birthCity,actual:identity?.birthCity??null});
+  // World has already admitted a living Thread; disagreement is evidence,
+  // never grounds for retroactively failing the birth.
+  const reconciliationNote=differences.length?{kind:"world_identity_disagreement",differences}:null;
   return Object.freeze({
     event:"thread-birth-complete",
     requestId:birth.requestId,
@@ -115,10 +122,11 @@ function birthFinalResult(birth,identity,worldInspection){
     genesisId:birth.genesisId,
     threadId:birth.threadId,
     fibreIdentityNumber:birth.data.developmentResult.fibreIdentityNumber,
-    name,sex:chosen,birthDate:identity.birthDate,birthCity:identity.birthCity,
+    name:identity?.name??name,sex:identity?.sex??chosen,birthDate:identity?.birthDate??request.bornAt.slice(0,10),
+    birthCity:identity?.birthCity??request.subjectIdentity.birthCity,reconciliationNote,
     locality:birth.data.newbornLocation.locality,
     countryCode:birth.data.newbornLocation.countryCode,
-    languages:identity.languages,
+    languages:identity?.languages??request.subjectIdentity.languages,
     memoryRefCount:worldInspection?.authoritativeThread?.memoryRefCount??null,
     worldSpecId:request.worldSpec.worldSpecId,
     identityMode:"fresh_birth_composition",
@@ -238,6 +246,7 @@ export function createBirthLifecycle({
         const authored=await authorPlacePopulation({
           adapter:populationAuthor,selector,placeKey:key,version,
           repair:birth.data.authoringRepair??null,
+          attempt:birth.data.authoringAttempt??0,round:birth.data.authoringRound??0,
         });
         if(!active(requestId))return "complete";
         store.savePlace(key,version,authored);
@@ -245,19 +254,24 @@ export function createBirthLifecycle({
           stage:"place_authored",status:"authoring",placeVersion:version,attemptCount:0,
           data:{...birth.data,placeKey:key,chosenPlaceVersion:version,
             worldMode:birth.input.forceNewWorld?"forced":"created",
-            authoringRepair:null},
+            authoringRepair:null,authoringAttempt:0},
           error:null,failureRetryable:null,nextAttemptAt:at,
         });
       }catch(error){
-        if((journalError(error)||truncatedPopulation(error))&&!birth.data.authoringRepair){
-          store.progress(requestId,{data:{...birth.data,placeKey:key,
-            chosenPlaceVersion:version,authoringRepair:message(error)},
-            attemptCount:birth.attemptCount+1,
-            error:message(error),failureRetryable:true,nextAttemptAt:at+5_000});
-        }else{
-          if(journalError(error)||truncatedPopulation(error))error.retryable=false;
-          throw error;
-        }
+        if(journalError(error)||truncatedPopulation(error)){
+          const attempt=(birth.data.authoringAttempt??0)+1;
+          const exhausted=attempt>=3;
+          store.progress(requestId,{
+            data:{...birth.data,placeKey:key,chosenPlaceVersion:version,
+              errorCode:String(error?.code??"PLACE_AUTHORING_REJECTED"),
+              authoringAttempt:exhausted?0:attempt,
+              authoringRound:(birth.data.authoringRound??0)+(exhausted?1:0),
+              authoringRepair:exhausted?null:message(error)},
+            attemptCount:attempt,status:exhausted?"failed":"authoring",
+            error:message(error),failureRetryable:exhausted?true:null,
+            nextAttemptAt:at+(exhausted?AUTHOR_EXHAUSTED_BACKOFF_MS:5_000),
+          });
+        }else throw error;
       }
       return "authored";
     }
@@ -289,25 +303,30 @@ export function createBirthLifecycle({
             const authored=await authorNamingTradition({
               adapter:author,place:{...place,selector:birth.data.selector},
               origin,childDecade:decade,placeVersion:place.version,repair,
+              attempt:birth.data.namingAttempt??0,round:birth.data.namingRound??0,
             });
             if(!active(requestId))return "complete";
             store.saveNaming(place.key,needed.originId,decade,version,authored);
             store.progress(requestId,{
               data:{...birth.data,namingVersions:{...birth.data.namingVersions,
-                [needed.originId]:version},namingRepair:null},
+                [needed.originId]:version},namingRepair:null,namingAttempt:0},
               attemptCount:0,error:null,failureRetryable:null,nextAttemptAt:at,
             });
           }catch(error){
-            if(journalError(error)&&repair===null){
+            if(journalError(error)||truncatedPopulation(error)){
+              const attempt=(birth.data.namingAttempt??0)+1;
+              const exhausted=attempt>=3;
               store.progress(requestId,{
-                data:{...birth.data,namingRepair:{originId:needed.originId,reason:message(error)}},
-                attemptCount:birth.attemptCount+1,
-                error:message(error),failureRetryable:true,nextAttemptAt:at+5_000,
+                data:{...birth.data,
+                  errorCode:String(error?.code??"NAMING_AUTHORING_REJECTED"),
+                  namingAttempt:exhausted?0:attempt,
+                  namingRound:(birth.data.namingRound??0)+(exhausted?1:0),
+                  namingRepair:exhausted?null:{originId:needed.originId,reason:message(error)}},
+                attemptCount:attempt,status:exhausted?"failed":"authoring",
+                error:message(error),failureRetryable:exhausted?true:null,
+                nextAttemptAt:at+(exhausted?AUTHOR_EXHAUSTED_BACKOFF_MS:5_000),
               });
-            }else{
-              if(journalError(error))error.retryable=false;
-              throw error;
-            }
+            }else throw error;
           }
           return "authored";
         }
@@ -323,7 +342,8 @@ export function createBirthLifecycle({
         }
         const selectedSex=birthSex(requestId,birth.input.sex);
         const calibration=await appearanceCalibration();
-        for(let redraw=0;redraw<16;redraw++){
+        const firstRedraw=birth.data.nameRedrawOffset??0;
+        for(let redraw=firstRedraw;redraw<firstRedraw+16;redraw++){
           parentage=composeParentage({
             requestId,chronology,selector:birth.data.selector,
             place:place.authored,selected,traditions,sex:selectedSex,redraw,
@@ -369,8 +389,11 @@ export function createBirthLifecycle({
           });
           return "continue";
         }
-        const exhausted=new Error("All bounded child-name redraws collided in this Place");
-        exhausted.retryable=false;throw exhausted;
+        // A stochastic collision does not condemn a prospective child.
+        store.progress(requestId,{status:"authoring",
+          data:{...birth.data,nameRedrawOffset:firstRedraw+16},
+          nextAttemptAt:at+60_000});
+        return "deferred";
       }
       // Existing pinned Slice 1 births retain their historic family-profile material.
       selection=selectionFromBirth(birth,place);
@@ -468,6 +491,7 @@ export function createBirthLifecycle({
       const identity=inspection?.authoritativeThread?.identity;
       const result=birthFinalResult(birth,identity,inspection);
       store.progress(requestId,{stage:"complete",status:"published",result,nextAttemptAt:null,
+        data:{...birth.data,reconciliationNote:result.reconciliationNote},
         error:null,failureRetryable:null});
       return "complete";
     }
@@ -496,11 +520,11 @@ export function createBirthLifecycle({
       }catch(error){
         if(!active(original.requestId))return {usedAuthor};
         const attempt=birth.attemptCount+1;
-        const retryable=error?.retryable!==false && !(
-          error instanceof TypeError && birth.stage!=="place_resolved"
-        );
+        const retryable=error?.retryable!==false &&
+          !(birth.stage==="requested"&&error instanceof TypeError);
         store.progress(original.requestId,{
           status:"failed",error:message(error),failureRetryable:retryable,
+          data:{...birth.data,errorCode:String(error?.code??error?.constructor?.name??"BIRTH_FAILED")},
           attemptCount:attempt,nextAttemptAt:retryable?nowMs()+backoff(attempt):null,
         });
         return {usedAuthor,failed:true};

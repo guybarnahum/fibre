@@ -60,8 +60,19 @@ async function geonames(path, params, { username, fetchImpl }) {
 
   const response = await fetchImpl(url, { headers:{ Accept:"application/json" } });
   const payload = await response.json().catch(() => null);
-  if (!response.ok || payload === null) throw new Error(`GeoNames request failed: HTTP ${response.status}`);
-  if (payload.status) throw new Error(`GeoNames request failed: ${payload.status.message ?? payload.status.value ?? "unknown error"}`);
+  if (!response.ok || payload === null) {
+    const error=new Error(`GeoNames request failed: HTTP ${response.status}`);
+    error.retryable=response.status>=500||response.status===429||response.status===408;
+    error.code="GEONAMES_HTTP_"+response.status;
+    throw error;
+  }
+  if(payload.status){
+    const code=Number(payload.status.value);
+    const error=new Error(`GeoNames request failed: ${payload.status.message??code}`);
+    error.code="GEONAMES_STATUS_"+code;
+    error.retryable=[18,19,20].includes(code);
+    throw error;
+  }
   if (!Array.isArray(payload.geonames)) throw new Error("GeoNames response is missing geonames");
   return payload.geonames;
 }
@@ -137,7 +148,8 @@ export async function resolveGeoNamesPlace({
     ?? countryMatches.find((place) => normalize(place.city) === normalize(baseCity))
     ?? countryMatches[0]
     ?? null;
-  if (exact === null) throw new Error(`GeoNames could not resolve ${requestedCity}, ${requestedCountry}`);
+  if (exact === null) throw Object.assign(new Error(`GeoNames could not resolve ${requestedCity}, ${requestedCountry}`),
+    {retryable:false,code:"GEONAMES_PLACE_NOT_FOUND"});
   return exact;
 }
 

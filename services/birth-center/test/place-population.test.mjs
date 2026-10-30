@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {PLACE_POPULATION_SCHEMA,choosePlaceCouple,chooseHouseholdPattern,validatePlacePopulation} from "../src/place-population.mjs";
+import {PLACE_POPULATION_SCHEMA,choosePlaceCouple,chooseHouseholdPattern,validatePlacePopulation,normalizePlacePopulation,normalizeNamingTradition,validateNamingTradition} from "../src/place-population.mjs";
 import {composeParentage,drawBirthHousehold,parentAgesAtBirth} from "../src/birth-parentage.mjs";
 import {composeBirthSubjectIdentity} from "../src/birth-material.mjs";
 import {referencePopulationIds,sampleFounderPhysicalGenome} from "../../../core/src/human-appearance/index.mjs";
@@ -120,6 +120,86 @@ test("a Place's mixed-parent frequency and sampled couples follow its own author
       ...place.couples[0],motherOriginId:"b",fatherOriginId:"b",
     }]}),/mixedParentShare/,
     "Place authoring accepted an impossible mixed-parent fraction");
+});
+
+test("a perturbed authored family remains valid through real World Genesis validators",()=>{
+  const candidate=structuredClone(place);
+  candidate.originGroups[0].share*=1.05;
+  candidate.originGroups[0].referencePopulations[0].share=0.95;
+  candidate.originGroups[0].label="  Cafe\u0301 Origin  ";
+  candidate.couples.push({...candidate.couples[0],weight:2});
+  candidate.couples.push({...candidate.couples[0],motherOriginId:"unknown-origin"});
+  candidate.householdPatterns.push({...candidate.householdPatterns[0]});
+  candidate.localNamingOriginId="missing-origin";
+  const placeNormalized=normalizePlacePopulation(candidate);
+  validatePlacePopulation(placeNormalized);
+  assert.equal(placeNormalized.originGroups[0].label,"Café Origin");
+  assert.ok(Math.abs(placeNormalized.originGroups.reduce((sum,g)=>sum+g.share,0)-1)<1e-9);
+  assert.ok(placeNormalized.normalizations.some(n=>n.action==="merged duplicate"));
+  assert.ok(placeNormalized.normalizations.some(n=>n.action==="dropped unknown origin"));
+  assert.ok(placeNormalized.normalizations.some(n=>n.path==="localNamingOriginId"));
+  const candidateNames=names("A");
+  candidateNames.childFemaleGivenNames[1]=candidateNames.childFemaleGivenNames[0].toUpperCase();
+  candidateNames.childMaleGivenNames[0]=candidateNames.childFemaleGivenNames[0];
+  candidateNames.familyNames[0]="  Na\u0308me  ";
+  const naming=normalizeNamingTradition(candidateNames);
+  validateNamingTradition(naming,2000);
+  assert.ok(naming.normalizations.some(n=>n.path==="childFemaleGivenNames"));
+  assert.equal(naming.familyNames[0],"Näme");
+  const requestId="perturbed-world-birth";
+  const selected=choosePlaceCouple({place:placeNormalized,requestId});
+  const parentage=composeParentage({requestId,chronology,selector,place:placeNormalized,
+    selected:{...selected,childOriginId:"a"},traditions:{a:naming,b:naming},sex:"female"});
+  const selection=composeGenesisWorldSelection({selector,heritage:null,authored:placeNormalized,
+    requestId,...chronology,createdAt:"2026-10-29T00:00:00Z",
+    familyOverride:parentage.family,
+    householdOverride:{...parentage.household,participants:parentage.participants}});
+  const request=composeGenesisBirthRequest({requestId,requestedAt:"2026-10-29T18:00:00Z",
+    selection,sexSelection:"female",calibrationModel:null,parentage});
+  const plan=buildGenesisDevelopmentPlan(request);
+  assert.ok(plan.envelopePlan.envelopes.length>0,
+    "Normalized household failed the real World historical envelope");
+  const episode={episodeId:"perturbed-episode",occurredAt:plan.windows[0].startAt,
+    placeRef:plan.worldSpec.places[0].placeId,
+    participantRefs:plan.roster.participants.map(p=>p.participantId),
+    introducedParticipants:[]};
+  assert.equal(deriveGenesisLifeContinuity({threadId:plan.threadId,
+    worldSpec:plan.worldSpec,initialRoster:plan.roster.participants,
+    episodes:[episode]}).guarantees.everyPublishedParticipantHasRoleAuthority,true,
+    "Normalized family failed real World life continuity");
+});
+
+test("reconstructed staging deviations quote the exact invalid language or ancestry",()=>{
+  const aswan=structuredClone(place);
+  aswan.schoolingLanguages=["Arabic","Saidi Arabic dialects (Upper Egyptian Arabic)"];
+  assert.throws(()=>validatePlacePopulation(normalizePlacePopulation(aswan)),
+    /Saidi Arabic dialects \(Upper Egyptian Arabic\)/,
+    "Invalid dialect did not surface its rejected value");
+  aswan.schoolingLanguages=["Arabic","English"];
+  aswan.originGroups[0].referencePopulations[0].referencePopulation="invented.population";
+  assert.throws(()=>validatePlacePopulation(normalizePlacePopulation(aswan)),
+    /invented\.population/,"Invalid ancestry code did not surface its rejected value");
+  aswan.originGroups[0].referencePopulations[0].referencePopulation="eur_north";
+  validatePlacePopulation(normalizePlacePopulation(aswan));
+  const manchester=structuredClone(place);
+  manchester.schoolingLanguages=["Arabic and English"];
+  assert.throws(()=>validatePlacePopulation(normalizePlacePopulation(manchester)),
+    /Arabic and English/,"Schooling phrase did not surface its rejected value");
+  manchester.schoolingLanguages=["Arabic","English"];
+  validatePlacePopulation(normalizePlacePopulation(manchester));
+});
+
+test("identical unisex naming pools redraw rather than reject a birth",()=>{
+  const tradition=names("U");
+  tradition.childMaleGivenNames=[...tradition.childFemaleGivenNames];
+  const selected={couple:place.couples[1],mother:place.originGroups[0],
+    father:place.originGroups[1],childOriginId:"a"};
+  for(let i=0;i<120;i++){
+    const birth=composeParentage({requestId:"unisex-draw-"+i,chronology,selector,place,
+      selected,traditions:{a:tradition,b:tradition},sex:"female"});
+    assert.notEqual(birth.femaleName,birth.maleName,
+      "A chance unisex name collision failed to redraw");
+  }
 });
 
 test("weighted households vary siblings and caregiving without inventing a fixed family",()=>{

@@ -17,6 +17,7 @@ import { migrateBirthState } from "../src/birth-state-migrations.mjs";
 import { GENESIS_DEVELOPMENT_REQUEST_VERSION } from "../src/genesis-development-plan.mjs";
 import { createGenesisDevelopmentService } from "../src/genesis-development-service.mjs";
 import { createBirthCenterRuntime } from "../src/runtime.mjs";
+import {compactBirthActivity} from "../src/birth-activity.mjs";
 
 function readJson(path) {
   return JSON.parse(readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8"));
@@ -149,6 +150,18 @@ test("Birth Center develops a narrow request and World atomically admits the res
   migrateBirthState(birthStorage);
   const worldStorage = localStorage(join(root, "world.sqlite"), "world");
   const activity = activityRecorders();
+  const costRecords=[];
+  const compact=compactBirthActivity({record:async entry=>{costRecords.push(entry);return entry;}});
+  // Observe the compact production writer during the actual locally admitted
+  // Genesis birth, without disturbing the detailed history assertions below.
+  const birthActivity={
+    record:async entry=>{
+      await activity.birth.record(entry);
+      await compact.record(entry);
+    },
+    runStage:(meta,fn)=>activity.birth.runStage(meta,context=>
+      compact.runStage(meta,()=>fn(context))),
+  };
 
   const genesisStore = new GenesisStore(worldStorage);
   const genomeStore = new SymbolicGenomeStore(worldStorage);
@@ -161,7 +174,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
   const runtime = createBirthCenterRuntime({
     storage: birthStorage,
     worldPublisher,
-    activityRecorder: activity.birth,
+    activityRecorder: birthActivity,
     now: () => "2026-08-31T23:31:00Z",
     nowMs: () => 1_788_218_260_000,
   });
@@ -175,7 +188,7 @@ test("Birth Center develops a narrow request and World atomically admits the res
     runtime,
     creativeAdapter: adapter,
     repairAdapter: adapter,
-    activityRecorder: activity.birth,
+    activityRecorder: birthActivity,
     now: () => "2026-08-31T23:32:00Z",
     randomIntFn: () => 0,
   });
@@ -300,6 +313,14 @@ test("Birth Center develops a narrow request and World atomically admits the res
   assert.equal(providerCommits.length, 21);
   assert.equal(providerCommits.every((record) => typeof record.evidence.providerRequestId === "string"), true);
 
+  // Stage-level D1 writes: the deployed Cloudflare wrapper uses exactly this
+  // compaction contract. Eight rows/record is the observed staging multiplier.
+  const birthStageRecords=costRecords.filter(entry=>entry.requestId===first.requestId);
+  assert.ok(birthStageRecords.length*8<=100,
+    "One full locally admitted birth exceeded 100 estimated D1 Activity rows");
+  assert.ok(!birthStageRecords.some(entry=>entry.status==="started"
+    ||entry.stage?.endsWith(".provider_commit")),
+    "Activity still duplicates started/completed model invocations");
   assert.equal(requestActivity.every((record) => record.genesisId === first.genesisId), true);
   assert.equal(requestActivity.every((record) => record.threadId === first.threadId), true);
   assert.deepEqual(
@@ -312,14 +333,14 @@ test("Birth Center develops a narrow request and World atomically admits the res
   const restarted = createBirthCenterRuntime({
     storage: birthStorage,
     worldPublisher,
-    activityRecorder: activity.birth,
+    activityRecorder: birthActivity,
     now: () => "2026-08-31T23:33:00Z",
     nowMs: () => 1_788_218_380_000,
   });
   const replayService = createGenesisDevelopmentService({
     runtime: restarted,
     creativeAdapter: deterministicCognition(replayCounter),
-    activityRecorder: activity.birth,
+    activityRecorder: birthActivity,
     now: () => "2026-08-31T23:34:00Z",
     randomIntFn: () => 1,
   });

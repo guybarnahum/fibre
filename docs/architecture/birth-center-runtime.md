@@ -15,6 +15,32 @@ The **Birth Center** is Fibre's distinct runtime boundary for creating and devel
 
 Genesis may take many model calls, repairs, retries, checkpoints, process restarts, provider interruptions and long elapsed time. None of that is a reason to hold a live-world database transaction open or expose provisional candidate state as Thread authority.
 
+## Failure and cost discipline
+
+A prospective birth fails permanently only for invalid operator input
+(an unresolvable place or contradictory heritage), integrity/contract
+conflicts (missing pinned evidence or World rejection), or an exhausted
+bounded authoring budget. Authoring exhaustion first produces a **retryable**
+failure with a long backoff and an operator Resume path; it never erases
+a person already admitted by World.
+
+Model deviations must be prevented in structured output, normalized
+deterministically with pinned `normalizations` evidence, or repaired with
+the exact rejected value and violated rule quoted. A Place and each naming
+tradition receive at most three distinct journaled invocation IDs per
+authoring cycle (initial plus two repairs), one call per alarm. Two failed
+samples do not permanently fail a birth. Accidental composition coincidences
+are redrawn; impossible evidence or contradictory input remains an error.
+After admission, identity discrepancies are reconciliation notes on a
+completed birth, never a retroactive failure.
+
+An ordinary complete birth emits D1 Activity records for completed coarse
+stages/attempts and failures only; per-model-call progress remains in the
+durable model-invocation journal. The target is at most 100 D1 rows written
+per birth, pending direct staging measurement. The operator's
+`genesis:births --failures` view groups persisted failure witnesses by
+stage and error code.
+
 ## Runtime ownership
 
 The Birth Center owns:

@@ -90,11 +90,23 @@ export function composeParentage({
   if(!motherNames||!fatherNames)
     throw new TypeError("Named parents lack their own birth-decade material");
   const motherGiven=selectName(motherNames.femaleGivenNames,requestId,"mother-given");
-  const fatherGiven=selectName(fatherNames.maleGivenNames,requestId,"father-given");
+  let fatherGiven=selectName(fatherNames.maleGivenNames,requestId,"father-given");
   const motherFamily=selectName(mom.familyNames,requestId,"mother-family");
   const fatherFamily=selectName(dad.familyNames,requestId,"father-family");
   const motherName=fullName(motherGiven,motherFamily,mom);
-  const fatherName=fullName(fatherGiven,fatherFamily,dad);
+  let fatherName=fullName(fatherGiven,fatherFamily,dad);
+  if(fatherName===motherName){
+    for(let trial=1;trial<257&&fatherName===motherName;trial++){
+      fatherGiven=selectName(fatherNames.maleGivenNames,requestId,"father-given",trial);
+      fatherName=fullName(fatherGiven,fatherFamily,dad);
+    }
+    if(fatherName===motherName){
+      fatherGiven=fatherNames.maleGivenNames.find(given=>
+        fullName(given,fatherFamily,dad)!==motherName);
+      if(!fatherGiven)throw new TypeError("No distinct parental names in the pinned naming pool");
+      fatherName=fullName(fatherGiven,fatherFamily,dad);
+    }
+  }
   const childFamilyFor=chosenSex=>{
     switch(child.transmission){
       case "mother":return motherFamily;
@@ -106,10 +118,22 @@ export function composeParentage({
     }
   };
   const femaleGiven=selectName(child.childFemaleGivenNames,requestId,"child-female",redraw);
-  const maleGiven=selectName(child.childMaleGivenNames,requestId,"child-male",redraw);
+  let maleGiven=selectName(child.childMaleGivenNames,requestId,"child-male",redraw);
   const femaleName=fullName(femaleGiven,childFamilyFor("female"),child);
-  const maleName=fullName(maleGiven,childFamilyFor("male"),child);
-  if(femaleName===maleName)throw new TypeError("Selected child sex names are identical");
+  let maleName=fullName(maleGiven,childFamilyFor("male"),child);
+  if(femaleName===maleName){
+    // A coincidental unisex draw is not a bad naming tradition.
+    for(let ordinal=redraw+1;ordinal<redraw+257&&maleName===femaleName;ordinal++){
+      maleGiven=selectName(child.childMaleGivenNames,requestId,"child-male",ordinal);
+      maleName=fullName(maleGiven,childFamilyFor("male"),child);
+    }
+    if(maleName===femaleName){
+      maleGiven=child.childMaleGivenNames.find(given=>
+        fullName(given,childFamilyFor("male"),child)!==femaleName);
+      if(!maleGiven)throw new TypeError("Naming tradition has no distinct child sex name");
+      maleName=fullName(maleGiven,childFamilyFor("male"),child);
+    }
+  }
   const origins=[selected.mother,selected.father];
   const raised=[];
   for(let i=0;i<2;i++){
@@ -176,12 +200,14 @@ export function composeParentage({
     const list=sibling.sex==="female"?child.childFemaleGivenNames:child.childMaleGivenNames;
     const surname=childFamilyFor(sibling.sex);
     let name;
-    for(let trial=0;trial<list.length;trial++){
+    for(let trial=0;trial<Math.max(64,list.length*8);trial++){
       const given=selectName(list,requestId,"sibling-"+index+"-given",trial);
       const candidate=fullName(given,surname,child);
       if(!usedNames.has(candidate)){name=candidate;break;}
     }
-    if(!name)throw new TypeError("Naming tradition cannot distinguish siblings");
+    if(!name)name=list.map(given=>fullName(given,surname,child))
+      .find(candidate=>!usedNames.has(candidate));
+    if(!name)throw new TypeError("Naming pool cannot supply another distinct sibling");
     usedNames.add(name);
     return {name,sex:sibling.sex,relativeAge:sibling.relativeAge,gapYears:sibling.gapYears};
   });

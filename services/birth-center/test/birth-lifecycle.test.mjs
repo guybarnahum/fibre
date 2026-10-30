@@ -266,14 +266,15 @@ test("an interrupted Place save replays the committed authoring call",async(t)=>
   assert.equal(modelCalls,1,"Restart regenerated a committed Place authoring call");
 });
 
-test("a truncated Place response gets one concise repair, never a third call",async t=>{
+test("a truncated Place exhausts three unique authoring calls before long retryable backoff",async t=>{
   const state=tempBirthState(t),storage=state.storage();
   let time=Date.parse(AT);
   const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
   t.after(()=>store.close());
-  const prompts=[];
+  const prompts=[],ids=[];
   const lifecycle=lifecycleFor(store,storage,{nowMs:()=>time,invoke:async args=>{
     prompts.push(args.systemPrompt);
+    ids.push(args.clientRequestId);
     throw Object.assign(
       new Error("OpenAI model response did not complete: incomplete (max_output_tokens)"),
       {code:"MODEL_INCOMPLETE_RESPONSE",providerErrorCode:"max_output_tokens",retryable:false},
@@ -288,15 +289,18 @@ test("a truncated Place response gets one concise repair, never a third call",as
       chronology:{bornAt:"2004-01-01T00:00:00.000Z",chronologyEndsAt:"2026-01-01T00:00:00.000Z"},
     },
   });
-  await lifecycle.handleWake();
-  assert.equal(store.get(requestId).failureRetryable,true,
-    "Truncated Place was denied its one repair");
-  time+=5_000;
-  await lifecycle.handleWake();
-  assert.equal(prompts.length,2,"Truncated Place generated more than one repair call");
+  for(let attempt=0;attempt<3;attempt++){
+    await lifecycle.handleWake();
+    if(attempt<2)time+=5_000;
+  }
+  assert.equal(prompts.length,3,"Place exceeded its three-call authoring budget");
+  assert.equal(new Set(ids).size,3,"Repair reused a durable invocation identifier");
   assert.match(prompts[1],/previous output was cut off.*more concise/iu,
-    "The repair ignored the truncated output");
-  assert.equal(store.get(requestId).failureRetryable,false);
+    "Repair ignored the truncated output");
+  assert.equal(store.get(requestId).failureRetryable,true,
+    "Exhausted authoring incorrectly became a permanent failure");
+  assert.ok(store.get(requestId).nextAttemptAt-time>=6*60*60_000,
+    "Exhausted authoring was scheduled for immediate retry");
   assert.equal(store.get(requestId).threadId,null,
     "A failed Place created a reserved Thread");
 });
