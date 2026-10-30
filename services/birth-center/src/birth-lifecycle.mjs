@@ -698,12 +698,26 @@ export function createBirthLifecycle({
     if(store.isTerminal(birth.stage))return projection(birth);
     if(birth.status==="failed" && birth.failureRetryable===false)
       throw new TypeError("A terminal birth failure cannot be resumed");
-    const needsNewGeneration=birth.status==="failed"&&
+    const conflicted=birth.status==="failed"&&
+      birth.data.errorCode==="DURABLE_INVOCATION_CONFLICT";
+    const needsNewGeneration=birth.stage==="developing"&&birth.status==="failed"&&
       ["DURABLE_INVOCATION_CONFLICT","DEVELOPMENT_BUDGET_EXHAUSTED"].includes(birth.data.errorCode);
+    const data={
+      ...birth.data,
+      ...(conflicted&&birth.stage==="place_resolved"?{
+        authoringRound:(birth.data.authoringRound??0)+1,
+        authoringAttempt:0,authoringRepair:null,
+      }:{}),
+      ...(conflicted&&birth.stage==="parents_selected"?{
+        namingRound:(birth.data.namingRound??0)+1,
+        namingAttempt:0,namingRepair:null,
+      }:{}),
+      ...(needsNewGeneration?{
+        generationOrdinal:Math.min(1,(birth.data.generationOrdinal??0)+1),
+      }:{}),
+    };
     return projection(store.progress(requestId,{status:"queued",error:null,
-      data:needsNewGeneration?{...birth.data,
-        generationOrdinal:Math.min(1,(birth.data.generationOrdinal??0)+1)}:birth.data,
-      failureRetryable:null,nextAttemptAt:nowMs()}));
+      data,failureRetryable:null,nextAttemptAt:nowMs()}));
   }
   return Object.freeze({
     enqueue:input=>projection(store.enqueue(input)),enqueueValidated,

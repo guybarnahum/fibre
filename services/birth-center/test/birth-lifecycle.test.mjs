@@ -172,6 +172,36 @@ test("a deploy-time journal conflict pauses without looping, then Resume advance
   assert.equal(ordinal,1,"Resume reused the conflicted model invocation generation");
 });
 
+test("Place authoring witness conflict advances its own request ID on Resume",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  const time=Date.parse(AT);
+  const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  const calls=[];
+  const lifecycle=lifecycleFor(store,storage,{nowMs:()=>time,invoke:async args=>{
+    calls.push(args.clientRequestId);
+    throw new DurableInvocationConflictError("pinned Place model witness changed after deploy");
+  }});
+  const requestId="place-prompt-deploy-conflict";
+  store.enqueue(input(requestId));
+  store.progress(requestId,{stage:"place_resolved",status:"authoring",nextAttemptAt:time,
+    data:{
+      selector:{country:"United States",city:"Hilo",birthCity:"Hilo, United States",
+        key:"united-states/hilo",slug:"united-states_hilo",display:"United States/Hilo"},
+      chronology:{bornAt:"2004-01-01T00:00:00.000Z",
+        chronologyEndsAt:"2026-01-01T00:00:00.000Z"},
+    },
+  });
+  await lifecycle.handleWake();
+  assert.equal(store.get(requestId).nextAttemptAt,null,
+    "A deployed prompt change kept retrying its conflicted durable witness");
+  lifecycle.resume(requestId);
+  await lifecycle.handleWake();
+  assert.equal(calls.length,2);
+  assert.notEqual(calls[0],calls[1],
+    "A resumed Place repeated the same rejected durable request ID");
+});
+
 test("development budget exhaustion grants one resumed generation, never a third",async t=>{
   const state=tempBirthState(t),storage=state.storage();
   const time=Date.parse(AT);
