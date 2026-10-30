@@ -141,12 +141,15 @@ export async function deployCloudflareService({
   acceptSchemaImpl = null,
   birthPreflight = null,
   localBirthPreflight = runLocalBirthPreflight,
+  bootstrapPreflight = false,
   createDeploymentClient = createWranglerDeploymentClient,
   wait,
   print = console.log,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   const serviceId = normalizeService(service);
+  if(bootstrapPreflight&&serviceId!=="birth-center")
+    throw new TypeError("--bootstrap-preflight applies only to birth-center");
   const root = resolve(nonEmpty("repoRoot", repoRoot));
   const sourceGitSha = await resolveSource(root);
   const current = await resolveConfig({
@@ -161,7 +164,7 @@ export async function deployCloudflareService({
     gitSha:sourceGitSha,
   });
   if(serviceId==="birth-center")
-    await localBirthPreflight({repoRoot:root,environment:env});
+    await localBirthPreflight({repoRoot:root,environment:env,bootstrapPreflight});
   const deployConfigPath = resolve(root, ".fibre", "cloudflare", env, "service-deploy", `${serviceId}.jsonc`);
   await mkdir(dirname(deployConfigPath), { recursive:true });
   const deployConfig = structuredClone(prepared.config);
@@ -251,22 +254,25 @@ export async function deployCloudflareService({
 
 function parseArgs(argv) {
   let environment = null;
-  let service = null;
+  let service = null,bootstrapPreflight=false;
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === "--env") environment = argv[++index] ?? null;
     else if (argv[index] === "--service") service = argv[++index] ?? null;
+    else if(argv[index]==="--bootstrap-preflight")bootstrapPreflight=true;
     else throw new TypeError(`unsupported argument ${argv[index]}`);
   }
   if (!environment) throw new TypeError("--env <staging|production> is required");
   if (!service) throw new TypeError("--service <service-id> is required");
-  return { environment, service };
+  if(bootstrapPreflight&&service!=="birth-center")
+    throw new TypeError("--bootstrap-preflight applies only to birth-center");
+  return { environment, service,bootstrapPreflight };
 }
 
 async function main(argv) {
-  const { environment, service } = parseArgs(argv);
+  const { environment, service,bootstrapPreflight } = parseArgs(argv);
   const repoRoot = repoRootFrom(import.meta.url);
   const result = await deployCloudflareService({
-    repoRoot,environment,service,
+    repoRoot,environment,service,bootstrapPreflight,
     birthPreflight:service==="birth-center"
       ?({baseUrl,expectedSha})=>runBirthPreflight({
         baseUrl,expectedSha,privateToken:process.env.FIBRE_PRIVATE_TOKEN,

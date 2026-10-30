@@ -86,6 +86,16 @@ purpose do not prove loneliness, boredom or City Guide causation.
 The view must explicitly distinguish input exposure, reported reason,
 deterministic mechanism and tested behavioral influence.
 
+**October 30 Aswan wave-1 staging evidence (operator report):**
+`genesis:birth --count 4` initiated four Aswan births, with one
+development per alarm taking approximately **95–119 seconds each**.
+Activity D1 recorded approximately **49 writes per birth**, down from
+approximately **900** previously. Birth Center incurred approximately
+**670 Durable Object rows read and 590 written for the entire wave**.
+The wave monitor made **22 indexed birth-list reads in 10 minutes**,
+with **no per-birth polling**. These are bounded measurements of this
+four-birth staging wave, not production throughput or cost guarantees.
+
 **October 30 staging verification — deployed `4ac6aca`:**
 London's versioned Place was accepted on the first authoring attempt
 after packed-language normalization. Two resumed births completed:

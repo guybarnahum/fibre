@@ -157,13 +157,14 @@ export async function deployCloudflareStackWithEvidence({
 }
 
 function parseArgs(argv) {
-  let environment = null;
+  let environment = null,bootstrapPreflight=false;
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === "--env") environment = argv[++index] ?? null;
+    else if(argv[index]==="--bootstrap-preflight")bootstrapPreflight=true;
     else throw new TypeError(`unsupported argument ${argv[index]}`);
   }
   if (!environment) throw new TypeError("--env <staging|production> is required");
-  return { environment };
+  return { environment,bootstrapPreflight };
 }
 
 // Read-only, best-effort deployment warning. Never block deployment because
@@ -200,13 +201,14 @@ export async function warnActiveBirthsBeforeDeploy(environment,{
 }
 
 async function main() {
-  const { environment } = parseArgs(process.argv.slice(2));
+  const { environment,bootstrapPreflight } = parseArgs(process.argv.slice(2));
   const repoRoot = repoRootFrom(import.meta.url);
   await warnActiveBirthsBeforeDeploy(environment);
   const client = createWranglerDeploymentClient({ cwd: repoRoot });
   const result = await deployCloudflareStackWithEvidence({
     repoRoot,
     environment,
+    bootstrapPreflight,
     client,
     birthPreflight:({baseUrl,expectedSha})=>runBirthPreflight({
       baseUrl,expectedSha,privateToken:process.env.FIBRE_PRIVATE_TOKEN,

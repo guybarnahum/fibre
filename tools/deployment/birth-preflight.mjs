@@ -8,24 +8,34 @@ import {loadDeploymentManifest,resolveServiceDeployment} from "./deployment-mani
 // Fail closed before any upload. The old Worker supplies only pinned records;
 // all composition/World validation and provider schema transport run locally.
 export async function runLocalBirthPreflight({
-  repoRoot,environment,place="United States/Hilo",
-  fetchMaterial=null,probeSchemas=probeBirthModelSchemas,log=console.log,
+  repoRoot,environment,place="United States/Hilo",bootstrapPreflight=false,
+  deployment=birthDeployment,fetchMaterial=null,
+  probeSchemas=probeBirthModelSchemas,log=console.log,
 }={}){
-  const remote=birthDeployment(environment);
-  const material=fetchMaterial
-    ?await fetchMaterial(remote,place)
-    :(await birthRequest(remote,"/internal/births/preflight/material?place="+
-        encodeURIComponent(place),{timeoutMs:30_000})).material;
-  if(!Array.isArray(material?.places)||!material.places.length)
-    throw new Error("BIRTH PREFLIGHT no pinned Place/naming material from serving Birth Center");
-  const rehearsal=rehearseBirthSnapshot(material);
+  const remote=deployment(environment);
+  let rehearsal=null;
+  try{
+    const material=fetchMaterial
+      ?await fetchMaterial(remote,place)
+      :(await birthRequest(remote,"/internal/births/preflight/material?place="+
+          encodeURIComponent(place),{timeoutMs:30_000})).material;
+    if(bootstrapPreflight)
+      throw new Error("BIRTH PREFLIGHT: --bootstrap-preflight refused; snapshot route already exists");
+    if(!Array.isArray(material?.places)||!material.places.length)
+      throw new Error("BIRTH PREFLIGHT no pinned Place/naming material from serving Birth Center");
+    rehearsal=rehearseBirthSnapshot(material);
+  }catch(error){
+    if(!bootstrapPreflight||error?.status!==404)throw error;
+    log("BIRTH PREFLIGHT WARNING: snapshot route returned 404; skipping local rehearsal for this bootstrap only");
+  }
   const manifest=await loadDeploymentManifest(resolve(repoRoot,
     "infra/deployments/environments/cloudflare.yaml"));
   const integrations=resolveServiceDeployment(manifest,"birth-center").integrations;
   const schemas=await probeSchemas(process.env,{
     creative:integrations.creative,repair:integrations.repair,
   });
-  log("BIRTH LOCAL PREFLIGHT ok ("+schemas+" schemas, place "+rehearsal.place+")");
+  log("BIRTH LOCAL PREFLIGHT ok ("+schemas+" schemas"+
+    (rehearsal?", place "+rehearsal.place:", bootstrap snapshot unavailable")+")");
   return {schemas,rehearsal};
 }
 

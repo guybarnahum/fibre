@@ -344,6 +344,7 @@ export async function deployCloudflareStack({
   log = console.log,
   birthPreflight = null,
   localBirthPreflight = runLocalBirthPreflight,
+  bootstrapPreflight = false,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (typeof validateRepository !== "function") throw new TypeError("validateRepository callback is required");
@@ -351,7 +352,7 @@ export async function deployCloudflareStack({
   if (!client) throw new TypeError("Cloudflare deployment client is required");
 
   await validateRepository();
-  await localBirthPreflight({repoRoot,environment:env});
+  await localBirthPreflight({repoRoot,environment:env,bootstrapPreflight});
   await client.assertAuthenticated();
   const resourceState = await provision();
   if (resourceState?.environment !== env) throw new Error(`provisioned Cloudflare state environment mismatch: ${String(resourceState?.environment)}`);
@@ -462,22 +463,24 @@ export async function runCommand(command, args, { cwd = process.cwd() } = {}) {
 }
 
 function parseArgs(argv) {
-  let environment = null;
+  let environment = null,bootstrapPreflight=false;
   for (let index = 0; index < argv.length; index += 1) {
     if (argv[index] === "--env") environment = argv[++index] ?? null;
+    else if(argv[index]==="--bootstrap-preflight")bootstrapPreflight=true;
     else throw new TypeError(`unsupported argument ${argv[index]}`);
   }
   if (!environment) throw new TypeError("--env <staging|production> is required");
-  return { environment };
+  return { environment,bootstrapPreflight };
 }
 
 if (process.argv[1] && new URL(import.meta.url).pathname === process.argv[1]) {
-  const { environment } = parseArgs(process.argv.slice(2));
+  const { environment,bootstrapPreflight } = parseArgs(process.argv.slice(2));
   const repoRoot = repoRootFrom(import.meta.url);
   const client = createWranglerDeploymentClient({ cwd: repoRoot });
   const result = await deployCloudflareStack({
     repoRoot,
     environment,
+    bootstrapPreflight,
     client,
     validateRepository: () => runCommand("npm", ["run", "validate"], { cwd: repoRoot }),
     provision: () => provisionCloudflareResources({

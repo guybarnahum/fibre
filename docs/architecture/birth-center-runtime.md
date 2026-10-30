@@ -73,7 +73,7 @@ any worker upload**. The serving worker must support the authenticated
 closed, rather than silently approving an unverified deploy.
 
 After the Birth Center Worker and state schema are deployed, both
-commands retain the internal birth preflight as a smoke check before success
+commands retain the internal birth preflight as a smoke check before reporting
 success. The same check is available through
 `npm run birth:preflight -- --env staging [--place United States/Hilo]`.
 The deployed Worker sends **one tiny, capped** response-schema request
@@ -89,9 +89,14 @@ silently trigger Place authoring. Successful deployment prints
 `BIRTH PREFLIGHT ok (7 schemas, place United States/Hilo)`.
 The deployed revision must match the deployment being accepted. If the
 post-deploy smoke check fails, the CLI explicitly reports that the **new
-revision is already serving**. The initial deployment of the snapshot
-endpoint requires an explicit bootstrap plan because the preceding Worker
-cannot serve that endpoint.
+revision is already serving**. For the initial deployment of this snapshot endpoint, an explicit
+`--bootstrap-preflight` flag is accepted by `cloud:deploy` and targeted
+`cloud:deploy:service -- --service birth-center` **only** when the serving
+Birth Center returns HTTP 404 for the read-only snapshot route. It skips
+only the pre-upload local rehearsal, logs a warning, still runs all seven
+local provider schema probes, and retains the post-upload smoke check.
+If the snapshot route exists, or the read fails for any other reason,
+the flag is refused. Normal subsequent deployments always rehearse.
 
 A provider `MODEL_REQUEST_CONFIGURATION_ERROR` is a paused,
 operator-resumable birth rather than a terminal rejection or recurring
