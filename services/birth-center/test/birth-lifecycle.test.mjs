@@ -323,6 +323,9 @@ test("Admin and CLI share one indexed lifecycle with bounded, World-free page re
     worldFetch:async()=>{worldCalls++;throw Error("unexpected World read");},
     presentationFetch:async()=>{throw Error("unexpected Presentation");},
     privateToken:"private-test-token-123456",
+    geoNamesUsername:"fixture",
+    resolvePlace:async()=>({birthCity:"Hilo, United States",countryCode:"US",
+      locality:"Hilo",timeZone:"Pacific/Honolulu"}),
   });
   const api=createBirthLifecycleApi({lifecycle,privateToken:"private-test-token-123456"});
   const headers={"x-fibre-private-token":"private-test-token-123456",

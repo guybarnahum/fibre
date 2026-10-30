@@ -381,7 +381,7 @@ test("a forced given-name collision redraws a parent's family name by ordinal 16
   template.childMaleGivenNames=Array(24).fill("Ben");
   const selected={couple:place.couples[1],mother:place.originGroups[0],
     father:place.originGroups[1],childOriginId:"a"};
-  const householdPattern={caregivers:["mother","father"],siblings:0,weight:1};
+  const householdPattern={caregivers:["mother","father"],siblings:[]};
   let found=false;
   for(let i=0;i<120&&!found;i++){
     const requestId="forced-family-collision-"+i;

@@ -1,6 +1,6 @@
 import { resolveGeoNamesPlace } from "../../../integrations/geography/geonames.mjs";
 import { buildGenesisDevelopmentPlan } from "./genesis-development-plan.mjs";
-import { deriveGenesisLifeContinuity } from "../../world-kernel/src/genesis-life-continuity-v1.mjs";
+import { deriveGenesisLifeContinuity } from "./genesis-development-contracts.mjs";
 import { DurableInvocationConflictError } from "./model-runtime/durable-invocation-journal.mjs";
 import { genesisSexForThread } from "./genesis-sex.mjs";
 import { selectBirthChronology } from "./birth-material.mjs";
