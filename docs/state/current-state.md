@@ -112,6 +112,26 @@ parental age of 18 at that sibling's birth. These corrections have not yet
 been validated in staging. Re-run with fresh birth request IDs; do not infer
 success from the two failed attempts.
 
+**October 29 staging — Slice 2 births actually completed at `6831f3b`:**
+Birth Center's authoritative CLI lifecycle confirmed Hilo (Kalani Ladia,
+`genesis-birth-mvuc83el`) and Aswan (Tasneem Jundī,
+`genesis-birth-mvuccuvd`) each progressed through development,
+World admission, Presentation and `complete`. Their admitted Threads
+were visible in World. The earlier London (Joanna Lewandowski) and
+Manchester (Aaron Kelly) births were also independently complete.
+
+**Operator display mismatch:** Admin's legacy
+`/internal/births/pending` read development reservations and mistakenly
+classified all four as stale `emerging`, even though
+`GET /births/:id` was complete. The modern lifecycle intentionally
+does not settle old development-status rows, and the legacy birth request
+list excludes lifecycle-owned requests. The targeted source fix now
+projects a bounded, lightweight lifecycle-status page into the existing
+operator response, suppresses obsolete development duplicates and
+reports completed births as `in-world` without World reads or changing
+birth admission. This operator fix awaits local validation and deployment;
+Admin's full authoring-route unification remains Slice 3.
+
 **Latest staging finding (October 29):** Hilo and Aswan progressed
 through Place Population and naming authoring, but both stopped in
 `parents_selected` before reserving a Thread or issued name.

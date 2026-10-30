@@ -82,6 +82,38 @@ test("Birth Center retains every outcome for three days without doubling a reque
   assert.equal(births.find(x=>x.requestId==="stillborn").stage,"stillborn");
 });
 
+test("completed lifecycle births supersede stale development status without World reconciliation",()=>{
+  const now=Date.parse("2026-10-30T02:30:00.000Z");
+  const stale=staleModern({requestId:"genesis-birth-complete",
+    genesisId:"gen_completed",threadId:"thr_completed",
+    status:"developing",locationSource:"birth-center",
+    createdAt:"2026-10-30T02:00:00.000Z",
+    updatedAt:"2026-10-30T02:01:00.000Z"});
+  const lifecycle={
+    requestId:stale.requestId,requestedAt:stale.requestedAt,
+    genesisId:stale.genesisId,threadId:stale.threadId,
+    status:"published",stage:"complete",sex:"female",name:"Joanna Lewandowski",
+    location:"United Kingdom/London",
+    createdAt:stale.createdAt,updatedAt:"2026-10-30T02:10:00.000Z",
+  };
+  const runtime={
+    birthRequestStore:{recent:()=>[stale],isActive:status=>status==="developing"},
+    developmentRequestStore:{
+      recent:()=>[developmentFor(stale)],
+      getDisposition:()=>null,
+    },
+    provisionalBirthStore:{get:()=>null},
+  };
+  const lifecycleBirths=[lifecycle];
+  assert.deepEqual(pendingBirths(runtime,{nowMs:()=>now,lifecycleBirths}),[],
+    "A completed Thread was still pending World reconciliation");
+  const recent=recentBirths(runtime,{nowMs:()=>now,lifecycleBirths});
+  assert.equal(recent.length,1,"Lifecycle and development duplicated one Thread");
+  assert.equal(recent[0].stage,"in-world","A completed life was not shown in World");
+  assert.equal(recent[0].name,"Joanna Lewandowski");
+  assert.equal(recent[0].stale,false,"A completed birth was marked stale");
+});
+
 test("stale births wake immediately once, then retry on the normal interval", () => {
   const request = staleModern();
   const runtime = {

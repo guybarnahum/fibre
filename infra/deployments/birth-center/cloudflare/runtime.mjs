@@ -254,13 +254,34 @@ export function stillbornBirths(runtime) {
     .sort((left, right) => Date.parse(right.settledAt ?? right.updatedAt) - Date.parse(left.settledAt ?? left.updatedAt));
 }
 
-export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
+function lifecycleOperatorBirth(birth,nowMs){
+  const stage=["complete","unlocated"].includes(birth.stage)?"in-world"
+    :birth.stage==="stillborn"?"stillborn"
+    :birth.stage==="cancelled"||birth.status==="failed"?"failed"
+    :["admitted","presented","located","publishing"].includes(birth.stage)?"emerging"
+    :["genome_selected","developing"].includes(birth.stage)?"developing":"genesis";
+  const terminal=["in-world","stillborn","failed"].includes(stage);
+  const timing=birthTiming(birth,nowMs);
+  return Object.freeze({
+    source:"lifecycle",requestId:birth.requestId,requestedAt:birth.requestedAt,
+    genesisId:birth.genesisId,threadId:birth.threadId,
+    location:birth.location,locationSource:"birth-center",sex:birth.sex,
+    name:birth.name,status:birth.status,stage,error:birth.error,
+    createdAt:birth.createdAt,updatedAt:birth.updatedAt,
+    ageMs:timing.ageMs,idleMs:timing.idleMs,stale:!terminal&&timing.stale,
+    classification:null,
+    staleReason:!terminal&&timing.stale?"No recorded birth progress for five minutes.":null,
+  });
+}
+
+export function pendingBirths(runtime, { nowMs = Date.now, lifecycleBirths=[] } = {}) {
   const queued = [];
-  const known = new Set();
+  const known = new Set(lifecycleBirths.map(b=>b.requestId));
   const development = runtime.developmentRequestStore.recent({ limit:32 });
   const developmentByRequest = new Map(development.map((request) => [request.requestId, request]));
 
   for (const request of runtime.birthRequestStore.recent({ limit:64 })) {
+    if(known.has(request.requestId))continue;
     const developmentRequest = developmentByRequest.get(request.requestId) ?? null;
     // CLI preparation is an early witness. The durable development record
     // takes over once it exists; never show two rows for one birth.
@@ -327,11 +348,13 @@ export function pendingBirths(runtime, { nowMs = Date.now } = {}) {
 }
 
 // Three-day observational history; never deletes a birth or changes its authority.
-export function recentBirths(runtime, {nowMs=Date.now}={}) {
+export function recentBirths(runtime, {nowMs=Date.now,lifecycleBirths=[]}={}) {
+  const lifecycleIds=new Set(lifecycleBirths.map(b=>b.requestId));
   const byId=new Map();
   for(const birth of runtime.birthRequestStore.recent({limit:256}))
-    byId.set(birth.requestId,{birth,development:null});
+    if(!lifecycleIds.has(birth.requestId))byId.set(birth.requestId,{birth,development:null});
   for(const development of runtime.developmentRequestStore.recent({limit:256})){
+    if(lifecycleIds.has(development.requestId))continue;
     const entry=byId.get(development.requestId)??{birth:null,development:null};
     entry.development=development;
     byId.set(development.requestId,entry);
@@ -382,6 +405,12 @@ export function recentBirths(runtime, {nowMs=Date.now}={}) {
       failureCode:disposition?.failureCode??null,
       failureRetryable:disposition?.failureRetryable??null,
     }));
+  }
+  for(const birth of lifecycleBirths){
+    const entry=lifecycleOperatorBirth(birth,nowMs);
+    if(["in-world","stillborn","failed"].includes(entry.stage)
+      && Date.parse(birth.updatedAt)<cutoff)continue;
+    history.push(entry);
   }
   return history.sort((a,b)=>Date.parse(b.updatedAt)-Date.parse(a.updatedAt));
 }
@@ -549,7 +578,7 @@ async function ensureBirthStatusScheduled(runtime, {
   return Object.freeze({ scheduledAt:next });
 }
 
-function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters, activityRecorder, now, nowMs, randomIntFn }) {
+function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters, activityRecorder, now, nowMs, randomIntFn, lifecycleStore }) {
   if (reasoningAdapters === null || reasoningAdapters === undefined) {
     return Object.freeze({
       creativeAdapter: null,
@@ -592,8 +621,13 @@ function createDevelopmentComponents({ runtime, privateToken, reasoningAdapters,
   });
   const birthApi = createBirthInitiationApi({
     service:birthService,
-    pendingBirths:() => pendingBirths(runtime, { nowMs }),
-    recentBirths:() => recentBirths(runtime, { nowMs }),
+    birthListing:()=>{
+      const lifecycleBirths=lifecycleStore.recentStatus({limit:64});
+      return {
+        births:pendingBirths(runtime,{nowMs,lifecycleBirths}),
+        recentBirths:recentBirths(runtime,{nowMs,lifecycleBirths}),
+      };
+    },
     stillbornBirths:() => stillbornBirths(runtime),
     birthplaces:BIRTHPLACES,
     requestStore:runtime.birthRequestStore,
@@ -650,6 +684,7 @@ export function createBirthCenterCloudflareRuntime({
       }));
     },
   });
+  const lifecycleStore = createBirthLifecycleStore(birthStorage,{now,nowMs});
   const development = createDevelopmentComponents({
     runtime,
     privateToken,
@@ -658,9 +693,9 @@ export function createBirthCenterCloudflareRuntime({
     now,
     nowMs,
     randomIntFn,
+    lifecycleStore,
   });
   const publicationApi = createBirthCenterWriteApi({ runtime, privateToken });
-  const lifecycleStore = createBirthLifecycleStore(birthStorage,{now,nowMs});
   const presentationFetch = env?.THREAD_PRESENTATION?.fetch
     ? bindingFetch(env.THREAD_PRESENTATION)
     : async()=>Response.json({error:"presentation_binding_missing"},{status:503});

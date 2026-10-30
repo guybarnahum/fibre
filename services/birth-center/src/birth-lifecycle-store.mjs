@@ -71,6 +71,18 @@ export function createBirthLifecycleStore(storage, {
     "AND (created_at<? OR (created_at=? AND request_id<?)) "+
     "ORDER BY created_at DESC,request_id DESC LIMIT ?"
   );
+  // One bounded operator read, without loading the large development-request
+  // JSON or naming/Place records. The lifecycle row remains the authority.
+  const recentStatusQuery=db.prepare(
+    "SELECT request_id,requested_at,lifecycle_stage,status,thread_id,genesis_id,"+
+    "selected_location,selected_sex,error_text,created_at,updated_at,"+
+    "json_extract(lifecycle_input_json,'$.place') AS requested_place,"+
+    "json_extract(lifecycle_result_json,'$.name') AS final_name,"+
+    "json_extract(lifecycle_data_json,'$.developmentRequest.subjectIdentity.femaleName') AS female_name,"+
+    "json_extract(lifecycle_data_json,'$.developmentRequest.subjectIdentity.maleName') AS male_name "+
+    "FROM modern_birth_requests WHERE lifecycle_input_json IS NOT NULL "+
+    "ORDER BY created_at DESC,request_id DESC LIMIT ?"
+  );
   const placeByVersion=db.prepare("SELECT * FROM birth_place_records WHERE place_key=? AND version=?");
   const placeLatest=db.prepare(
     "SELECT * FROM birth_place_records WHERE place_key=? ORDER BY created_at DESC,version DESC LIMIT 1"
@@ -210,6 +222,19 @@ export function createBirthLifecycleStore(storage, {
       nextCursor:rows.length>limit&&last?{createdAt:last.createdAt,requestId:last.requestId}:null,
     });
   }
+  function recentStatus({limit=64}={}){
+    if(!Number.isSafeInteger(limit)||limit<1||limit>128)
+      throw new TypeError("birth status limit must be 1..128");
+    return recentStatusQuery.all(limit).map(row=>Object.freeze({
+      requestId:row.request_id,requestedAt:row.requested_at,
+      stage:row.lifecycle_stage,status:row.status,
+      threadId:row.thread_id,genesisId:row.genesis_id,
+      location:row.selected_location??row.requested_place,
+      sex:row.selected_sex,
+      name:row.final_name??(row.selected_sex==="female"?row.female_name:row.male_name),
+      error:row.error_text,createdAt:row.created_at,updatedAt:row.updated_at,
+    }));
+  }
   function place(key,version=null) {
     const row=version===null?placeLatest.get(key):placeByVersion.get(key,version);
     return row?Object.freeze({key:row.place_key,version:row.version,
@@ -228,7 +253,7 @@ export function createBirthLifecycleStore(storage, {
     });
   }
   return Object.freeze({
-    get,enqueue,progress,list,place,savePlace,naming,saveNaming,
+    get,enqueue,progress,list,recentStatus,place,savePlace,naming,saveNaming,
     nameIndexSeeded,seedNames,reserveName,releaseName,
     due({limit=2}={}){return due.all(nowMs(),limit).map(fromRow);},
     nextDueAt(){return nextDue.get().at??null;},

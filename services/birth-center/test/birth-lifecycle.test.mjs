@@ -126,6 +126,31 @@ test("birth status and listing expose pinned family facts without World reads",a
     "Birth listing discarded the reviewable family facts");
 });
 
+test("operator birth status is a bounded lifecycle projection, not a second authority",t=>{
+  const state=tempBirthState(t),store=createBirthLifecycleStore(state.storage());
+  t.after(()=>store.close());
+  store.enqueue(input("completed-visible",{sex:"female"}));
+  store.progress("completed-visible",{
+    stage:"complete",status:"published",
+    threadId:"thr_visible",genesisId:"gen_visible",
+    sex:"female",location:"United Kingdom/London",
+    data:{developmentRequest:{subjectIdentity:{femaleName:"Joanna Lewandowski"}}},
+    result:{name:"Joanna Lewandowski"},
+    nextAttemptAt:null,
+  });
+  const visible=store.recentStatus({limit:2});
+  assert.equal(visible.length,1);
+  assert.deepEqual({
+    stage:visible[0].stage,threadId:visible[0].threadId,
+    name:visible[0].name,location:visible[0].location,
+  },{
+    stage:"complete",threadId:"thr_visible",
+    name:"Joanna Lewandowski",location:"United Kingdom/London",
+  },"Operator status did not reflect the completed lifecycle row");
+  assert.equal(Object.hasOwn(visible[0],"data"),false,
+    "Operator listing loaded a full Genesis development request");
+});
+
 test("one birth request has an indexed durable lifecycle and immutable inputs",async(t)=>{
   const state=tempBirthState(t),storage=state.storage();
   const store=createBirthLifecycleStore(storage);

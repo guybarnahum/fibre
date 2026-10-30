@@ -61,6 +61,7 @@ export function createBirthInitiationApi({
   service,
   pendingBirths = null,
   recentBirths = null,
+  birthListing = null,
   stillbornBirths = null,
   birthplaces = null,
   requestStore = null,
@@ -74,6 +75,9 @@ export function createBirthInitiationApi({
   }
   if (recentBirths !== null && typeof recentBirths !== "function") {
     throw new TypeError("birth API recentBirths must be a function or null");
+  }
+  if (birthListing !== null && typeof birthListing !== "function") {
+    throw new TypeError("birth API birthListing must be a function or null");
   }
   if (stillbornBirths !== null && typeof stillbornBirths !== "function") {
     throw new TypeError("birth API stillbornBirths must be a function or null");
@@ -156,8 +160,12 @@ export function createBirthInitiationApi({
       }
       if (url.pathname === PENDING_ROUTE) {
         if (request.method !== "GET") return json(405, { error:"method_not_allowed" });
-        if (pendingBirths === null) return json(503, { error:"pending_births_not_configured" });
+        if (pendingBirths === null && birthListing === null) return json(503, { error:"pending_births_not_configured" });
         try {
+          if(birthListing!==null){
+            const {births,recentBirths}=await birthListing();
+            return json(200,{ok:true,births,recentBirths});
+          }
           const births=await pendingBirths();
           return json(200, { ok:true, births,
             ...(recentBirths===null?{}:{recentBirths:await recentBirths()}),
