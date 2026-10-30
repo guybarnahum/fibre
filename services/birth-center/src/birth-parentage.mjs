@@ -91,8 +91,11 @@ export function composeParentage({
     throw new TypeError("Named parents lack their own birth-decade material");
   const motherGiven=selectName(motherNames.femaleGivenNames,requestId,"mother-given");
   let fatherGiven=selectName(fatherNames.maleGivenNames,requestId,"father-given");
-  const motherFamily=selectName(mom.familyNames,requestId,"mother-family");
-  const fatherFamily=selectName(dad.familyNames,requestId,"father-family");
+  // Use the first 16 ordinals for given-name redraws; later ordinals
+  // also redraw both parental family names, preserving transmission rules.
+  const familyOrdinal=Math.floor(redraw/16);
+  const motherFamily=selectName(mom.familyNames,requestId,"mother-family",familyOrdinal);
+  const fatherFamily=selectName(dad.familyNames,requestId,"father-family",familyOrdinal);
   const motherName=fullName(motherGiven,motherFamily,mom);
   let fatherName=fullName(fatherGiven,fatherFamily,dad);
   if(fatherName===motherName){

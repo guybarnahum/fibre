@@ -1,5 +1,7 @@
 import { resolveGeoNamesPlace } from "../../../integrations/geography/geonames.mjs";
 import { buildGenesisDevelopmentPlan } from "./genesis-development-plan.mjs";
+import { deriveGenesisLifeContinuity } from "../../world-kernel/src/genesis-life-continuity-v1.mjs";
+import { DurableInvocationConflictError } from "./model-runtime/durable-invocation-journal.mjs";
 import { genesisSexForThread } from "./genesis-sex.mjs";
 import { selectBirthChronology } from "./birth-material.mjs";
 import { composeGenesisBirthRequest } from "./genesis-birth-authoring.mjs";
@@ -14,6 +16,29 @@ import {
 } from "./place-population.mjs";
 import {selectedOrigins,requiredNamingOrigins,composeParentage,birthSex} from "./birth-parentage.mjs";
 
+export function preflightGenesisAdmission(request){
+  try{
+    const plan=buildGenesisDevelopmentPlan(request);
+  // Historical envelope covers chronology and place affordances. The real
+  // World life-continuity validator also checks initial roster role authority.
+  deriveGenesisLifeContinuity({
+    threadId:plan.threadId,worldSpec:plan.worldSpec,
+    initialRoster:plan.roster.participants,
+    episodes:[{
+      episodeId:"preflight_initial_roster",
+      occurredAt:plan.windows[0].startAt,
+      placeRef:plan.worldSpec.places[0].placeId,
+      participantRefs:plan.roster.participants.map(p=>p.participantId),
+      introducedParticipants:[],
+    }],
+  });
+    return plan;
+  }catch(error){
+    error.retryable=false;
+    error.code="BIRTH_PREFLIGHT_WORLD_CONTRACT";
+    throw error;
+  }
+}
 const AUTHOR_EXHAUSTED_BACKOFF_MS=6*60*60_000;
 const OBSERVE_LIMIT_MS=2*60*60_000;
 const OBSERVE_FIRST_MS=15_000;
@@ -26,7 +51,7 @@ function message(error){return String(error?.message??error).slice(0,400);}
 function responseError(response,payload,what){
   const error=new Error(what+" returned HTTP "+response.status+": "+JSON.stringify(payload?.error??payload).slice(0,200));
   error.status=response.status;
-  error.retryable=response.status===408||response.status===429||response.status>=500;
+  error.retryable=response.status===404||response.status===408||response.status===429||response.status>=500;
   return error;
 }
 async function checkedResponse(response,what){
@@ -140,6 +165,7 @@ export function createBirthLifecycle({
   store,runtime,developmentService,authorAdapter,populationAdapter=authorAdapter,
   worldFetch,presentationFetch,privateToken,geoNamesUsername=null,
   viewerOrigin="https://insidefibre.com",nowMs=Date.now,
+  resolvePlace=resolveGeoNamesPlace,
   onWake=()=>{},
 }={}){
   if(!store || !runtime || !developmentService || !authorAdapter ||
@@ -207,7 +233,7 @@ export function createBirthLifecycle({
           throw error;
         }
         if(!geoNamesUsername)throw Object.assign(new Error("Birth Center GEONAMES_USERNAME is required"),{retryable:false});
-        canonicalPlace=await resolveGeoNamesPlace({
+        canonicalPlace=birth.data.canonicalPlace??await resolvePlace({
           country:requested.country,city:requested.city,
           username:geoNamesUsername,
         });
@@ -349,7 +375,7 @@ export function createBirthLifecycle({
         const selectedSex=birthSex(requestId,birth.input.sex);
         const calibration=await appearanceCalibration();
         const firstRedraw=birth.data.nameRedrawOffset??0;
-        for(let redraw=firstRedraw;redraw<firstRedraw+16;redraw++){
+        for(let redraw=firstRedraw;redraw<firstRedraw+64;redraw++){
           parentage=composeParentage({
             requestId,chronology,selector:birth.data.selector,
             place:place.authored,selected,traditions,sex:selectedSex,redraw,
@@ -366,7 +392,7 @@ export function createBirthLifecycle({
             selection,sexSelection:selectedSex,calibrationModel:calibration,
             canonicalPlace:birth.data.canonicalPlace,parentage,
           });
-          const plan=buildGenesisDevelopmentPlan(request);
+          const plan=preflightGenesisAdmission(request);
           if(!store.reserveName(birth.data.selector.key,parentage.issuedName,requestId))
             continue;
           if(!active(requestId))return "complete";
@@ -395,10 +421,14 @@ export function createBirthLifecycle({
           });
           return "continue";
         }
-        // A stochastic collision does not condemn a prospective child.
-        store.progress(requestId,{status:"authoring",
-          data:{...birth.data,nameRedrawOffset:firstRedraw+16},
-          nextAttemptAt:at+60_000});
+        // A bounded batch first redraws given names, then family names.
+        // Never spin indefinitely in alarms; an operator can resume with a
+        // fresh ordinal range without turning a coincidence into stillbirth.
+        store.progress(requestId,{status:"failed",failureRetryable:true,
+          error:"No unique full name after 64 redraws",
+          data:{...birth.data,nameRedrawOffset:firstRedraw+64,
+            errorCode:"BIRTH_NAME_COLLISION_BUDGET"},
+          nextAttemptAt:null});
         return "deferred";
       }
       // Existing pinned Slice 1 births retain their historic family-profile material.
@@ -409,7 +439,7 @@ export function createBirthLifecycle({
         selection,sexSelection:birth.input.sex,
         calibrationModel:calibration,canonicalPlace:birth.data.canonicalPlace,
       });
-      const plan=buildGenesisDevelopmentPlan(request);
+      const plan=preflightGenesisAdmission(request);
       if(!active(requestId))return "complete";
       const sex=birth.input.sex??(plan.subjectIdentity?.sex??null);
       const selectedSex=sex??genesisSexForThread({threadId:plan.threadId});
@@ -426,7 +456,9 @@ export function createBirthLifecycle({
       return "continue";
     }
     if(stage==="developing"){
-      const developmentResult=await developmentService.develop(birth.data.developmentRequest);
+      const developmentResult=await developmentService.develop(birth.data.developmentRequest,{
+        generationOrdinal:birth.data.generationOrdinal??0,
+      });
       if(!active(requestId))return "complete";
       store.progress(requestId,{
         stage:"publishing",status:"publishing",attemptCount:0,
@@ -456,6 +488,14 @@ export function createBirthLifecycle({
       return "observing";
     }
     if(stage==="admitted"){
+      if(at-(birth.observationStartedAt??at)>=OBSERVE_LIMIT_MS){
+        store.progress(requestId,{stage:"unpresented",status:"published",
+          nextAttemptAt:null,result:{
+            event:"thread-birth-unpresented",requestId,threadId:birth.threadId,
+            reason:"presentation_not_observed_within_two_hours",
+          }});
+        return "complete";
+      }
       const ready=await presentation(birth.threadId);
       if(!active(requestId))return "complete";
       if(!ready){
@@ -503,9 +543,14 @@ export function createBirthLifecycle({
     }
     return "complete";
   }
-  async function processOne(original,{canAuthor}){
-    let birth=original,usedAuthor=false;
+  async function processOne(original,{canAuthor,canDevelop,deadline}){
+    let birth=original,usedAuthor=false,usedDevelopment=false;
     for(let n=0;n<8;n++){
+      if(Date.now()>=deadline)return {usedAuthor,usedDevelopment};
+      if(birth.stage==="developing"&&!canDevelop){
+        store.progress(birth.requestId,{nextAttemptAt:nowMs()+15_000});
+        return {usedAuthor,usedDevelopment};
+      }
       try{
         // Reserve the authoring budget before a possible provider failure.
         // One unsuccessful call must not admit a second call in this alarm.
@@ -517,25 +562,35 @@ export function createBirthLifecycle({
         const missingNaming=requirement!==null&&requirement.originId!==null;
         const enteringAuthor=(placeMissing||missingNaming)&&canAuthor&&!usedAuthor;
         if(enteringAuthor)usedAuthor=true;
+        if(birth.stage==="developing")usedDevelopment=true;
         const action=await advance(birth,{canAuthor:canAuthor&&!usedAuthor||enteringAuthor});
-        if(action==="deferred")return {usedAuthor};
+        if(action==="deferred")return {usedAuthor,usedDevelopment};
         if(action==="authored")usedAuthor=true;
         if(action==="authored" || action==="development" || action==="observing" || action==="complete")
-          return {usedAuthor};
+          return {usedAuthor,usedDevelopment};
         birth=store.get(original.requestId);
       }catch(error){
-        if(!active(original.requestId))return {usedAuthor};
+        if(!active(original.requestId))return {usedAuthor,usedDevelopment};
         const attempt=birth.attemptCount+1;
-        const retryable=error?.retryable!==false;
+        const conflict=error instanceof DurableInvocationConflictError;
+        const exhausted=birth.stage==="developing"&&(
+          /exhaust(?:ed|ion)|budget.*(?:exceeded|depleted)/iu.test(message(error))||
+          /exhaust/iu.test(String(error?.gate??"")));
+        const exhaustedCount=(birth.data.developmentExhaustions??0)+(exhausted?1:0);
+        const retryable=conflict||exhausted?exhaustedCount<2:error?.retryable!==false;
+        const pause=conflict||(exhausted&&exhaustedCount<2);
+        const code=conflict?"DURABLE_INVOCATION_CONFLICT"
+          :exhausted?"DEVELOPMENT_BUDGET_EXHAUSTED"
+          :String(error?.code??error?.constructor?.name??"BIRTH_FAILED");
         store.progress(original.requestId,{
           status:"failed",error:message(error),failureRetryable:retryable,
-          data:{...birth.data,errorCode:String(error?.code??error?.constructor?.name??"BIRTH_FAILED")},
-          attemptCount:attempt,nextAttemptAt:retryable?nowMs()+backoff(attempt):null,
+          data:{...birth.data,errorCode:code,developmentExhaustions:exhaustedCount},
+          attemptCount:attempt,nextAttemptAt:retryable&&!pause?nowMs()+backoff(attempt):null,
         });
-        return {usedAuthor,failed:true};
+        return {usedAuthor,usedDevelopment,failed:true};
       }
     }
-    return {usedAuthor};
+    return {usedAuthor,usedDevelopment};
   }
   async function ensureScheduled(){
     const next=store.nextDueAt();
@@ -548,11 +603,16 @@ export function createBirthLifecycle({
     const started=nowMs();
     const state=runtime.infraDriver.state;
     const before=state?.costSnapshot?.(runtime.stateScopeId)??null;
-    let advanced=0,failed=0,usedAuthor=false;
+    let advanced=0,failed=0,usedAuthor=false,usedDevelopment=false;
+    const deadline=Date.now()+295_000;
     try{
-      for(const birth of store.due({limit:2})){
-        const result=await processOne(birth,{canAuthor:!usedAuthor});
+      for(const birth of store.due({limit:8})){
+        if(Date.now()>=deadline)break;
+        const result=await processOne(birth,{
+          canAuthor:!usedAuthor,canDevelop:!usedDevelopment,deadline,
+        });
         if(result.usedAuthor)usedAuthor=true;
+        if(result.usedDevelopment)usedDevelopment=true;
         advanced++;
         if(result.failed)failed++;
       }
@@ -565,7 +625,7 @@ export function createBirthLifecycle({
         queries:after.queries-before.queries,
       }:{};
       onWake({event:"birth-lifecycle-wake",advanced,failed,authorCalls:usedAuthor?1:0,
-        wallMs:nowMs()-started,...cost});
+        wallMs:nowMs()-started,developments:usedDevelopment?1:0,...cost});
     }
     return {advanced,failed};
   }
@@ -605,17 +665,48 @@ export function createBirthLifecycle({
       nextAttemptAt:null,error:reason.trim(),failureRetryable:false,
       data:{...birth.data,abandonReason:reason.trim()}}));
   }
+  async function enqueueValidated(input){
+    // Existing requests are checked against their immutable input witness,
+    // without repeating GeoNames on idempotent POST.
+    if(store.get(input?.requestId))return projection(store.enqueue(input));
+    let canonicalPlace=null;
+    if(input?.place!=null){
+      let selector;
+      try{selector=normalizeGenesisWorldSelector(input.place);}
+      catch(error){error.retryable=false;error.code="BIRTH_INVALID_OPERATOR_INPUT";throw error;}
+      if(!geoNamesUsername)
+        throw Object.assign(new Error("Birth Center GEONAMES_USERNAME is required"),{
+          retryable:false,code:"GEONAMES_NOT_CONFIGURED"});
+      try{
+        canonicalPlace=await resolvePlace({
+          country:selector.country,city:selector.city,username:geoNamesUsername});
+      }catch(error){
+        // Provider quota/outage is not a reason to reject a valid request.
+        // The requested stage will retry the identical resolution with backoff.
+        if(error?.retryable===false)throw error;
+      }
+    }
+    let birth=store.enqueue(input);
+    if(canonicalPlace)birth=store.progress(birth.requestId,{
+      data:{...birth.data,canonicalPlace},
+    });
+    return projection(birth);
+  }
   function resume(requestId){
     const birth=store.get(requestId);
     if(!birth)throw new Error("Birth not found");
     if(store.isTerminal(birth.stage))return projection(birth);
     if(birth.status==="failed" && birth.failureRetryable===false)
       throw new TypeError("A terminal birth failure cannot be resumed");
+    const needsNewGeneration=birth.status==="failed"&&
+      ["DURABLE_INVOCATION_CONFLICT","DEVELOPMENT_BUDGET_EXHAUSTED"].includes(birth.data.errorCode);
     return projection(store.progress(requestId,{status:"queued",error:null,
+      data:needsNewGeneration?{...birth.data,
+        generationOrdinal:Math.min(1,(birth.data.generationOrdinal??0)+1)}:birth.data,
       failureRetryable:null,nextAttemptAt:nowMs()}));
   }
   return Object.freeze({
-    enqueue:input=>projection(store.enqueue(input)),
+    enqueue:input=>projection(store.enqueue(input)),enqueueValidated,
     get:requestId=>{const row=store.get(requestId);return row?projection(row):null;},
     place:requestId=>{
       const birth=store.get(requestId);

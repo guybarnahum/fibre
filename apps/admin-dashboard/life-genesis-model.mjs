@@ -5,7 +5,7 @@ export function genesisExecutionEvidence({requestId,lifecycle=null,pending=[],st
   const active=modern??pending.find(item=>item?.requestId===requestId)??null;
   const terminal=stillborn.find(item=>item?.requestId===requestId)??null;
   const detail=inspection?.requestId===requestId?inspection:null;
-  const state=modern?["complete","unlocated"].includes(modern.stage)?"born"
+  const state=modern?["complete","unlocated","unpresented"].includes(modern.stage)?"born"
     :modern.stage==="stillborn"?"stillborn":"pending"
     :terminal||detail?.disposition?.outcome==="stillborn"?"stillborn"
     :detail?.disposition?.outcome==="born"?"born"

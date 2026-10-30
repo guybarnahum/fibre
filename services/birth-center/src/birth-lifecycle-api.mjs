@@ -43,7 +43,7 @@ export function createBirthLifecycleApi({lifecycle,privateToken}={}){
           if(!body||typeof body!=="object"||Array.isArray(body) ||
             Object.keys(body).some(key=>!allowed.has(key)))
             throw new TypeError("Birth request fields are invalid");
-          const birth=lifecycle.enqueue({
+          const birth=await (lifecycle.enqueueValidated??lifecycle.enqueue)({
             ...body,forceNewWorld:body.forceNewWorld??false,
           });
           return json(202,{ok:true,birth});
@@ -73,7 +73,7 @@ export function createBirthLifecycleApi({lifecycle,privateToken}={}){
         return json(200,{ok:true,birth});
       }catch(error){
         const status=["BIRTH_INPUT_CONFLICT","BIRTH_IN_FLIGHT"].includes(error?.code)?409
-          :error instanceof TypeError?400:500;
+          :error?.retryable===false||error instanceof TypeError?400:500;
         return json(status,{error:status===409?(error.code==="BIRTH_IN_FLIGHT"?"birth_in_flight":"birth_input_conflict"):
           status===400?"invalid_birth_request":"birth_lifecycle_failed",
           detail:String(error?.message??error)});

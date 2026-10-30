@@ -8,6 +8,7 @@ import {composeGenesisWorldSelection} from "../src/genesis-world-selection.mjs";
 import {composeGenesisBirthRequest} from "../src/genesis-birth-authoring.mjs";
 import {buildGenesisDevelopmentPlan} from "../src/genesis-development-plan.mjs";
 import {deriveGenesisLifeContinuity} from "../../world-kernel/src/genesis-life-continuity-v1.mjs";
+import {preflightGenesisAdmission} from "../src/birth-lifecycle.mjs";
 import {createBirthLifecycleStore} from "../src/birth-lifecycle-store.mjs";
 import {tempBirthState} from "./support/birth-state-fixture.mjs";
 
@@ -347,6 +348,52 @@ test("drawn households pass real World Genesis envelope and continuity role auth
   }
   assert.ok(Object.values(seen).every(Boolean),
     "Genesis role sample did not exercise grandparent, sibling and non-caregiving parent");
+});
+
+test("a World-invalid initial role is rejected by preflight before development",()=>{
+  const requestId="preflight-contract-proof";
+  const selected=choosePlaceCouple({place,requestId});
+  const parentage=composeParentage({requestId,chronology,selector,place,
+    selected:{...selected,childOriginId:"a"},
+    traditions:{a:names("A"),b:names("B")},sex:"female"});
+  const selection=composeGenesisWorldSelection({
+    selector,heritage:null,authored:place,requestId,...chronology,
+    createdAt:"2026-10-29T00:00:00Z",
+    familyOverride:parentage.family,
+    householdOverride:{...parentage.household,participants:parentage.participants},
+  });
+  const request=composeGenesisBirthRequest({
+    requestId,requestedAt:"2026-10-29T18:00:00Z",
+    selection,sexSelection:"female",calibrationModel:null,parentage,
+  });
+  assert.ok(preflightGenesisAdmission(request).envelopePlan.envelopes.length,
+    "The real World validator rejected a valid birth request");
+  const bad={...request,participants:request.participants.map((person,index)=>
+    index===0?{...person,factualRoles:[...person.factualRoles,"unafforded_role"]}:person)};
+  assert.throws(()=>preflightGenesisAdmission(bad),
+    /unafforded_role|not afforded|roleRef/u,
+    "A World-invalid family role reached model development");
+});
+
+test("a forced given-name collision redraws a parent's family name by ordinal 16",()=>{
+  const template=names("F");
+  template.childFemaleGivenNames=Array(24).fill("Ava");
+  template.childMaleGivenNames=Array(24).fill("Ben");
+  const selected={couple:place.couples[1],mother:place.originGroups[0],
+    father:place.originGroups[1],childOriginId:"a"};
+  const householdPattern={caregivers:["mother","father"],siblings:0,weight:1};
+  let found=false;
+  for(let i=0;i<120&&!found;i++){
+    const requestId="forced-family-collision-"+i;
+    const issue=redraw=>composeParentage({requestId,chronology,selector,place,
+      selected,traditions:{a:template,b:template},sex:"female",
+      householdPattern,redraw}).issuedName;
+    const original=issue(0);
+    assert.equal(issue(15),original,
+      "Given-name redraw unexpectedly changed a frozen family name");
+    found=[16,32,48].some(ordinal=>issue(ordinal)!==original);
+  }
+  assert.ok(found,"Surname collision had no bounded family-name redraw");
 });
 
 test("a different biological father changes inherited body and family name without changing the Place",()=>{

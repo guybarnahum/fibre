@@ -699,6 +699,7 @@ function mapCoordinates(event) {
 }
 
 function birthStage(birth){
+  if(birth?.stage==="unpresented")return "unpresented";
   if(["complete","unlocated"].includes(birth?.stage))return "in-world";
   if(birth?.stage==="stillborn")return "stillborn";
   if(birth?.stage==="cancelled" ||
@@ -708,7 +709,7 @@ function birthStage(birth){
   return "genesis";
 }
 function activeBirth(birth){
-  return !["complete","unlocated","stillborn","cancelled"].includes(birth?.stage)
+  return !["complete","unlocated","unpresented","stillborn","cancelled"].includes(birth?.stage)
     &&!(birth?.status==="failed"&&birth?.failureRetryable===false);
 }
 
@@ -751,9 +752,9 @@ function renderBirthPipelineMarkers() {
       const circle = document.createElementNS(SVG_NS, "circle");
       circle.setAttribute("cx", (point.x + Math.cos(angle) * spread).toFixed(1));
       circle.setAttribute("cy", (point.y + Math.sin(angle) * spread).toFixed(1));
-      circle.setAttribute("r", ({ genesis:5, developing:6.5, emerging:8, "in-world":9 })[stage] ?? 5);
+      circle.setAttribute("r", ({ genesis:5, developing:6.5, emerging:8, "in-world":9, unpresented:9 })[stage] ?? 5);
       circle.classList.add("thread-birth-stage-marker", `stage-${stage}`);
-      if(["in-world","stillborn","failed"].includes(stage))circle.classList.add("completed");
+      if(["in-world","unpresented","stillborn","failed"].includes(stage))circle.classList.add("completed");
       circle.style.animationDelay = `${-(index % 5) * 180}ms`;
       const title = document.createElementNS(SVG_NS, "title");
       const known = birth.threadId ? rememberPendingBirth(birth) : null;
@@ -1109,7 +1110,7 @@ function renderPendingBirths(births) {
         birth.sex ? human(birth.sex) : "Sex not yet established",
         pendingStatusText(birth),
         "started " + elapsedText(birth.createdAt),
-        (["in-world","stillborn","failed"].includes(birthStage(birth))?"last recorded ":"last update ")+elapsedText(birth.updatedAt),
+        (["in-world","unpresented","stillborn","failed"].includes(birthStage(birth))?"last recorded ":"last update ")+elapsedText(birth.updatedAt),
       ].filter(Boolean).join(" · ");
       copy.append(heading, meta);
       if (birth.stale === true) {
@@ -1139,7 +1140,7 @@ function renderPendingBirths(births) {
       const stage = birthStage(birth);
       const stageBadge = badge(pendingStatusText(birth));
       stageBadge.classList.add("thread-birth-stage-badge", `stage-${stage}`);
-      if (!["in-world","stillborn","failed"].includes(stage)) stageBadge.classList.add("thread-pending-throb");
+      if (!["in-world","unpresented","stillborn","failed"].includes(stage)) stageBadge.classList.add("thread-pending-throb");
       statuses.append(stageBadge);
       if (birth.stale === true) statuses.append(badge("stale", "failed"));
       if(birth.requestId){

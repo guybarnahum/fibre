@@ -3,7 +3,7 @@ import { canonicalDigest, canonicalJson } from "./state-codec.mjs";
 
 // One lifecycle per requestId in the existing modern_birth_requests authority.
 // Historical Admin and CLI records remain unchanged until their routes retire.
-const TERMINAL = new Set(["complete", "unlocated", "cancelled", "stillborn"]);
+const TERMINAL = new Set(["complete", "unlocated", "unpresented", "cancelled", "stillborn"]);
 const STAGES = new Set([
   "requested", "place_resolved", "place_authored", "parents_selected",
   "genome_selected", "developing", "publishing", "admitted",

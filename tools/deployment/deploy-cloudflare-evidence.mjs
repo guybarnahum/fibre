@@ -1,5 +1,6 @@
 import { execFile as execFileCallback } from "node:child_process";
 import { shortSha } from "../shared/repo-root.mjs";
+import { birthDeployment,birthRequest } from "../genesis/birth-remote.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -164,9 +165,43 @@ function parseArgs(argv) {
   return { environment };
 }
 
+// Read-only, best-effort deployment warning. Never block deployment because
+// the previous Birth Center is unavailable or a status page is unreadable.
+export async function warnActiveBirthsBeforeDeploy(environment,{
+  deployment=birthDeployment,request=birthRequest,log=console.warn,
+}={}){
+  try{
+    const remote=deployment(environment),active=[],seen=new Set();
+    let cursor=null;
+    for(let page=0;page<50;page++){
+      const query=new URLSearchParams({limit:"40"});
+      if(cursor)query.set("after",cursor);
+      const data=await request(remote,"/births?"+query,{timeoutMs:10_000});
+      for(const birth of data.births??[]){
+        if(["developing","publishing"].includes(birth.stage)&&!seen.has(birth.requestId)){
+          seen.add(birth.requestId);
+          active.push(birth.stage+" "+birth.requestId);
+        }
+      }
+      cursor=data.nextCursor??null;
+      if(cursor===null)break;
+      if(page===49)log("BIRTH DEPLOY WARNING: active-birth scan truncated at 50 pages");
+    }
+    if(active.length)log("BIRTH DEPLOY WARNING: "+active.length+
+      " developing/publishing births may cross a model or World contract revision:\n"+
+      active.map(v=>"  "+v).join("\n"));
+    return active;
+  }catch(error){
+    log("BIRTH DEPLOY WARNING: unable to check in-flight births: "+
+      String(error?.message??error).slice(0,200));
+    return [];
+  }
+}
+
 async function main() {
   const { environment } = parseArgs(process.argv.slice(2));
   const repoRoot = repoRootFrom(import.meta.url);
+  await warnActiveBirthsBeforeDeploy(environment);
   const client = createWranglerDeploymentClient({ cwd: repoRoot });
   const result = await deployCloudflareStackWithEvidence({
     repoRoot,

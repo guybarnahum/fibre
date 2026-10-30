@@ -15,6 +15,35 @@ The **Birth Center** is Fibre's distinct runtime boundary for creating and devel
 
 Genesis may take many model calls, repairs, retries, checkpoints, process restarts, provider interruptions and long elapsed time. None of that is a reason to hold a live-world database transaction open or expose provisional candidate state as Thread authority.
 
+## Deploys and incomplete births
+
+An admitted Thread remains alive even when Presentation never appears.
+The Birth Center stops observation after two hours in `unpresented`
+(a visible, non-failure terminal outcome), just as an unseen location
+becomes `unlocated` after the existing observation limit.
+
+A durable model request witness conflict after deployment pauses
+automatic retries with `DURABLE_INVOCATION_CONFLICT`; it preserves
+the earlier invocation journal and leaves the birth operator-resumable.
+Resume advances the bounded generation ordinal so new prompts use new
+journal IDs. Development gate-budget exhaustion likewise pauses after
+the first bounded budget; one Resume grants a second bounded
+generation, and a second exhaustion is terminal. Deployment checks
+the previous Birth Center for `developing`/`publishing` births and
+warns; a failed status check does not block deployment.
+
+Explicit place names are resolved before POST accepts a birth:
+unknown or malformed locations are rejected without enqueueing,
+while GeoNames quota/server failures are resolved by the alarm
+with backoff. Canonical geography is pinned on the lifecycle.
+World historical-envelope and initial-roster role authority are
+validated before Genesis development calls. One development step
+may run per alarm, and an alarm stops starting new work after
+approximately five minutes; other short stages can progress.
+Client-side `--follow REQUEST_ID` only observes and never resumes.
+Internal service-binding route 404s remain retryable during staggered
+deployments.
+
 ## Failure and cost discipline
 
 A prospective birth fails permanently only for invalid operator input

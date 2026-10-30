@@ -128,6 +128,7 @@ function instrumentDurableCognitionAdapter({
   birthRuntime,
   activity,
   context,
+  generationOrdinal=0,
 }) {
   const observations = new Map();
   const durable = birthRuntime.durableAdapter(baseAdapter, {
@@ -142,13 +143,16 @@ function instrumentDurableCognitionAdapter({
     async invoke(args) {
       const invocationContext = resolvedContext(context);
       const stage = cognitionStage(args?.clientRequestId);
+      const request= generationOrdinal===0?args:{
+        ...args,clientRequestId:args.clientRequestId+":generation-"+generationOrdinal,
+      };
       const result = await runActivityStage(activity, {
         ...invocationContext,
         stage,
-        attempt: 1,
+        attempt: generationOrdinal+1,
         evidence: cognitionEvidence(stage, args),
-      }, async () => durable.invoke(args));
-      const observation = observations.get(args?.clientRequestId);
+      }, async () => durable.invoke(request));
+      const observation = observations.get(request.clientRequestId);
       const replay = observation === "durable_model_replay";
       const requestId = providerRequestId(result);
       await bestEffortRecord(activity, {
@@ -215,7 +219,9 @@ export function createGenesisDevelopmentService({
   return Object.freeze({
     serviceVersion: GENESIS_DEVELOPMENT_SERVICE_VERSION,
 
-    async develop(developmentRequest) {
+    async develop(developmentRequest,{generationOrdinal=0}={}) {
+      if(!Number.isSafeInteger(generationOrdinal)||generationOrdinal<0||generationOrdinal>1)
+        throw new TypeError("Development generation ordinal must be 0 or 1");
       const builtPlan = buildGenesisDevelopmentPlan(developmentRequest);
       const context = activityContext(builtPlan);
       await bestEffortRecord(activity, {
@@ -271,12 +277,14 @@ export function createGenesisDevelopmentService({
               birthRuntime,
               activity,
               context: cognitionContext,
+              generationOrdinal,
             });
             const repair = instrumentDurableCognitionAdapter({
               baseAdapter: repairBase,
               birthRuntime,
               activity,
               context: cognitionContext,
+              generationOrdinal,
             });
             const phaseContext = genesisOperationId === null
               ? context

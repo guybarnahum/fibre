@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { createBirthLifecycleStore } from "../src/birth-lifecycle-store.mjs";
 import { createBirthLifecycle } from "../src/birth-lifecycle.mjs";
+import { DurableInvocationConflictError } from "../src/model-runtime/durable-invocation-journal.mjs";
 import { createBirthLifecycleApi } from "../src/birth-lifecycle-api.mjs";
 import { tempBirthState } from "./support/birth-state-fixture.mjs";
 
@@ -98,6 +99,184 @@ function lifecycleFor(store,storage,{nowMs=()=>Date.parse(AT),invoke=async()=>({
     privateToken:"private-test-token-123456",nowMs,
   });
 }
+
+test("an admitted life becomes unpresented after two hours without retroactive failure",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  let time=Date.parse(AT);
+  const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  const runtime={
+    stateScopeId:"birth",infraDriver:storage.infraDriver,
+    durableAdapter:adapter=>adapter,
+    provisionalBirthStore:{get:()=>null},
+    developmentRequestStore:{get:()=>null},
+  };
+  const lifecycle=createBirthLifecycle({
+    store,runtime,developmentService:{develop:()=>{throw Error("not developing");}},
+    authorAdapter:{invoke:async()=>{throw Error("not authoring");}},
+    worldFetch:()=>{throw Error("World was not required for Presentation absence");},
+    presentationFetch:async()=>Response.json({}, {status:404}),
+    privateToken:"private-test-token-123456",nowMs:()=>time,
+  });
+  store.enqueue(input("unpresented-proof"));
+  store.progress("unpresented-proof",{
+    stage:"admitted",status:"published",threadId:"thr_unpresented_proof",
+    genesisId:"gen_unpresented_proof",observationStartedAt:time,nextAttemptAt:time,
+  });
+  await lifecycle.handleWake();
+  assert.equal(store.get("unpresented-proof").stage,"admitted");
+  time+=2*60*60_000+1;
+  await lifecycle.handleWake();
+  const birth=lifecycle.get("unpresented-proof");
+  assert.equal(birth.stage,"unpresented");
+  assert.equal(birth.status,"published");
+  assert.equal(birth.result.event,"thread-birth-unpresented");
+  assert.equal(store.get("unpresented-proof").nextAttemptAt,null);
+});
+
+test("a deploy-time journal conflict pauses without looping, then Resume advances generation",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  let time=Date.parse(AT),calls=0,ordinal=null;
+  const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  const runtime={
+    stateScopeId:"birth",infraDriver:storage.infraDriver,
+    durableAdapter:adapter=>adapter,provisionalBirthStore:{get:()=>null},
+    developmentRequestStore:{get:()=>null},
+  };
+  const lifecycle=createBirthLifecycle({
+    store,runtime,developmentService:{develop:async(_request,options)=>{
+      calls++;ordinal=options.generationOrdinal;
+      throw new DurableInvocationConflictError("same model ID has a different prompt witness");
+    }},
+    authorAdapter:{invoke:async()=>{throw Error("unexpected authoring");}},
+    worldFetch:()=>{throw Error("unexpected World");},
+    presentationFetch:()=>{throw Error("unexpected Presentation");},
+    privateToken:"private-test-token-123456",nowMs:()=>time,
+  });
+  store.enqueue(input("conflict-proof"));
+  store.progress("conflict-proof",{
+    stage:"developing",status:"developing",threadId:"thr_conflict_proof",
+    data:{developmentRequest:{}},nextAttemptAt:time,
+  });
+  await lifecycle.handleWake();
+  assert.equal(lifecycle.get("conflict-proof").failureRetryable,true);
+  assert.equal(lifecycle.get("conflict-proof").errorCode,"DURABLE_INVOCATION_CONFLICT");
+  assert.equal(store.get("conflict-proof").nextAttemptAt,null);
+  time+=60_000;
+  await lifecycle.handleWake();
+  assert.equal(calls,1,"Durable journal conflict caused unbounded automatic retries");
+  lifecycle.resume("conflict-proof");
+  await lifecycle.handleWake();
+  assert.equal(calls,2);
+  assert.equal(ordinal,1,"Resume reused the conflicted model invocation generation");
+});
+
+test("development budget exhaustion grants one resumed generation, never a third",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  const time=Date.parse(AT);
+  const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  const generations=[];
+  const lifecycle=createBirthLifecycle({
+    store,runtime:{stateScopeId:"birth",infraDriver:storage.infraDriver,
+      durableAdapter:adapter=>adapter,provisionalBirthStore:{get:()=>null},
+      developmentRequestStore:{get:()=>null}},
+    developmentService:{develop:async(_request,options)=>{
+      generations.push(options.generationOrdinal);
+      throw Object.assign(new Error("replacement Pass-A exhausted 20 generated versions"),
+        {gate:"record_repair_exhausted"});
+    }},
+    authorAdapter:{invoke:async()=>{throw Error("unexpected authoring");}},
+    worldFetch:()=>{throw Error("unexpected World");},
+    presentationFetch:()=>{throw Error("unexpected Presentation");},
+    privateToken:"private-test-token-123456",nowMs:()=>time,
+  });
+  store.enqueue(input("bounded-development-proof"));
+  store.progress("bounded-development-proof",{stage:"developing",status:"developing",
+    threadId:"thr_bounded_proof",data:{developmentRequest:{}},nextAttemptAt:time});
+  await lifecycle.handleWake();
+  assert.equal(lifecycle.get("bounded-development-proof").failureRetryable,true);
+  assert.equal(lifecycle.get("bounded-development-proof").errorCode,"DEVELOPMENT_BUDGET_EXHAUSTED");
+  assert.equal(store.get("bounded-development-proof").nextAttemptAt,null);
+  lifecycle.resume("bounded-development-proof");
+  await lifecycle.handleWake();
+  assert.deepEqual(generations,[0,1],
+    "A resumed Genesis reused an exhausted budget or exceeded its second generation");
+  assert.equal(lifecycle.get("bounded-development-proof").failureRetryable,false,
+    "Second bounded exhaustion remained indefinitely retryable");
+});
+
+test("one wake executes at most one development despite multiple due births",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  const time=Date.parse(AT);
+  const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  let calls=0;
+  const lifecycle=createBirthLifecycle({
+    store,runtime:{stateScopeId:"birth",infraDriver:storage.infraDriver,
+      durableAdapter:adapter=>adapter,provisionalBirthStore:{get:()=>null},
+      developmentRequestStore:{get:()=>null}},
+    developmentService:{develop:async()=>{calls++;return {status:"pending"};}},
+    authorAdapter:{invoke:async()=>{throw Error("unexpected authoring");}},
+    worldFetch:()=>{throw Error("unexpected World");},
+    presentationFetch:()=>{throw Error("unexpected Presentation");},
+    privateToken:"private-test-token-123456",nowMs:()=>time,
+  });
+  for(const id of ["a-first","z-second"]){
+    store.enqueue(input(id));
+    store.progress(id,{stage:"developing",status:"developing",
+      threadId:"thr_"+id,genesisId:"gen_"+id,
+      data:{developmentRequest:{}},nextAttemptAt:time});
+  }
+  await lifecycle.handleWake();
+  assert.equal(calls,1,"A wake executed two unbounded Genesis development stages");
+  assert.equal(store.get("z-second").stage,"developing");
+  assert.ok(store.get("z-second").nextAttemptAt>time,
+    "Deferred second Genesis was left due for an immediate alarm spin");
+});
+
+test("an unknown Place is rejected by POST before any birth row is queued",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  const store=createBirthLifecycleStore(storage);
+  t.after(()=>store.close());
+  let resolutionAttempts=0,rateLimited=false;
+  const runtime={stateScopeId:"birth",infraDriver:storage.infraDriver,
+    durableAdapter:adapter=>adapter,provisionalBirthStore:{get:()=>null},
+    developmentRequestStore:{get:()=>null}};
+  const lifecycle=createBirthLifecycle({
+    store,runtime,developmentService:{develop:()=>{throw Error("no development");}},
+    authorAdapter:{invoke:async()=>{throw Error("no authoring");}},
+    worldFetch:()=>{throw Error("no World call");},
+    presentationFetch:()=>{throw Error("no Presentation call");},
+    privateToken:"private-test-token-123456",geoNamesUsername:"fixture",
+    resolvePlace:async()=>{resolutionAttempts++;
+      const error=new Error(rateLimited?"GeoNames quota exceeded":
+        "GeoNames could not resolve Unknown City, Egypt");
+      error.code=rateLimited?"GEONAMES_STATUS_18":"GEONAMES_PLACE_NOT_FOUND";
+      error.retryable=rateLimited;
+      throw error;
+    },
+  });
+  const api=createBirthLifecycleApi({lifecycle,privateToken:"private-test-token-123456"});
+  const body=input("unknown-place-proof",{place:"Egypt/Unknown City"});
+  const response=await api.fetch(new Request("https://birth.local/births",{
+    method:"POST",headers:{"x-fibre-private-token":"private-test-token-123456",
+      "content-type":"application/json"},body:JSON.stringify(body),
+  }));
+  assert.equal(response.status,400);
+  assert.equal(resolutionAttempts,1);
+  assert.equal(store.get(body.requestId),null,"Invalid place leaked a queued birth");
+  rateLimited=true;
+  const deferred=input("provider-outage-proof",{place:"Egypt/Aswan"});
+  const accepted=await api.fetch(new Request("https://birth.local/births",{
+    method:"POST",headers:{"x-fibre-private-token":"private-test-token-123456",
+      "content-type":"application/json"},body:JSON.stringify(deferred),
+  }));
+  assert.equal(accepted.status,202,"GeoNames credit exhaustion rejected a viable birth");
+  assert.equal(store.get(deferred.requestId).stage,"requested",
+    "A queued birth lost its alarm-time place resolution stage");
+});
 
 test("Admin and CLI share one indexed lifecycle with bounded, World-free page reads",async t=>{
   const state=tempBirthState(t),storage=state.storage();
