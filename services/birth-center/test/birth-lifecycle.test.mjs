@@ -50,6 +50,11 @@ const populationAuthored={
   schoolingLanguages:["English"],
   localNamingOriginId:"origin-0",
   mixedParentShare:0.2,
+  householdPatterns:[
+    {caregivers:["mother","father"],siblings:0,weight:5},
+    {caregivers:["mother"],siblings:2,weight:3},
+    {caregivers:["father","grandmother"],siblings:1,weight:2},
+  ],
   originGroups:Array.from({length:8},(_,i)=>({
     originId:"origin-"+i,label:"Origin "+i,share:1/8,
     heritageTags:["Origin "+i],
@@ -93,6 +98,33 @@ function lifecycleFor(store,storage,{nowMs=()=>Date.parse(AT),invoke=async()=>({
     privateToken:"private-test-token-123456",nowMs,
   });
 }
+
+test("birth status and listing expose pinned family facts without World reads",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  const store=createBirthLifecycleStore(storage);
+  t.after(()=>store.close());
+  const api=createBirthLifecycleApi({lifecycle:lifecycleFor(store,storage),
+    privateToken:"private-test-token-123456"});
+  store.enqueue(input("review-family"));
+  const parentage={
+    mother:{name:"Mara Quinn",originLabel:"Origin 0",birthDecade:1970},
+    father:{name:"Noah Quinn",originLabel:"Origin 1",birthDecade:1970},
+    mixed:true,childGivenNameTradition:{originId:"origin-0",originLabel:"Origin 0"},
+    household:{caregivers:["mother"],siblings:[
+      {name:"Rae Quinn",sex:"female",relativeAge:"younger",gapYears:3},
+    ]},mixedParentShare:0.2,
+  };
+  store.progress("review-family",{stage:"genome_selected",data:{parentage},nextAttemptAt:null});
+  const headers={"x-fibre-private-token":"private-test-token-123456"};
+  const one=await api.fetch(new Request("https://birth.local/births/review-family",{headers}));
+  assert.equal(one.status,200);
+  assert.deepEqual((await one.json()).birth.parentage,parentage,
+    "Birth details hid the pinned parentage or household");
+  const list=await api.fetch(new Request("https://birth.local/births",{headers}));
+  assert.equal(list.status,200);
+  assert.deepEqual((await list.json()).births[0].parentage,parentage,
+    "Birth listing discarded the reviewable family facts");
+});
 
 test("one birth request has an indexed durable lifecycle and immutable inputs",async(t)=>{
   const state=tempBirthState(t),storage=state.storage();

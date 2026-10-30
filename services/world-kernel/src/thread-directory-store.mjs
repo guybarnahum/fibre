@@ -112,6 +112,23 @@ function registryEntry(row) {
   });
 }
 
+// Narrow birth-name seed: a single identity-column query against threads.
+// Do not construct the joined directory or consult current-location evidence.
+export function readThreadBirthCityNames(storage,birthCity){
+  if(typeof birthCity!=="string"||!birthCity.trim()||birthCity.length>240)
+    throw new TypeError("Exact birthCity is required");
+  const db=openWorldStateDatabase(storage,{readOnly:true,storeName:"Thread birth-city names"});
+  try{
+    return db.prepare(`
+      SELECT json_extract(state_json,'$.identity.name') AS displayName
+      FROM threads
+      WHERE json_extract(state_json,'$.identity.birthCity')=?
+        AND json_type(state_json,'$.identity.name')='text'
+      ORDER BY thread_id
+    `).all(birthCity).map(row=>row.displayName).filter(name=>typeof name==="string"&&name.trim());
+  }finally{db.close();}
+}
+
 export class ThreadDirectoryStore {
   #database;
   #tables;

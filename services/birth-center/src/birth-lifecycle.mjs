@@ -64,12 +64,11 @@ function namingRequirement(birth,store){
   return {place,selected,originId:null,decade};
 }
 async function worldNamesForPlace(world,selector){
-  const data=await world("/internal/thread-directory/search?limit=5000");
-  if(!Array.isArray(data?.threads)||data.threads.length>=5000)
-    throw new Error("World directory name seed is incomplete");
-  return data.threads.filter(entry=>
-    entry.birthPlace?.toLocaleLowerCase("en-US")===selector.birthCity.toLocaleLowerCase("en-US")
-  ).map(entry=>entry.displayName).filter(name=>typeof name==="string"&&name.trim());
+  const data=await world("/internal/thread-directory/names?birthCity="+
+    encodeURIComponent(selector.birthCity));
+  if(data?.birthCity!==selector.birthCity||!Array.isArray(data.names))
+    throw new Error("World returned invalid birth-city name seed");
+  return data.names;
 }
 
 function projection(birth){
@@ -82,6 +81,7 @@ function projection(birth){
     placeVersion:birth.placeVersion,genesisId:birth.genesisId,threadId:birth.threadId,
     location:birth.location,sex:birth.sex,
     result:birth.result,createdAt:birth.createdAt,updatedAt:birth.updatedAt,
+    parentage:data?.parentage??null,
     name:data?.developmentRequest?.subjectIdentity?.[
       birth.sex==="male"?"maleName":"femaleName"
     ]??null,
@@ -326,6 +326,7 @@ export function createBirthLifecycle({
             selector:birth.data.selector,
             heritage:birth.input.heritage===null?null:normalizeHeritage(birth.input.heritage),
             authored:place.authored,familyOverride:parentage.family,
+            householdOverride:{...parentage.household,participants:parentage.participants},
             requestId,...chronology,createdAt:place.createdAt,
           });
           const request=composeGenesisBirthRequest({
@@ -345,8 +346,18 @@ export function createBirthLifecycle({
                 [id,store.naming(place.key,id,decade,birth.data.namingVersions?.[id]??null).version])),
               parentage:{
                 mother:parentage.mother,father:parentage.father,
+                mixed:parentage.mixed,
                 couple:{motherOriginId:selected.mother.originId,fatherOriginId:selected.father.originId},
-                childOriginId:selected.childOriginId,issuedName:parentage.issuedName,
+                childGivenNameTradition:{
+                  originId:selected.childOriginId,
+                  originLabel:place.authored.originGroups.find(g=>g.originId===selected.childOriginId).label,
+                },
+                household:{
+                  caregivers:parentage.household.caregivers,
+                  siblings:parentage.household.siblings,
+                },
+                mixedParentShare:place.authored.mixedParentShare,
+                issuedName:parentage.issuedName,
               }},
             error:null,failureRetryable:null,nextAttemptAt:at,
           });

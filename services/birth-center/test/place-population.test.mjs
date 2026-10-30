@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {choosePlaceCouple,validatePlacePopulation} from "../src/place-population.mjs";
-import {composeParentage} from "../src/birth-parentage.mjs";
+import {choosePlaceCouple,chooseHouseholdPattern,validatePlacePopulation} from "../src/place-population.mjs";
+import {composeParentage,drawBirthHousehold} from "../src/birth-parentage.mjs";
 import {composeBirthSubjectIdentity} from "../src/birth-material.mjs";
+import {composeGenesisWorldSelection} from "../src/genesis-world-selection.mjs";
 import {createBirthLifecycleStore} from "../src/birth-lifecycle-store.mjs";
 import {tempBirthState} from "./support/birth-state-fixture.mjs";
 
@@ -21,6 +22,11 @@ const place={
   schoolingLanguages:["English"],
   localNamingOriginId:"a",
   mixedParentShare:0.35,
+  householdPatterns:[
+    {caregivers:["mother","father"],siblings:0,weight:5},
+    {caregivers:["mother"],siblings:2,weight:3},
+    {caregivers:["father","grandmother"],siblings:1,weight:2},
+  ],
   originGroups:Array.from({length:8},(_,i)=>({
     originId:String.fromCharCode(97+i),label:"Origin "+i,share:1/8,
     heritageTags:["Origin "+i],heritageLanguages:["English"],
@@ -75,6 +81,87 @@ test("a Place's mixed-parent frequency and sampled couples follow its own author
       ...place.couples[0],motherOriginId:"b",fatherOriginId:"b",
     }]}),/mixedParentShare/,
     "Place authoring accepted an impossible mixed-parent fraction");
+});
+
+test("weighted households vary siblings and caregiving without inventing a fixed family",()=>{
+  validatePlacePopulation(place);
+  const observed=new Map();
+  let noSiblings=false,younger=false,nonCaregiving=false;
+  const count=5000,total=place.householdPatterns.reduce((sum,item)=>sum+item.weight,0);
+  for(let i=0;i<count;i++){
+    const requestId="household-"+i;
+    const pattern=chooseHouseholdPattern({place,requestId});
+    const household=drawBirthHousehold({place,requestId});
+    const key=[...pattern.caregivers].sort().join(":")+":"+pattern.siblings;
+    observed.set(key,(observed.get(key)??0)+1);
+    assert.equal(household.siblings.length,pattern.siblings);
+    if(!household.siblings.length)noSiblings=true;
+    if(household.siblings.some(s=>s.relativeAge==="younger"))younger=true;
+    if(!household.caregivers.includes("father")||!household.caregivers.includes("mother"))
+      nonCaregiving=true;
+  }
+  for(const pattern of place.householdPatterns){
+    const key=[...pattern.caregivers].sort().join(":")+":"+pattern.siblings;
+    assert.ok(Math.abs((observed.get(key)??0)/count-pattern.weight/total)<0.03,
+      "The place's household weights did not govern birth households");
+  }
+  assert.ok(noSiblings&&younger&&nonCaregiving,
+    "Household sampling still forces older siblings or two caregiving parents");
+  assert.throws(()=>validatePlacePopulation({...place,householdPatterns:[
+    {caregivers:["grandmother"],siblings:0,weight:1},
+    ...place.householdPatterns.slice(1),
+  ]}),/household/,"An authored household without a caregiving parent was accepted");
+});
+
+test("non-caregiving biological parents retain their genetic ancestry",()=>{
+  const selected={
+    mother:place.originGroups[0],father:place.originGroups[1],
+    couple:place.couples[1],childOriginId:"a",
+  };
+  const props={requestId:"caregiver-difference",chronology,selector,place,selected,
+    traditions:{a:names("A"),b:names("B")},sex:"female"};
+  const withFather=composeParentage({...props,householdPattern:{
+    caregivers:["mother","father"],siblings:[],
+  }});
+  const withoutFather=composeParentage({...props,householdPattern:{
+    caregivers:["mother"],siblings:[],
+  }});
+  const father=withoutFather.participants.find(p=>p.participantId==="father");
+  assert.deepEqual(father.factualRoles,["father","synthetic_genetic_ancestor"]);
+  assert.ok(father.relationshipFacts.some(fact=>fact.includes("Does not live")));
+  assert.deepEqual(withFather.family.physicalAncestry,withoutFather.family.physicalAncestry,
+    "Removing caregiving changed biological origin");
+  const identity=parentage=>composeBirthSubjectIdentity({requestId:props.requestId,
+    material:{...parentage.family,birthCity:selector.birthCity},
+    explicitNames:{femaleName:parentage.femaleName,maleName:parentage.maleName},
+  });
+  assert.deepEqual(identity(withFather).physicalGenome,identity(withoutFather).physicalGenome,
+    "Removing a caregiver rewrote the child's inherited body");
+  const worldFor=parentage=>composeGenesisWorldSelection({
+    selector,heritage:null,authored:place,requestId:props.requestId,
+    ...chronology,createdAt:"2026-10-29T00:00:00Z",
+    familyOverride:parentage.family,
+    householdOverride:{...parentage.household,participants:parentage.participants},
+  });
+  const a=worldFor(withFather),b=worldFor(withoutFather);
+  assert.notEqual(a.worldSpec.householdShape,b.worldSpec.householdShape,
+    "Different households produced identical WorldSpec families");
+  assert.ok(a.placeAffordances[0].ordinaryCounterpartRoles.includes("father"));
+  assert.ok(!b.placeAffordances[0].ordinaryCounterpartRoles.includes("father"),
+    "A non-caregiving father remained a default home counterpart");
+  assert.ok(b.worldSpec.familyRelations.every(fact=>!fact.includes("two years older")),
+    "A Slice 2 household retained the fixed older sibling");
+  const withYounger=composeParentage({...props,householdPattern:{
+    caregivers:["mother"],siblings:[{sex:"female",relativeAge:"younger",gapYears:3}],
+  }});
+  const sibling=withYounger.household.siblings[0];
+  assert.ok(sibling.name.includes("Family"),"A named sibling lost the family naming convention");
+  assert.equal(sibling.relativeAge,"younger");
+  assert.ok(withYounger.participants.some(person=>person.factualRoles.includes("sibling")
+    &&person.relationshipFacts.join(" ").includes(sibling.name)),
+    "The younger sibling was not an actual Genesis participant");
+  assert.ok(worldFor(withYounger).worldSpec.familyRelations.some(fact=>fact.includes("younger")),
+    "WorldSpec ignored the child's drawn younger sibling");
 });
 
 test("a different biological father changes inherited body and family name without changing the Place",()=>{

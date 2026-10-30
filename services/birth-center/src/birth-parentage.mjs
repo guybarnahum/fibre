@@ -2,7 +2,7 @@ import {sha256} from "./state-codec.mjs";
 import {GENESIS_DEVELOPMENT_REQUEST_VERSION} from "./genesis-development-plan.mjs";
 import {canonicalJson} from "./genesis-development-contracts.mjs";
 import {genesisSexForThread} from "./genesis-sex.mjs";
-import {selectName,choosePlaceCouple,chooseChildTradition} from "./place-population.mjs";
+import {selectName,choosePlaceCouple,chooseChildTradition,chooseHouseholdPattern} from "./place-population.mjs";
 
 function unit(seed){
   return Number.parseInt(sha256(seed).slice(0,12),16)/0x1000000000000;
@@ -37,8 +37,19 @@ export function requiredNamingOrigins(selected){
   return [...new Set([selected.mother.originId,selected.father.originId,selected.childOriginId])];
 }
 
+export function drawBirthHousehold({place,requestId}){
+  const pattern=chooseHouseholdPattern({place,requestId});
+  const siblings=Array.from({length:pattern.siblings},(_,index)=>({
+    sex:unit(requestId+":sibling:"+index+":sex")<0.5?"female":"male",
+    relativeAge:unit(requestId+":sibling:"+index+":older")<0.5?"older":"younger",
+    gapYears:1+Math.floor(unit(requestId+":sibling:"+index+":gap")*8),
+  }));
+  return Object.freeze({caregivers:[...pattern.caregivers],siblings});
+}
+
 export function composeParentage({
   requestId,chronology,selector,place,selected,traditions,sex,redraw=0,
+  householdPattern=null,
 }){
   const mom=traditions[selected.mother.originId];
   const dad=traditions[selected.father.originId];
@@ -100,33 +111,88 @@ export function composeParentage({
     femaleGivenNames:[femaleGiven],maleGivenNames:[maleGiven],
     familyNames:[childFamilyFor(sex)],
   };
-  const parents=[
-    {
-      participantId:"mother",factualRoles:["mother","caregiver","synthetic_genetic_ancestor"],
+  const draw=householdPattern??drawBirthHousehold({place,requestId});
+  const caregivers=[...draw.caregivers];
+  const parentParticipants=[
+    {role:"mother",name:motherName,born:motherBorn,parentAge:motherAge,
+      origin:selected.mother.label},
+    {role:"father",name:fatherName,born:fatherBorn,parentAge:fatherAge,
+      origin:selected.father.label},
+  ].map(parent=>{
+    const livesHere=caregivers.includes(parent.role);
+    return {
+      participantId:parent.role,
+      factualRoles:[parent.role,"synthetic_genetic_ancestor",...(livesHere?["caregiver"]:[])],
       relationshipFacts:[
-        "The subject's mother is "+motherName+".",
-        "She was born in approximately "+motherBorn+" and had the subject at age "+motherAge+".",
-        "Maternal family roots: "+selected.mother.label+".",
+        "The subject's "+parent.role+" is "+parent.name+".",
+        "Born approximately "+parent.born+"; age "+parent.parentAge+" at the subject's birth.",
+        "Family roots: "+parent.origin+".",
+        livesHere?"Lives in the subject's household.":"Does not live in the subject's household.",
       ],
-    },
-    {
-      participantId:"father",factualRoles:["father","caregiver","synthetic_genetic_ancestor"],
-      relationshipFacts:[
-        "The subject's father is "+fatherName+".",
-        "He was born in approximately "+fatherBorn+" and had the subject at age "+fatherAge+".",
-        "Paternal family roots: "+selected.father.label+".",
-      ],
-    },
-    {
-      participantId:"sibling_1",factualRoles:["sibling"],
-      relationshipFacts:["Lives with the subject and is two years older."],
-    },
+    };
+  });
+  const grandparents=["grandmother","grandfather"].filter(role=>caregivers.includes(role))
+    .map(role=>{
+      const maternal=unit(requestId+":grandparent:"+role+":line")<0.5;
+      const side=maternal?"maternal":"paternal";
+      return {
+        participantId:role,
+        factualRoles:[role,"caregiver"],
+        relationshipFacts:[
+          "The subject's "+side+" "+role+" lives in the household.",
+          "Family roots: "+(maternal?selected.mother.label:selected.father.label)+".",
+        ],
+      };
+    });
+  const usedNames=new Set([sex==="female"?femaleName:maleName]);
+  const siblings=draw.siblings.map((sibling,index)=>{
+    const list=sibling.sex==="female"?child.childFemaleGivenNames:child.childMaleGivenNames;
+    const surname=childFamilyFor(sibling.sex);
+    let name;
+    for(let trial=0;trial<list.length;trial++){
+      const given=selectName(list,requestId,"sibling-"+index+"-given",trial);
+      const candidate=fullName(given,surname,child);
+      if(!usedNames.has(candidate)){name=candidate;break;}
+    }
+    if(!name)throw new TypeError("Naming tradition cannot distinguish siblings");
+    usedNames.add(name);
+    return {name,sex:sibling.sex,relativeAge:sibling.relativeAge,gapYears:sibling.gapYears};
+  });
+  const siblingParticipants=siblings.map((sibling,index)=>({
+    participantId:"sibling_"+(index+1),
+    factualRoles:["sibling",sibling.sex==="female"?"sister":"brother"],
+    relationshipFacts:[
+      sibling.name+" is the subject's "+(sibling.sex==="female"?"sister":"brother")+".",
+      "Lives in the household; "+sibling.gapYears+" year(s) "+sibling.relativeAge+" than the subject.",
+    ],
+  }));
+  const familyRelations=[
+    ...parentParticipants.map(parent=>parent.relationshipFacts[0]),
+    ...grandparents.map(grandparent=>grandparent.relationshipFacts[0]),
+    ...siblingParticipants.map(sibling=>sibling.relationshipFacts.join(" ")),
   ];
+  const description="The subject lives in "+selector.city+" with "+
+    [...caregivers.map(role=>{
+      if(role==="mother")return "mother "+motherName;
+      if(role==="father")return "father "+fatherName;
+      return "a "+role;
+    }),...siblings.map(sibling=>sibling.name+" ("+sibling.relativeAge+" sibling)")].join(", ")+
+    ". "+(siblings.length===0?"There are no siblings in this household.":"");
+  const household=Object.freeze({
+    caregivers,siblings,description,familyRelations,
+    homeCounterpartRoles:["caregiver",...caregivers,...(siblings.length?["sibling"]:[]),
+      "relative","peer","neighbor"],
+  });
+  const parents=[...parentParticipants,...grandparents,...siblingParticipants];
   return Object.freeze({
     selected,sex,redraw,
     femaleName,maleName,issuedName:sex==="female"?femaleName:maleName,
-    mother:Object.freeze({name:motherName,originId:selected.mother.originId,birthDecade:Math.floor(motherBorn/10)*10}),
-    father:Object.freeze({name:fatherName,originId:selected.father.originId,birthDecade:Math.floor(fatherBorn/10)*10}),
-    family,participants:parents,
+    mother:Object.freeze({name:motherName,originId:selected.mother.originId,
+      originLabel:selected.mother.label,birthDecade:Math.floor(motherBorn/10)*10}),
+    father:Object.freeze({name:fatherName,originId:selected.father.originId,
+      originLabel:selected.father.label,birthDecade:Math.floor(fatherBorn/10)*10}),
+    mixed:selected.mother.originId!==selected.father.originId,
+    childGivenNameTradition:selected.childOriginId,
+    household,family,participants:parents,
   });
 }

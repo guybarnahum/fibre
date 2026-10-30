@@ -19,7 +19,7 @@ import {
 } from "#services/world-kernel/src/lived-now-regulation.mjs";
 import { openSemanticStateInspectionStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openSituatedLifeInspectionStore } from "#services/world-kernel/src/situated-life-store.mjs";
-import { ThreadDirectoryStore } from "#services/world-kernel/src/thread-directory-store.mjs";
+import { ThreadDirectoryStore,readThreadBirthCityNames } from "#services/world-kernel/src/thread-directory-store.mjs";
 import { createThreadDirectoryService } from "#services/world-kernel/src/thread-directory-service.mjs";
 import { ThreadHealthProjectionStore } from "#services/world-kernel/src/thread-health-projection-store.mjs";
 import { createThreadHealthProjectionService } from "#services/world-kernel/src/thread-health-projection-service.mjs";
@@ -42,6 +42,7 @@ const THREAD_IDENTITY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]
 const THREAD_OBSERVATORY_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/observatory$/u;
 const THREAD_REPAIR_ROUTE = /^\/internal\/threads\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})\/repair$/u;
 const THREAD_DIRECTORY_ROUTE = "/internal/thread-directory/search";
+const THREAD_DIRECTORY_NAMES_ROUTE = "/internal/thread-directory/names";
 const THREAD_DIRECTORY_ENTRIES_ROUTE = "/internal/thread-directory/entries";
 const THREAD_DIRECTORY_PRESENCE_ROUTE = "/internal/thread-directory/presence";
 const THREAD_DIRECTORY_ENTRY_ROUTE = /^\/internal\/thread-directory\/entry\/([A-Za-z0-9][A-Za-z0-9._:-]{0,255})$/u;
@@ -811,6 +812,18 @@ export class FibreWorldDurableObject extends DurableObject {
       return Response.json({
         contract:"fibre-thread-migration-summary-entry-v0.1",
         migration,
+      });
+    }
+    if (url.pathname === THREAD_DIRECTORY_NAMES_ROUTE) {
+      if (request.method !== "GET") return Response.json({error:{code:"METHOD_NOT_ALLOWED"}},{status:405});
+      if (!privateOperatorAuthorized(request, this.env))
+        return Response.json({error:{code:"PRIVATE_TOKEN_REQUIRED"}},{status:403});
+      const birthCity=url.searchParams.get("birthCity");
+      if(url.searchParams.size!==1 || birthCity===null || !birthCity.trim() || birthCity.length>240)
+        return Response.json({error:{code:"INVALID_REQUEST",detail:"Exact birthCity is required"}},{status:400});
+      return Response.json({
+        contract:"fibre-world-birth-city-names-v0.1",birthCity,
+        names:readThreadBirthCityNames(this.worldStorage,birthCity),
       });
     }
     if (url.pathname === THREAD_DIRECTORY_ROUTE) {

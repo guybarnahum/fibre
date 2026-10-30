@@ -30,6 +30,17 @@ const coupleSchema = {
     },
   },
 };
+const householdPatternSchema={
+  type:"object",additionalProperties:false,
+  required:["caregivers","siblings","weight"],
+  properties:{
+    caregivers:{type:"array",minItems:1,maxItems:4,items:{
+      type:"string",enum:["mother","father","grandmother","grandfather"],
+    }},
+    siblings:{type:"integer",minimum:0,maximum:4},
+    weight:positive,
+  },
+};
 export const PLACE_POPULATION_SCHEMA = {
   type:"object",additionalProperties:false,
   required:[
@@ -37,7 +48,7 @@ export const PLACE_POPULATION_SCHEMA = {
     "learningDescription","commerceDescription","mobilityPattern",
     "schoolingOrCommunityContext","culturalContext","availableInstitutions",
     "intellectualEnvironment","schoolingLanguages","originGroups","couples",
-    "mixedParentShare","localNamingOriginId",
+    "mixedParentShare","localNamingOriginId","householdPatterns",
   ],
   properties:{
     timeZone:textField,homeDescription:textField,schoolDescription:textField,
@@ -48,6 +59,7 @@ export const PLACE_POPULATION_SCHEMA = {
     originGroups:{type:"array",minItems:8,maxItems:20,items:originSchema},
     couples:{type:"array",minItems:2,maxItems:150,items:coupleSchema},
     mixedParentShare:fraction,localNamingOriginId:textField,
+    householdPatterns:{type:"array",minItems:3,maxItems:6,items:householdPatternSchema},
   },
 };
 
@@ -63,6 +75,23 @@ export function validatePlacePopulation(value){
   if(!Number.isFinite(value.mixedParentShare)||value.mixedParentShare<0||value.mixedParentShare>1)
     bad("mixedParentShare must be between 0 and 1");
   if(!validList(value.schoolingLanguages,1,3))bad("schooling languages must contain 1–3 names");
+  if(!Array.isArray(value.householdPatterns)||value.householdPatterns.length<3||value.householdPatterns.length>6)
+    bad("householdPatterns must contain 3–6 weighted entries");
+  const householdKeys=new Set();
+  for(const pattern of value.householdPatterns){
+    const caregivers=pattern?.caregivers;
+    if(!Array.isArray(caregivers)||caregivers.length<1||caregivers.length>4
+      ||caregivers.some(role=>!["mother","father","grandmother","grandfather"].includes(role))
+      ||new Set(caregivers).size!==caregivers.length
+      ||(!caregivers.includes("mother")&&!caregivers.includes("father")))
+      bad("a household needs distinct permitted caregivers and at least one parent");
+    if(!Number.isSafeInteger(pattern.siblings)||pattern.siblings<0||pattern.siblings>4
+      ||!Number.isFinite(pattern.weight)||pattern.weight<=0)
+      bad("household siblings or weight is invalid");
+    const key=[...caregivers].sort().join(",")+":"+pattern.siblings;
+    if(householdKeys.has(key))bad("duplicate household pattern");
+    householdKeys.add(key);
+  }
   if(!Array.isArray(value.originGroups)||value.originGroups.length<8||value.originGroups.length>20)
     bad("expected 8–20 distinct origin groups");
   const origins=new Map();
@@ -122,6 +151,10 @@ function weighted(entries,seed,weight){
   for(const item of entries){draw-=weight(item);if(draw<0)return item;}
   return entries.at(-1);
 }
+export function chooseHouseholdPattern({place,requestId}){
+  return weighted(place.householdPatterns,requestId+"\\0household-pattern",item=>item.weight);
+}
+
 export function choosePlaceCouple({place,requestId,heritage=null}){
   // Model output is checked before entering the versioned Place store.
   // Never redo that authoring-time validation for every child draw.
@@ -147,6 +180,7 @@ export async function authorPlacePopulation({adapter,selector,placeKey,version,r
     "Choose 8–20 concrete local resident origin groups, with heritageTags describing exact family-origin labels usable as heritage filters, plausible household languages and evidence-grounded referencePopulations.",
     "Every origin's referencePopulations must sum to 1. Use Fibre's existing codes (eur_north, eur_south, afr_north, afr_west, afr_east, afr_south, middle_east, west_asia, south_asia, east_asia, southeast_asia, indigenous_america, oceania and their supported descendants).",
     "Couples describe plausible concrete mother/father origin pairings and positive relative weights within same/mixed classes, not independent resident draws.",
+    "Author 3–6 distinct householdPatterns, each {caregivers,siblings,weight}, with positive plausible relative weights for this city and child birth decade. Caregivers are a unique subset of mother, father, grandmother, grandfather and include at least one parent. Siblings is 0–4. Include ordinary variation: some only children, some younger siblings, and some households with one non-caregiving parent or a grandparent. Do not default everyone to two caregivers and an older sibling.",
     "mixedParentShare is the estimated share of children in this exact place and child's birth decade with different mother/father originId values, not a worldwide constant. It may be high in Hilo and low in Chengdu. A group with internally mixed ancestry paired with itself counts as same-origin.",
     "If mixedParentShare > 0 include a different-origin couple; if < 1 include a same-origin couple. Couple's childGivenNameTradition gives nonnegative weights for mother, father or local mainstream naming source. No name lists in the Place record.",
     "A heritage filter selects existing couples, never reauthors a place. Do not assign religion, ability, character, class, work, political orientation, trauma or interests to an individual from a group.",

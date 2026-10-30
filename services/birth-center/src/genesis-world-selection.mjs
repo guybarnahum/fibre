@@ -160,7 +160,7 @@ function subjectLanguages(value) {
   return Object.freeze(languages);
 }
 
-function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, chronologyEndsAt, createdAt, familyOverride=null }) {
+function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, chronologyEndsAt, createdAt, familyOverride=null, householdOverride=null }) {
   const family = familyOverride ?? sampleFamilyProfile({ profiles:authored.familyProfiles, requestId });
   const timeZone = assertTimeZone(nonEmpty("authored world timeZone", authored.timeZone));
   const languages = subjectLanguages(family.languages);
@@ -170,14 +170,17 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
     throw new TypeError("authored raised languages must be included in the subject's eventual spoken languages");
   }
   const sourceDigest = digest({ selector, heritage, authored, familyProfileId:family.id }).slice(0, 12);
-  const worldSpecDigest = digest({selector,heritage,authored,familyProfileId:family.id,bornAt,chronologyEndsAt}).slice(0,12);
+  const worldSpecDigest = digest({selector,heritage,authored,familyProfileId:family.id,bornAt,chronologyEndsAt,
+    ...(householdOverride?{household:householdOverride.caregivers,
+      siblings:householdOverride.siblings}:{}),
+  }).slice(0,12);
   const worldSpecId = `world_modern_${selector.slug}_${heritage?.slug ?? "default"}_${worldSpecDigest}`;
   const place = (kind) => `place_${selector.slug}_${sourceDigest}_${kind}`;
   const heritageLabel = heritage?.display ?? null;
   const familyOriginContext = nonEmpty("authored world familyOriginContext", family.familyOriginContext);
-  const householdShape = heritageLabel === null
+  const householdShape = householdOverride?.description ?? (heritageLabel === null
     ? "Two caregivers, the subject and one sibling share a household; other relatives may participate in ordinary visits and family logistics without being assumed to live there."
-    : `Two caregivers, the subject and one sibling share a household in ${selector.city}. The household carries ${heritageLabel} heritage; other relatives or community ties may participate in ordinary visits, language, food, celebrations and family logistics without prescribing the subject's beliefs or personality.`;
+    : `Two caregivers, the subject and one sibling share a household in ${selector.city}. The household carries ${heritageLabel} heritage; other relatives or community ties may participate in ordinary visits, language, food, celebrations and family logistics without prescribing the subject's beliefs or personality.`);
   const culturalContext = [
     authored.culturalContext,
     ...(heritageLabel === null ? [] : [`Household heritage: ${heritageLabel}. ${authored.heritageContext??"Parentage and upbringing are specific to the selected family."}`]),
@@ -194,7 +197,8 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
       Object.freeze({ placeId: place("commerce"), description: authored.commerceDescription }),
     ]),
     householdShape,
-    familyRelations: Object.freeze(["The sibling is two years older than the subject."]),
+    familyRelations: Object.freeze(householdOverride?.familyRelations??
+      ["The sibling is two years older than the subject."]),
     languages,
     materialCircumstances: "Housing, food, schooling and routine mobility are stable enough for ordinary daily life; household spending choices matter without assigning the family a fixed socioeconomic identity.",
     mobilityPattern: authored.mobilityPattern,
@@ -228,7 +232,7 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
     familyNames: Object.freeze([...family.familyNames]),
   });
   const householdSuffix = heritageLabel === null ? "" : ` in a household with ${heritageLabel} heritage`;
-  const participants = Object.freeze([
+  const participants = Object.freeze(householdOverride?.participants??[
     Object.freeze({ participantId:"caregiver_1", factualRoles:Object.freeze(["caregiver"]), relationshipFacts:Object.freeze([
       `Lives with the subject in ${selector.city}${householdSuffix}.`,
     ]) }),
@@ -240,7 +244,8 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
     ]) }),
   ]);
   const placeAffordances = Object.freeze([
-    Object.freeze({ placeRef:place("home"), placeKind:"home", ordinaryCounterpartRoles:Object.freeze(["caregiver", "sibling", "relative", "peer", "neighbor"]) }),
+    Object.freeze({ placeRef:place("home"), placeKind:"home", ordinaryCounterpartRoles:Object.freeze(householdOverride?.homeCounterpartRoles??
+      ["caregiver", "sibling", "relative", "peer", "neighbor"]) }),
     Object.freeze({ placeRef:place("school"), placeKind:"school", ordinaryCounterpartRoles:Object.freeze(["peer", "teacher", "coach", "mentor"]) }),
     Object.freeze({ placeRef:place("transit"), placeKind:"transit", ordinaryCounterpartRoles:Object.freeze(["peer", "neighbor", "caregiver", "sibling", "transit_worker"]) }),
     Object.freeze({ placeRef:place("learning"), placeKind:"library_or_learning", ordinaryCounterpartRoles:Object.freeze(["peer", "librarian", "teacher", "mentor", "caregiver"]) }),
@@ -250,8 +255,9 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
 }
 
 
-export function composeGenesisWorldSelection({selector,heritage=null,authored,requestId,bornAt,chronologyEndsAt,createdAt,familyOverride=null}) {
-  const composed=buildAuthoredWorld({selector,heritage,authored,requestId,bornAt,chronologyEndsAt,createdAt,familyOverride});
+export function composeGenesisWorldSelection({selector,heritage=null,authored,requestId,bornAt,chronologyEndsAt,createdAt,familyOverride=null,householdOverride=null}) {
+  const composed=buildAuthoredWorld({selector,heritage,authored,requestId,bornAt,chronologyEndsAt,
+    createdAt,familyOverride,householdOverride});
   return Object.freeze({...composed,selector,heritage});
 }
 
