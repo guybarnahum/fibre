@@ -2,7 +2,7 @@ import {sha256} from "./state-codec.mjs";
 import {GENESIS_DEVELOPMENT_REQUEST_VERSION} from "./genesis-development-plan.mjs";
 import {canonicalJson} from "./genesis-development-contracts.mjs";
 import {genesisSexForThread} from "./genesis-sex.mjs";
-import {selectName,choosePlaceCouple,chooseChildTradition,chooseHouseholdPattern} from "./place-population.mjs";
+import {selectName,choosePlaceCouple,chooseChildTradition,chooseHouseholdPattern,placeSchoolingProfile} from "./place-population.mjs";
 
 function unit(seed){
   return Number.parseInt(sha256(seed).slice(0,12),16)/0x1000000000000;
@@ -35,6 +35,21 @@ function distinct(value){
     if(!seen.has(key)){seen.add(key);out.push(text);}
   }
   return out;
+}
+
+// A foreign school offering is not a universal language acquisition.
+// Earlier options are more likely, and at most one is retained.
+export function retainedSchoolForeignLanguage(place,requestId){
+  const {foreignLanguagesOffered,foreignLanguageRetention}=placeSchoolingProfile(place);
+  if(!foreignLanguagesOffered.length||
+    unit(requestId+":school-foreign-retain")>=foreignLanguageRetention)return null;
+  const total=foreignLanguagesOffered.length*(foreignLanguagesOffered.length+1)/2;
+  let pick=unit(requestId+":school-foreign-choice")*total;
+  for(let i=0;i<foreignLanguagesOffered.length;i++){
+    pick-=foreignLanguagesOffered.length-i;
+    if(pick<0)return foreignLanguagesOffered[i];
+  }
+  return foreignLanguagesOffered.at(-1);
 }
 
 // The planned Thread ID depends only on requestId, not the child's chosen name.
@@ -147,11 +162,20 @@ export function composeParentage({
       }
     }
   }
-  if(raised.length===0)raised.push(place.schoolingLanguages[0]);
   const homeLanguages=distinct(raised);
-  const schoolLanguages=distinct(place.schoolingLanguages);
-  const languages=distinct([...homeLanguages,...schoolLanguages]).slice(0,3);
-  const raisedLanguages=homeLanguages.filter(lang=>languages.includes(lang)).slice(0,3);
+  const {instructionLanguages}=placeSchoolingProfile(place);
+  const instruction=distinct(instructionLanguages);
+  // Reserve the instruction slots before taking additional household
+  // languages. Keep the household's original order in the final repertoire.
+  const instructionKeys=new Set(instruction.map(x=>x.toLocaleLowerCase("en-US")));
+  const extras=homeLanguages.filter(x=>!instructionKeys.has(x.toLocaleLowerCase("en-US")))
+    .slice(0,Math.max(0,3-instruction.length));
+  const selectedHome=new Set([...instruction,...extras].map(x=>x.toLocaleLowerCase("en-US")));
+  const keptHome=homeLanguages.filter(x=>selectedHome.has(x.toLocaleLowerCase("en-US")));
+  const foreign=retainedSchoolForeignLanguage(place,requestId);
+  const languages=distinct([...keptHome,...instruction,
+    ...(foreign===null?[]:[foreign])]).slice(0,3);
+  const raisedLanguages=keptHome.filter(lang=>languages.includes(lang)).slice(0,3);
   const lineage={
     maternal:selected.mother.referencePopulations,
     paternal:selected.father.referencePopulations,

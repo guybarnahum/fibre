@@ -16,7 +16,7 @@ The optional `place_authored` stage makes **one journaled model call** when a pl
 - **Civic context:** the existing World-context fields, including place/time zone, home, schooling, transit, institutions, local and schooling languages, and material/social context.
 - **Place Population:** `originGroups`, `couples`, `mixedParentShare` and `householdPatterns`, with provenance and a version/digest. No given-name or surname lists are in this call.
 
-`originGroups` are 8–20 concrete resident lineage sources, each with an `originId`, resident `share`, physical `referencePopulations` (existing codes), `heritageLanguages` and their `householdRetentionRate`. Each group has at most three heritage tags and at most three ancestry references; reference codes are selected from the complete canonical Human Appearance enumeration, not guessed. A group can be explicitly mixed; an umbrella “A or B” is not a single selectable group.
+`originGroups` are 8–20 concrete resident lineage sources, each with an `originId`, resident `share`, physical `referencePopulations` (existing codes), `heritageLanguages` and their `householdRetentionRate`. Each group has at most six heritage tags and at most six ancestry references; reference codes are selected from the complete canonical Human Appearance enumeration, not guessed. A group can be explicitly mixed; an umbrella “A or B” is not a single selectable group.
 
 `couples` are at most 40 weighted `motherOriginId × fatherOriginId` pairs, representing the large majority of births rather than an exhaustive combinatorial set. The authored `mixedParentShare` still estimates the full local mixed-parent frequency even when rare pairings are omitted. Their `weight` represents plausible couples in that place/decade, **not** independent draws from resident shares. Cross-origin couples should be frequent where they are common (Hilo) and rare where they are not (Chengdu). Each couple carries **only** weights for the child's given-name source: mother's tradition, father's tradition or local mainstream. Naming conventions are not stored on the couple.
 
@@ -88,12 +88,25 @@ relative age and year gap; and the pinned Place's `mixedParentShare`.
 `GET /births/:id` and `genesis:births` expose these without further
 World or model reads or fetching an entire Place record.
 
-**Atomic language evidence:** `heritageLanguages` and
-`schoolingLanguages` each contain only bare language names, never dialect
-descriptions or parenthetical varieties. Place validation reuses the
-family-profile language validator. Birth composition merges household and
-school language evidence without counting regional varieties twice and
-reserves room for a plausible school-taught language.
+**Foreign-language realism (Slice 4):** A Place distinguishes
+`instructionLanguages` (1–2, acquired by every child),
+`foreignLanguagesOffered` (0–6), and
+`foreignLanguageRetention ∈ [0,1]` (the estimated share of young adults
+retaining one usable school foreign language). Each birth deterministically
+draws **at most one** offered language using requestId, retaining it with
+that probability and weighting offered languages toward earlier entries.
+Eventual spoken languages are household-raised languages first, then
+instruction languages, then the single retained foreign language, capped
+at three. A school's offered curriculum is not an individual's fluency.
+
+Older pinned Places remain valid without rewriting their records:
+`schoolingLanguages[0]` acts as instruction, subsequent entries as
+foreign offerings, with retention **0.3**. That compatibility split is
+recorded as a Place normalization when material is normalized. The shared
+family-profile bare-language validator remains authoritative, and no
+regional variety consumes a separate language slot. Place evidence may
+list up to six heritage languages, heritage tags and ancestry references;
+these are possibilities, not automatic personal attributes.
 
 **Naming is lazy.** The first time a birth draws an origin group, Birth Center obtains one small **journaled naming-tradition model call** for that group. It records given-name pools for the parents' birth decade and for the child's birth decade, plus family names. It also owns the naming rules: `transmission ∈ {father, mother, mother+father, patronymic}`, `nameOrder` and `joiner`. Reuse that version for subsequent births; author missing decade material under the same journaled first-use rule. Parents' birth decades need not equal the child's decade. Authored naming data must be large enough to permit individual variation; names are not a code for religion or personality.
 

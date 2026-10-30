@@ -4,6 +4,9 @@ import {
   parseGenesisArgs,normalizeGenesisWorldSelector,
 } from "#services/birth-center/src/genesis-world-selection.mjs";
 import { birthEnvironment,birthDeployment,birthRequest } from "./birth-remote.mjs";
+import {runGenesisBirthWave} from "./birth-wave.mjs";
+import {pathToFileURL} from "node:url";
+import {resolve} from "node:path";
 
 function usage(){
   return [
@@ -12,9 +15,10 @@ function usage(){
     "  npm run genesis:birth -- --env staging --sex=female --place=Israel/Jerusalem --heritage=\"Yemeni Jewish\"",
     "  npm run genesis:birth -- --env staging --resume genesis-birth-...",
     "  npm run genesis:birth -- --env staging --follow genesis-birth-...",
+    "  npm run genesis:birth -- --env staging --place=United Kingdom/London --count 8",
     "  npm run genesis:birth -- --env staging --abandon genesis-birth-... --reason \"Operator cancellation\"",
     "",
-    "Options: --sex=female|male, --place=Country/City, --heritage=..., --new-world,",
+    "Options: --sex=female|male, --place=Country/City, --heritage=..., --new-world, --count N (1–12),",
     "         --resume REQUEST_ID, --follow REQUEST_ID, --abandon REQUEST_ID --reason TEXT, --env ENV.",
     "A new birth without an explicit place samples a globally distributed birthplace.",
     "A new-model place is authored once by the Birth Center and reused by decade.",
@@ -23,11 +27,13 @@ function usage(){
 }
 function parse(argv){
   const remote=birthEnvironment(argv);
-  let resume=null,follow=null,abandon=null,reason=null;
+  let resume=null,follow=null,abandon=null,reason=null,count=1,countProvided=false;
   const remaining=[];
   for(let i=0;i<remote.args.length;i++){
     const arg=remote.args[i];
-    if(arg==="--follow")follow=remote.args[++i]??null;
+    if(arg==="--count"){count=Number(remote.args[++i]);countProvided=true;}
+    else if(arg.startsWith("--count=")){count=Number(arg.slice(8));countProvided=true;}
+    else if(arg==="--follow")follow=remote.args[++i]??null;
     else if(arg.startsWith("--follow="))follow=arg.slice(9);
     else if(arg==="--resume")resume=remote.args[++i]??null;
     else if(arg.startsWith("--resume="))resume=arg.slice(9);
@@ -37,6 +43,10 @@ function parse(argv){
     else if(arg.startsWith("--reason="))reason=arg.slice(9);
     else remaining.push(arg);
   }
+  if(!Number.isSafeInteger(count)||count<1||count>12)
+    throw new TypeError("--count must be an integer from 1 to 12");
+  if(countProvided&&(resume!==null||follow!==null||abandon!==null))
+    throw new TypeError("--count is only available when creating new births");
   if([resume,follow,abandon].filter(x=>x!==null).length>1)
     throw new TypeError("Choose only one of --resume, --follow, --abandon");
   if((resume!==null&&!resume)||(follow!==null&&!follow)||(abandon!==null&&!abandon))
@@ -48,7 +58,7 @@ function parse(argv){
   if((resume!==null||follow!==null||abandon!==null)&&
     (options.sex!==null||options.world!==null||options.heritage!==null||options.forceNewWorld))
     throw new TypeError("Resume/abandon cannot change birth inputs");
-  return {environment:remote.environment,options,resume,follow,abandon,reason};
+  return {environment:remote.environment,options,resume,follow,abandon,reason,count,countProvided};
 }
 function heartbeat(current,startedAt,stageSince,deployed,requestId){
   const age=Math.floor((Date.now()-startedAt)/1000);
@@ -93,6 +103,12 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
   if(health?.service!=="birth-center"||!/^[0-9a-f]{40}$/u.test(health.deploymentGitSha??""))
     throw new Error("Birth Center health did not supply a valid deploymentGitSha");
   deployedSha=health.deploymentGitSha;
+  if(parsed.countProvided){
+    return await runGenesisBirthWave({
+      remote,environment:parsed.environment,options:parsed.options,
+      count:parsed.count,readRemote,now,sleep,
+    });
+  }
   if(parsed.resume!==null){
     await readRemote(remote,"/births/"+encodeURIComponent(requestId)+"/resume",{method:"POST"});
   }else if(parsed.follow===null){
@@ -193,7 +209,8 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
     }
   }
 }
-runGenesisBirth().catch(error=>{
+if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href)
+  runGenesisBirth().catch(error=>{
   process.stderr.write(JSON.stringify({
     event:error?.code==="THREAD_BIRTH_PAUSED"?"thread-birth-paused":"thread-birth-failed",
     errorName:error?.constructor?.name??"Error",

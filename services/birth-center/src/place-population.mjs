@@ -51,7 +51,8 @@ export const PLACE_POPULATION_SCHEMA = {
     "timeZone","homeDescription","schoolDescription","transitDescription",
     "learningDescription","commerceDescription","mobilityPattern",
     "schoolingOrCommunityContext","culturalContext","availableInstitutions",
-    "intellectualEnvironment","schoolingLanguages","originGroups","couples",
+    "intellectualEnvironment","instructionLanguages","foreignLanguagesOffered",
+    "foreignLanguageRetention","originGroups","couples",
     "mixedParentShare","localNamingOriginId","householdPatterns",
   ],
   properties:{
@@ -59,7 +60,9 @@ export const PLACE_POPULATION_SCHEMA = {
     transitDescription:textField,learningDescription:textField,commerceDescription:textField,
     mobilityPattern:textField,schoolingOrCommunityContext:textField,culturalContext:textField,
     availableInstitutions:textList(3,12),intellectualEnvironment:textField,
-    schoolingLanguages:languageList,
+    instructionLanguages:{type:"array",minItems:1,maxItems:2,items:atomicText},
+    foreignLanguagesOffered:{type:"array",minItems:0,maxItems:6,items:atomicText},
+    foreignLanguageRetention:fraction,
     originGroups:{type:"array",minItems:8,maxItems:20,items:originSchema},
     couples:{type:"array",minItems:2,maxItems:40,items:coupleSchema},
     mixedParentShare:fraction,localNamingOriginId:textField,
@@ -92,7 +95,7 @@ function positiveTotal(list,selector,path,changes){
 // repertoire is selected at composition time, not by suppressing civic facts.
 // Recover obvious provider packing before applying the authoritative validators.
 const packedSeparator=/(?:」「|[、・,;\/|]|\s+(?:and|or)\s+)/giu;
-function normalizeEvidenceList(owner,field,path,changes,{language=false}={}){
+function normalizeEvidenceList(owner,field,path,changes,{language=false,max=6,allowEmpty=false}={}){
   const original=owner?.[field];
   if(!Array.isArray(original))return;
   const results=[],seen=new Set();
@@ -114,15 +117,49 @@ function normalizeEvidenceList(owner,field,path,changes,{language=false}={}){
       if(!seen.has(key)){seen.add(key);results.push(part);}
     }
   }
-  owner[field]=results.slice(0,6);
+  owner[field]=results.slice(0,max);
   note(changes,path,original,owner[field]);
-  if(owner[field].length===0)bad(field+" has no valid entries after normalization",original);
+  if(!allowEmpty&&owner[field].length===0)
+    bad(field+" has no valid entries after normalization",original);
+}
+// Interpret older pinned Place evidence without changing the stored version.
+// The compatibility witness is also included in normalized Place provenance.
+export function placeSchoolingProfile(place){
+  if(Array.isArray(place?.instructionLanguages))
+    return {instructionLanguages:place.instructionLanguages,
+      foreignLanguagesOffered:place.foreignLanguagesOffered??[],
+      foreignLanguageRetention:place.foreignLanguageRetention,
+      normalization:null};
+  const original=place?.schoolingLanguages;
+  if(!Array.isArray(original)||original.length===0)
+    return {instructionLanguages:[],foreignLanguagesOffered:[],
+      foreignLanguageRetention:null,normalization:null};
+  return {
+    instructionLanguages:[original[0]],
+    foreignLanguagesOffered:original.slice(1),
+    foreignLanguageRetention:0.3,
+    normalization:{path:"schoolingLanguages",action:"legacy schooling split",
+      from:original,to:{instructionLanguages:[original[0]],
+        foreignLanguagesOffered:original.slice(1),foreignLanguageRetention:0.3}},
+  };
 }
 export function normalizePlacePopulation(output){
   const changes=[];
   const value=normalizeTextTree(output,"place",changes);
   if(!value||!Array.isArray(value.originGroups))return value;
-  normalizeEvidenceList(value,"schoolingLanguages","schoolingLanguages",changes,{language:true});
+  const schooling=placeSchoolingProfile(value);
+  if(schooling.normalization)changes.push(schooling.normalization);
+  value.instructionLanguages=[...schooling.instructionLanguages];
+  value.foreignLanguagesOffered=[...schooling.foreignLanguagesOffered];
+  value.foreignLanguageRetention=schooling.foreignLanguageRetention;
+  delete value.schoolingLanguages;
+  normalizeEvidenceList(value,"instructionLanguages","instructionLanguages",changes,{language:true,max:2});
+  normalizeEvidenceList(value,"foreignLanguagesOffered","foreignLanguagesOffered",changes,{language:true,allowEmpty:true});
+  // Offered classes are alternatives to, not duplicates of, instruction.
+  const instruction=new Set(value.instructionLanguages.map(x=>x.toLocaleLowerCase("en-US")));
+  const offered=value.foreignLanguagesOffered;
+  value.foreignLanguagesOffered=offered.filter(x=>!instruction.has(x.toLocaleLowerCase("en-US")));
+  note(changes,"foreignLanguagesOffered",offered,value.foreignLanguagesOffered);
   const origins=value.originGroups;
   for(const [i,group] of origins.entries()){
     normalizeEvidenceList(group,"heritageLanguages",
@@ -230,8 +267,18 @@ export function validatePlacePopulation(value){
   if(!value||typeof value!=="object"||Array.isArray(value))bad("missing Place");
   if(!Number.isFinite(value.mixedParentShare)||value.mixedParentShare<0||value.mixedParentShare>1)
     bad("mixedParentShare must be between 0 and 1");
-  try{validateLanguages(value.schoolingLanguages,"schoolingLanguages",6);}
-  catch(error){bad(error.message,value.schoolingLanguages);}
+  const schooling=placeSchoolingProfile(value);
+  try{validateLanguages(schooling.instructionLanguages,"instructionLanguages",2);}
+  catch(error){bad(error.message,schooling.instructionLanguages);}
+  if(!Array.isArray(schooling.foreignLanguagesOffered)||schooling.foreignLanguagesOffered.length>6)
+    bad("foreignLanguagesOffered must contain 0–6 bare languages",schooling.foreignLanguagesOffered);
+  if(schooling.foreignLanguagesOffered.length){
+    try{validateLanguages(schooling.foreignLanguagesOffered,"foreignLanguagesOffered",6);}
+    catch(error){bad(error.message,schooling.foreignLanguagesOffered);}
+  }
+  if(!Number.isFinite(schooling.foreignLanguageRetention)||
+    schooling.foreignLanguageRetention<0||schooling.foreignLanguageRetention>1)
+    bad("foreignLanguageRetention must be between 0 and 1",schooling.foreignLanguageRetention);
   if(!Array.isArray(value.householdPatterns)||value.householdPatterns.length<1||value.householdPatterns.length>6)
     bad("householdPatterns must contain 1–6 valid entries",value.householdPatterns);
   const householdKeys=new Set();
@@ -340,7 +387,7 @@ export function choosePlaceCouple({place,requestId,heritage=null}){
 export async function authorPlacePopulation({adapter,selector,placeKey,version,repair=null,attempt=0,round=0}){
   const prompt=[
     "Author one bounded civic Place and resident population for a Fibre birth cohort.",
-    "Return one compact JSON object with civic context, schoolingLanguages, 8–20 concrete originGroups, at most 40 weighted couples, localNamingOriginId and mixedParentShare.",
+    "Return one compact JSON object with civic context, instructionLanguages, foreignLanguagesOffered, foreignLanguageRetention, 8–20 concrete originGroups, at most 40 weighted couples, localNamingOriginId and mixedParentShare.",
     "The place describes residents, not one family or a future person's personality. Give each civic description only one or two concrete sentences; avoid repetition.",
     "Choose 8–20 concrete local resident origin groups. Use up to 6 distinct heritageTags and referencePopulations per group when supported by local reality; only include meaningful roots and household languages.",
     "Every origin's referencePopulations must sum to 1. Select referencePopulation only from the codes permitted by the schema.",
@@ -349,7 +396,8 @@ export async function authorPlacePopulation({adapter,selector,placeKey,version,r
     "mixedParentShare is the estimated share of children in this exact place and child's birth decade with different mother/father originId values, not a worldwide constant. It may be high in Hilo and low in Chengdu. A group with internally mixed ancestry paired with itself counts as same-origin.",
     "If mixedParentShare > 0 include a different-origin couple; if < 1 include a same-origin couple. Couple's childGivenNameTradition gives nonnegative weights for mother, father or local mainstream naming source. No name lists in the Place record.",
     "A heritage filter selects existing couples, never reauthors a place. Do not assign religion, ability, character, class, work, political orientation, trauma or interests to an individual from a group.",
-    "List up to 6 distinct locally plausible schoolingLanguages and heritageLanguages as separate bare language names (e.g. English, French, Spanish, German). Never pack languages into one field; avoid dialects, regional varieties, and parenthetical descriptions. The eventual language selection for an individual happens later.",
+    "instructionLanguages (1–2) are the languages used routinely for instruction that every child acquires. foreignLanguagesOffered (0–6) are separately taught foreign languages (e.g. French, Spanish, German in London). foreignLanguageRetention is the proportion of young adults retaining one usable foreign language, 0–1; do not presume every offered foreign language is acquired.",
+    "List languages separately as bare names; never pack them together. heritageLanguages (up to 6) is household language evidence, not a child's guaranteed eventual language list.",
     "Include at least one language commonly taught in local schools, including a foreign language where appropriate (e.g. English in Egypt). Use a valid IANA time zone. Avoid claims of census precision.",
   ].join("\n");
   const result=await adapter.invoke({

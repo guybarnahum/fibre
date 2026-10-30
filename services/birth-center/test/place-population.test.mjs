@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {PLACE_POPULATION_SCHEMA,choosePlaceCouple,chooseHouseholdPattern,validatePlacePopulation,normalizePlacePopulation,normalizeNamingTradition,validateNamingTradition} from "../src/place-population.mjs";
-import {composeParentage,drawBirthHousehold,parentAgesAtBirth} from "../src/birth-parentage.mjs";
+import {composeParentage,drawBirthHousehold,parentAgesAtBirth,retainedSchoolForeignLanguage} from "../src/birth-parentage.mjs";
 import {composeBirthSubjectIdentity} from "../src/birth-material.mjs";
 import {referencePopulationIds,sampleFounderPhysicalGenome} from "../../../core/src/human-appearance/index.mjs";
 import {composeGenesisWorldSelection} from "../src/genesis-world-selection.mjs";
@@ -88,7 +88,8 @@ test("London packed school languages and origin evidence are split and pinned",(
   london.originGroups[0].heritageTags=["English and German","French / Spanish"];
   const fixed=normalizePlacePopulation(london);
   validatePlacePopulation(fixed);
-  assert.deepEqual(fixed.schoolingLanguages,["English","French","Spanish","German"],
+  assert.deepEqual(fixed.instructionLanguages,["English"]);
+  assert.deepEqual(fixed.foreignLanguagesOffered,["French","Spanish","German"],
     "London's fourth school language was lost to schema packing");
   assert.deepEqual(fixed.originGroups[0].heritageLanguages,
     ["English","French","German","Spanish"]);
@@ -99,7 +100,8 @@ test("London packed school languages and origin evidence are split and pinned",(
     change.from==="Spanish」「German"),
     "The original rejected packed value was not retained in provenance");
   const schema=PLACE_POPULATION_SCHEMA.properties;
-  assert.equal(schema.schoolingLanguages.maxItems,6);
+  assert.equal(schema.instructionLanguages.maxItems,2);
+  assert.equal(schema.foreignLanguagesOffered.maxItems,6);
   assert.equal(schema.originGroups.items.properties.heritageLanguages.maxItems,6);
   assert.equal(schema.originGroups.items.properties.heritageTags.maxItems,6);
   assert.equal(schema.originGroups.items.properties.referencePopulations.maxItems,6);
@@ -121,6 +123,59 @@ test("five authored school languages never force more than three child languages
     "The child's language cap should be applied after raised languages, then school order");
 });
 
+test("foreign school retention matches the authored share and never gives two foreign languages",()=>{
+  const city=structuredClone(place);
+  delete city.schoolingLanguages;
+  city.instructionLanguages=["English"];
+  city.foreignLanguagesOffered=["French","Spanish","German","Italian","Japanese"];
+  city.foreignLanguageRetention=0.35;
+  city.originGroups.forEach(group=>{group.heritageLanguages=["English"];
+    group.householdRetentionRate=1;});
+  validatePlacePopulation(city);
+  let retained=0;
+  const offered=new Set(city.foreignLanguagesOffered);
+  for(let i=0;i<1800;i++){
+    const requestId="foreign-school-child-"+i;
+    const chosen=retainedSchoolForeignLanguage(city,requestId);
+    if(chosen!==null)retained++;
+    const selected={couple:city.couples[0],mother:city.originGroups[0],
+      father:city.originGroups[0],childOriginId:"a"};
+    const family=composeParentage({requestId,chronology,selector,place:city,
+      selected,traditions:{a:names("A"),b:names("B")},sex:"female"}).family;
+    assert.equal(family.languages[0],"English");
+    assert.ok(family.languages.length<=3);
+    assert.ok(family.languages.filter(language=>offered.has(language)).length<=1);
+    assert.equal(family.languages.some(language=>offered.has(language)),chosen!==null);
+  }
+  assert.ok(Math.abs(retained/1800-city.foreignLanguageRetention)<0.04,
+    "School foreign-language retention does not track the authored young-adult share");
+});
+
+test("a Place without foreign offerings is valid and never invents fluency",()=>{
+  const city=structuredClone(place);
+  delete city.schoolingLanguages;
+  city.instructionLanguages=["English"];
+  city.foreignLanguagesOffered=[];
+  city.foreignLanguageRetention=0;
+  const normalized=normalizePlacePopulation(city);
+  validatePlacePopulation(normalized);
+  for(let i=0;i<100;i++)
+    assert.equal(retainedSchoolForeignLanguage(normalized,"no-foreign-"+i),null);
+});
+
+test("legacy schooling evidence is interpreted without rewriting stored Places",()=>{
+  const pinned=structuredClone(place);
+  pinned.schoolingLanguages=["English","French","Spanish","German"];
+  const normalized=normalizePlacePopulation(pinned);
+  validatePlacePopulation(normalized);
+  assert.deepEqual(normalized.instructionLanguages,["English"]);
+  assert.deepEqual(normalized.foreignLanguagesOffered,["French","Spanish","German"]);
+  assert.equal(normalized.foreignLanguageRetention,0.3);
+  assert.ok(normalized.provenance.normalizations.some(item=>
+    item.action==="legacy schooling split"&&item.from.length===4));
+  assert.deepEqual(pinned.schoolingLanguages,["English","French","Spanish","German"]);
+});
+
 test("Place languages are atomic and one language never appears as multiple varieties",()=>{
   const invalid={...place,schoolingLanguages:["Arabic","Saidi Arabic dialects (Upper Egyptian Arabic)","English"]};
   assert.throws(()=>validatePlacePopulation(invalid),/bare language/,
@@ -135,8 +190,10 @@ test("Place languages are atomic and one language never appears as multiple vari
     couple:withVarieties.couples[1],childOriginId:"a"};
   const birth=composeParentage({requestId:"atomic-languages",chronology,selector,
     place:withVarieties,selected,traditions:{a:names("A"),b:names("B")},sex:"female"});
-  assert.deepEqual(birth.family.languages,["Arabic","English"],
-    "Arabic varieties consumed multiple spoken-language slots or excluded school English");
+  const retained=retainedSchoolForeignLanguage(withVarieties,"atomic-languages");
+  assert.deepEqual(birth.family.languages,
+    retained===null?["Arabic"]:["Arabic","English"],
+    "Arabic varieties consumed multiple spoken-language slots or made school English universal");
   assert.deepEqual(birth.family.raisedLanguages,["Arabic"],
     "Regional varieties became independent household languages");
 });
@@ -218,7 +275,7 @@ test("staging deviations normalize language packing and reject invented ancestry
   aswan.schoolingLanguages=["Arabic","Saidi Arabic dialects (Upper Egyptian Arabic)"];
   const cleanedAswan=normalizePlacePopulation(aswan);
   validatePlacePopulation(cleanedAswan);
-  assert.deepEqual(cleanedAswan.schoolingLanguages,["Arabic"]);
+  assert.deepEqual(cleanedAswan.instructionLanguages,["Arabic"]);
   assert.ok(cleanedAswan.provenance.normalizations.some(change=>
     change.action==="dropped invalid bare language"&&
     change.value==="Saidi Arabic dialects (Upper Egyptian Arabic)"));
@@ -232,7 +289,8 @@ test("staging deviations normalize language packing and reject invented ancestry
   manchester.schoolingLanguages=["Arabic and English"];
   const repaired=normalizePlacePopulation(manchester);
   validatePlacePopulation(repaired);
-  assert.deepEqual(repaired.schoolingLanguages,["Arabic","English"]);
+  assert.deepEqual(repaired.instructionLanguages,["Arabic"]);
+  assert.deepEqual(repaired.foreignLanguagesOffered,["English"]);
   assert.ok(repaired.provenance.normalizations.some(change=>
     change.action==="split packed"&&change.from==="Arabic and English"));
 });

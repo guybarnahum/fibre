@@ -86,6 +86,25 @@ purpose do not prove loneliness, boredom or City Guide causation.
 The view must explicitly distinguish input exposure, reported reason,
 deterministic mechanism and tested behavioral influence.
 
+**October 30 staging verification — deployed `4ac6aca`:**
+London's versioned Place was accepted on the first authoring attempt
+after packed-language normalization. Two resumed births completed:
+**Matthew Lee (London)**, same-origin White British parents, an older
+brother, Place `mixedParentShare=0.32`; and **Emily Ishikawa (Hilo)**,
+a mixed-origin couple, a grandmother in the household, two older
+siblings, Place `mixedParentShare=0.65`.
+These are verified staging outcomes, not merely source claims.
+
+**Slice 4 (source pending local validation):** New Place authoring
+separates instruction languages, foreign offerings, and a local
+foreign-language retention estimate. Old Place language evidence is
+interpreted using the 0.3 compatibility share without rewriting stored
+versions. `genesis:birth --count N` (N=1–12) starts distinct Birth
+Center lifecycle requests and monitors them via one indexed birth-list
+page per interval. The ordinary one-result-per-birth JSON format
+remains suitable for `tail` and births.log. No separate server wave
+state or scheduler was introduced.
+
 ## Accepted Birth Center decisions — October 29, 2026
 
 [ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md)
