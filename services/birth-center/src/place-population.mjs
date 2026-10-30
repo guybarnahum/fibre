@@ -134,13 +134,18 @@ export function placeSchoolingProfile(place){
   if(!Array.isArray(original)||original.length===0)
     return {instructionLanguages:[],foreignLanguagesOffered:[],
       foreignLanguageRetention:null,normalization:null};
+  // Earlier authors occasionally packed several languages into the first
+  // legacy field. Only the first is routine instruction; the rest are offers.
+  const first=typeof original[0]==="string"
+    ?original[0].split(packedSeparator).map(x=>x.trim()).filter(Boolean)
+    :[original[0]];
+  const instructionLanguages=first.slice(0,1);
+  const foreignLanguagesOffered=[...first.slice(1),...original.slice(1)];
   return {
-    instructionLanguages:[original[0]],
-    foreignLanguagesOffered:original.slice(1),
+    instructionLanguages,foreignLanguagesOffered,
     foreignLanguageRetention:0.3,
     normalization:{path:"schoolingLanguages",action:"legacy schooling split",
-      from:original,to:{instructionLanguages:[original[0]],
-        foreignLanguagesOffered:original.slice(1),foreignLanguageRetention:0.3}},
+      from:original,to:{instructionLanguages,foreignLanguagesOffered,foreignLanguageRetention:0.3}},
   };
 }
 export function normalizePlacePopulation(output){
@@ -148,7 +153,15 @@ export function normalizePlacePopulation(output){
   const value=normalizeTextTree(output,"place",changes);
   if(!value||!Array.isArray(value.originGroups))return value;
   const schooling=placeSchoolingProfile(value);
-  if(schooling.normalization)changes.push(schooling.normalization);
+  if(schooling.normalization){
+    changes.push(schooling.normalization);
+    const first=value.schoolingLanguages[0];
+    const unpacked=typeof first==="string"
+      ?first.split(packedSeparator).map(x=>x.trim()).filter(Boolean):[];
+    if(unpacked.length>1)changes.push({
+      path:"instructionLanguages[0]",action:"split packed",from:first,to:unpacked,
+    });
+  }
   value.instructionLanguages=[...schooling.instructionLanguages];
   value.foreignLanguagesOffered=[...schooling.foreignLanguagesOffered];
   value.foreignLanguageRetention=schooling.foreignLanguageRetention;

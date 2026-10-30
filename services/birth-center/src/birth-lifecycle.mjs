@@ -679,7 +679,7 @@ export function createBirthLifecycle({
     if(store.isTerminal(birth.stage))return projection(birth);
     if(birth.threadId===null){
       store.releaseName(requestId);
-      return projection(store.progress(requestId,{stage:"cancelled",status:"cancelled",
+      return projection(store.progress(requestId,{stage:"cancelled",
         failureRetryable:null,nextAttemptAt:null,
         data:{...birth.data,abandonReason:reason.trim()}}));
     }

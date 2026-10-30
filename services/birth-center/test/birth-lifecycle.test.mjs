@@ -526,7 +526,8 @@ test("terminal failed requests cancel without manufacturing stillbirths",async t
   assert.equal((await abandon("failed-before-identity")).status,200);
   const cancelled=store.get("failed-before-identity");
   assert.equal(cancelled.stage,"cancelled");
-  assert.equal(cancelled.status,"cancelled");
+  assert.equal(cancelled.status,"failed",
+    "Cancellation should preserve the failed status permitted by the installed schema");
   assert.equal(cancelled.error,"Original model contract failure",
     "Cancellation erased original failure evidence");
   assert.equal(cancelled.data.errorCode,"MODEL_CONTRACT_FAILURE");

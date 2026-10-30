@@ -22,7 +22,10 @@ test("a wave creates distinct lifecycle births and monitors via one indexed page
     if(path.startsWith("/births?")){
       pages++;
       assert.equal(path,"/births?limit=40&all=1","Wave should use a single indexed page");
-      return {births:store.list({limit:40}).births,nextCursor:null};
+      // The remote API projects parentage from the durable lifecycle data.
+      return {births:store.list({limit:40,includeCancelled:true}).births.map(b=>({
+        ...b,parentage:b.data?.parentage??null,
+      })),nextCursor:null};
     }
     detailReads++;
     throw new Error("Wave performed per-birth polling: "+path);
