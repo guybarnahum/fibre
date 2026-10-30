@@ -710,7 +710,8 @@ function birthStage(birth){
 }
 function activeBirth(birth){
   return !["complete","unlocated","unpresented","stillborn","cancelled"].includes(birth?.stage)
-    &&!(birth?.status==="failed"&&birth?.failureRetryable===false);
+    &&!(birth?.status==="failed"&&(birth?.failureRetryable===false||
+      birth?.nextAttemptAt==null));
 }
 
 function birthplaceForBirth(birth) {
@@ -1075,6 +1076,8 @@ function elapsedText(value) {
 }
 
 function pendingStatusText(birth) {
+  if(birth?.status==="failed"&&birth?.failureRetryable===true&&birth?.nextAttemptAt==null)
+    return "paused · Resume required";
   return birthStage(birth);
 }
 
@@ -1211,7 +1214,8 @@ function renderPendingBirths(births) {
           }catch(error){content.textContent=String(error.message??error);}
         });
         actions.append(details);
-        if(activeBirth(birth)||birth?.stage==="failed"){
+        if(activeBirth(birth)||
+          (birth?.status==="failed"&&birth?.failureRetryable===true)){
           for(const action of ["resume","abandon"]){
             if(action==="resume"&&!(birth.status==="failed"&&birth.failureRetryable!==false))continue;
             const button=document.createElement("button");
@@ -1279,13 +1283,22 @@ async function loadPendingBirths({ quiet=false,older=false }={}){
 }
 function schedulePendingPoll(){
   stopPendingPolling();
-  if(!active||populationMode!=="birth-center"||document.hidden
-    ||!pendingBirthSnapshot.some(activeBirth))return;
+  if(!active||populationMode!=="birth-center"||document.hidden)return;
+  const activeBirths=pendingBirthSnapshot.filter(activeBirth);
+  if(activeBirths.length===0)return;
+  const now=Date.now();
+  // If every birth is in a scheduled failure backoff, read once near the
+  // next due time rather than spending D1 quota every 30 seconds for hours.
+  const allBackedOff=activeBirths.every(birth=>birth.status==="failed"
+    &&Number.isFinite(birth.nextAttemptAt)&&birth.nextAttemptAt>now);
+  const interval=allBackedOff
+    ?Math.max(30_000,Math.min(...activeBirths.map(birth=>birth.nextAttemptAt-now)))
+    :30_000;
   pendingBirthTimer=window.setTimeout(async()=>{
     pendingBirthTimer=null;
     if(!active||populationMode!=="birth-center"||document.hidden)return;
     await loadPendingBirths({quiet:true});
-  },30000);
+  },interval);
 }
 function startPendingPolling(){schedulePendingPoll();}
 function stopPendingPolling(){

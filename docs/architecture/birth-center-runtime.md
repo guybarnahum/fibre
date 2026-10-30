@@ -20,7 +20,11 @@ Genesis may take many model calls, repairs, retries, checkpoints, process restar
 An admitted Thread remains alive even when Presentation never appears.
 The Birth Center stops observation after two hours in `unpresented`
 (a visible, non-failure terminal outcome), just as an unseen location
-becomes `unlocated` after the existing observation limit.
+becomes `unlocated` after the existing observation limit. World
+inspection outages after location is known also stop at the same deadline:
+the birth becomes `complete`, with a pinned
+`world_inspection_unavailable` reconciliation note rather than a
+retroactive failure. Observation errors cannot fail an admitted Thread.
 
 A durable model request witness conflict after deployment pauses
 automatic retries with `DURABLE_INVOCATION_CONFLICT`; it preserves
@@ -28,7 +32,9 @@ the earlier invocation journal and leaves the birth operator-resumable.
 Resume advances the bounded generation ordinal so new prompts use new
 journal IDs. Development gate-budget exhaustion likewise pauses after
 the first bounded budget; one Resume grants a second bounded
-generation, and a second exhaustion is terminal. Deployment checks
+generation, and a second exhaustion is terminal. An immutable pinned Genesis
+development-plan conflict is a terminal integrity error, not a
+retryable model-witness conflict. Deployment checks
 the previous Birth Center for `developing`/`publishing` births and
 warns; a failed status check does not block deployment.
 
@@ -41,6 +47,10 @@ validated before Genesis development calls. One development step
 may run per alarm, and an alarm stops starting new work after
 approximately five minutes; other short stages can progress.
 Client-side `--follow REQUEST_ID` only observes and never resumes.
+A birth paused for operator Resume stops automatic browser polling and
+CLI follow exits with the Resume command; while all outstanding births
+are in scheduled backoff the dashboard defers its next read until the
+earliest retry, instead of polling every 30 seconds for hours.
 Internal service-binding route 404s remain retryable during staggered
 deployments.
 

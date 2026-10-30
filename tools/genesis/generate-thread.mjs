@@ -158,6 +158,14 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
         error.code="THREAD_BIRTH_UNLOCATED";
         throw error;
       }
+      if(birth.status==="failed"&&birth.failureRetryable===true&&birth.nextAttemptAt==null){
+        process.stderr.write("RESUME npm run genesis:birth -- --env "+
+          parsed.environment+" --resume "+requestId+"\n");
+        const error=new Error(birth.error??"Birth paused for operator Resume");
+        error.code="THREAD_BIRTH_PAUSED";
+        error.retryable=true;
+        throw error;
+      }
       if(["cancelled","stillborn"].includes(birth.stage) ||
         (birth.status==="failed"&&birth.failureRetryable===false)){
         const error=new Error(birth.error??"Birth ended without admission");
@@ -165,7 +173,10 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
         error.retryable=false;
         throw error;
       }
-      await sleep(5_000);
+      const next=Number(birth.nextAttemptAt);
+      const sleepMs=Number.isFinite(next)&&next>now()
+        ?Math.min(60_000,Math.max(5_000,next-now())):5_000;
+      await sleep(sleepMs);
     }
   }finally{
     clearInterval(tick);
@@ -178,7 +189,7 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
 }
 runGenesisBirth().catch(error=>{
   process.stderr.write(JSON.stringify({
-    event:"thread-birth-failed",
+    event:error?.code==="THREAD_BIRTH_PAUSED"?"thread-birth-paused":"thread-birth-failed",
     errorName:error?.constructor?.name??"Error",
     errorCode:error?.code??null,
     retryable:error?.retryable??null,

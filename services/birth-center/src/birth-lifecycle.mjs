@@ -2,6 +2,7 @@ import { resolveGeoNamesPlace } from "../../../integrations/geography/geonames.m
 import { buildGenesisDevelopmentPlan } from "./genesis-development-plan.mjs";
 import { deriveGenesisLifeContinuity } from "./genesis-development-contracts.mjs";
 import { DurableInvocationConflictError } from "./model-runtime/durable-invocation-journal.mjs";
+import { GenesisDevelopmentRequestConflictError } from "./genesis-development-request-store.mjs";
 import { genesisSexForThread } from "./genesis-sex.mjs";
 import { selectBirthChronology } from "./birth-material.mjs";
 import { composeGenesisBirthRequest } from "./genesis-birth-authoring.mjs";
@@ -142,16 +143,16 @@ function birthFinalResult(birth,identity,worldInspection){
     sexSelection:birth.input.sex??"derived",
     placeSelection:birth.data.selector?.display??null,
     heritageSelection:birth.input.heritage,
-    worldMode:birth.data.worldMode,
-    selectionDigest:request.originMaterial.selectionDigest.slice(0,19),
+    worldMode:birth.data.worldMode??null,
+    selectionDigest:request.originMaterial?.selectionDigest?.slice(0,19)??null,
     genesisId:birth.genesisId,
     threadId:birth.threadId,
-    fibreIdentityNumber:birth.data.developmentResult.fibreIdentityNumber,
+    fibreIdentityNumber:birth.data.developmentResult?.fibreIdentityNumber??null,
     name:identity?.name??name,sex:identity?.sex??chosen,birthDate:identity?.birthDate??request.bornAt.slice(0,10),
     birthCity:identity?.birthCity??request.subjectIdentity.birthCity,reconciliationNote,
-    locality:birth.data.newbornLocation.locality,
-    countryCode:birth.data.newbornLocation.countryCode,
-    languages:identity?.languages??request.subjectIdentity.languages,
+    locality:birth.data.newbornLocation?.locality??null,
+    countryCode:birth.data.newbornLocation?.countryCode??null,
+    languages:identity?.languages??request.subjectIdentity.languages??null,
     memoryRefCount:worldInspection?.authoritativeThread?.memoryRefCount??null,
     worldSpecId:request.worldSpec.worldSpecId,
     identityMode:"fresh_birth_composition",
@@ -216,6 +217,21 @@ export function createBirthLifecycle({
   async function observeLocation(threadId){
     const data=await world("/internal/threads/"+encodeURIComponent(threadId)+"/observatory?view=current");
     return newbornLocationStatus(data.observatory);
+  }
+  function completeWithoutInspection(birth){
+    const request=birth.data.developmentRequest;
+    const identity={
+      name:birth.sex==="female"?request.subjectIdentity.femaleName:request.subjectIdentity.maleName,
+      sex:birth.sex,birthDate:request.bornAt.slice(0,10),
+      birthCity:request.subjectIdentity.birthCity,
+      languages:request.subjectIdentity.languages,
+    };
+    const reconciliationNote={kind:"world_inspection_unavailable",
+      reason:"admitted_thread_inspection_not_observed_within_two_hours"};
+    const result={...birthFinalResult(birth,identity,null),reconciliationNote};
+    store.progress(birth.requestId,{stage:"complete",status:"published",result,
+      data:{...birth.data,reconciliationNote},
+      error:null,failureRetryable:null,nextAttemptAt:null});
   }
   async function advance(birth,{canAuthor}){
     const {requestId,stage}=birth,at=nowMs();
@@ -490,7 +506,7 @@ export function createBirthLifecycle({
     if(stage==="admitted"){
       if(at-(birth.observationStartedAt??at)>=OBSERVE_LIMIT_MS){
         store.progress(requestId,{stage:"unpresented",status:"published",
-          nextAttemptAt:null,result:{
+          error:null,failureRetryable:null,nextAttemptAt:null,result:{
             event:"thread-birth-unpresented",requestId,threadId:birth.threadId,
             reason:"presentation_not_observed_within_two_hours",
           }});
@@ -505,19 +521,22 @@ export function createBirthLifecycle({
         });
         return "observing";
       }
-      store.progress(requestId,{stage:"presented",attemptCount:0,nextAttemptAt:at+OBSERVE_FIRST_MS});
+      store.progress(requestId,{stage:"presented",attemptCount:0,
+        error:null,failureRetryable:null,nextAttemptAt:at+OBSERVE_FIRST_MS});
       return "observing";
     }
     if(stage==="presented"){
+      if(at-(birth.observationStartedAt??at)>=OBSERVE_LIMIT_MS){
+        store.progress(requestId,{stage:"unlocated",status:"published",
+          error:null,failureRetryable:null,nextAttemptAt:null,result:{
+            event:"thread-birth-unlocated",requestId,threadId:birth.threadId,
+            state:"location_not_observed_within_two_hours",
+          }});
+        return "complete";
+      }
       const result=await observeLocation(birth.threadId);
       if(!active(requestId))return "complete";
       if(result.state!=="located"){
-        if(at-(birth.observationStartedAt??at)>=OBSERVE_LIMIT_MS){
-          store.progress(requestId,{stage:"unlocated",nextAttemptAt:null,result:{
-            event:"thread-birth-unlocated",requestId,threadId:birth.threadId,state:result.state,
-          }});
-          return "complete";
-        }
         store.progress(requestId,{
           attemptCount:birth.attemptCount+1,
           nextAttemptAt:at+backoff(birth.attemptCount+1,OBSERVE_FIRST_MS,OBSERVE_MAX_MS),
@@ -525,10 +544,15 @@ export function createBirthLifecycle({
         return "observing";
       }
       store.progress(requestId,{stage:"located",attemptCount:0,
+        error:null,failureRetryable:null,
         data:{...birth.data,newbornLocation:result.location},nextAttemptAt:at});
       return "continue";
     }
     if(stage==="located"){
+      if(at-(birth.observationStartedAt??at)>=OBSERVE_LIMIT_MS){
+        completeWithoutInspection(birth);
+        return "complete";
+      }
       const inspection=(await world(
         "/internal/genesis/"+encodeURIComponent(birth.genesisId)+"/threads/"+
         encodeURIComponent(birth.threadId)+"/inspection",
@@ -571,15 +595,31 @@ export function createBirthLifecycle({
         birth=store.get(original.requestId);
       }catch(error){
         if(!active(original.requestId))return {usedAuthor,usedDevelopment};
+        if(["admitted","presented","located"].includes(birth.stage)){
+          // An admitted person cannot fail because Presentation, observatory
+          // or inspection is temporarily absent. The observation deadline
+          // resolves to a visible outcome on a later wake.
+          const attempt=birth.attemptCount+1;
+          store.progress(original.requestId,{
+            status:"published",attemptCount:attempt,
+            error:message(error),failureRetryable:null,
+            nextAttemptAt:nowMs()+backoff(attempt,OBSERVE_FIRST_MS,OBSERVE_MAX_MS),
+          });
+          return {usedAuthor,usedDevelopment};
+        }
         const attempt=birth.attemptCount+1;
         const conflict=error instanceof DurableInvocationConflictError;
+        const pinnedConflict=error instanceof GenesisDevelopmentRequestConflictError
+          ||/^durable Genesis development plan digest drift/u.test(message(error));
         const exhausted=birth.stage==="developing"&&(
           /exhaust(?:ed|ion)|budget.*(?:exceeded|depleted)/iu.test(message(error))||
           /exhaust/iu.test(String(error?.gate??"")));
         const exhaustedCount=(birth.data.developmentExhaustions??0)+(exhausted?1:0);
-        const retryable=conflict||exhausted?exhaustedCount<2:error?.retryable!==false;
+        const retryable=pinnedConflict?false:conflict||exhausted
+          ?exhaustedCount<2:error?.retryable!==false;
         const pause=conflict||(exhausted&&exhaustedCount<2);
-        const code=conflict?"DURABLE_INVOCATION_CONFLICT"
+        const code=pinnedConflict?"DEVELOPMENT_PINNED_PLAN_CONFLICT"
+          :conflict?"DURABLE_INVOCATION_CONFLICT"
           :exhausted?"DEVELOPMENT_BUDGET_EXHAUSTED"
           :String(error?.code??error?.constructor?.name??"BIRTH_FAILED");
         store.progress(original.requestId,{

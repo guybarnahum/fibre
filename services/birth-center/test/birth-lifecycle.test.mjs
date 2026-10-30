@@ -3,6 +3,7 @@ import test from "node:test";
 import { createBirthLifecycleStore } from "../src/birth-lifecycle-store.mjs";
 import { createBirthLifecycle } from "../src/birth-lifecycle.mjs";
 import { DurableInvocationConflictError } from "../src/model-runtime/durable-invocation-journal.mjs";
+import { GenesisDevelopmentRequestConflictError } from "../src/genesis-development-request-store.mjs";
 import { createBirthLifecycleApi } from "../src/birth-lifecycle-api.mjs";
 import { tempBirthState } from "./support/birth-state-fixture.mjs";
 
@@ -132,6 +133,89 @@ test("an admitted life becomes unpresented after two hours without retroactive f
   assert.equal(birth.status,"published");
   assert.equal(birth.result.event,"thread-birth-unpresented");
   assert.equal(store.get("unpresented-proof").nextAttemptAt,null);
+});
+
+test("post-admission World outages cannot fail a Thread or bypass observation limits",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  let time=Date.parse(AT),worldCalls=0;
+  const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  const lifecycle=createBirthLifecycle({
+    store,runtime:{stateScopeId:"birth",infraDriver:storage.infraDriver,
+      durableAdapter:adapter=>adapter,provisionalBirthStore:{get:()=>null},
+      developmentRequestStore:{get:()=>null}},
+    developmentService:{develop:()=>{throw Error("Admitted life was re-developed");}},
+    authorAdapter:{invoke:async()=>{throw Error("Admitted life was re-authored");}},
+    worldFetch:async()=>{worldCalls++;return Response.json({error:"route_not_deployed"},{status:404});},
+    presentationFetch:async()=>{throw Error("Presentation unexpectedly queried");},
+    privateToken:"private-test-token-123456",nowMs:()=>time,
+  });
+  for(const stage of ["presented","located"]){
+    const id="alive-"+stage;
+    store.enqueue(input(id,{sex:"female"}));
+    store.progress(id,{stage,status:"published",nextAttemptAt:time,
+      threadId:"thr_"+stage,genesisId:"gen_"+stage,sex:"female",
+      observationStartedAt:time,
+      data:{
+        selector:{display:"Egypt/Aswan"},worldMode:"created",
+        developmentResult:{fibreIdentityNumber:"TEST-1"},
+        newbornLocation:{locality:"Aswan",countryCode:"EG"},
+        developmentRequest:{
+          bornAt:"2004-03-01T00:00:00Z",
+          subjectIdentity:{femaleName:"Tasneem Jundī",maleName:"Tariq Jundī",
+            birthCity:"Aswān, Egypt",languages:["Arabic","English"]},
+          originMaterial:{selectionDigest:"sha256:sample"},
+          worldSpec:{worldSpecId:"world_aswan"},
+        },
+      },
+    });
+  }
+  await lifecycle.handleWake();
+  assert.equal(store.get("alive-presented").status,"published");
+  assert.equal(store.get("alive-located").status,"published");
+  assert.ok(worldCalls>0,"World unavailability was not exercised");
+  time+=2*60*60_000+1;
+  const before=worldCalls;
+  await lifecycle.handleWake();
+  assert.equal(worldCalls,before,"Observation continued making World calls after its deadline");
+  const unlocated=lifecycle.get("alive-presented");
+  assert.equal(unlocated.stage,"unlocated");
+  assert.equal(unlocated.status,"published");
+  const completed=lifecycle.get("alive-located");
+  assert.equal(completed.stage,"complete");
+  assert.equal(completed.status,"published");
+  assert.equal(completed.result.reconciliationNote.kind,"world_inspection_unavailable");
+  assert.equal(completed.failureRetryable,null);
+});
+
+test("an immutable development plan conflict is terminal, not an infinite retry",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  const time=Date.parse(AT),store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  let attempts=0;
+  const lifecycle=createBirthLifecycle({
+    store,runtime:{stateScopeId:"birth",infraDriver:storage.infraDriver,
+      durableAdapter:adapter=>adapter,provisionalBirthStore:{get:()=>null},
+      developmentRequestStore:{get:()=>null}},
+    developmentService:{develop:async()=>{attempts++;
+      throw new GenesisDevelopmentRequestConflictError(
+        "Genesis development request already exists for different development material");}},
+    authorAdapter:{invoke:async()=>{throw Error("unexpected authoring");}},
+    worldFetch:()=>{throw Error("unexpected World");},
+    presentationFetch:()=>{throw Error("unexpected Presentation");},
+    privateToken:"private-test-token-123456",nowMs:()=>time,
+  });
+  store.enqueue(input("pinned-contract-proof"));
+  store.progress("pinned-contract-proof",{stage:"developing",status:"developing",
+    data:{developmentRequest:{}},nextAttemptAt:time});
+  await lifecycle.handleWake();
+  const birth=lifecycle.get("pinned-contract-proof");
+  assert.equal(birth.failureRetryable,false,
+    "A pinned Genesis plan conflict was treated as transient");
+  assert.equal(birth.errorCode,"DEVELOPMENT_PINNED_PLAN_CONFLICT");
+  assert.equal(birth.nextAttemptAt,null);
+  await lifecycle.handleWake();
+  assert.equal(attempts,1,"A permanent plan conflict kept consuming development attempts");
 });
 
 test("a deploy-time journal conflict pauses without looping, then Resume advances generation",async t=>{
