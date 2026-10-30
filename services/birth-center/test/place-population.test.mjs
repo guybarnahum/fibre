@@ -5,6 +5,9 @@ import {composeParentage,drawBirthHousehold,parentAgesAtBirth} from "../src/birt
 import {composeBirthSubjectIdentity} from "../src/birth-material.mjs";
 import {referencePopulationIds,sampleFounderPhysicalGenome} from "../../../core/src/human-appearance/index.mjs";
 import {composeGenesisWorldSelection} from "../src/genesis-world-selection.mjs";
+import {composeGenesisBirthRequest} from "../src/genesis-birth-authoring.mjs";
+import {buildGenesisDevelopmentPlan} from "../src/genesis-development-plan.mjs";
+import {deriveGenesisLifeContinuity} from "../../world-kernel/src/genesis-life-continuity-v1.mjs";
 import {createBirthLifecycleStore} from "../src/birth-lifecycle-store.mjs";
 import {tempBirthState} from "./support/birth-state-fixture.mjs";
 
@@ -149,7 +152,9 @@ test("non-caregiving biological parents retain their genetic ancestry",()=>{
     caregivers:["mother"],siblings:[],
   }});
   const father=withoutFather.participants.find(p=>p.participantId==="father");
-  assert.deepEqual(father.factualRoles,["father","synthetic_genetic_ancestor"]);
+  assert.deepEqual(father.factualRoles,["father"]);
+  assert.equal(withoutFather.father.geneticProvenance,"synthetic_genetic_ancestor");
+  assert.equal(withoutFather.mother.geneticProvenance,"synthetic_genetic_ancestor");
   assert.ok(father.relationshipFacts.some(fact=>fact.includes("Does not live")));
   assert.deepEqual(withFather.family.physicalAncestry,withoutFather.family.physicalAncestry,
     "Removing caregiving changed biological origin");
@@ -184,6 +189,61 @@ test("non-caregiving biological parents retain their genetic ancestry",()=>{
     "The younger sibling was not an actual Genesis participant");
   assert.ok(worldFor(withYounger).worldSpec.familyRelations.some(fact=>fact.includes("younger")),
     "WorldSpec ignored the child's drawn younger sibling");
+});
+
+test("drawn households pass real World Genesis envelope and continuity role authority",()=>{
+  const traditions={a:names("A"),b:names("B")};
+  const seen={grandparent:false,sibling:false,nonCaregiving:false};
+  for(let i=0;i<36;i++){
+    const requestId="genesis-family-roles-"+i;
+    const selected=choosePlaceCouple({place,requestId});
+    const mother=place.originGroups.find(group=>group.originId===selected.couple.motherOriginId);
+    const father=place.originGroups.find(group=>group.originId===selected.couple.fatherOriginId);
+    const parentage=composeParentage({
+      requestId,chronology,selector,place,
+      selected:{...selected,mother,father,childOriginId:"a"},
+      traditions,sex:"female",
+    });
+    const selection=composeGenesisWorldSelection({
+      selector,heritage:null,authored:place,requestId,...chronology,
+      createdAt:"2026-10-29T00:00:00Z",
+      familyOverride:parentage.family,
+      householdOverride:{...parentage.household,participants:parentage.participants},
+    });
+    const request=composeGenesisBirthRequest({
+      requestId,requestedAt:"2026-10-29T18:00:00Z",
+      selection,sexSelection:"female",calibrationModel:null,parentage,
+    });
+    // This constructs the historical envelope through World's real validator,
+    // including the exact home affordance roles the birth would publish.
+    const plan=buildGenesisDevelopmentPlan(request);
+    assert.equal(plan.envelopePlan.envelopes.length,plan.windows.length,
+      "World rejected a drawn household's place affordances");
+    const episode={
+      episodeId:"episode_"+i,occurredAt:plan.windows[0].startAt,
+      placeRef:plan.worldSpec.places[0].placeId,
+      participantRefs:plan.roster.participants.map(person=>person.participantId),
+      introducedParticipants:[],
+    };
+    // World validates the actual hashed Genesis roster, not a mocked family.
+    const continuity=deriveGenesisLifeContinuity({
+      threadId:plan.threadId,worldSpec:plan.worldSpec,
+      initialRoster:plan.roster.participants,episodes:[episode],
+    });
+    assert.equal(continuity.guarantees.everyPublishedParticipantHasRoleAuthority,true,
+      "World rejected a drawn household member's historical role");
+    assert.ok(!plan.roster.participants.some(person=>
+      person.factualRoles.includes("synthetic_genetic_ancestor")),
+    "Genetic ancestry leaked into historical roles");
+    seen.grandparent||=parentage.household.caregivers.some(role=>
+      role==="grandmother"||role==="grandfather");
+    seen.sibling||=parentage.household.siblings.length>0;
+    seen.nonCaregiving||=parentage.participants.some(person=>
+      (person.factualRoles.includes("mother")||person.factualRoles.includes("father"))
+      &&!person.factualRoles.includes("caregiver"));
+  }
+  assert.ok(Object.values(seen).every(Boolean),
+    "Genesis role sample did not exercise grandparent, sibling and non-caregiving parent");
 });
 
 test("a different biological father changes inherited body and family name without changing the Place",()=>{

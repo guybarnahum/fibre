@@ -112,6 +112,21 @@ parental age of 18 at that sibling's birth. These corrections have not yet
 been validated in staging. Re-run with fresh birth request IDs; do not infer
 success from the two failed attempts.
 
+**Latest staging finding (October 29):** Hilo and Aswan progressed
+through Place Population and naming authoring, but both stopped in
+`parents_selected` before reserving a Thread or issued name.
+The composed household referenced family roles not included in the
+WorldSpec's fixed `affordedRoles`, so World Genesis historical-envelope
+and initial-roster validation rejected the requests. The source fix now
+unions actual drawn family roles into `affordedRoles`, derives the home
+counterpart roles from that authority, and keeps
+`synthetic_genetic_ancestor` on pinned parental provenance rather than
+historical `factualRoles`. A real-World-validator regression test covers
+households with grandparents, siblings and non-caregiving parents.
+This fix is **not yet locally or staging verified**; Place and naming
+materials from the failed attempts are already stored and need no
+re-authoring to exercise the corrected composition.
+
 **Source capability before this staging correction:** New births use a shared Place Population per place and birth decade, an authored mixed-parent share and weighted couple selection. Naming traditions are journaled on first use for each drawn origin, with era-specific parent and child names. Named mother and father shape ancestry, names, upbringing languages and historical Genesis participants. Schema v5 adds naming versions and a per-place name index covering in-flight births. The Slice 2 review correction adds weighted household patterns to the same Place model call; each child draws caregiving parents and grandparents and zero to four individually situated siblings. Both biological parents remain named genetic ancestors even when absent from the home. Birth status now projects these pinned family details. The once-per-place World name seed uses a new identity-only `GET /internal/thread-directory/names?birthCity=...` read rather than the full directory and its location evidence. This narrowly scoped World route is the only new World code; no World schema migration is required. These remain source claims, not deployed evidence. Old pinned Slice 1 births retain their original Place versions. Admin unification and read-only Place inspection remain Slice 3; editing is deferred.
 
 ## Identity, Genesis and embodiment

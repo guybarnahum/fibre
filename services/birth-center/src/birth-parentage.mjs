@@ -131,7 +131,7 @@ export function composeParentage({
     const livesHere=caregivers.includes(parent.role);
     return {
       participantId:parent.role,
-      factualRoles:[parent.role,"synthetic_genetic_ancestor",...(livesHere?["caregiver"]:[])],
+      factualRoles:[parent.role,...(livesHere?["caregiver"]:[])],
       relationshipFacts:[
         "The subject's "+parent.role+" is "+parent.name+".",
         "Born approximately "+parent.born+"; age "+parent.parentAge+" at the subject's birth.",
@@ -189,17 +189,17 @@ export function composeParentage({
     ". "+(siblings.length===0?"There are no siblings in this household.":"");
   const household=Object.freeze({
     caregivers,siblings,description,familyRelations,
-    homeCounterpartRoles:["caregiver",...caregivers,...(siblings.length?["sibling"]:[]),
-      "relative","peer","neighbor"],
   });
   const parents=[...parentParticipants,...grandparents,...siblingParticipants];
   return Object.freeze({
     selected,sex,redraw,
     femaleName,maleName,issuedName:sex==="female"?femaleName:maleName,
     mother:Object.freeze({name:motherName,originId:selected.mother.originId,
-      originLabel:selected.mother.label,birthDecade:Math.floor(motherBorn/10)*10}),
+      originLabel:selected.mother.label,birthDecade:Math.floor(motherBorn/10)*10,
+      geneticProvenance:"synthetic_genetic_ancestor"}),
     father:Object.freeze({name:fatherName,originId:selected.father.originId,
-      originLabel:selected.father.label,birthDecade:Math.floor(fatherBorn/10)*10}),
+      originLabel:selected.father.label,birthDecade:Math.floor(fatherBorn/10)*10,
+      geneticProvenance:"synthetic_genetic_ancestor"}),
     mixed:selected.mother.originId!==selected.father.originId,
     childGivenNameTradition:selected.childOriginId,
     household,family,participants:parents,

@@ -181,6 +181,17 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
   const householdShape = householdOverride?.description ?? (heritageLabel === null
     ? "Two caregivers, the subject and one sibling share a household; other relatives may participate in ordinary visits and family logistics without being assumed to live there."
     : `Two caregivers, the subject and one sibling share a household in ${selector.city}. The household carries ${heritageLabel} heritage; other relatives or community ties may participate in ordinary visits, language, food, celebrations and family logistics without prescribing the subject's beliefs or personality.`);
+  const baseRoles=["caregiver","sibling","relative","peer","teacher","neighbor",
+    "vendor","librarian","coach","mentor","transit_worker"];
+  const affordedRoles=[...new Set([...baseRoles,
+    ...(householdOverride?.participants??[]).flatMap(person=>person.factualRoles)])];
+  const homeCounterpartRoles=householdOverride===null
+    ?["caregiver","sibling","relative","peer","neighbor"]
+    :[...new Set(["caregiver","relative","peer","neighbor",
+      ...householdOverride.participants.filter(person=>
+        person.factualRoles.includes("caregiver")||person.factualRoles.includes("sibling")
+      ).flatMap(person=>person.factualRoles)])]
+      .filter(role=>affordedRoles.includes(role));
   const culturalContext = [
     authored.culturalContext,
     ...(heritageLabel === null ? [] : [`Household heritage: ${heritageLabel}. ${authored.heritageContext??"Parentage and upbringing are specific to the selected family."}`]),
@@ -206,7 +217,7 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
     culturalContext,
     availableInstitutions: Object.freeze([...authored.availableInstitutions]),
     intellectualEnvironment: authored.intellectualEnvironment,
-    affordedRoles: Object.freeze(["caregiver", "sibling", "relative", "peer", "teacher", "neighbor", "vendor", "librarian", "coach", "mentor", "transit_worker"]),
+    affordedRoles: Object.freeze(affordedRoles),
     worldAuthorship: Object.freeze({
       authorId: "fibre_modern_world_authoring",
       sourcesConsulted: Object.freeze([]),
@@ -244,8 +255,7 @@ function buildAuthoredWorld({ selector, heritage, authored, requestId, bornAt, c
     ]) }),
   ]);
   const placeAffordances = Object.freeze([
-    Object.freeze({ placeRef:place("home"), placeKind:"home", ordinaryCounterpartRoles:Object.freeze(householdOverride?.homeCounterpartRoles??
-      ["caregiver", "sibling", "relative", "peer", "neighbor"]) }),
+    Object.freeze({ placeRef:place("home"), placeKind:"home", ordinaryCounterpartRoles:Object.freeze(homeCounterpartRoles) }),
     Object.freeze({ placeRef:place("school"), placeKind:"school", ordinaryCounterpartRoles:Object.freeze(["peer", "teacher", "coach", "mentor"]) }),
     Object.freeze({ placeRef:place("transit"), placeKind:"transit", ordinaryCounterpartRoles:Object.freeze(["peer", "neighbor", "caregiver", "sibling", "transit_worker"]) }),
     Object.freeze({ placeRef:place("learning"), placeKind:"library_or_learning", ordinaryCounterpartRoles:Object.freeze(["peer", "librarian", "teacher", "mentor", "caregiver"]) }),

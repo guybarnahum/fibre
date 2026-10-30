@@ -61,10 +61,16 @@ and, for each sibling, independently draws sex, older/younger status and a
 tradition using the corresponding child-decade pool, and share the child's
 family name or a patronymic derived from their common father. Grandparents
 remain unnamed, with roles and maternal/paternal family-root facts. Both
-parents remain synthetic genetic ancestors even when not caregivers; a
-non-caregiving parent is explicitly recorded as living outside the child's
-household. Household selection changes WorldSpec household description,
-family relations, historical participants and home counterpart roles.
+parents remain synthetic genetic ancestors even when not caregivers; this is
+pinned under each parent's `geneticProvenance`, never inserted into the
+historical participant's `factualRoles`. A non-caregiving parent is
+explicitly recorded as living outside the child's household. The WorldSpec's
+`affordedRoles` are the existing base roles plus the drawn participants'
+actual family roles (mother, father, grandparents and sibling sex roles);
+home `ordinaryCounterpartRoles` derive from this same role authority and
+the household's caregiving/sibling participants. Household selection changes
+WorldSpec household description, family relations, historical participants
+and home counterpart roles.
 Previously pinned Slice 1 family-profile births retain their original
 household material.
 
@@ -133,4 +139,9 @@ Cost: **one model call per new place × child's birth decade** authors civic con
 
 **Alternatives:** large fixed household profiles still clone families; independent parent draws erase real couple patterns; per-birth models add cost; per-birth World name checks add load. We reject these for this slice, not broader natural family development. No caller or model assigns the child's future feelings, attention, choices or values. History can bend the future only when a Thread later consumes admitted parental/childhood evidence. Birth-cohort differential tests must change selected parents while fixing place and verify changed admitted lineage, naming and upbringing; the standing **behavioral** differential remains separate and unproved.
 
-**Household semantic test:** in a large seeded cohort for one Place, pattern frequencies match authored weights and demonstrate zero siblings, younger siblings and a non-caregiving biological parent without changing that parent's physical ancestry. **World names test:** a city-only response lists no other-city names and consults no location evidence. **Slice 2 semantic test:** over a large deterministic sample for one pinned Place, the observed mixed-origin fraction must approximate its `mixedParentShare` within tolerance, and every selected couple must be one of the authored Place couples. The class fallback must remain defined under heritage filtering. **Additional proof:** bounded samples for Hilo, Addis Ababa, London and Aswan should expose name collisions, improbable parents, family repetition and language errors. Verify one Place authoring call, lazy naming, one-time World name-index seed, in-flight name reservations, and unchanged lineage after replay.
+**Genesis role-boundary test:** compose a deterministic cohort of real
+Birth Center development requests and admit each through World's actual
+historical-envelope plan and life-continuity initial-roster validators,
+including grandparents, siblings and a non-caregiving biological parent.
+All role references must have WorldSpec authority; ancestry provenance
+must not masquerade as a lived role. **Household semantic test:** in a large seeded cohort for one Place, pattern frequencies match authored weights and demonstrate zero siblings, younger siblings and a non-caregiving biological parent without changing that parent's physical ancestry. **World names test:** a city-only response lists no other-city names and consults no location evidence. **Slice 2 semantic test:** over a large deterministic sample for one pinned Place, the observed mixed-origin fraction must approximate its `mixedParentShare` within tolerance, and every selected couple must be one of the authored Place couples. The class fallback must remain defined under heritage filtering. **Additional proof:** bounded samples for Hilo, Addis Ababa, London and Aswan should expose name collisions, improbable parents, family repetition and language errors. Verify one Place authoring call, lazy naming, one-time World name-index seed, in-flight name reservations, and unchanged lineage after replay.
