@@ -1,5 +1,5 @@
 import {createOpenAIModelAdapter} from "#integrations/ai/reasoning/openai.mjs";
-import {BIRTH_RESPONSE_SCHEMAS,assertBirthResponseSchemaPatterns} from "./model-response-schemas.mjs";
+import {BIRTH_RESPONSE_SCHEMAS,assertBirthResponseSchemaPatterns} from "#services/birth-center/src/model-response-schemas.mjs";
 
 // The same seven exact transport schemas on the laptop and deployed Worker.
 // Responses are deliberately tiny; truncated output still proves acceptance.

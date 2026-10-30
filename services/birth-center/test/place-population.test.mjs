@@ -116,13 +116,7 @@ test("zero heritage retention still gives every child a validated home language"
   validatePlacePopulation(city);
   for(let index=0;index<48;index++){
     const requestId="zero-household-retention-"+index;
-    const couple=choosePlaceCouple({place:city,requestId});
-    const origin=new Map(city.originGroups.map(group=>[group.originId,group]));
-    const selected={
-      couple,mother:origin.get(couple.motherOriginId),
-      father:origin.get(couple.fatherOriginId),
-      childOriginId:"a",
-    };
+    const selected={...choosePlaceCouple({place:city,requestId}),childOriginId:"a"};
     const parentage=composeParentage({requestId,chronology,selector,place:city,
       selected,traditions:{a:names("A"),b:names("B")},sex:"female"});
     assert.deepEqual(parentage.family.raisedLanguages,["English"],

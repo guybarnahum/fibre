@@ -2,7 +2,7 @@ import {fileURLToPath,pathToFileURL} from "node:url";
 import {resolve} from "node:path";
 import {birthDeployment,birthEnvironment,birthRequest} from "../genesis/birth-remote.mjs";
 import {rehearseBirthSnapshot} from "../../services/birth-center/src/birth-preflight.mjs";
-import {probeBirthModelSchemas} from "../../services/birth-center/src/birth-schema-probe.mjs";
+import {probeBirthModelSchemas} from "../../infra/deployments/birth-center/cloudflare/birth-schema-probe.mjs";
 import {loadDeploymentManifest,resolveServiceDeployment} from "./deployment-manifest.mjs";
 
 // Fail closed before any upload. The old Worker supplies only pinned records;

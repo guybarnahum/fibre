@@ -415,6 +415,7 @@ async function deploySchemaGatedStack(gated){
   return deployCloudflareStack({
     repoRoot:root,environment:"staging",client:gated.client,
     validateRepository:async()=>{},provision:async()=>state,
+    localBirthPreflight:async()=>{},
     wait:async()=>{},log:()=>{},
   });
 }

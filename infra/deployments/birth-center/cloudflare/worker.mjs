@@ -4,7 +4,7 @@ import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { migrateBirthState } from "#services/birth-center/src/birth-state-migrations.mjs";
 import {rehearseStoredBirth,snapshotStoredBirthMaterial} from "#services/birth-center/src/birth-preflight.mjs";
-import {probeBirthModelSchemas} from "#services/birth-center/src/birth-schema-probe.mjs";
+import {probeBirthModelSchemas} from "./birth-schema-probe.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
