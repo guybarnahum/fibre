@@ -59,8 +59,22 @@ const birthLocation = $("#thread-birth-location");
 const birthMap = $("#thread-birth-map");
 const birthMapParts = mountWorldMap(birthMap, { selection:true });
 const birthCityMarkers=document.createElementNS(SVG_NS,"g");
+const birthCompletedMarkers=document.createElementNS(SVG_NS,"g");
 const birthPipelineMarkers=document.createElementNS(SVG_NS,"g");
-birthMapParts.markers.append(birthCityMarkers,birthPipelineMarkers);
+birthMapParts.markers.append(birthCityMarkers,birthCompletedMarkers,birthPipelineMarkers);
+const birthMapShell=$(".thread-birth-map-shell");
+let birthCityEntries=[];
+let birthHoverFrame=null;
+let birthHoverCoordinates=null;
+let birthMapPopover=null;
+let birthMapPopoverCloseTimer=null;
+function scheduleBirthMapPopoverClose(){
+  if(birthMapPopoverCloseTimer!==null)clearTimeout(birthMapPopoverCloseTimer);
+  birthMapPopoverCloseTimer=window.setTimeout(()=>{
+    if(birthMapPopover)birthMapPopover.hidden=true;
+    birthMapPopoverCloseTimer=null;
+  },1100);
+}
 const birthMapMarker = birthMapParts.selectionMarker;
 const birthMapSelection = $("#thread-birth-map-selection");
 const birthSearchResults = $("#thread-birth-search-results");
@@ -735,7 +749,12 @@ function birthplaceForBirth(birth) {
 
 function renderBirthPipelineMarkers() {
   birthPipelineMarkers.replaceChildren();
+  birthCompletedMarkers.replaceChildren();
   if (!Array.isArray(birthplaces)) return;
+  birthMapPopover?.remove();
+  birthMapPopover=null;
+  if(birthMapPopoverCloseTimer!==null)clearTimeout(birthMapPopoverCloseTimer);
+  birthMapPopoverCloseTimer=null;
   const visible = pendingBirthSnapshot;
   const groups = new Map();
   for (const birth of visible) {
@@ -744,10 +763,21 @@ function renderBirthPipelineMarkers() {
     if (!groups.has(place.place)) groups.set(place.place, []);
     groups.get(place.place).push({ birth, place });
   }
+  const inWorld=[];
   for (const entries of groups.values()) {
-    entries.forEach(({ birth, place }, index) => {
+    const completed=entries.filter(({birth})=>birthStage(birth)==="in-world"&&birth.threadId);
+    if(completed.length){
+      const place=completed[0].place;
+      inWorld.push({
+        place,count:completed.length,activeCount:0,
+        frozenSituatedCount:0,transitionCount:0,awaitingLivedNowCount:0,
+        births:completed.map(({birth})=>birth),
+      });
+    }
+    const inProgress=entries.filter(({birth})=>birthStage(birth)!=="in-world"||!birth.threadId);
+    inProgress.forEach(({ birth, place }, index) => {
       const point = worldMapPoint(place.lat, place.long);
-      const count = entries.length;
+      const count = inProgress.length;
       const angle = count === 1 ? 0 : (Math.PI * 2 * index) / count;
       const spread = count === 1 ? 0 : Math.min(13, 4 + count);
       const stage = birthStage(birth);
@@ -764,6 +794,14 @@ function renderBirthPipelineMarkers() {
       const flag = countryFlag(known?.birthLocation?.countryCode);
       title.textContent = [birth.name, [flag, birthplace].filter(Boolean).join(" "), stage, birth.threadId].filter(Boolean).join(" · ");
       circle.append(title);
+      if(index===0){
+        const city=document.createElementNS(SVG_NS,"text");
+        city.classList.add("thread-birth-pipeline-label");
+        city.setAttribute("x",String(point.x+12));
+        city.setAttribute("y",String(point.y-6));
+        city.textContent=place.city;
+        birthPipelineMarkers.append(city);
+      }
       const canonical=birth.requestedLocation;
       if(canonical?.country&&canonical?.city
         &&Number.isFinite(Number(canonical.lat))&&Number.isFinite(Number(canonical.long))){
@@ -780,21 +818,107 @@ function renderBirthPipelineMarkers() {
       birthPipelineMarkers.append(circle);
     });
   }
+  // Threads and Birth Center share the same grouped World marker and
+  // on-demand portrait viewer. No extra population fetch or birth polling.
+  const rendered=renderWorldCountMarkers(birthCompletedMarkers,inWorld);
+  for(const {marker,location} of rendered){
+    marker.classList.add("interactive","thread-birth-completed");
+    marker.setAttribute("tabindex","0");
+    marker.setAttribute("role","button");
+    marker.setAttribute("aria-label",location.count+" in-world birth"+
+      (location.count===1?"":"s")+" in "+location.place.city);
+    marker.addEventListener("pointerenter",()=>showBirthMapPopover(location,marker));
+    marker.addEventListener("pointerleave",scheduleBirthMapPopoverClose);
+    marker.addEventListener("click",event=>{
+      event.stopPropagation();
+      showBirthMapPopover(location,marker);
+    });
+    marker.addEventListener("keydown",event=>{
+      if(event.key==="Enter"||event.key===" "){
+        event.preventDefault();
+        showBirthMapPopover(location,marker);
+      }
+    });
+  }
+}
+
+function showBirthMapPopover(location,marker){
+  if(birthMapPopoverCloseTimer!==null)clearTimeout(birthMapPopoverCloseTimer);
+  birthMapPopoverCloseTimer=null;
+  const popover=birthMapPopover??document.createElement("div");
+  if(!birthMapPopover){
+    popover.className="thread-map-popover thread-birth-map-popover";
+    popover.addEventListener("pointerenter",()=>{
+      if(birthMapPopoverCloseTimer!==null)clearTimeout(birthMapPopoverCloseTimer);
+      birthMapPopoverCloseTimer=null;
+    });
+    popover.addEventListener("pointerleave",scheduleBirthMapPopoverClose);
+    birthMapShell.append(popover);
+    birthMapPopover=popover;
+  }
+  const heading=document.createElement("div");
+  heading.className="thread-map-popover-head";
+  const title=document.createElement("strong");
+  title.append(createThreadLocation(location.place));
+  const count=document.createElement("span");
+  count.textContent=location.count+" in-world birth"+(location.count===1?"":"s");
+  heading.append(title,count);
+  const faces=document.createElement("div");
+  faces.className="thread-map-faces";
+  for(const birth of location.births){
+    faces.append(createThreadIdentityViewer({
+      threadId:birth.threadId,name:birth.name??birth.threadId,
+      compact:true,className:"thread-map-person",title:"Born here · in World",
+    }));
+  }
+  popover.replaceChildren(heading,faces);
+  popover.hidden=false;
+  const rect=marker.getBoundingClientRect();
+  const shell=birthMapShell.getBoundingClientRect();
+  const width=popover.getBoundingClientRect().width;
+  const left=Math.max(8,Math.min(rect.left-shell.left+rect.width/2-width/2,
+    birthMapShell.clientWidth-width-8));
+  popover.style.left=Math.round(left)+"px";
+  popover.style.top=Math.round(rect.bottom-shell.top+8)+"px";
+}
+
+function updateBirthCityProximity(coordinates){
+  const radians=Math.PI/180;
+  const maxLatitudeDelta=300/69;
+  const hoverCos=coordinates?Math.cos(coordinates.lat*radians):0;
+  for(const {place,marker} of birthCityEntries){
+    let nearby=false;
+    if(coordinates&&Math.abs(place.lat-coordinates.lat)<=maxLatitudeDelta){
+      const dLat=(place.lat-coordinates.lat)*radians;
+      const dLong=(place.long-coordinates.long)*radians;
+      const a=Math.sin(dLat/2)**2+hoverCos*
+        Math.cos(place.lat*radians)*Math.sin(dLong/2)**2;
+      nearby=3959*2*Math.asin(Math.min(1,Math.sqrt(a)))<=300;
+    }
+    marker.style.display=nearby?"":"none";
+  }
 }
 
 function renderBirthCityMarkers() {
   birthCityMarkers.replaceChildren();
+  birthCityEntries=[];
   for(const place of birthplaces??[]){
     const point=worldMapPoint(place.lat,place.long);
-    const marker=document.createElementNS(SVG_NS,"circle");
+    const marker=document.createElementNS(SVG_NS,"g");
     marker.classList.add("thread-birth-city-marker");
     if(place.tier==="anchor")marker.classList.add("anchor");
-    marker.setAttribute("cx",point.x.toFixed(1));
-    marker.setAttribute("cy",point.y.toFixed(1));
-    marker.setAttribute("r",place.tier==="anchor"?"4":"2.6");
+    marker.style.display="none";
+    const circle=document.createElementNS(SVG_NS,"circle");
+    circle.setAttribute("cx",point.x.toFixed(1));
+    circle.setAttribute("cy",point.y.toFixed(1));
+    circle.setAttribute("r",place.tier==="anchor"?"4":"2.6");
+    const label=document.createElementNS(SVG_NS,"text");
+    label.setAttribute("x",String(point.x+7));
+    label.setAttribute("y",String(point.y-5));
+    label.textContent=place.city;
     const title=document.createElementNS(SVG_NS,"title");
     title.textContent=place.city+", "+place.country+" · Select birthplace";
-    marker.append(title);
+    marker.append(circle,label,title);
     marker.addEventListener("click",(event)=>{
       event.stopPropagation();
       const displayName=place.city+", "+place.country;
@@ -804,6 +928,7 @@ function renderBirthCityMarkers() {
       });
     });
     birthCityMarkers.append(marker);
+    birthCityEntries.push({place,marker});
   }
 }
 
@@ -1103,6 +1228,7 @@ function renderPendingBirths(births) {
       row.className = "thread-birth-pending-row";
       row.classList.toggle("stale", birth.stale === true);
       const copy = document.createElement("div");
+      copy.className="thread-birth-pending-copy";
       const known = birth.threadId ? rememberPendingBirth(birth) : null;
       const birthplace = threadBirthplaceText(known) ?? birth.location?.replace("/", ", ") ?? null;
       const flag = countryFlag(known?.birthLocation?.countryCode);
@@ -1162,8 +1288,6 @@ function renderPendingBirths(births) {
         statuses.append(inspect);
       }
       if(birth.requestId){
-        const actions=document.createElement("div");
-        actions.className="thread-birth-pending-status";
         const details=document.createElement("details");
         const summary=document.createElement("summary");
         summary.textContent="Family & Place";
@@ -1221,7 +1345,7 @@ function renderPendingBirths(births) {
             }
           }catch(error){content.textContent=String(error.message??error);}
         });
-        actions.append(details);
+        statuses.append(details);
         if(activeBirth(birth)||
           (birth?.status==="failed"&&(birth?.failureRetryable===true||
             (birth.failureRetryable===false&&!birth.threadId)))){
@@ -1248,10 +1372,9 @@ function renderPendingBirths(births) {
               }catch(error){window.alert(String(error.message??error));}
               finally{button.disabled=false;}
             });
-            actions.append(button);
+            statuses.append(button);
           }
         }
-        statuses.append(actions);
       }
       row.append(copy, statuses);
       birthPending.append(row);
@@ -1481,6 +1604,7 @@ function holdOperatorMode() {
   const appearanceActive=populationMode === "appearance";
   activityViewPanel.hidden=appearanceActive;
   activityViewPanel.style.display=appearanceActive?"none":"";
+  activityViewPanel.classList.toggle("birth-center-only",populationMode==="birth-center");
   $("#raw-view").hidden = true;
   birthCenterView.hidden = populationMode !== "birth-center";
   view.hidden = populationMode !== "threads";
@@ -1659,6 +1783,7 @@ function exitOperatorMode(nextMode) {
   stopAppearanceExperimentsLiveWatch();
   activityViewPanel.hidden=false;
   activityViewPanel.style.display="";
+  activityViewPanel.classList.remove("birth-center-only");
   birthCenterView.hidden = true;
   view.hidden = true;
   appearanceView.hidden = true;
@@ -1681,6 +1806,21 @@ function exitOperatorMode(nextMode) {
 birthLocation.addEventListener("input", renderBirthSearch);
 birthRandomLocation.addEventListener("click", () => setBirthLocation("", null));
 birthMap.addEventListener("click", chooseFromMap);
+birthMap.addEventListener("pointermove",event=>{
+  birthHoverCoordinates=mapCoordinates(event);
+  if(birthHoverFrame!==null)return;
+  birthHoverFrame=requestAnimationFrame(()=>{
+    birthHoverFrame=null;
+    updateBirthCityProximity(birthHoverCoordinates);
+  });
+});
+birthMap.addEventListener("pointerleave",()=>{
+  birthHoverCoordinates=null;
+  if(birthHoverFrame!==null)cancelAnimationFrame(birthHoverFrame);
+  birthHoverFrame=null;
+  updateBirthCityProximity(null);
+  scheduleBirthMapPopoverClose();
+});
 birthMap.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") return;
   event.preventDefault();

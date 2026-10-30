@@ -1253,3 +1253,146 @@
 .thread-birth-stage-badge.stage-stillborn{color:var(--muted);background:var(--surface-subtle)}
 
 .thread-birth-stage-marker.selectable{cursor:pointer}
+
+
+/* Birth Center: a map-first workspace, a single compact action line, and
+   durable lifecycle rows. Keep these styles scoped outside the other views. */
+.activity-view-panel.birth-center-only > .activity-view-head,
+.activity-view-panel.birth-center-only > .activity-view:not(#birth-center-view) {
+  display:none !important;
+}
+.thread-birth-center-view { min-width:0; }
+.thread-birth-section-head {
+  display:flex;align-items:baseline;justify-content:space-between;
+  gap:12px;min-width:0;margin-bottom:10px;
+}
+.thread-birth-section-head > div { display:flex;align-items:baseline;flex-wrap:wrap;gap:9px;min-width:0; }
+.thread-birth-section-head strong { font-size:12px;color:var(--text); }
+.thread-birth-section-head span { font-size:10px;color:var(--muted);line-height:1.4; }
+.thread-birth-section-head a { color:var(--accent); }
+.thread-birth-map-section { padding:14px 16px 15px; border-bottom:1px solid var(--border); }
+.thread-birth-map-hint { white-space:nowrap; }
+.thread-birth-map-shell { position:relative; }
+.thread-birth-map-popover { z-index:10; }
+.thread-birth-completed .thread-world-marker-core { fill:#12b76a; }
+.thread-world-count-marker.thread-birth-completed .thread-world-marker-core { fill:#12b76a; }
+.thread-world-count-marker.thread-birth-completed .thread-world-count { fill:#fff; }
+.thread-birth-city-marker { cursor:pointer; }
+.thread-birth-city-marker circle {
+  fill:color-mix(in srgb,var(--accent) 65%,white);
+  stroke:var(--surface);stroke-width:1.3;
+  vector-effect:non-scaling-stroke;
+}
+.thread-birth-city-marker:not(.anchor) { opacity:.72; }
+.thread-birth-city-marker:hover { opacity:1; }
+.thread-birth-city-marker:hover circle { fill:var(--accent);stroke-width:2; }
+.thread-birth-city-marker text,.thread-birth-pipeline-label {
+  fill:#f8fbff;stroke:#142338;stroke-width:3px;paint-order:stroke;
+  font-size:9px;font-weight:700;pointer-events:none;
+}
+.thread-birth-pipeline-label { font-size:10px; }
+.thread-birth-action-section {
+  margin:14px 16px 12px;padding:12px 13px 11px;
+  border:1px solid var(--border);border-radius:10px;
+  background:var(--surface-subtle);
+}
+.thread-birth-action-section .thread-birth-section-head { margin-bottom:9px; }
+.thread-birth-form { display:grid;gap:7px; }
+.thread-birth-controls-compact {
+  display:grid;
+  grid-template-columns:minmax(220px,1.3fr) minmax(178px,.8fr) minmax(154px,.7fr) auto;
+  align-items:end;gap:10px;
+}
+.thread-birth-place-controls { grid-template-columns:minmax(130px,1fr) auto;gap:6px; }
+.thread-birth-field input {
+  width:100%;min-width:0;height:34px;padding:0 9px;
+  border:1px solid var(--border-strong);border-radius:7px;
+  color:var(--text);background:var(--surface);font-size:11px;outline:none;
+}
+.thread-birth-field input:focus {
+  border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 13%,transparent);
+}
+.thread-birth-random-location { white-space:nowrap;font-size:10px;min-height:34px; }
+.thread-birth-compact-submit { height:34px;white-space:nowrap;padding:7px 12px; }
+.thread-birth-search-results { max-width:min(520px,100%); }
+.thread-birth-result:empty { display:none; }
+.thread-birth-pending-section {
+  margin:0 16px 16px;padding:12px 13px;
+  border:1px solid var(--border);border-radius:10px;
+  background:var(--surface);gap:10px;
+}
+.thread-birth-pending-head { gap:12px; }
+.thread-birth-pending-head > div { flex-wrap:wrap; }
+.thread-birth-pending-head > div:first-child strong { font-size:12px; }
+.thread-birth-pending-tools { display:flex;align-items:center;gap:12px; }
+.thread-birth-show-cancelled {
+  display:inline-flex;align-items:center;gap:6px;white-space:nowrap;
+  font-size:10px;color:var(--muted);cursor:pointer;
+}
+.thread-birth-show-cancelled input { margin:0;accent-color:var(--accent);width:14px;height:14px; }
+.thread-birth-pending-head button { padding:6px 9px;font-size:10px; }
+.thread-birth-pending-row {
+  display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;gap:12px;padding:8px 10px;
+}
+.thread-birth-pending-row > .thread-birth-pending-copy {
+  display:grid;gap:2px;min-width:0;
+}
+.thread-birth-pending-row > .thread-birth-pending-copy strong {
+  font-size:11px;line-height:1.35;
+}
+.thread-birth-pending-row > .thread-birth-pending-status {
+  display:flex;align-items:center;justify-content:flex-end;
+  flex-wrap:wrap;gap:6px;min-width:0;flex:0 1 auto;
+}
+.thread-birth-pending-status .thread-birth-stage-badge { white-space:nowrap; }
+.thread-birth-pending-status > a,
+.thread-birth-pending-status > button,
+.thread-birth-pending-status > details > summary {
+  display:inline-flex;align-items:center;justify-content:center;
+  min-height:26px;padding:4px 8px;margin:0;
+  border:1px solid var(--border-strong);border-radius:6px;
+  background:var(--surface);color:var(--text);
+  font-size:9px;font-weight:650;line-height:1.3;
+  white-space:nowrap;text-decoration:none;cursor:pointer;
+}
+.thread-birth-pending-status > details { position:relative; }
+.thread-birth-pending-status > details > summary { list-style:none; }
+.thread-birth-pending-status > details > summary::-webkit-details-marker { display:none; }
+.thread-birth-pending-status > details > summary::before { content:"▸";margin-right:5px;color:var(--muted); }
+.thread-birth-pending-status > details[open] > summary::before { content:"▾"; }
+.thread-birth-pending-status > a:hover,
+.thread-birth-pending-status > button:hover,
+.thread-birth-pending-status > details > summary:hover {
+  border-color:var(--accent);background:var(--surface-subtle);
+}
+.thread-birth-pending-status > details[open] { z-index:12; }
+.thread-birth-family-detail {
+  position:absolute;right:0;top:calc(100% + 6px);
+  z-index:12;width:min(390px,75vw);max-height:290px;overflow:auto;
+  padding:12px;border:1px solid var(--border);border-radius:9px;
+  background:var(--surface);box-shadow:var(--shadow);
+  color:var(--text);font-size:10px;line-height:1.6;
+  white-space:pre-wrap;text-align:left;
+}
+.thread-birth-family-detail pre { max-width:100%;overflow:auto;font-size:9px;white-space:pre; }
+.thread-birth-family-detail button { display:block;margin-top:8px;font-size:10px; }
+@media(max-width:1150px){
+  .thread-birth-controls-compact {
+    grid-template-columns:minmax(240px,1.2fr) minmax(180px,1fr);
+  }
+  .thread-birth-compact-submit { justify-self:end; }
+}
+@media(max-width:700px){
+  .thread-birth-map-section { padding:10px; }
+  .thread-birth-action-section { margin:10px;padding:10px; }
+  .thread-birth-pending-section { margin:0 10px 12px;padding:10px; }
+  .thread-birth-section-head { display:grid;gap:4px; }
+  .thread-birth-map-hint { white-space:normal; }
+  .thread-birth-controls-compact { grid-template-columns:1fr;gap:10px; }
+  .thread-birth-compact-submit { justify-self:stretch; }
+  .thread-birth-pending-row { grid-template-columns:minmax(0,1fr);gap:7px; }
+  .thread-birth-pending-row > .thread-birth-pending-status { justify-content:flex-start; }
+  .thread-birth-pending-head { align-items:flex-start; }
+  .thread-birth-pending-tools { gap:7px; }
+}
