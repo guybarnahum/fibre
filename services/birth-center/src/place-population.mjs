@@ -81,7 +81,7 @@ function normalizeTextTree(value,path,changes){
   return value;
 }
 function note(changes,path,from,to){
-  if(JSON.stringify(from)!==JSON.stringify(to))changes.push({path,from,to});
+  if(JSON.stringify(from)!==JSON.stringify(to))changes.push({path,from:from??null,to:to??null});
 }
 function positiveTotal(list,selector,path,changes){
   const total=list.reduce((n,item)=>n+(Number(selector(item))||0),0);
@@ -145,7 +145,7 @@ export function normalizePlacePopulation(output){
       &&new Set(c).size===c.length&&(c.includes("mother")||c.includes("father"))
       &&Number.isSafeInteger(pattern.siblings)&&pattern.siblings>=0&&pattern.siblings<=4
       &&Number.isFinite(pattern.weight)&&pattern.weight>0&&!households.has(key);
-    if(!valid)changes.push({path:"householdPatterns",action:"dropped invalid or duplicate",value:pattern});
+    if(!valid)changes.push({path:"householdPatterns",action:"dropped invalid or duplicate",value:pattern??null});
     else households.add(key);
     return valid;
   });
