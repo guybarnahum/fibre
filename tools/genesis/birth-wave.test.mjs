@@ -21,7 +21,7 @@ test("a wave creates distinct lifecycle births and monitors via one indexed page
     }
     if(path.startsWith("/births?")){
       pages++;
-      assert.equal(path,"/births?limit=40","Wave should use a single indexed page");
+      assert.equal(path,"/births?limit=40&all=1","Wave should use a single indexed page");
       return {births:store.list({limit:40}).births,nextCursor:null};
     }
     detailReads++;
@@ -37,9 +37,12 @@ test("a wave creates distinct lifecycle births and monitors via one indexed page
     sleep:async()=>{
       for(const birth of store.list({limit:40}).births)
         store.progress(birth.requestId,{stage:"complete",status:"published",
-          nextAttemptAt:null,result:{
+          nextAttemptAt:null,
+          data:{parentage:{mother:{name:"Mara Quinn"},father:{name:"Noah Quinn"},mixed:false}},
+          result:{
             event:"thread-birth-complete",requestId:birth.requestId,
-            threadId:"thr_"+birth.requestId,
+            threadId:"thr_"+birth.requestId,name:"Joanna Quinn",
+            sex:"female",birthCity:"London",languages:["English"],
           }});
     },
     stdout:{write:text=>out.push(text)},
@@ -53,4 +56,8 @@ test("a wave creates distinct lifecycle births and monitors via one indexed page
   assert.equal(out.length,8);
   assert.equal(new Set(out.map(line=>JSON.parse(line).requestId)).size,8);
   assert.ok(err.join("").includes("8/8 complete"));
+  assert.equal(err.filter(line=>line.includes("parents Mara Quinn / Noah Quinn")).length,8,
+    "A completed wave birth had no family summary on stderr");
+  assert.ok(out.every(line=>JSON.parse(line).event==="thread-birth-complete"),
+    "Human summaries changed the machine-readable JSON output");
 });

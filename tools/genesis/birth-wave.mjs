@@ -1,6 +1,26 @@
 import {randomUUID} from "node:crypto";
 import {setTimeout as delay} from "node:timers/promises";
 
+// The family witness is part of the same lifecycle projection, not another read.
+export function writeBirthCompletion(stderr,birth){
+  const result=birth.result??{},parents=birth.parentage;
+  const names=(result.languages??[]).join?.(", ")??String(result.languages??"");
+  const line=[
+    result.name??birth.name??"Unnamed Thread",
+    result.sex??birth.sex??"unknown sex",
+    result.birthCity??birth.location??"unknown birthplace",
+    "parents "+(parents?.mother?.name??"—")+" / "+(parents?.father?.name??"—")+
+      " ("+(parents?(parents.mixed?"mixed":"same origin"):"origin unrecorded")+")",
+    names||"—",
+  ].join(" · ");
+  const width=Number.isSafeInteger(stderr.columns)?Math.max(12,stderr.columns-2):null;
+  const chars=Array.from(line);
+  const display=width!==null&&chars.length>width
+    ?chars.slice(0,width-1).join("")+"…":line;
+  if(stderr.isTTY)stderr.write("\r\u001b[2K");
+  stderr.write(display+"\n");
+}
+
 // A wave is only a client of the existing Birth Center lifecycle.
 // POST at the door, then one cursor-paged list GET per monitoring interval.
 export async function runGenesisBirthWave({
@@ -28,7 +48,7 @@ export async function runGenesisBirthWave({
     while([...births.values()].some(item=>!item.done)){
       let page;
       try{
-        page=await readRemote(remote,"/births?limit=40"+
+        page=await readRemote(remote,"/births?limit=40&all=1"+
           (cursor?"&after="+encodeURIComponent(cursor):""));
         if(!Array.isArray(page.births))throw new Error("Birth page is missing births");
         failedPolls=0;
@@ -46,12 +66,18 @@ export async function runGenesisBirthWave({
         const outcome=["complete","unpresented","unlocated"].includes(birth.stage);
         if(outcome){
           state.done=true;
+          if(birth.stage==="complete"){
+            writeBirthCompletion(stderr,birth);
+            lastLine="";
+          }
           stdout.write(JSON.stringify({...birth.result,requestMode:"new"})+"\n");
-        }else if(birth.status==="failed"&&(
+        }else if(["cancelled","stillborn"].includes(birth.stage)||
+          (birth.status==="failed"&&(
           birth.failureRetryable===false||birth.nextAttemptAt==null||
-          Number(birth.nextAttemptAt)-now()>5*60_000)){
+          Number(birth.nextAttemptAt)-now()>5*60_000))){
           state.done=true;
-          if(birth.failureRetryable)stderr.write("RESUME "+resume(birth.requestId)+"\n");
+          if(birth.failureRetryable&&!["cancelled","stillborn"].includes(birth.stage))
+            stderr.write("RESUME "+resume(birth.requestId)+"\n");
           else stderr.write("BIRTH terminal "+birth.requestId+" "+(birth.error??"") +"\n");
         }
       }
@@ -78,7 +104,7 @@ export async function runGenesisBirthWave({
       const onPage=new Set(page.births.map(b=>b.requestId));
       cursor=[...births].every(([id,state])=>state.done||onPage.has(id))
         ?null:page.nextCursor??null;
-      await sleep(5_000);
+      await sleep(30_000);
     }
     if(stderr.isTTY)stderr.write("\n");
     return {complete:[...births.values()].filter(s=>s.done&&

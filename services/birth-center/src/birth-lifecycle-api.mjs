@@ -26,12 +26,15 @@ export function createBirthLifecycleApi({lifecycle,privateToken}={}){
       try{
         if(url.pathname==="/births"){
           if(request.method==="GET"){
-            if([...url.searchParams.keys()].some(key=>!["limit","after"].includes(key)))
+            if([...url.searchParams.keys()].some(key=>!["limit","after","all"].includes(key)))
               return json(400,{error:"invalid_birth_list_query"});
             const limit=url.searchParams.has("limit")?Number(url.searchParams.get("limit")):32;
             if(!Number.isSafeInteger(limit)||limit<1||limit>40)
               return json(400,{error:"invalid_birth_list_limit"});
-            const result=lifecycle.list({limit,after:cursor(url.searchParams.get("after"))});
+            if(url.searchParams.has("all")&&!["0","1"].includes(url.searchParams.get("all")))
+              return json(400,{error:"invalid_birth_list_query"});
+            const result=lifecycle.list({limit,after:cursor(url.searchParams.get("after")),
+              includeCancelled:url.searchParams.get("all")==="1"});
             return json(200,{ok:true,...result,
               nextCursor:result.nextCursor===null?null:
                 result.nextCursor.createdAt+"|"+result.nextCursor.requestId});

@@ -69,6 +69,7 @@ const birthCountField = $("#thread-birth-count-field");
 const birthPending = $("#thread-birth-pending");
 const birthPendingCount = $("#thread-birth-pending-count");
 const birthPendingRefresh = $("#thread-birth-pending-refresh");
+const birthShowCancelled = $("#thread-birth-show-cancelled");
 const birthResult = $("#thread-birth-result");
 const birthSubmit = $("#thread-birth-submit");
 
@@ -1076,6 +1077,7 @@ function elapsedText(value) {
 }
 
 function pendingStatusText(birth) {
+  if(birth?.stage==="cancelled")return "cancelled";
   if(birth?.status==="failed"&&birth?.failureRetryable===true&&birth?.nextAttemptAt==null)
     return "paused · Resume required";
   return birthStage(birth);
@@ -1121,6 +1123,12 @@ function renderPendingBirths(births) {
         stale.className = "thread-birth-stale-reason";
         stale.textContent = `${human(birth.classification ?? "stale")} · ${birth.staleReason ?? "Birth has stopped making progress."}`;
         copy.append(stale);
+      }
+      if (birth.abandonReason) {
+        const reason=document.createElement("span");
+        reason.className="thread-birth-stale-reason";
+        reason.textContent="Abandoned: "+birth.abandonReason;
+        copy.append(reason);
       }
       if (birth.error) {
         const failure = document.createElement("span");
@@ -1215,7 +1223,8 @@ function renderPendingBirths(births) {
         });
         actions.append(details);
         if(activeBirth(birth)||
-          (birth?.status==="failed"&&birth?.failureRetryable===true)){
+          (birth?.status==="failed"&&(birth?.failureRetryable===true||
+            (birth.failureRetryable===false&&!birth.threadId)))){
           for(const action of ["resume","abandon"]){
             if(action==="resume"&&!(birth.status==="failed"&&birth.failureRetryable!==false))continue;
             const button=document.createElement("button");
@@ -1260,6 +1269,7 @@ async function loadPendingBirths({ quiet=false,older=false }={}){
   });
   try{
     const query=new URLSearchParams({limit:"32"});
+    if(birthShowCancelled.checked)query.set("all","1");
     if(older&&pendingBirthNextCursor)query.set("after",pendingBirthNextCursor);
     const response=await fetch("/api/threads/births?"+query,{cache:"no-store"});
     const payload=await response.json();
@@ -1681,6 +1691,10 @@ for (const input of birthForm.querySelectorAll('input[name="birth-count"], input
   input.addEventListener("change", syncBirthMode);
 }
 birthPendingRefresh.addEventListener("click", () => void loadPendingBirths());
+birthShowCancelled.addEventListener("change",()=>{
+  pendingBirthNextCursor=null;
+  void loadPendingBirths();
+});
 threadPopulationRepairGeography.addEventListener("click", () => void repairBirthGeographyBatch());
 birthForm.addEventListener("submit", submitBirth);
 

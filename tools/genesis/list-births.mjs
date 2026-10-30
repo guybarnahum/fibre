@@ -3,12 +3,13 @@ import { birthEnvironment,birthDeployment,birthRequest } from "./birth-remote.mj
 async function main(){
   const {environment,args}=birthEnvironment(process.argv.slice(2));
   if(args.includes("--help")||args.includes("-h")){
-    process.stdout.write("Usage: npm run genesis:births -- --env staging [--limit 32] [--after CURSOR] [--failures]\n");
+    process.stdout.write("Usage: npm run genesis:births -- --env staging [--limit 32] [--after CURSOR] [--failures] [--all]\n");
     return;
   }
-  let limit=32,after=null,failures=false;
+  let limit=32,after=null,failures=false,all=false;
   for(let i=0;i<args.length;i++){
     if(args[i]==="--failures")failures=true;
+    else if(args[i]==="--all")all=true;
     else if(args[i]==="--limit")limit=Number(args[++i]);
     else if(args[i].startsWith("--limit="))limit=Number(args[i].slice(8));
     else if(args[i]==="--after")after=args[++i]??null;
@@ -22,9 +23,10 @@ async function main(){
     do{
       const query=new URLSearchParams({limit:String(limit)});
       if(cursor)query.set("after",cursor);
+      if(all)query.set("all","1");
       const data=await birthRequest(birthDeployment(environment),"/births?"+query);
       for(const birth of data.births??[]){
-        if(birth.status!=="failed")continue;
+        if(birth.stage==="cancelled"||birth.status!=="failed")continue;
         failed++;
         const stage=birth.stage??"unknown",errorCode=birth.errorCode??"BIRTH_FAILED";
         const key=stage+"|"+errorCode;
@@ -44,6 +46,7 @@ async function main(){
   }
   const query=new URLSearchParams({limit:String(limit)});
   if(after)query.set("after",after);
+  if(all)query.set("all","1");
   const data=await birthRequest(birthDeployment(environment),"/births?"+query);
   process.stdout.write(JSON.stringify({
     event:"genesis-births",environment,births:data.births,nextCursor:data.nextCursor,

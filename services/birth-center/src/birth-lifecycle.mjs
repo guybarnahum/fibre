@@ -113,7 +113,7 @@ function projection(birth){
     placeVersion:birth.placeVersion,genesisId:birth.genesisId,threadId:birth.threadId,
     location:birth.location,sex:birth.sex,
     result:birth.result,createdAt:birth.createdAt,updatedAt:birth.updatedAt,
-    parentage:data?.parentage??null,
+    parentage:data?.parentage??null,abandonReason:data?.abandonReason??null,
     reconciliationNote:data?.reconciliationNote??null,
     placeKey:data?.placeKey??null,
     name:data?.developmentRequest?.subjectIdentity?.[
@@ -679,7 +679,8 @@ export function createBirthLifecycle({
     if(store.isTerminal(birth.stage))return projection(birth);
     if(birth.threadId===null){
       store.releaseName(requestId);
-      return projection(store.progress(requestId,{stage:"cancelled",nextAttemptAt:null,
+      return projection(store.progress(requestId,{stage:"cancelled",status:"cancelled",
+        failureRetryable:null,nextAttemptAt:null,
         data:{...birth.data,abandonReason:reason.trim()}}));
     }
     const provisional=runtime.provisionalBirthStore.get(birth.genesisId);

@@ -4,7 +4,7 @@ import {
   parseGenesisArgs,normalizeGenesisWorldSelector,
 } from "#services/birth-center/src/genesis-world-selection.mjs";
 import { birthEnvironment,birthDeployment,birthRequest } from "./birth-remote.mjs";
-import {runGenesisBirthWave} from "./birth-wave.mjs";
+import {runGenesisBirthWave,writeBirthCompletion} from "./birth-wave.mjs";
 import {pathToFileURL} from "node:url";
 import {resolve} from "node:path";
 
@@ -157,6 +157,7 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
       }
       if(birth.stage==="complete"&&birth.result?.event==="thread-birth-complete"){
         clearLine();
+        writeBirthCompletion(process.stderr,birth);
         process.stdout.write(JSON.stringify({...birth.result,requestMode:mode})+"\n");
         outcomeObserved=true;
         return;

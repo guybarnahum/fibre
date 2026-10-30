@@ -493,6 +493,60 @@ test("Admin and CLI share one indexed lifecycle with bounded, World-free page re
     "Birth list read contacted World or a model");
 });
 
+test("terminal failed requests cancel without manufacturing stillbirths",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  const store=createBirthLifecycleStore(storage);
+  t.after(()=>store.close());
+  let worldReads=0;
+  const runtime={stateScopeId:"birth",infraDriver:storage.infraDriver,
+    durableAdapter:adapter=>adapter,
+    provisionalBirthStore:{get:()=>null},developmentRequestStore:{get:()=>null}};
+  const lifecycle=createBirthLifecycle({
+    store,runtime,developmentService:{develop:()=>{throw Error("Unexpected development");}},
+    authorAdapter:{invoke:()=>{throw Error("Unexpected model call");}},
+    worldFetch:async()=>{worldReads++;return Response.json({presentThreadIds:[]});},
+    presentationFetch:()=>{throw Error("Unexpected Presentation");},
+    privateToken:"private-test-token-123456",
+  });
+  const api=createBirthLifecycleApi({lifecycle,privateToken:"private-test-token-123456"});
+  const headers={"x-fibre-private-token":"private-test-token-123456",
+    "content-type":"application/json"};
+  store.enqueue(input("failed-before-identity"));
+  store.progress("failed-before-identity",{stage:"place_resolved",status:"failed",
+    error:"Original model contract failure",failureRetryable:false,nextAttemptAt:null,
+    data:{errorCode:"MODEL_CONTRACT_FAILURE"}});
+  store.enqueue(input("failed-with-identity"));
+  store.progress("failed-with-identity",{stage:"developing",status:"failed",
+    threadId:"thr_reserved",genesisId:"gen_reserved",error:"Original publication failure",
+    failureRetryable:false,nextAttemptAt:null});
+  const abandon=id=>api.fetch(new Request(
+    "https://birth.local/births/"+id+"/abandon",{
+      method:"POST",headers,body:JSON.stringify({reason:"Operator cleared old failure"}),
+    }));
+  assert.equal((await abandon("failed-before-identity")).status,200);
+  const cancelled=store.get("failed-before-identity");
+  assert.equal(cancelled.stage,"cancelled");
+  assert.equal(cancelled.status,"cancelled");
+  assert.equal(cancelled.error,"Original model contract failure",
+    "Cancellation erased original failure evidence");
+  assert.equal(cancelled.data.errorCode,"MODEL_CONTRACT_FAILURE");
+  assert.equal(cancelled.data.abandonReason,"Operator cleared old failure");
+  assert.equal(lifecycle.get("failed-before-identity").abandonReason,
+    "Operator cleared old failure","The cancellation reason was not inspectable");
+  assert.equal((await abandon("failed-with-identity")).status,200);
+  assert.equal(store.get("failed-with-identity").stage,"stillborn",
+    "A reserved identity was incorrectly cancelled");
+  const ordinary=await api.fetch(new Request("https://birth.local/births?limit=1",{headers}));
+  const page=await ordinary.json();
+  assert.deepEqual(page.births.map(x=>x.requestId),["failed-with-identity"],
+    "Cancelled requests leaked into the default failure and birth lists");
+  const withCancelled=await api.fetch(new Request(
+    "https://birth.local/births?all=1",{headers}));
+  assert.equal((await withCancelled.json()).births.length,2,
+    "Explicit cancelled inspection lost the historical request");
+  assert.equal(worldReads,1,"Cancellation unexpectedly consulted World for an unreserved identity");
+});
+
 test("birth status and listing expose pinned family facts without World reads",async t=>{
   const state=tempBirthState(t),storage=state.storage();
   const store=createBirthLifecycleStore(storage);

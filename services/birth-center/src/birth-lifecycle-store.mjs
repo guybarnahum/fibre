@@ -64,10 +64,12 @@ export function createBirthLifecycleStore(storage, {
   );
   const listFirst=db.prepare(
     "SELECT "+COLUMNS+" FROM modern_birth_requests WHERE lifecycle_input_json IS NOT NULL "+
+    "AND (?=1 OR lifecycle_stage!='cancelled') "+
     "ORDER BY created_at DESC,request_id DESC LIMIT ?"
   );
   const listNext=db.prepare(
     "SELECT "+COLUMNS+" FROM modern_birth_requests WHERE lifecycle_input_json IS NOT NULL "+
+    "AND (?=1 OR lifecycle_stage!='cancelled') "+
     "AND (created_at<? OR (created_at=? AND request_id<?)) "+
     "ORDER BY created_at DESC,request_id DESC LIMIT ?"
   );
@@ -221,9 +223,10 @@ export function createBirthLifecycleStore(storage, {
     );
     return get(requestId);
   }
-  function list({limit=32,after=null}={}) {
+  function list({limit=32,after=null,includeCancelled=false}={}) {
     if(!Number.isSafeInteger(limit)||limit<1||limit>128)throw new TypeError("birth list limit must be 1..128");
-    const rows=after===null?listFirst.all(limit+1):listNext.all(after.createdAt,after.createdAt,after.requestId,limit+1);
+    const rows=after===null?listFirst.all(Number(includeCancelled),limit+1)
+      :listNext.all(Number(includeCancelled),after.createdAt,after.createdAt,after.requestId,limit+1);
     const page=rows.slice(0,limit).map(fromRow);
     const last=page.at(-1);
     return Object.freeze({

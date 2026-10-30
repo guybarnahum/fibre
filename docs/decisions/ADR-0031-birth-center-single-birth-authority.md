@@ -2,12 +2,12 @@
 id: ADR-0031
 status: accepted
 canonical: true
-last-reviewed: 2026-10-29
+last-reviewed: 2026-10-30
 ---
 
 # ADR-0031 — Birth Center as the single birth authority
 
-**Accepted 2026-10-29; Slice 1 staging-verified at `66da96e`, Slice 2 staging-verified at `6831f3b`. Slice 3 lifecycle Admin unification is committed but requires local validation and redeployment. Count waves remain deferred.** Birth Center owns the full *prospective birth request*. World Kernel alone admits a living Thread, FIN and authoritative history. Thread Presentation owns public projection. Neither the CLI nor Admin authors a separate birth.
+**Accepted 2026-10-29; Slice 1 staging-verified at `66da96e`, Slice 2 staging-verified at `6831f3b`. Slice 3 Admin unification is deployed; bounded count waves and lifecycle-list refinements are committed, pending local validation.** Birth Center owns the full *prospective birth request*. World Kernel alone admits a living Thread, FIN and authoritative history. Thread Presentation owns public projection. Neither the CLI nor Admin authors a separate birth.
 
 **Operator cost boundary (Slice 3):** Admin and CLI both submit directly to
 `POST /births`; Admin lists one cursor-paged `GET /births?limit=32`
@@ -33,11 +33,15 @@ requested → place_resolved → place_authored? → parents_selected
 `place_authored` runs only if the canonical place and **child's birth decade** have no Place record. Otherwise the request reuses its version. One journaled model call creates **both** the existing civic/World context and the Place Population. There is no second World-context authoring call. Naming traditions are authored separately, only for origin groups actually drawn (ADR-0032).
 
 An interrupted stage retains `failed(retryable | terminal)` with its cause. Resuming keeps the same request, accepted material and model-journal witnesses. `POST /births/:id/abandon` requires a reason:
-- **Before `threadId` reservation:** `cancelled`.
+- **Before `threadId` reservation:** `cancelled`, including a terminal failed request. Keep its original error/code and append the operator's reason; never label a failed request stillborn.
 - **After reservation, before World admission:** `stillborn(reason)`.
 - **After admission:** stop outstanding observation only. The live Thread and its history remain.
 
 No timeout, missing status response or operator absence silently creates a stillbirth.
+Default paginated lists omit cancelled requests; `GET /births?all=1` opts into
+their history. Admin's Show cancelled toggle and `genesis:births --all`
+share that indexed view. `genesis:births --failures` counts only non-cancelled
+failures, even with `--all`. The individual request remains readable.
 
 ## Execution and controls
 
@@ -74,4 +78,4 @@ A model call awaited inside a Durable Object alarm still costs wall time. `devel
 3. Move Admin to the same API. Show Place records **read-only**. Delete the old path. **Population editing is deferred.**
 4. Add bounded `--count` waves.
 
-These slices are authorized but not yet implemented.
+Slices 1–3 are deployed; Slice 4 source and cancellation/list refinements await local validation and staging deployment.

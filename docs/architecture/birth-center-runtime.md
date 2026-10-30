@@ -128,8 +128,12 @@ An ordinary complete birth emits D1 Activity records for completed coarse
 stages/attempts and failures only; per-model-call progress remains in the
 durable model-invocation journal. The target is at most 100 D1 rows written
 per birth, pending direct staging measurement. The operator's
-`genesis:births --failures` view groups persisted failure witnesses by
-stage and error code.
+`genesis:births --failures` view groups non-cancelled failure witnesses by
+stage and error code. Explicitly abandoning an unreserved failed request
+marks it cancelled without discarding the original error and operator reason.
+Default paginated birth lists omit cancelled requests; `GET /births?all=1`,
+Admin's Show cancelled and `genesis:births --all` inspect them on demand.
+A reserved-but-unadmitted identity is stillborn, never merely cancelled.
 
 ## Runtime ownership
 
