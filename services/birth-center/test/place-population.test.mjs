@@ -81,6 +81,46 @@ test("all schema-permitted physical origins produce valid founder genomes",()=>{
   }
 });
 
+test("London packed school languages and origin evidence are split and pinned",()=>{
+  const london=structuredClone(place);
+  london.schoolingLanguages=["English","French","Spanish」「German"];
+  london.originGroups[0].heritageLanguages=["English or French","German、Spanish","French"];
+  london.originGroups[0].heritageTags=["English and German","French / Spanish"];
+  const fixed=normalizePlacePopulation(london);
+  validatePlacePopulation(fixed);
+  assert.deepEqual(fixed.schoolingLanguages,["English","French","Spanish","German"],
+    "London's fourth school language was lost to schema packing");
+  assert.deepEqual(fixed.originGroups[0].heritageLanguages,
+    ["English","French","German","Spanish"]);
+  assert.deepEqual(fixed.originGroups[0].heritageTags,
+    ["English","German","French","Spanish"]);
+  assert.ok(fixed.provenance.normalizations.some(change=>
+    change.action==="split packed"&&change.path==="schoolingLanguages[2]"&&
+    change.from==="Spanish」「German"),
+    "The original rejected packed value was not retained in provenance");
+  const schema=PLACE_POPULATION_SCHEMA.properties;
+  assert.equal(schema.schoolingLanguages.maxItems,6);
+  assert.equal(schema.originGroups.items.properties.heritageLanguages.maxItems,6);
+  assert.equal(schema.originGroups.items.properties.heritageTags.maxItems,6);
+  assert.equal(schema.originGroups.items.properties.referencePopulations.maxItems,6);
+});
+
+test("five authored school languages never force more than three child languages",()=>{
+  const city=structuredClone(place);
+  city.schoolingLanguages=["English","French","Spanish","German","Italian"];
+  city.originGroups[0].heritageLanguages=["Portuguese"];
+  city.originGroups[1].heritageLanguages=["German"];
+  const fixed=normalizePlacePopulation(city);
+  validatePlacePopulation(fixed);
+  const selected={couple:fixed.couples[1],mother:fixed.originGroups[0],
+    father:fixed.originGroups[1],childOriginId:"a"};
+  const birth=composeParentage({requestId:"five-school-languages",chronology,selector,
+    place:fixed,selected,traditions:{a:names("A"),b:names("B")},sex:"female"});
+  assert.deepEqual(birth.family.raisedLanguages,["Portuguese","German"]);
+  assert.deepEqual(birth.family.languages,["Portuguese","German","English"],
+    "The child's language cap should be applied after raised languages, then school order");
+});
+
 test("Place languages are atomic and one language never appears as multiple varieties",()=>{
   const invalid={...place,schoolingLanguages:["Arabic","Saidi Arabic dialects (Upper Egyptian Arabic)","English"]};
   assert.throws(()=>validatePlacePopulation(invalid),/bare language/,
@@ -173,12 +213,15 @@ test("a perturbed authored family remains valid through real World Genesis valid
     "Normalized family failed real World life continuity");
 });
 
-test("reconstructed staging deviations quote the exact invalid language or ancestry",()=>{
+test("staging deviations normalize language packing and reject invented ancestry",()=>{
   const aswan=structuredClone(place);
   aswan.schoolingLanguages=["Arabic","Saidi Arabic dialects (Upper Egyptian Arabic)"];
-  assert.throws(()=>validatePlacePopulation(normalizePlacePopulation(aswan)),
-    /Saidi Arabic dialects \(Upper Egyptian Arabic\)/,
-    "Invalid dialect did not surface its rejected value");
+  const cleanedAswan=normalizePlacePopulation(aswan);
+  validatePlacePopulation(cleanedAswan);
+  assert.deepEqual(cleanedAswan.schoolingLanguages,["Arabic"]);
+  assert.ok(cleanedAswan.provenance.normalizations.some(change=>
+    change.action==="dropped invalid bare language"&&
+    change.value==="Saidi Arabic dialects (Upper Egyptian Arabic)"));
   aswan.schoolingLanguages=["Arabic","English"];
   aswan.originGroups[0].referencePopulations[0].referencePopulation="invented.population";
   assert.throws(()=>validatePlacePopulation(normalizePlacePopulation(aswan)),
@@ -187,10 +230,11 @@ test("reconstructed staging deviations quote the exact invalid language or ances
   validatePlacePopulation(normalizePlacePopulation(aswan));
   const manchester=structuredClone(place);
   manchester.schoolingLanguages=["Arabic and English"];
-  assert.throws(()=>validatePlacePopulation(normalizePlacePopulation(manchester)),
-    /Arabic and English/,"Schooling phrase did not surface its rejected value");
-  manchester.schoolingLanguages=["Arabic","English"];
-  validatePlacePopulation(normalizePlacePopulation(manchester));
+  const repaired=normalizePlacePopulation(manchester);
+  validatePlacePopulation(repaired);
+  assert.deepEqual(repaired.schoolingLanguages,["Arabic","English"]);
+  assert.ok(repaired.provenance.normalizations.some(change=>
+    change.action==="split packed"&&change.from==="Arabic and English"));
 });
 
 test("identical unisex naming pools redraw rather than reject a birth",()=>{

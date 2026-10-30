@@ -75,6 +75,7 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
   }
   const remote=birthDeployment(parsed.environment);
   const startedAt=now();
+  let deployedSha=null;
   let requestId=parsed.follow??parsed.resume??parsed.abandon;
   const mode=parsed.follow!==null?"follow":parsed.resume===null?"new":"resume";
   let outcomeObserved=false;
@@ -88,6 +89,10 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
     return;
   }
   try{
+  const health=await readRemote(remote,"/healthz");
+  if(health?.service!=="birth-center"||!/^[0-9a-f]{40}$/u.test(health.deploymentGitSha??""))
+    throw new Error("Birth Center health did not supply a valid deploymentGitSha");
+  deployedSha=health.deploymentGitSha;
   if(parsed.resume!==null){
     await readRemote(remote,"/births/"+encodeURIComponent(requestId)+"/resume",{method:"POST"});
   }else if(parsed.follow===null){
@@ -107,7 +112,7 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
   }
   let currentStage=null,stageSince=now();
   const tick=setInterval(()=>{
-    if(currentStage!==null)heartbeat(currentStage,startedAt,stageSince,remote.sourceGitSha,requestId);
+    if(currentStage!==null)heartbeat(currentStage,startedAt,stageSince,deployedSha,requestId);
   },10_000);
   tick.unref?.();
   try{
@@ -131,7 +136,7 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
         currentStage=birth.stage;
         stageSince=now();
         process.stderr.write("BIRTH "+currentStage+" requestId="+requestId+
-          " deployed="+shortSha(remote.sourceGitSha)+
+          " deployed="+shortSha(deployedSha)+
           (birth.threadId?" threadId="+birth.threadId:"")+"\n");
       }
       if(birth.stage==="complete"&&birth.result?.event==="thread-birth-complete"){
@@ -158,10 +163,11 @@ export async function runGenesisBirth(argv=process.argv.slice(2),{
         error.code="THREAD_BIRTH_UNLOCATED";
         throw error;
       }
-      if(birth.status==="failed"&&birth.failureRetryable===true&&birth.nextAttemptAt==null){
+      if(birth.status==="failed"&&birth.failureRetryable===true&&
+        (birth.nextAttemptAt==null||Number(birth.nextAttemptAt)-now()>5*60_000)){
         process.stderr.write("RESUME npm run genesis:birth -- --env "+
           parsed.environment+" --resume "+requestId+"\n");
-        const error=new Error(birth.error??"Birth paused for operator Resume");
+        const error=new Error(birth.error??"Birth paused or in long backoff; operator Resume available");
         error.code="THREAD_BIRTH_PAUSED";
         error.retryable=true;
         throw error;

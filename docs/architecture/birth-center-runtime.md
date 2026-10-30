@@ -90,6 +90,21 @@ terminal by previously deployed code, so the existing staging failures
 remain recoverable after a corrected deployment. Invalid operator
 place/heritage input remains terminal.
 
+## Place evidence is broader than individual language acquisition
+
+Place authoring permits up to six schooling languages, household heritage
+languages, heritage tags and physical reference populations per origin;
+these are a city's and resident groups' alternatives, not an individual
+Thread's repertoire. If a model packs languages or tags with commas,
+slashes, pipes, Japanese punctuation or the words "and"/"or", deterministic
+normalization splits, trims, case-deduplicates and caps the list before
+the bare-language validator runs. Each split, rejected non-bare value
+and final normalization is pinned in Place provenance. Empty results
+remain invalid. Individual composition selects **at most three**
+eventual languages: raised languages first, followed by schooling
+languages in the author's order. A model's schema cannot force a
+real city's multiple schooling languages into one string.
+
 ## Failure and cost discipline
 
 A prospective birth fails permanently only for invalid operator input

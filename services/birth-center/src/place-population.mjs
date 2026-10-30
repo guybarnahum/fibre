@@ -6,7 +6,7 @@ import {validateLanguages} from "../../../core/src/population-context/family-pro
 const textField = {type:"string",minLength:1};
 const atomicText={type:"string",minLength:1,maxLength:48,
   pattern:String.raw`^[^()\[\]{},;/|:"\n]+$`};
-const languageList={type:"array",minItems:1,maxItems:3,items:atomicText};
+const languageList={type:"array",minItems:1,maxItems:6,items:atomicText};
 const textList = (minItems=1,maxItems=8) => ({type:"array",minItems,maxItems,items:textField});
 const fraction = {type:"number",minimum:0,maximum:1};
 const positive = {type:"number",exclusiveMinimum:0};
@@ -15,8 +15,8 @@ const originSchema = {
   required:["originId","label","share","heritageTags","referencePopulations","heritageLanguages","householdRetentionRate"],
   properties:{
     originId:textField,label:textField,share:positive,
-    heritageTags:textList(1,3),
-    referencePopulations:{type:"array",minItems:1,maxItems:3,items:{
+    heritageTags:textList(1,6),
+    referencePopulations:{type:"array",minItems:1,maxItems:6,items:{
       type:"object",additionalProperties:false,required:["population","share","referencePopulation"],
       properties:{population:textField,share:positive,referencePopulation:{type:"string",enum:referencePopulationIds}},
     }},
@@ -88,11 +88,48 @@ function positiveTotal(list,selector,path,changes){
   if(!(total>0))bad(path+" sum must be positive",list);
   return total;
 }
+// Preserve authored alternatives in a Place. A child's much narrower spoken
+// repertoire is selected at composition time, not by suppressing civic facts.
+// Recover obvious provider packing before applying the authoritative validators.
+const packedSeparator=/(?:」「|[、・,;\/|]|\s+(?:and|or)\s+)/giu;
+function normalizeEvidenceList(owner,field,path,changes,{language=false}={}){
+  const original=owner?.[field];
+  if(!Array.isArray(original))return;
+  const results=[],seen=new Set();
+  for(let i=0;i<original.length;i++){
+    const raw=original[i];
+    if(typeof raw!=="string")continue;
+    const parts=raw.split(packedSeparator).map(value=>value.trim()).filter(Boolean);
+    if(parts.length>1)
+      changes.push({path:path+"["+i+"]",action:"split packed",from:raw,to:parts});
+    for(const part of parts){
+      if(language){
+        try{validateLanguages([part],field,6);}
+        catch{
+          changes.push({path:path+"["+i+"]",action:"dropped invalid bare language",value:part});
+          continue;
+        }
+      }
+      const key=part.toLocaleLowerCase("en-US");
+      if(!seen.has(key)){seen.add(key);results.push(part);}
+    }
+  }
+  owner[field]=results.slice(0,6);
+  note(changes,path,original,owner[field]);
+  if(owner[field].length===0)bad(field+" has no valid entries after normalization",original);
+}
 export function normalizePlacePopulation(output){
   const changes=[];
   const value=normalizeTextTree(output,"place",changes);
   if(!value||!Array.isArray(value.originGroups))return value;
+  normalizeEvidenceList(value,"schoolingLanguages","schoolingLanguages",changes,{language:true});
   const origins=value.originGroups;
+  for(const [i,group] of origins.entries()){
+    normalizeEvidenceList(group,"heritageLanguages",
+      "originGroups["+i+"].heritageLanguages",changes,{language:true});
+    normalizeEvidenceList(group,"heritageTags",
+      "originGroups["+i+"].heritageTags",changes);
+  }
   positiveTotal(origins,x=>x.share,"origin share",changes);
   for(const [i,origin] of origins.entries()){
     if(!(origin.share>0)){
@@ -193,7 +230,7 @@ export function validatePlacePopulation(value){
   if(!value||typeof value!=="object"||Array.isArray(value))bad("missing Place");
   if(!Number.isFinite(value.mixedParentShare)||value.mixedParentShare<0||value.mixedParentShare>1)
     bad("mixedParentShare must be between 0 and 1");
-  try{validateLanguages(value.schoolingLanguages,"schoolingLanguages");}
+  try{validateLanguages(value.schoolingLanguages,"schoolingLanguages",6);}
   catch(error){bad(error.message,value.schoolingLanguages);}
   if(!Array.isArray(value.householdPatterns)||value.householdPatterns.length<1||value.householdPatterns.length>6)
     bad("householdPatterns must contain 1–6 valid entries",value.householdPatterns);
@@ -220,7 +257,7 @@ export function validatePlacePopulation(value){
       bad("origin IDs must be distinct and named",group?.originId);
     if(!Number.isFinite(group.share)||group.share<=0)bad("origin share must be positive");
     if(!validList(group.heritageTags))bad("origin heritage evidence is required");
-    try{validateLanguages(group.heritageLanguages,"heritageLanguages");}
+    try{validateLanguages(group.heritageLanguages,"heritageLanguages",6);}
     catch(error){bad(error.message,group.heritageLanguages);}
     if(!Number.isFinite(group.householdRetentionRate)||group.householdRetentionRate<0||group.householdRetentionRate>1)
       bad("household retention rate must be between 0 and 1");
@@ -305,14 +342,14 @@ export async function authorPlacePopulation({adapter,selector,placeKey,version,r
     "Author one bounded civic Place and resident population for a Fibre birth cohort.",
     "Return one compact JSON object with civic context, schoolingLanguages, 8–20 concrete originGroups, at most 40 weighted couples, localNamingOriginId and mixedParentShare.",
     "The place describes residents, not one family or a future person's personality. Give each civic description only one or two concrete sentences; avoid repetition.",
-    "Choose 8–20 concrete local resident origin groups. Use at most 3 heritageTags and 3 referencePopulations per group; only include meaningful roots and household languages.",
+    "Choose 8–20 concrete local resident origin groups. Use up to 6 distinct heritageTags and referencePopulations per group when supported by local reality; only include meaningful roots and household languages.",
     "Every origin's referencePopulations must sum to 1. Select referencePopulation only from the codes permitted by the schema.",
     "Use no more than 40 plausible mother/father origin pairings, concentrating on couples representing the large majority of births; rare pairings can be omitted. Weights are relative within same/mixed classes, not independent resident draws. mixedParentShare must still estimate the true mixed-child fraction.",
     "Author 3–6 distinct householdPatterns, each {caregivers,siblings,weight}, with positive plausible relative weights for this city and child birth decade. Caregivers are a unique subset of mother, father, grandmother, grandfather and include at least one parent. Siblings is 0–4. Include ordinary variation: some only children, some younger siblings, and some households with one non-caregiving parent or a grandparent. Do not default everyone to two caregivers and an older sibling.",
     "mixedParentShare is the estimated share of children in this exact place and child's birth decade with different mother/father originId values, not a worldwide constant. It may be high in Hilo and low in Chengdu. A group with internally mixed ancestry paired with itself counts as same-origin.",
     "If mixedParentShare > 0 include a different-origin couple; if < 1 include a same-origin couple. Couple's childGivenNameTradition gives nonnegative weights for mother, father or local mainstream naming source. No name lists in the Place record.",
     "A heritage filter selects existing couples, never reauthors a place. Do not assign religion, ability, character, class, work, political orientation, trauma or interests to an individual from a group.",
-    "Every schoolingLanguages and heritageLanguages entry must be one bare language name (e.g. Arabic, English, Hawaiian), not a dialect, regional variety, list, or parenthetical explanation. Do not list multiple varieties of the same language.",
+    "List up to 6 distinct locally plausible schoolingLanguages and heritageLanguages as separate bare language names (e.g. English, French, Spanish, German). Never pack languages into one field; avoid dialects, regional varieties, and parenthetical descriptions. The eventual language selection for an individual happens later.",
     "Include at least one language commonly taught in local schools, including a foreign language where appropriate (e.g. English in Egypt). Use a valid IANA time zone. Avoid claims of census precision.",
   ].join("\n");
   const result=await adapter.invoke({
