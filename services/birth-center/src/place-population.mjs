@@ -5,7 +5,7 @@ import {validateLanguages} from "../../../core/src/population-context/family-pro
 // A Place is a shared civic/population prior, never a pre-authored person.
 const textField = {type:"string",minLength:1};
 const atomicText={type:"string",minLength:1,maxLength:48,
-  pattern:String.raw`^[\p{L} '-]+$`};
+  pattern:String.raw`^[^()\[\]{},;/|:"\n]+$`};
 const languageList={type:"array",minItems:1,maxItems:3,items:atomicText};
 const textList = (minItems=1,maxItems=8) => ({type:"array",minItems,maxItems,items:textField});
 const fraction = {type:"number",minimum:0,maximum:1};

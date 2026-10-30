@@ -62,6 +62,7 @@
     "cloud:d1:migrate": "node tools/deployment/run-with-progress.mjs cloud:d1:migrate node --env-file-if-exists=.env tools/deployment/migrate-cloudflare-d1.mjs",
     "cloud:configure-secrets": "node tools/deployment/run-with-progress.mjs cloud:configure-secrets node --env-file-if-exists=.env tools/deployment/configure-cloudflare-secrets.mjs",
     "cloud:deploy": "node tools/deployment/run-with-progress.mjs cloud:deploy node --env-file-if-exists=.env tools/deployment/deploy-cloudflare-evidence.mjs",
+    "birth:preflight": "node --env-file-if-exists=.env tools/deployment/birth-preflight.mjs",
     "cloud:deploy:service": "node tools/deployment/run-with-progress.mjs cloud:deploy:service node --env-file-if-exists=.env tools/deployment/deploy-cloudflare-service.mjs",
     "cloud:deploy:apps": "node tools/deployment/run-with-progress.mjs cloud:deploy:apps node --env-file-if-exists=.env tools/deployment/cloudflare-apps.mjs",
     "cloud:e2e": "node tools/deployment/run-with-progress.mjs cloud:e2e node --env-file-if-exists=.env tools/deployment/cloudflare-e2e.mjs",

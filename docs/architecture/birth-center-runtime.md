@@ -54,6 +54,42 @@ earliest retry, instead of polling every 30 seconds for hours.
 Internal service-binding route 404s remain retryable during staggered
 deployments.
 
+## Deployment preflight: no birth before acceptance
+
+`npm run slice:validate` walks the seven Birth Center model
+response schemas (Place, naming, and Genesis development/repair),
+checking OpenAI strict shape and rejecting unsupported regex
+constructs, including Unicode-property escapes, lookaround,
+backreferences and word boundaries. Canonical model output is still
+validated locally. Only the transported regex dialect is restricted.
+
+After the Birth Center Worker and state schema are deployed, both
+`cloud:deploy` and `cloud:deploy:service -- --service birth-center`
+run a mandatory internal birth preflight before reporting deployment
+success. The same check is available through
+`npm run birth:preflight -- --env staging [--place United States/Hilo]`.
+The deployed Worker sends **one tiny, capped** response-schema request
+per schema to the configured OpenAI models; a provider rejection fails,
+while an incomplete/truncated completion proves transport acceptance.
+It then reads one already-authored Place and its pinned naming traditions,
+draws parents and a household, composes a request, and runs real World
+pre-admission validators. No newborn development, model call for the
+dry-run itself, name reservation, World admission or new birth record.
+Indexed Place/naming reads are bounded to a few hundred rows. A missing
+pinned Place/naming tradition fails preflight explicitly; it must never
+silently trigger Place authoring. Successful deployment prints
+`BIRTH PREFLIGHT ok (7 schemas, place United States/Hilo)`.
+The deployed revision must match the deployment being accepted.
+
+A provider `MODEL_REQUEST_CONFIGURATION_ERROR` is a paused,
+operator-resumable birth rather than a terminal rejection or recurring
+provider retry. Resume after correcting the deployed schema/request
+advances the stage's durable invocation ordinal. The Resume exception also
+recognizes `MODEL_REQUEST_CONFIGURATION_ERROR` rows incorrectly marked
+terminal by previously deployed code, so the existing staging failures
+remain recoverable after a corrected deployment. Invalid operator
+place/heritage input remains terminal.
+
 ## Failure and cost discipline
 
 A prospective birth fails permanently only for invalid operator input

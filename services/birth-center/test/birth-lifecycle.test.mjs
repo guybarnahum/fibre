@@ -5,6 +5,7 @@ import { createBirthLifecycle } from "../src/birth-lifecycle.mjs";
 import { DurableInvocationConflictError } from "../src/model-runtime/durable-invocation-journal.mjs";
 import { GenesisDevelopmentRequestConflictError } from "../src/genesis-development-request-store.mjs";
 import { createBirthLifecycleApi } from "../src/birth-lifecycle-api.mjs";
+import {rehearseStoredBirth} from "../src/birth-preflight.mjs";
 import { tempBirthState } from "./support/birth-state-fixture.mjs";
 
 const AT="2026-10-29T18:00:00.000Z";
@@ -100,6 +101,28 @@ function lifecycleFor(store,storage,{nowMs=()=>Date.parse(AT),invoke=async()=>({
     privateToken:"private-test-token-123456",nowMs,
   });
 }
+
+test("stored-place birth rehearsal validates without model, development or name reservation",t=>{
+  const state=tempBirthState(t),store=createBirthLifecycleStore(state.storage());
+  t.after(()=>store.close());
+  const key="united-states/hilo:2000";
+  store.savePlace(key,"place_preflight_fixture",populationAuthored);
+  for(const origin of ["origin-0","origin-1"])
+    store.saveNaming(key,origin,"2000","naming_preflight_"+origin,namingAuthored);
+  const readonly=new Proxy(store,{
+    get(target,prop){
+      if(["reserveName","seedNames","saveNaming","savePlace","enqueue","progress",
+        "releaseName"].includes(prop))return ()=>{throw Error("preflight mutated birth state");};
+      return target[prop];
+    },
+  });
+  const result=rehearseStoredBirth({store:readonly,place:"United States/Hilo"});
+  assert.equal(result.place,"United States/Hilo");
+  assert.equal(store.get(result.requestId),null,"Preflight queued a birth");
+  assert.equal(store.reserveName("united-states/hilo",result.issuedName,
+    "real-birth-after-preflight"),true,"Preflight reserved the candidate name");
+  store.releaseName("real-birth-after-preflight");
+});
 
 test("an admitted life becomes unpresented after two hours without retroactive failure",async t=>{
   const state=tempBirthState(t),storage=state.storage();
@@ -216,6 +239,43 @@ test("an immutable development plan conflict is terminal, not an infinite retry"
   assert.equal(birth.nextAttemptAt,null);
   await lifecycle.handleWake();
   assert.equal(attempts,1,"A permanent plan conflict kept consuming development attempts");
+});
+
+test("provider schema HTTP 400 pauses authoring until code is fixed and resumed",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  const time=Date.parse(AT),store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  const requestIds=[];
+  const lifecycle=lifecycleFor(store,storage,{nowMs:()=>time,invoke:async args=>{
+    requestIds.push(args.clientRequestId);
+    throw Object.assign(new Error("HTTP 400: Invalid schema for response_format"),{
+      code:"MODEL_REQUEST_CONFIGURATION_ERROR",retryable:false,httpStatus:400});
+  }});
+  const requestId="invalid-provider-schema-proof";
+  store.enqueue(input(requestId));
+  store.progress(requestId,{stage:"place_resolved",status:"authoring",nextAttemptAt:time,
+    data:{selector:{country:"United States",city:"Hilo",
+      key:"united-states/hilo",birthCity:"Hilo, United States"},
+      chronology:{bornAt:"2004-05-01T00:00:00Z",
+        chronologyEndsAt:"2026-05-01T00:00:00Z"}},
+  });
+  await lifecycle.handleWake();
+  const paused=lifecycle.get(requestId);
+  assert.equal(paused.errorCode,"MODEL_REQUEST_CONFIGURATION_ERROR");
+  assert.equal(paused.failureRetryable,true,
+    "Invalid provider schema permanently rejected a viable birth");
+  assert.equal(paused.nextAttemptAt,null,
+    "Invalid provider schema retried automatically without a deployment fix");
+  await lifecycle.handleWake();
+  assert.equal(requestIds.length,1,"The same broken schema was sent repeatedly");
+  // Records from a pre-fix deployment may have marked this exact provider
+  // configuration failure nonretryable; recovery must work after upgrade.
+  store.progress(requestId,{failureRetryable:false,nextAttemptAt:null});
+  lifecycle.resume(requestId);
+  await lifecycle.handleWake();
+  assert.equal(requestIds.length,2);
+  assert.notEqual(requestIds[0],requestIds[1],
+    "Operator Resume reused a failed schema probe invocation ID");
 });
 
 test("a deploy-time journal conflict pauses without looping, then Resume advances generation",async t=>{

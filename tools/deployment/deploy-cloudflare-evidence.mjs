@@ -1,6 +1,7 @@
 import { execFile as execFileCallback } from "node:child_process";
 import { shortSha } from "../shared/repo-root.mjs";
 import { birthDeployment,birthRequest } from "../genesis/birth-remote.mjs";
+import {runBirthPreflight} from "./birth-preflight.mjs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { basename, dirname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -207,6 +208,9 @@ async function main() {
     repoRoot,
     environment,
     client,
+    birthPreflight:({baseUrl,expectedSha})=>runBirthPreflight({
+      baseUrl,expectedSha,privateToken:process.env.FIBRE_PRIVATE_TOKEN,
+    }),
     validateRepository: () => runCommand("npm", ["run", "validate"], { cwd: repoRoot }),
     provision: ({ sourceGitSha } = {}) => provisionCloudflareResources({
       repoRoot,

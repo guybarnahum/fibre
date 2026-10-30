@@ -609,16 +609,19 @@ export function createBirthLifecycle({
         }
         const attempt=birth.attemptCount+1;
         const conflict=error instanceof DurableInvocationConflictError;
+        const configuration=["MODEL_REQUEST_CONFIGURATION_ERROR",
+          "MODEL_RESPONSE_SCHEMA_INVALID"].includes(error?.code);
         const pinnedConflict=error instanceof GenesisDevelopmentRequestConflictError
           ||/^durable Genesis development plan digest drift/u.test(message(error));
         const exhausted=birth.stage==="developing"&&(
           /exhaust(?:ed|ion)|budget.*(?:exceeded|depleted)/iu.test(message(error))||
           /exhaust/iu.test(String(error?.gate??"")));
         const exhaustedCount=(birth.data.developmentExhaustions??0)+(exhausted?1:0);
-        const retryable=pinnedConflict?false:conflict||exhausted
+        const retryable=pinnedConflict?false:configuration?true:conflict||exhausted
           ?exhaustedCount<2:error?.retryable!==false;
-        const pause=conflict||(exhausted&&exhaustedCount<2);
+        const pause=configuration||conflict||(exhausted&&exhaustedCount<2);
         const code=pinnedConflict?"DEVELOPMENT_PINNED_PLAN_CONFLICT"
+          :configuration?"MODEL_REQUEST_CONFIGURATION_ERROR"
           :conflict?"DURABLE_INVOCATION_CONFLICT"
           :exhausted?"DEVELOPMENT_BUDGET_EXHAUSTED"
           :String(error?.code??error?.constructor?.name??"BIRTH_FAILED");
@@ -736,12 +739,15 @@ export function createBirthLifecycle({
     const birth=store.get(requestId);
     if(!birth)throw new Error("Birth not found");
     if(store.isTerminal(birth.stage))return projection(birth);
-    if(birth.status==="failed" && birth.failureRetryable===false)
+    if(birth.status==="failed"&&birth.failureRetryable===false
+      &&birth.data.errorCode!=="MODEL_REQUEST_CONFIGURATION_ERROR")
       throw new TypeError("A terminal birth failure cannot be resumed");
     const conflicted=birth.status==="failed"&&
-      birth.data.errorCode==="DURABLE_INVOCATION_CONFLICT";
+      ["DURABLE_INVOCATION_CONFLICT","MODEL_REQUEST_CONFIGURATION_ERROR"]
+        .includes(birth.data.errorCode);
     const needsNewGeneration=birth.stage==="developing"&&birth.status==="failed"&&
-      ["DURABLE_INVOCATION_CONFLICT","DEVELOPMENT_BUDGET_EXHAUSTED"].includes(birth.data.errorCode);
+      ["DURABLE_INVOCATION_CONFLICT","DEVELOPMENT_BUDGET_EXHAUSTED",
+        "MODEL_REQUEST_CONFIGURATION_ERROR"].includes(birth.data.errorCode);
     const data={
       ...birth.data,
       ...(conflicted&&birth.stage==="place_resolved"?{

@@ -147,10 +147,16 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
           runtimeAcceptance:{ ok:true, status:404 },
         };
       },
+      async birthPreflight({baseUrl,expectedSha}){
+        assert.equal(baseUrl,"https://birth.example");
+        assert.equal(expectedSha,SHA);
+        calls.push("birth-preflight");
+      },
       print:()=>{},
     });
 
-    assert.deepEqual(calls, ["d1","wrangler:deploy","service-revision","birth-migrate-and-accept"]);
+    assert.deepEqual(calls, ["d1","wrangler:deploy","service-revision",
+      "birth-migrate-and-accept","birth-preflight"]);
     assert.equal(result.schemaAcceptance.migration.toVersion, 2);
     assert.equal(result.schemaAcceptance.runtimeAcceptance.status, 404);
   } finally {

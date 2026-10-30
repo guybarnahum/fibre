@@ -7,6 +7,22 @@ canonical: true
 
 # Current state of Fibre
 
+**Birth deployment gating (source only, October 30):** Staging at
+`060f5c9` revealed that every Place/naming model call failed HTTP 400
+because the structured-output schema sent `\\p{L}`, unsupported by the
+OpenAI provider's regex dialect. `genesis:births --failures` listed
+seven failed births; prior production-like discoveries also included
+token truncation, ancestry reference codes, World role affordances and
+non-atomic language authoring. The response regex now uses a negated
+punctuation class, and local static tests plus deployed provider probes
+must validate all seven model schemas. Both deployment commands now
+run a stored-Place, no-reservation Genesis preflight, failing closed
+before declaring deployment accepted. These changes are **not yet
+locally validated or deployed**; the seven staging failures must not be
+represented as resolved until the operator's new preflight passes.
+
+
+
 Fibre is a persistent World for artificial persons called **Threads**. Each Thread's identity, history, embodied origin, private interior, relationships, resources, and changing life persist beyond any particular model execution. Models supply temporary, fallible cognition; World and the owning domain authorities admit durable facts and consequences.
 
 This document answers **what Fibre can actually do and what remains unproven**. It is not an operational handoff or a duplicate milestone ledger. [Current priorities](current-priorities.md) owns the next action; [public progress](public-progress.md) owns public claims; [prototype roadmap](../validation/prototype-roadmap.md) preserves future ambition. A committed source capability, locally passed test, staging-observed behavior, and scientific standing are **different evidence levels**.

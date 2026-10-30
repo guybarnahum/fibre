@@ -16,6 +16,7 @@ import {
   runWrangler,
 } from "./cloudflare-operator.mjs";
 import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
+import {runBirthPreflight} from "./birth-preflight.mjs";
 import {
   d1BindingsFromConfig,
   ensureCloudflareD1Migrations,
@@ -138,6 +139,7 @@ export async function deployCloudflareService({
   ensureD1MigrationsImpl = ensureCloudflareD1Migrations,
   acceptServiceRevisionImpl = acceptCloudflareServiceRevision,
   acceptSchemaImpl = null,
+  birthPreflight = null,
   createDeploymentClient = createWranglerDeploymentClient,
   wait,
   print = console.log,
@@ -226,6 +228,8 @@ export async function deployCloudflareService({
     }))({prepared,serviceRevision})
     :null;
   if(schemaAcceptance!==null&&preinstalledWorldSchema===null)print("STATE SCHEMA INSTALLED "+serviceId);
+  if(serviceId==="birth-center"&&birthPreflight!==null)
+    await birthPreflight({baseUrl:serviceRevision.baseUrl,expectedSha});
   return Object.freeze({
     environment: env,
     serviceId,
@@ -255,7 +259,13 @@ function parseArgs(argv) {
 async function main(argv) {
   const { environment, service } = parseArgs(argv);
   const repoRoot = repoRootFrom(import.meta.url);
-  const result = await deployCloudflareService({ repoRoot, environment, service });
+  const result = await deployCloudflareService({
+    repoRoot,environment,service,
+    birthPreflight:service==="birth-center"
+      ?({baseUrl,expectedSha})=>runBirthPreflight({
+        baseUrl,expectedSha,privateToken:process.env.FIBRE_PRIVATE_TOKEN,
+      }):null,
+  });
   console.log(`Cloudflare service deployed: ${result.serviceId} -> ${result.workerName}`);
   console.log(`SOURCE  ${shortSha(result.sourceGitSha)}`);
   const output = `${result.stdout}\n${result.stderr}`.trim();

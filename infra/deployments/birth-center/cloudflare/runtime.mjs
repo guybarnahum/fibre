@@ -205,6 +205,7 @@ export function createBirthCenterCloudflareRuntime({
   return Object.freeze({
     infraDriver,
     birthStorage,
+    lifecycleStore,
     activityRecorder,
     runtime,
     creativeAdapter: development.creativeAdapter,

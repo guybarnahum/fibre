@@ -341,6 +341,7 @@ export async function deployCloudflareStack({
   client,
   wait = delay,
   log = console.log,
+  birthPreflight = null,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (typeof validateRepository !== "function") throw new TypeError("validateRepository callback is required");
@@ -418,6 +419,8 @@ export async function deployCloudflareStack({
           check:() => client.checkBirthCenterRuntime({ baseUrl }),
         })
       : null;
+    if(serviceId==="birth-center"&&birthPreflight!==null)
+      await birthPreflight({baseUrl,expectedSha});
     deployments.push(Object.freeze({
       serviceId,
       workerName,

@@ -3,6 +3,10 @@ import { DurableObject } from "cloudflare:workers";
 import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { migrateBirthState } from "#services/birth-center/src/birth-state-migrations.mjs";
+import {rehearseStoredBirth} from "#services/birth-center/src/birth-preflight.mjs";
+import {
+  BIRTH_RESPONSE_SCHEMAS,assertBirthResponseSchemaPatterns,
+} from "#services/birth-center/src/model-response-schemas.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
@@ -46,6 +50,48 @@ function createReasoningAdapters(env) {
     worldAuthoringAdapter:authoringAdapter(16_000),
     populationAuthoringAdapter:authoringAdapter(32_000),
   });
+}
+
+// Probe with the actual selected deployment model and schema transport, but
+// cap completion at 64 tokens and never journal or persist these invocations.
+async function probeBirthModelSchemas(env){
+  const creative=reasoningProfile("creative"),repair=reasoningProfile("repair");
+  const adapters=new Map();
+  for(const entry of BIRTH_RESPONSE_SCHEMAS){
+    assertBirthResponseSchemaPatterns(entry);
+    if(!adapters.has(entry.role)){
+      const profile=entry.role==="repair"?repair:creative;
+      const authoring=["population","authoring"].includes(entry.role);
+      adapters.set(entry.role,createOpenAIModelAdapter({
+        environment:env,modelId:profile.config.model,
+        temperature:profile.config.temperature,
+        topP:profile.config.topP,
+        reasoningEffort:authoring?"low":profile.config.reasoningEffort,
+        maxOutputTokens:64,retryLimit:0,timeoutMs:60_000,
+        ...(authoring?{fetchImpl:async(input,init)=>{
+          const body=JSON.parse(init.body);
+          delete body.temperature;
+          delete body.top_p;
+          return fetch(input,{...init,body:JSON.stringify(body)});
+        }}:{}),
+      }));
+    }
+    try{
+      await adapters.get(entry.role).invoke({
+        clientRequestId:"birth-preflight-"+entry.name.toLowerCase().replace(/[^a-z0-9]+/gu,"-"),
+        systemPrompt:"Deployment schema acceptance probe. Return the smallest valid object possible.",
+        input:{probe:true},
+        responseSchema:entry.schema,
+      });
+    }catch(error){
+      // Provider accepted the schema: a tiny output cap may intentionally
+      // truncate or produce incomplete JSON. HTTP/contract rejection fails.
+      if(["MODEL_INCOMPLETE_RESPONSE","UNPARSEABLE_MODEL_OUTPUT",
+        "MODEL_OUTPUT_SCHEMA_CONSTRAINT_ERROR"].includes(error?.code))continue;
+      throw new Error("schema "+entry.name+": "+String(error?.message??error));
+    }
+  }
+  return BIRTH_RESPONSE_SCHEMAS.length;
 }
 
 export class FibreBirthCenterDurableObject extends DurableObject {
@@ -111,6 +157,26 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         capabilities:["state"],
         health,
       }, { status:health.level === "normal" ? 200 : 503 });
+    }
+    if(url.pathname==="/internal/births/preflight"){
+      if(request.method!=="POST")return Response.json({error:"method_not_allowed"},{status:405});
+      if(request.headers.get("x-fibre-private-token")!==this.env.FIBRE_PRIVATE_TOKEN)
+        return Response.json({error:"private_token_required"},{status:403});
+      try{
+        const body=await request.json();
+        if(!body||typeof body!=="object"||Array.isArray(body)||
+          Object.keys(body).some(key=>key!=="place"))
+          return Response.json({error:"invalid_preflight_input"},{status:400});
+        const cloud=this.runtimeForRequest();
+        const schemas=await probeBirthModelSchemas(this.env);
+        const dryRun=rehearseStoredBirth({store:cloud.lifecycleStore,
+          place:body.place??"United States/Hilo"});
+        return Response.json({ok:true,schemas,place:dryRun.place,
+          deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null});
+      }catch(error){
+        return Response.json({ok:false,error:"birth_preflight_failed",
+          detail:String(error?.message??error)}, {status:422});
+      }
     }
     const cloud = this.runtimeForRequest();
     // A lifecycle status read is one indexed local row; a cold read must not

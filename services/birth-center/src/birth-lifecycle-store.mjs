@@ -83,6 +83,15 @@ export function createBirthLifecycleStore(storage, {
     "FROM modern_birth_requests WHERE lifecycle_input_json IS NOT NULL "+
     "ORDER BY created_at DESC,request_id DESC LIMIT ?"
   );
+  const preflightPlaces=db.prepare(
+    "SELECT place_key,version FROM birth_place_records "+
+    "WHERE place_key>=? AND place_key<? ORDER BY place_key DESC,created_at DESC LIMIT 4"
+  );
+  const preflightNames=db.prepare(
+    "SELECT origin_id,authored_json FROM birth_naming_records "+
+    "WHERE place_key=? AND child_decade=? "+
+    "ORDER BY origin_id,created_at DESC LIMIT 48"
+  );
   const placeByVersion=db.prepare("SELECT * FROM birth_place_records WHERE place_key=? AND version=?");
   const placeLatest=db.prepare(
     "SELECT * FROM birth_place_records WHERE place_key=? ORDER BY created_at DESC,version DESC LIMIT 1"
@@ -235,6 +244,19 @@ export function createBirthLifecycleStore(storage, {
       error:row.error_text,createdAt:row.created_at,updatedAt:row.updated_at,
     }));
   }
+  function storedBirthPreflightPlaces(cityKey){
+    const base=cityKey+":";
+    return preflightPlaces.all(base,cityKey+";").map(row=>({
+      placeKey:row.place_key,version:row.version,
+    }));
+  }
+  function storedBirthPreflightNames(placeKey,decade){
+    const names=new Map();
+    for(const row of preflightNames.all(placeKey,decade)){
+      if(!names.has(row.origin_id))names.set(row.origin_id,decode(row.authored_json));
+    }
+    return names;
+  }
   function place(key,version=null) {
     const row=version===null?placeLatest.get(key):placeByVersion.get(key,version);
     return row?Object.freeze({key:row.place_key,version:row.version,
@@ -254,6 +276,7 @@ export function createBirthLifecycleStore(storage, {
   }
   return Object.freeze({
     get,enqueue,progress,list,recentStatus,place,savePlace,naming,saveNaming,
+    storedBirthPreflightPlaces,storedBirthPreflightNames,
     nameIndexSeeded,seedNames,reserveName,releaseName,
     due({limit=2}={}){return due.all(nowMs(),limit).map(fromRow);},
     nextDueAt(){return nextDue.get().at??null;},
