@@ -14,7 +14,7 @@ last-reviewed: 2026-10-29
 The optional `place_authored` stage makes **one journaled model call** when a place/decade lacks a record. That single output contains both:
 
 - **Civic context:** the existing World-context fields, including place/time zone, home, schooling, transit, institutions, local and schooling languages, and material/social context.
-- **Place Population:** `originGroups`, `couples` and `mixedParentShare`, with provenance and a version/digest. No given-name or surname lists are in this call.
+- **Place Population:** `originGroups`, `couples`, `mixedParentShare` and `householdPatterns`, with provenance and a version/digest. No given-name or surname lists are in this call.
 
 `originGroups` are 8–20 concrete resident lineage sources, each with an `originId`, resident `share`, physical `referencePopulations` (existing codes), `heritageLanguages` and their `householdRetentionRate`. A group can be explicitly mixed; an umbrella “A or B” is not a single selectable group.
 
@@ -47,6 +47,41 @@ place's *mixed-child frequency*, whereas couple weights control the
 composition *within* each class; do not multiply the two or apply one
 single weighted draw across both classes.
 
+**Households are drawn, not templated.** The same Place authoring call returns
+`householdPatterns`: 3–6 weighted entries of `{caregivers,siblings,weight}`.
+Caregivers are a nonempty subset of `mother`, `father`, `grandmother`,
+`grandfather` and include at least one biological parent; siblings is an
+integer from 0 to 4. Weights reflect believable household arrangements for
+the place and the child's birth decade. Reject invalid output with the
+existing single Place repair invocation.
+
+Each birth draws one household pattern deterministically by `requestId`
+and, for each sibling, independently draws sex, older/younger status and a
+1–8-year age gap. Siblings receive distinct names from the child's naming
+tradition using the corresponding child-decade pool, and share the child's
+family name or a patronymic derived from their common father. Grandparents
+remain unnamed, with roles and maternal/paternal family-root facts. Both
+parents remain synthetic genetic ancestors even when not caregivers; a
+non-caregiving parent is explicitly recorded as living outside the child's
+household. Household selection changes WorldSpec household description,
+family relations, historical participants and home counterpart roles.
+Previously pinned Slice 1 family-profile births retain their original
+household material.
+
+**Name-index seed is a narrow World query.** Once per canonical Place,
+Birth Center reads `GET /internal/thread-directory/names?birthCity=<exact>`,
+which returns only matching full display names from World Thread identity
+rows; it never requests the full directory, live location evidence or
+Presentation. This minimal World read route is the only deliberate World
+change in this slice.
+
+**Reviewable birth projection.** A birth's persisted lifecycle row carries
+parent names, origin labels and birth decades; mixed-couple status; selected
+child naming tradition; the drawn caregivers and named siblings with sex,
+relative age and year gap; and the pinned Place's `mixedParentShare`.
+`GET /births/:id` and `genesis:births` expose these without further
+World or model reads or fetching an entire Place record.
+
 **Naming is lazy.** The first time a birth draws an origin group, Birth Center obtains one small **journaled naming-tradition model call** for that group. It records given-name pools for the parents' birth decade and for the child's birth decade, plus family names. It also owns the naming rules: `transmission ∈ {father, mother, mother+father, patronymic}`, `nameOrder` and `joiner`. Reuse that version for subsequent births; author missing decade material under the same journaled first-use rule. Parents' birth decades need not equal the child's decade. Authored naming data must be large enough to permit individual variation; names are not a code for religion or personality.
 
 The Place and naming versions remain inspectable. New versions require explicit commands and provenance; **Admin edits are deferred**. Slice 3 only shows the Place record. Every birth pins the versions it consumed. Older births and Threads are not rewritten.
@@ -61,7 +96,7 @@ From `requestId` and pinned Place/naming versions:
 4. Sample retained household languages from the parents and local place. Limit **raised languages** to three. For now **eventual languages = raised languages ∪ Place schooling language(s), capped at three**, by a deterministic, replayable rule. Life-history-based eventual-language acquisition is **deferred**.
 5. Sample which tradition supplies the child's given name by the couple's weights. Compose the family name using the selected tradition's `transmission`, `nameOrder` and `joiner`; preserve spaces and culturally meaningful joins.
 6. Atomically reserve the child's complete name in a **Birth Center index keyed by canonical place and full name**. It covers issued names, including **in-flight** births. On the **first new-model birth in each place**, seed it once from the World thread directory. Later births use the local index, with **no per-birth World call or new World index**. If a name is taken, redraw deterministically with a small bound; do not redraw parents or silently loop.
-7. Pass both named parents into Genesis history as household participants and synthetic genetic ancestors, never disguised as live Threads. Keep these parent slots available for future real Thread parents. The independently versioned v3 inherited urges do **not** depend on ancestry, language, sex or name.
+7. Pass both named parents into Genesis history as synthetic genetic ancestors, with caregiving only when the sampled household includes them; include drawn siblings and unnamed caregiving grandparents. Never disguise them as live Threads. Keep these parent slots available for future real Thread parents. The independently versioned v3 inherited urges do **not** depend on ancestry, language, sex or name.
 
 No origin field may infer religion, class, job, ability, intelligence, values or temperament. Names and languages are plausible outcomes of specific parental traditions, not identities or destinies.
 
@@ -73,6 +108,7 @@ No origin field may infer religion, class, job, ability, intelligence, values or
 | Civic World-context fields, including schooling languages | Genesis WorldSpec/childhood authoring, eventual-language selector | Situated life and deterministic schooling language exposure |
 | `originId`, resident `share` | Couple validator, population inspector/calibration | Inspect resident composition; shares **do not** independently select parents |
 | `referencePopulations` | Existing maternal/paternal founder-genome resolver | Distinct parental physical genomes and child phenotype; live-parent precedence |
+| `householdPatterns` | Household sampler, Genesis WorldSpec and participants | Different caregivers, variable siblings, named family members and home social affordances |
 | `mixedParentShare` | Mixed/same-origin class draw | Place/era-specific fraction of mixed-origin newborns; pinned with Place version |
 | `couples`: parent origin IDs, weights | Within-class couple sampler | Plausible parent combinations and separate ancestry |
 | `childGivenNameTradition` weights | Child's given-name selector | Mother's, father's or mainstream tradition selected per birth |
@@ -87,7 +123,7 @@ No origin field may infer religion, class, job, ability, intelligence, values or
 
 Resident origins and couple rates describe a **shared place**, not an individual child. Authoring them separately for every CLI run or birth would invent inconsistent populations. Birth Center owns this model-authored, inspectable prior. **World owns admitted personal lineage.** The prior is not a census fact or a claim about any resident.
 
-Cost: **one model call per new place × child's birth decade** authors civic context, origin groups, couples and mixed-parent share together. Only drawn origin groups incur **one small naming call per missing naming tradition/decade material**. Parent draws, physical inheritance, household languages and name redraws are bounded local work. Seeding issued names uses **one World directory read per place**, not each birth. Normal status reads use indexed local records and never reauthor or scan World. Genesis development retains its existing separate model cost.
+Cost: **one model call per new place × child's birth decade** authors civic context, origin groups, couples and mixed-parent share together. Only drawn origin groups incur **one small naming call per missing naming tradition/decade material**. Parent draws, physical inheritance, household languages and name redraws are bounded local work. Seeding issued names uses **one identity-only World birth-city names read per place**, not each birth. Normal status reads use indexed local records and never reauthor or scan World. Genesis development retains its existing separate model cost.
 
 ## Vision and review
 
@@ -97,4 +133,4 @@ Cost: **one model call per new place × child's birth decade** authors civic con
 
 **Alternatives:** large fixed household profiles still clone families; independent parent draws erase real couple patterns; per-birth models add cost; per-birth World name checks add load. We reject these for this slice, not broader natural family development. No caller or model assigns the child's future feelings, attention, choices or values. History can bend the future only when a Thread later consumes admitted parental/childhood evidence. Birth-cohort differential tests must change selected parents while fixing place and verify changed admitted lineage, naming and upbringing; the standing **behavioral** differential remains separate and unproved.
 
-**Slice 2 semantic test:** over a large deterministic sample for one pinned Place, the observed mixed-origin fraction must approximate its `mixedParentShare` within tolerance, and every selected couple must be one of the authored Place couples. The class fallback must remain defined under heritage filtering. **Additional proof:** bounded samples for Hilo, Addis Ababa, London and Aswan should expose name collisions, improbable parents, family repetition and language errors. Verify one Place authoring call, lazy naming, one-time World name-index seed, in-flight name reservations, and unchanged lineage after replay.
+**Household semantic test:** in a large seeded cohort for one Place, pattern frequencies match authored weights and demonstrate zero siblings, younger siblings and a non-caregiving biological parent without changing that parent's physical ancestry. **World names test:** a city-only response lists no other-city names and consults no location evidence. **Slice 2 semantic test:** over a large deterministic sample for one pinned Place, the observed mixed-origin fraction must approximate its `mixedParentShare` within tolerance, and every selected couple must be one of the authored Place couples. The class fallback must remain defined under heritage filtering. **Additional proof:** bounded samples for Hilo, Addis Ababa, London and Aswan should expose name collisions, improbable parents, family repetition and language errors. Verify one Place authoring call, lazy naming, one-time World name-index seed, in-flight name reservations, and unchanged lineage after replay.
