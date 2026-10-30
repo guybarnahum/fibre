@@ -701,13 +701,15 @@ function mapCoordinates(event) {
 function birthStage(birth){
   if(["complete","unlocated"].includes(birth?.stage))return "in-world";
   if(birth?.stage==="stillborn")return "stillborn";
-  if(birth?.stage==="cancelled"||birth?.status==="failed")return "failed";
+  if(birth?.stage==="cancelled" ||
+    (birth?.status==="failed"&&birth?.failureRetryable===false))return "failed";
   if(["admitted","presented","located","publishing"].includes(birth?.stage))return "emerging";
   if(["genome_selected","developing"].includes(birth?.stage))return "developing";
   return "genesis";
 }
 function activeBirth(birth){
-  return !["in-world","stillborn","failed"].includes(birthStage(birth));
+  return !["complete","unlocated","stillborn","cancelled"].includes(birth?.stage)
+    &&!(birth?.status==="failed"&&birth?.failureRetryable===false);
 }
 
 function birthplaceForBirth(birth) {
@@ -1208,7 +1210,7 @@ function renderPendingBirths(births) {
           }catch(error){content.textContent=String(error.message??error);}
         });
         actions.append(details);
-        if(activeBirth(birth)){
+        if(activeBirth(birth)||birth?.stage==="failed"){
           for(const action of ["resume","abandon"]){
             if(action==="resume"&&!(birth.status==="failed"&&birth.failureRetryable!==false))continue;
             const button=document.createElement("button");
