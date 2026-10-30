@@ -65,22 +65,21 @@ export function renderGenesisExecutionPage(requestId){
       // Both lists have bounded retention; a miss never proves that no
       // candidate ever existed. The request-specific development inspection
       // is exact when that development request has been reserved.
-      const [pendingResult,stillbornResult,inspectionResult]=await Promise.allSettled([
-        getJson("/api/threads/births/pending"),
+      const [lifecycleResult,stillbornResult,inspectionResult]=await Promise.allSettled([
+        getJson("/api/threads/births/"+encodeURIComponent(requestId)),
         getJson("/api/threads/births/stillborn"),
         getJson("/api/threads/births/develop/"+encodeURIComponent(requestId)+"/inspection"),
       ]);
-      if(pendingResult.status==="rejected"&&stillbornResult.status==="rejected"
+      if(lifecycleResult.status==="rejected"&&stillbornResult.status==="rejected"
         &&inspectionResult.status==="rejected"){
         throw new Error("No Birth Center source could be inspected.");
       }
-      const pending=pendingResult.status==="fulfilled"
-        ?pendingResult.value.births??[]:[];
+      const lifecycle=lifecycleResult.status==="fulfilled"?lifecycleResult.value.birth??null:null;
       const stillborn=stillbornResult.status==="fulfilled"
         ?stillbornResult.value.births??[]:[];
       const inspection=inspectionResult.status==="fulfilled"
         ?inspectionResult.value.inspection??null:null;
-      const evidence=genesisExecutionEvidence({requestId,pending,stillborn,inspection});
+      const evidence=genesisExecutionEvidence({requestId,lifecycle,stillborn,inspection});
       summary.replaceChildren(el("strong",null,requestId),
         el("span",null,"Read-only · Birth Center authority"));
       if(evidence.state==="not_in_bounded_lists"){
@@ -126,6 +125,19 @@ export function renderGenesisExecutionPage(requestId){
         ["Birthplace",record?.location],
         ["Sex",record?.sex],
       ]);
+      if(lifecycle?.parentage){
+        const p=lifecycle.parentage;
+        section("Family and household",[
+          ["Mother", [p.mother?.name,p.mother?.originLabel,p.mother?.birthDecade].filter(Boolean).join(" · ")],
+          ["Father", [p.father?.name,p.father?.originLabel,p.father?.birthDecade].filter(Boolean).join(" · ")],
+          ["Couple",p.mixed?"Mixed origin":"Same origin"],
+          ["Mixed-parent share",p.mixedParentShare],
+          ["Child naming origin",p.childGivenNameTradition?.originLabel],
+          ["Caregivers",p.household?.caregivers?.join(", ")],
+          ["Siblings",(p.household?.siblings??[]).map(child=>
+            [child.name,child.sex,child.relativeAge,child.gapYears+" years"].join(" · ")).join("; ")||"none"],
+        ]);
+      }
       section("Progress and recovery",[
         ["Created",record?.createdAt?time(record.createdAt):null],
         ["Last update",record?.updatedAt?time(record.updatedAt):null],
@@ -155,7 +167,7 @@ export function renderGenesisExecutionPage(requestId){
       details.append(activity);
       const refs=el("details","life-causes-evidence");
       refs.append(el("summary",null,"Source coverage and provenance"),
-        el("p",null,"Pending-list witness: "+(pendingResult.status==="fulfilled"?"read":"unavailable")),
+        el("p",null,"Lifecycle witness: "+(lifecycle?"read":"not found; legacy record possible")),
         el("p",null,"Stillborn-list witness: "+(stillbornResult.status==="fulfilled"?"read":"unavailable")),
         el("p",null,"Development inspection: "+(inspection?"found":"not returned")),
         el("p",null,"Birth Center lists retain bounded recent requests; a missing record does not establish lifetime absence."));

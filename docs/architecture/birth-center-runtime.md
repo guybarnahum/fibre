@@ -88,12 +88,13 @@ The Cloudflare deployment uses a private Worker plus one named SQLite-backed Dur
 
 [ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md)
 and [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)
-are **accepted design decisions, not a claim of completed implementation**. Today's CLI still authors World/family context and urges
-outside Birth Center and reports `/preparation`; Admin uses a separate
-`birth-initiation.mjs` schema and fixture genomes. These are current
-limitations, not the desired authority model.
+are **accepted design decisions**. CLI and Admin now both submit
+to Birth Center's single durable `/births` lifecycle, rather than
+authoring context in a separate CLI cache or a parallel fixture-driven
+Admin path. The implementation is committed but Slice 3 awaits local and
+staging validation; only the Slice 2 births are staging verified.
 
-**One Birth Center request** would own the stages:
+**One Birth Center request** owns the stages:
 
 ```text
 requested → place_resolved → place_authored? → parents_selected

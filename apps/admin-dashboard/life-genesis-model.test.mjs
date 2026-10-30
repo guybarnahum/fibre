@@ -29,3 +29,16 @@ test("Birth execution never promotes provisional work to an admitted Thread",()=
     "a bounded lookup miss was misrepresented as a failed birth");
   assert.equal(unknown.publication,"not_established");
 });
+
+test("authoritative lifecycle completion wins over unsettled legacy development evidence",()=>{
+  const evidence=genesisExecutionEvidence({
+    requestId:"birth_complete",
+    lifecycle:{requestId:"birth_complete",stage:"complete",status:"published",
+      threadId:"thr_completed",genesisId:"gen_completed",name:"Kalani Ladia"},
+    inspection:{requestId:"birth_complete",requestStatus:"submitted",provisionalStatus:"pending"},
+  });
+  assert.equal(evidence.state,"born");
+  assert.equal(evidence.publication,"birth_center_confirmed_born",
+    "Admin treated a completed Thread as merely a provisional candidate");
+  assert.equal(evidence.source.name,"Kalani Ladia");
+});

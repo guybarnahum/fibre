@@ -836,14 +836,14 @@ export default {
             ? json(404,{error:"experiment_not_found"})
             : json(200,{contract:"fibre-admin-population-lab-experiment-v0.1",experiment});
         }
-        if (threadBirth) return proxyBirthCenter(request,env,"/births"+url.search);
-        if (birthItem) return proxyBirthCenter(request,env,
-          "/births/"+birthItem[1]+(birthItem[2]?"/"+birthItem[2]:""));
         if (stillbornBirthsRequest) return proxyBirthCenterGet(env, "/internal/births/stillborn");
         if (birthInspectionMatch) return proxyBirthCenterGet(env,
           "/internal/births/develop/"+birthInspectionMatch[1]+"/inspection");
         if (birthplaces) return proxyBirthCenterGet(env, "/internal/births/places");
         if (birthPlaceSearch) return searchBirthPlaces(request, env);
+        if (threadBirth) return proxyBirthCenter(request,env,"/births"+url.search);
+        if (birthItem) return proxyBirthCenter(request,env,
+          "/births/"+birthItem[1]+(birthItem[2]?"/"+birthItem[2]:""));
         if(worldEvents){
           const raw=url.searchParams.get("hours")??"24";
           if([...url.searchParams.keys()].some(key=>key!=="hours")

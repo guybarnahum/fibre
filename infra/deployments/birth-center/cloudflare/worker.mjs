@@ -120,6 +120,11 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       const response=await cloud.lifecycleApi?.fetch(request);
       if(response!==null&&response!==undefined)return response;
     }
+    if(request.method==="GET" &&
+      ["/internal/births/places","/internal/births/stillborn"].includes(url.pathname)){
+      const response=await cloud.birthApi?.fetch(request);
+      if(response!==null&&response!==undefined)return response;
+    }
     this.ensureSchedulerForStatefulRequest(cloud);
     if (cloud.lifecycleApi !== null) {
       const lifecycleResponse=await cloud.lifecycleApi.fetch(request);

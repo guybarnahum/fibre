@@ -1,13 +1,16 @@
 // Birth execution is not the Thread's historical childhood. All status
 // facts come from Birth Center; the absence of a bounded match proves nothing.
-export function genesisExecutionEvidence({requestId,pending=[],stillborn=[],inspection=null}={}){
-  const active=pending.find(item=>item?.requestId===requestId)??null;
+export function genesisExecutionEvidence({requestId,lifecycle=null,pending=[],stillborn=[],inspection=null}={}){
+  const modern=lifecycle?.requestId===requestId?lifecycle:null;
+  const active=modern??pending.find(item=>item?.requestId===requestId)??null;
   const terminal=stillborn.find(item=>item?.requestId===requestId)??null;
   const detail=inspection?.requestId===requestId?inspection:null;
-  const state=terminal||detail?.disposition?.outcome==="stillborn"?"stillborn"
+  const state=modern?["complete","unlocated"].includes(modern.stage)?"born"
+    :modern.stage==="stillborn"?"stillborn":"pending"
+    :terminal||detail?.disposition?.outcome==="stillborn"?"stillborn"
     :detail?.disposition?.outcome==="born"?"born"
       :active?"pending":detail?"inspected_only":"not_in_bounded_lists";
-  const source=terminal??active??null;
+  const source=modern??terminal??active??null;
   return Object.freeze({
     requestId,state,source,inspection:detail,
     threadId:source?.threadId??detail?.threadId??null,
