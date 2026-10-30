@@ -23,9 +23,9 @@ function languageName(value){
   const name=value.trim();
   // Old pinned Places may contain dialect labels. Do not propagate varieties
   // as additional spoken languages into a new person's identity.
-  const root=baseLanguages.find(base=>name.toLowerCase()===base.toLowerCase()
-    ||(name.toLowerCase().endsWith(" "+base.toLowerCase())
-      &&!/\b(?:creole|sign)\b/iu.test(name)));
+  const root=baseLanguages.find(base=>
+    new RegExp("\\b"+base+"\\b","iu").test(name)
+      &&!/\b(?:creole|sign)\b/iu.test(name));
   return root??name;
 }
 function distinct(value){

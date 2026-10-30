@@ -86,7 +86,7 @@ test("Place languages are atomic and one language never appears as multiple vari
     "Dialect descriptions were accepted as individual languages");
   const withVarieties={...place,schoolingLanguages:["Arabic","English"],
     originGroups:place.originGroups.map((group,index)=>({
-      ...group,heritageLanguages:index===0?["Egyptian Arabic","Arabic"]:["Arabic"],
+      ...group,heritageLanguages:index===0?["Arabic","Saidi Arabic dialects (Upper Egyptian Arabic)","Egyptian Arabic"]:["Arabic"],
     }))};
   // Historic pinned records can contain varieties; new authoring cannot.
   assert.throws(()=>validatePlacePopulation(withVarieties),/bare language/);
