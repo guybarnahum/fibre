@@ -162,9 +162,11 @@ export function composeParentage({
       }
     }
   }
-  const homeLanguages=distinct(raised);
   const {instructionLanguages}=placeSchoolingProfile(place);
   const instruction=distinct(instructionLanguages);
+  // School's first instruction language is also the household language when
+  // no parental heritage language was retained.
+  const homeLanguages=distinct(raised.length?raised:[instruction[0]]);
   // Reserve the instruction slots before taking additional household
   // languages. Keep the household's original order in the final repertoire.
   const instructionKeys=new Set(instruction.map(x=>x.toLocaleLowerCase("en-US")));

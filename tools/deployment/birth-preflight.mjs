@@ -1,6 +1,33 @@
 import {fileURLToPath,pathToFileURL} from "node:url";
 import {resolve} from "node:path";
-import {birthDeployment,birthEnvironment} from "../genesis/birth-remote.mjs";
+import {birthDeployment,birthEnvironment,birthRequest} from "../genesis/birth-remote.mjs";
+import {rehearseBirthSnapshot} from "../../services/birth-center/src/birth-preflight.mjs";
+import {probeBirthModelSchemas} from "../../services/birth-center/src/birth-schema-probe.mjs";
+import {loadDeploymentManifest,resolveServiceDeployment} from "./deployment-manifest.mjs";
+
+// Fail closed before any upload. The old Worker supplies only pinned records;
+// all composition/World validation and provider schema transport run locally.
+export async function runLocalBirthPreflight({
+  repoRoot,environment,place="United States/Hilo",
+  fetchMaterial=null,probeSchemas=probeBirthModelSchemas,log=console.log,
+}={}){
+  const remote=birthDeployment(environment);
+  const material=fetchMaterial
+    ?await fetchMaterial(remote,place)
+    :(await birthRequest(remote,"/internal/births/preflight/material?place="+
+        encodeURIComponent(place),{timeoutMs:30_000})).material;
+  if(!Array.isArray(material?.places)||!material.places.length)
+    throw new Error("BIRTH PREFLIGHT no pinned Place/naming material from serving Birth Center");
+  const rehearsal=rehearseBirthSnapshot(material);
+  const manifest=await loadDeploymentManifest(resolve(repoRoot,
+    "infra/deployments/environments/cloudflare.yaml"));
+  const integrations=resolveServiceDeployment(manifest,"birth-center").integrations;
+  const schemas=await probeSchemas(process.env,{
+    creative:integrations.creative,repair:integrations.repair,
+  });
+  log("BIRTH LOCAL PREFLIGHT ok ("+schemas+" schemas, place "+rehearsal.place+")");
+  return {schemas,rehearsal};
+}
 
 export async function runBirthPreflight({
   baseUrl,privateToken,place="United States/Hilo",expectedSha=null,

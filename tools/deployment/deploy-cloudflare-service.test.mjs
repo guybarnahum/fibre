@@ -134,6 +134,7 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
         };
       },
       async writeFileImpl() {},
+      async localBirthPreflight(){calls.push("local-preflight");},
       async ensureD1MigrationsImpl() { calls.push("d1"); },
       async runner(args) {
         calls.push(`wrangler:${args[0]}`);
@@ -155,7 +156,7 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
       print:()=>{},
     });
 
-    assert.deepEqual(calls, ["d1","wrangler:deploy","service-revision",
+    assert.deepEqual(calls, ["local-preflight","d1","wrangler:deploy","service-revision",
       "birth-migrate-and-accept","birth-preflight"]);
     assert.equal(result.schemaAcceptance.migration.toVersion, 2);
     assert.equal(result.schemaAcceptance.runtimeAcceptance.status, 404);
@@ -164,6 +165,25 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
   }
 });
 
+
+test("failed local Birth Center rehearsal never uploads a worker",async()=>{
+  const repoRoot=mkdtempSync(join(tmpdir(),"fibre-birth-preflight-reject-"));
+  let uploads=0;
+  try{
+    await assert.rejects(deployCloudflareService({
+      repoRoot,environment:"staging",service:"birth-center",
+      async resolveSource(){return SHA;},
+      async resolveConfig(){
+        return {sourceConfigPath:"infra/deployments/birth-center/cloudflare/wrangler.jsonc",
+          config:resolvedConfig("fibre-birth-center-staging")};
+      },
+      async localBirthPreflight(){throw new Error("World refused empty raisedLanguages");},
+      async runner(){uploads++;throw new Error("Should not upload");},
+      print:()=>{},
+    }),/World refused empty raisedLanguages/);
+    assert.equal(uploads,0,"A failed Birth preflight published the defective Worker");
+  }finally{rmSync(repoRoot,{recursive:true,force:true});}
+});
 
 test("targeted World deploy shares bounded schema-install retry before health acceptance",async()=>{
   const repoRoot=mkdtempSync(join(tmpdir(),"fibre-world-schema-retry-"));

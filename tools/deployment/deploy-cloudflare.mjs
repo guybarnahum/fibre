@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { shortSha } from "../shared/repo-root.mjs";
+import {runLocalBirthPreflight} from "./birth-preflight.mjs";
 import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 
@@ -342,6 +343,7 @@ export async function deployCloudflareStack({
   wait = delay,
   log = console.log,
   birthPreflight = null,
+  localBirthPreflight = runLocalBirthPreflight,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (typeof validateRepository !== "function") throw new TypeError("validateRepository callback is required");
@@ -349,6 +351,7 @@ export async function deployCloudflareStack({
   if (!client) throw new TypeError("Cloudflare deployment client is required");
 
   await validateRepository();
+  await localBirthPreflight({repoRoot,environment:env});
   await client.assertAuthenticated();
   const resourceState = await provision();
   if (resourceState?.environment !== env) throw new Error(`provisioned Cloudflare state environment mismatch: ${String(resourceState?.environment)}`);
@@ -419,8 +422,11 @@ export async function deployCloudflareStack({
           check:() => client.checkBirthCenterRuntime({ baseUrl }),
         })
       : null;
-    if(serviceId==="birth-center"&&birthPreflight!==null)
-      await birthPreflight({baseUrl,expectedSha});
+    if(serviceId==="birth-center"&&birthPreflight!==null){
+      try{await birthPreflight({baseUrl,expectedSha});}
+      catch(error){throw new Error("BIRTH POST-DEPLOY PREFLIGHT failed; NEW VERSION IS SERVING: "+
+        String(error?.message??error),{cause:error});}
+    }
     deployments.push(Object.freeze({
       serviceId,
       workerName,

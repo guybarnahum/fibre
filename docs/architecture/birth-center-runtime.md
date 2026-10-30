@@ -63,9 +63,17 @@ constructs, including Unicode-property escapes, lookaround,
 backreferences and word boundaries. Canonical model output is still
 validated locally. Only the transported regex dialect is restricted.
 
+Before uploading any worker, both `cloud:deploy` and the targeted Birth Center
+service deploy fetch the bounded, read-only Place and naming snapshot from
+the currently serving Birth Center. The new local code rehearses Genesis with
+real World validators and probes all seven actual schema transports using
+`OPENAI_API_KEY` from `.env`. Either failure stops the deployment **before
+any worker upload**. The serving worker must support the authenticated
+`/internal/births/preflight/material` snapshot endpoint; missing support fails
+closed, rather than silently approving an unverified deploy.
+
 After the Birth Center Worker and state schema are deployed, both
-`cloud:deploy` and `cloud:deploy:service -- --service birth-center`
-run a mandatory internal birth preflight before reporting deployment
+commands retain the internal birth preflight as a smoke check before success
 success. The same check is available through
 `npm run birth:preflight -- --env staging [--place United States/Hilo]`.
 The deployed Worker sends **one tiny, capped** response-schema request
@@ -79,7 +87,11 @@ Indexed Place/naming reads are bounded to a few hundred rows. A missing
 pinned Place/naming tradition fails preflight explicitly; it must never
 silently trigger Place authoring. Successful deployment prints
 `BIRTH PREFLIGHT ok (7 schemas, place United States/Hilo)`.
-The deployed revision must match the deployment being accepted.
+The deployed revision must match the deployment being accepted. If the
+post-deploy smoke check fails, the CLI explicitly reports that the **new
+revision is already serving**. The initial deployment of the snapshot
+endpoint requires an explicit bootstrap plan because the preceding Worker
+cannot serve that endpoint.
 
 A provider `MODEL_REQUEST_CONFIGURATION_ERROR` is a paused,
 operator-resumable birth rather than a terminal rejection or recurring

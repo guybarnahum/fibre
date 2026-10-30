@@ -6,12 +6,40 @@ import {composeParentage,requiredNamingOrigins} from "./birth-parentage.mjs";
 import {chooseChildTradition} from "./place-population.mjs";
 import {preflightGenesisAdmission} from "./birth-lifecycle.mjs";
 
+// A bounded read-only snapshot lets the next revision rehearse its own
+// composition locally, before replacing the currently serving Worker.
+export function snapshotStoredBirthMaterial({store,place="United States/Hilo"}={}){
+  const selector=normalizeGenesisWorldSelector(place);
+  return {place:selector.display,places:store.storedBirthPreflightPlaces(selector.key)
+    .map(ref=>{
+      const record=store.place(ref.placeKey,ref.version);
+      if(!record)return null;
+      const decade=ref.placeKey.split(":").at(-1);
+      return {record,naming:Object.fromEntries(
+        store.storedBirthPreflightNames(ref.placeKey,decade))};
+    }).filter(Boolean)};
+}
+
+export function rehearseBirthSnapshot(snapshot){
+  if(!Array.isArray(snapshot?.places))throw new TypeError("Invalid Birth Center preflight material");
+  const records=snapshot.places;
+  const store={
+    storedBirthPreflightPlaces:()=>records.map(x=>({
+      placeKey:x.record.key,version:x.record.version})),
+    place:(key,version)=>records.find(x=>x.record.key===key&&x.record.version===version)?.record,
+    storedBirthPreflightNames:(key)=>new Map(Object.entries(
+      records.find(x=>x.record.key===key)?.naming??{})),
+  };
+  return rehearseStoredBirth({store,place:snapshot.place});
+}
+
 // No model invocation, no World service calls, no development and no name
 // reservation. Every database operation below is an indexed SELECT.
 export function rehearseStoredBirth({store,place="United States/Hilo"}={}){
   if(!store?.storedBirthPreflightPlaces||!store?.storedBirthPreflightNames)
     throw new TypeError("Birth preflight requires a read-only lifecycle store");
   const selector=normalizeGenesisWorldSelector(place);
+  let evidence=null,samples=0;
   for(const ref of store.storedBirthPreflightPlaces(selector.key)){
     const record=store.place(ref.placeKey,ref.version);
     if(!record?.authored?.originGroups)continue;
@@ -48,12 +76,14 @@ export function rehearseStoredBirth({store,place="United States/Hilo"}={}){
           calibrationModel:null,parentage,
         });
         preflightGenesisAdmission(request);
-        return {place:selector.display,placeVersion:record.version,requestId,
+        evidence??={place:selector.display,placeVersion:record.version,requestId,
           issuedName:parentage.issuedName,
           couple:couple.motherOriginId+" / "+couple.fatherOriginId};
+        if(++samples>=16)return {...evidence,samples};
       }
     }
   }
+  if(evidence)return {...evidence,samples};
   throw new Error("Birth preflight: "+selector.display+
     " has no authored Place with complete pinned naming traditions");
 }

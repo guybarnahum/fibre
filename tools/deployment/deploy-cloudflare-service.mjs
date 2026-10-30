@@ -16,7 +16,7 @@ import {
   runWrangler,
 } from "./cloudflare-operator.mjs";
 import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
-import {runBirthPreflight} from "./birth-preflight.mjs";
+import {runBirthPreflight,runLocalBirthPreflight} from "./birth-preflight.mjs";
 import {
   d1BindingsFromConfig,
   ensureCloudflareD1Migrations,
@@ -140,6 +140,7 @@ export async function deployCloudflareService({
   acceptServiceRevisionImpl = acceptCloudflareServiceRevision,
   acceptSchemaImpl = null,
   birthPreflight = null,
+  localBirthPreflight = runLocalBirthPreflight,
   createDeploymentClient = createWranglerDeploymentClient,
   wait,
   print = console.log,
@@ -159,6 +160,8 @@ export async function deployCloudflareService({
     service:serviceId,
     gitSha:sourceGitSha,
   });
+  if(serviceId==="birth-center")
+    await localBirthPreflight({repoRoot:root,environment:env});
   const deployConfigPath = resolve(root, ".fibre", "cloudflare", env, "service-deploy", `${serviceId}.jsonc`);
   await mkdir(dirname(deployConfigPath), { recursive:true });
   const deployConfig = structuredClone(prepared.config);
@@ -228,8 +231,11 @@ export async function deployCloudflareService({
     }))({prepared,serviceRevision})
     :null;
   if(schemaAcceptance!==null&&preinstalledWorldSchema===null)print("STATE SCHEMA INSTALLED "+serviceId);
-  if(serviceId==="birth-center"&&birthPreflight!==null)
-    await birthPreflight({baseUrl:serviceRevision.baseUrl,expectedSha});
+  if(serviceId==="birth-center"&&birthPreflight!==null){
+    try{await birthPreflight({baseUrl:serviceRevision.baseUrl,expectedSha});}
+    catch(error){throw new Error("BIRTH POST-DEPLOY PREFLIGHT failed; NEW VERSION IS SERVING: "+
+      String(error?.message??error),{cause:error});}
+  }
   return Object.freeze({
     environment: env,
     serviceId,

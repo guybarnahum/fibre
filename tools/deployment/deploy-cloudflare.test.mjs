@@ -176,6 +176,7 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
     environment:"staging",
     client,
     validateRepository:async () => calls.push("validate"),
+    localBirthPreflight:async()=>calls.push("birth-local-preflight"),
     provision:async () => { calls.push("provision"); return state; },
     wait:async () => {},
     log:()=>{},
@@ -194,7 +195,7 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
     "https://api.staging.insidefibre.com",
   );
   assert.equal(result.externalViewerOrigin, "https://staging.insidefibre.com");
-  assert.deepEqual(calls.slice(0, 3), ["validate", "auth", "provision"]);
+  assert.deepEqual(calls.slice(0, 4), ["validate","birth-local-preflight","auth","provision"]);
   assert.deepEqual(calls.filter((call) => call.startsWith("deploy:")), [
     "deploy:asset-generator",
     "deploy:thread-presentation",
@@ -225,6 +226,20 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
   assert.equal(calls.at(-1), "viewer:https://staging.insidefibre.com");
 });
 
+test("full-stack Birth preflight rejects invalid composition before any upload",async()=>{
+  const {root,state}=await fixtureRepo();
+  let uploaded=0,provisioned=0;
+  await assert.rejects(deployCloudflareStack({
+    repoRoot:root,environment:"staging",
+    client:{async deployService(){uploaded++;}},
+    validateRepository:async()=>{},
+    localBirthPreflight:async()=>{throw new Error("Invalid household language");},
+    provision:async()=>{provisioned++;return state;},
+  }),/Invalid household language/);
+  assert.equal(uploaded,0,"Stack uploaded workers before local Birth validation");
+  assert.equal(provisioned,0,"Stack provisioned resources before local Birth validation");
+});
+
 test("deployment fails before deploy when required Fibre secrets are incomplete", async () => {
   const { root, state } = await fixtureRepo();
   let deployCalls = 0;
@@ -242,6 +257,7 @@ test("deployment fails before deploy when required Fibre secrets are incomplete"
     environment:"staging",
     client,
     validateRepository:async () => {},
+    localBirthPreflight:async()=>{},
     provision:async () => state,
     log:()=>{},
   }), /asset-generator is missing required Cloudflare secrets: OPENAI_API_KEY/);

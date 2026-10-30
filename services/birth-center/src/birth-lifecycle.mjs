@@ -609,8 +609,11 @@ export function createBirthLifecycle({
         }
         const attempt=birth.attemptCount+1;
         const conflict=error instanceof DurableInvocationConflictError;
+        const compositionDefect=birth.threadId===null&&
+          ["parents_selected","genome_selected"].includes(birth.stage)&&
+          (error instanceof TypeError||error?.code==="BIRTH_PREFLIGHT_WORLD_CONTRACT");
         const configuration=["MODEL_REQUEST_CONFIGURATION_ERROR",
-          "MODEL_RESPONSE_SCHEMA_INVALID"].includes(error?.code);
+          "MODEL_RESPONSE_SCHEMA_INVALID"].includes(error?.code)||compositionDefect;
         const pinnedConflict=error instanceof GenesisDevelopmentRequestConflictError
           ||/^durable Genesis development plan digest drift/u.test(message(error));
         const exhausted=birth.stage==="developing"&&(
@@ -621,6 +624,7 @@ export function createBirthLifecycle({
           ?exhaustedCount<2:error?.retryable!==false;
         const pause=configuration||conflict||(exhausted&&exhaustedCount<2);
         const code=pinnedConflict?"DEVELOPMENT_PINNED_PLAN_CONFLICT"
+          :compositionDefect?error?.code??"BIRTH_COMPOSITION_DEFECT"
           :configuration?"MODEL_REQUEST_CONFIGURATION_ERROR"
           :conflict?"DURABLE_INVOCATION_CONFLICT"
           :exhausted?"DEVELOPMENT_BUDGET_EXHAUSTED"
@@ -741,7 +745,11 @@ export function createBirthLifecycle({
     if(!birth)throw new Error("Birth not found");
     if(store.isTerminal(birth.stage))return projection(birth);
     if(birth.status==="failed"&&birth.failureRetryable===false
-      &&birth.data.errorCode!=="MODEL_REQUEST_CONFIGURATION_ERROR")
+      &&!["MODEL_REQUEST_CONFIGURATION_ERROR","BIRTH_COMPOSITION_DEFECT",
+        "BIRTH_PREFLIGHT_WORLD_CONTRACT"].includes(birth.data.errorCode)
+      &&!(birth.threadId===null&&
+        ["parents_selected","genome_selected"].includes(birth.stage)&&
+        birth.data.errorCode==="TypeError"))
       throw new TypeError("A terminal birth failure cannot be resumed");
     const conflicted=birth.status==="failed"&&
       ["DURABLE_INVOCATION_CONFLICT","MODEL_REQUEST_CONFIGURATION_ERROR"]
