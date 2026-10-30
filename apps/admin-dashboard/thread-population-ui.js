@@ -1089,7 +1089,7 @@ function renderPendingBirths(births) {
   if (births.length === 0) {
     const empty = document.createElement("span");
     empty.className = "thread-birth-pending-empty";
-    empty.textContent = "No active births or outcomes recorded in the last three days.";
+    empty.textContent = "No lifecycle births on this page.";
     birthPending.append(empty);
   } else {
     for (const birth of births) {
