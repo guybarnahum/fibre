@@ -11,10 +11,10 @@ const originSchema = {
   required:["originId","label","share","heritageTags","referencePopulations","heritageLanguages","householdRetentionRate"],
   properties:{
     originId:textField,label:textField,share:positive,
-    heritageTags:textList(1,8),
-    referencePopulations:{type:"array",minItems:1,maxItems:5,items:{
+    heritageTags:textList(1,3),
+    referencePopulations:{type:"array",minItems:1,maxItems:3,items:{
       type:"object",additionalProperties:false,required:["population","share","referencePopulation"],
-      properties:{population:textField,share:positive,referencePopulation:textField},
+      properties:{population:textField,share:positive,referencePopulation:{type:"string",enum:referencePopulationIds}},
     }},
     heritageLanguages:textList(1,3),householdRetentionRate:fraction,
   },
@@ -57,7 +57,7 @@ export const PLACE_POPULATION_SCHEMA = {
     availableInstitutions:textList(3,12),intellectualEnvironment:textField,
     schoolingLanguages:textList(1,3),
     originGroups:{type:"array",minItems:8,maxItems:20,items:originSchema},
-    couples:{type:"array",minItems:2,maxItems:150,items:coupleSchema},
+    couples:{type:"array",minItems:2,maxItems:40,items:coupleSchema},
     mixedParentShare:fraction,localNamingOriginId:textField,
     householdPatterns:{type:"array",minItems:3,maxItems:6,items:householdPatternSchema},
   },
@@ -175,11 +175,11 @@ export function choosePlaceCouple({place,requestId,heritage=null}){
 export async function authorPlacePopulation({adapter,selector,placeKey,version,repair=null}){
   const prompt=[
     "Author one bounded civic Place and resident population for a Fibre birth cohort.",
-    "Return one JSON object with civic context, schoolingLanguages, 8–20 concrete originGroups, weighted couples, localNamingOriginId and mixedParentShare.",
-    "The place describes residents, not one family or a future person's personality. Use concise civic descriptions (one or two meaningful sentences each).",
-    "Choose 8–20 concrete local resident origin groups, with heritageTags describing exact family-origin labels usable as heritage filters, plausible household languages and evidence-grounded referencePopulations.",
-    "Every origin's referencePopulations must sum to 1. Use Fibre's existing codes (eur_north, eur_south, afr_north, afr_west, afr_east, afr_south, middle_east, west_asia, south_asia, east_asia, southeast_asia, indigenous_america, oceania and their supported descendants).",
-    "Couples describe plausible concrete mother/father origin pairings and positive relative weights within same/mixed classes, not independent resident draws.",
+    "Return one compact JSON object with civic context, schoolingLanguages, 8–20 concrete originGroups, at most 40 weighted couples, localNamingOriginId and mixedParentShare.",
+    "The place describes residents, not one family or a future person's personality. Give each civic description only one or two concrete sentences; avoid repetition.",
+    "Choose 8–20 concrete local resident origin groups. Use at most 3 heritageTags and 3 referencePopulations per group; only include meaningful roots and household languages.",
+    "Every origin's referencePopulations must sum to 1. Select referencePopulation only from the codes permitted by the schema.",
+    "Use no more than 40 plausible mother/father origin pairings, concentrating on couples representing the large majority of births; rare pairings can be omitted. Weights are relative within same/mixed classes, not independent resident draws. mixedParentShare must still estimate the true mixed-child fraction.",
     "Author 3–6 distinct householdPatterns, each {caregivers,siblings,weight}, with positive plausible relative weights for this city and child birth decade. Caregivers are a unique subset of mother, father, grandmother, grandfather and include at least one parent. Siblings is 0–4. Include ordinary variation: some only children, some younger siblings, and some households with one non-caregiving parent or a grandparent. Do not default everyone to two caregivers and an older sibling.",
     "mixedParentShare is the estimated share of children in this exact place and child's birth decade with different mother/father originId values, not a worldwide constant. It may be high in Hilo and low in Chengdu. A group with internally mixed ancestry paired with itself counts as same-origin.",
     "If mixedParentShare > 0 include a different-origin couple; if < 1 include a same-origin couple. Couple's childGivenNameTradition gives nonnegative weights for mother, father or local mainstream naming source. No name lists in the Place record.",
@@ -188,7 +188,11 @@ export async function authorPlacePopulation({adapter,selector,placeKey,version,r
   ].join("\n");
   const result=await adapter.invoke({
     clientRequestId:"birth_population_"+sha256(placeKey+":"+version).slice(0,24)+(repair===null?"_author":"_repair"),
-    systemPrompt:repair===null?prompt:prompt+"\nPrevious material was rejected: "+repair+". Return a complete corrected output.",
+    systemPrompt:repair===null?prompt:prompt+"\n"+(
+      /incomplete|cut off|max_output_tokens|max_tokens/iu.test(repair)
+        ?"The previous output was cut off before completion. Return a more concise, complete JSON object within the output token budget. Do not omit required fields."
+        :"Previous material failed validation: "+repair+". Return a concise, complete corrected object."
+    ),
     input:{country:selector.country,city:selector.city,decade:placeKey.split(":")[1]},
     responseSchema:PLACE_POPULATION_SCHEMA,
   });

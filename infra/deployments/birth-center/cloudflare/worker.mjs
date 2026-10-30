@@ -25,13 +25,11 @@ function reasoningProfile(name) {
 
 function createReasoningAdapters(env) {
   const creative=reasoningProfile("creative");
-  // The family-profile structured output can be much larger than ordinary
-  // cognition; retain the former CLI's bounded authoring configuration.
-  const worldAuthoringAdapter=createOpenAIModelAdapter({
+  const authoringAdapter=maxOutputTokens=>createOpenAIModelAdapter({
     environment:env,
     modelId:creative.config.model,
     reasoningEffort:"low",
-    maxOutputTokens:16_000,
+    maxOutputTokens,
     timeoutMs:180_000,
     retryLimit:0,
     fetchImpl:async(input,init)=>{
@@ -45,7 +43,8 @@ function createReasoningAdapters(env) {
   return Object.freeze({
     creativeAdapter: selectReasoningIntegration(creative, { environment: env }),
     repairAdapter: selectReasoningIntegration(reasoningProfile("repair"), { environment: env }),
-    worldAuthoringAdapter,
+    worldAuthoringAdapter:authoringAdapter(16_000),
+    populationAuthoringAdapter:authoringAdapter(32_000),
   });
 }
 

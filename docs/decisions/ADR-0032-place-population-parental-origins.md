@@ -16,9 +16,9 @@ The optional `place_authored` stage makes **one journaled model call** when a pl
 - **Civic context:** the existing World-context fields, including place/time zone, home, schooling, transit, institutions, local and schooling languages, and material/social context.
 - **Place Population:** `originGroups`, `couples`, `mixedParentShare` and `householdPatterns`, with provenance and a version/digest. No given-name or surname lists are in this call.
 
-`originGroups` are 8–20 concrete resident lineage sources, each with an `originId`, resident `share`, physical `referencePopulations` (existing codes), `heritageLanguages` and their `householdRetentionRate`. A group can be explicitly mixed; an umbrella “A or B” is not a single selectable group.
+`originGroups` are 8–20 concrete resident lineage sources, each with an `originId`, resident `share`, physical `referencePopulations` (existing codes), `heritageLanguages` and their `householdRetentionRate`. Each group has at most three heritage tags and at most three ancestry references; reference codes are selected from the complete canonical Human Appearance enumeration, not guessed. A group can be explicitly mixed; an umbrella “A or B” is not a single selectable group.
 
-`couples` are weighted `motherOriginId × fatherOriginId` pairs. Their `weight` represents plausible couples in that place/decade, **not** independent draws from resident shares. Cross-origin couples should be frequent where they are common (Hilo) and rare where they are not (Chengdu). Each couple carries **only** weights for the child's given-name source: mother's tradition, father's tradition or local mainstream. Naming conventions are not stored on the couple.
+`couples` are at most 40 weighted `motherOriginId × fatherOriginId` pairs, representing the large majority of births rather than an exhaustive combinatorial set. The authored `mixedParentShare` still estimates the full local mixed-parent frequency even when rare pairings are omitted. Their `weight` represents plausible couples in that place/decade, **not** independent draws from resident shares. Cross-origin couples should be frequent where they are common (Hilo) and rare where they are not (Chengdu). Each couple carries **only** weights for the child's given-name source: mother's tradition, father's tradition or local mainstream. Naming conventions are not stored on the couple.
 
 **Place-specific mixed parentage:** `mixedParentShare ∈ [0,1]` is the
 model-authored, believable estimated proportion of children in this exact
@@ -57,7 +57,7 @@ existing single Place repair invocation.
 
 Each birth draws one household pattern deterministically by `requestId`
 and, for each sibling, independently draws sex, older/younger status and a
-1–8-year age gap. Siblings receive distinct names from the child's naming
+1–8-year age gap. An older sibling's gap is capped at the younger biological parent's age at the subject's birth minus 18; if that leaves no positive gap, the sibling is younger. Both parent ages use the same deterministic birth material. Siblings receive distinct names from the child's naming
 tradition using the corresponding child-decade pool, and share the child's
 family name or a patronymic derived from their common father. Grandparents
 remain unnamed, with roles and maternal/paternal family-root facts. Both
@@ -123,7 +123,7 @@ No origin field may infer religion, class, job, ability, intelligence, values or
 
 Resident origins and couple rates describe a **shared place**, not an individual child. Authoring them separately for every CLI run or birth would invent inconsistent populations. Birth Center owns this model-authored, inspectable prior. **World owns admitted personal lineage.** The prior is not a census fact or a claim about any resident.
 
-Cost: **one model call per new place × child's birth decade** authors civic context, origin groups, couples and mixed-parent share together. Only drawn origin groups incur **one small naming call per missing naming tradition/decade material**. Parent draws, physical inheritance, household languages and name redraws are bounded local work. Seeding issued names uses **one identity-only World birth-city names read per place**, not each birth. Normal status reads use indexed local records and never reauthor or scan World. Genesis development retains its existing separate model cost.
+Cost: **one model call per new place × child's birth decade** authors civic context, bounded origin groups (8–20), at most 40 couples, household patterns and mixed-parent share together. Population authoring alone has a 32k-token output ceiling to accommodate reasoning; naming retains its separate 16k authoring ceiling. An incomplete population output can use the existing single, more concise repair call. Only drawn origin groups incur **one small naming call per missing naming tradition/decade material**. Parent draws, physical inheritance, household languages and name redraws are bounded local work. Seeding issued names uses **one identity-only World birth-city names read per place**, not each birth. Normal status reads use indexed local records and never reauthor or scan World. Genesis development retains its existing separate model cost.
 
 ## Vision and review
 

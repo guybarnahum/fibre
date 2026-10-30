@@ -10,6 +10,9 @@ function unit(seed){
 function age(requestId,role){
   return 24+Math.floor(unit(requestId+":"+role+":parent-age")*15);
 }
+export function parentAgesAtBirth(requestId){
+  return Object.freeze({mother:age(requestId,"mother"),father:age(requestId,"father")});
+}
 function fullName(given,surname,convention){
   return convention.nameOrder==="family_given"
     ? surname+" "+given : given+" "+surname;
@@ -39,11 +42,17 @@ export function requiredNamingOrigins(selected){
 
 export function drawBirthHousehold({place,requestId}){
   const pattern=chooseHouseholdPattern({place,requestId});
-  const siblings=Array.from({length:pattern.siblings},(_,index)=>({
-    sex:unit(requestId+":sibling:"+index+":sex")<0.5?"female":"male",
-    relativeAge:unit(requestId+":sibling:"+index+":older")<0.5?"older":"younger",
-    gapYears:1+Math.floor(unit(requestId+":sibling:"+index+":gap")*8),
-  }));
+  const {mother,father}=parentAgesAtBirth(requestId);
+  const oldestGap=Math.min(8,Math.min(mother,father)-18);
+  const siblings=Array.from({length:pattern.siblings},(_,index)=>{
+    const gap=1+Math.floor(unit(requestId+":sibling:"+index+":gap")*8);
+    const older=unit(requestId+":sibling:"+index+":older")<0.5 && oldestGap>=1;
+    return {
+      sex:unit(requestId+":sibling:"+index+":sex")<0.5?"female":"male",
+      relativeAge:older?"older":"younger",
+      gapYears:older?Math.min(gap,oldestGap):gap,
+    };
+  });
   return Object.freeze({caregivers:[...pattern.caregivers],siblings});
 }
 
@@ -56,7 +65,7 @@ export function composeParentage({
   const child=traditions[selected.childOriginId];
   if(!mom||!dad||!child)throw new TypeError("Parentage requires pinned naming traditions");
   const year=Number(chronology.bornAt.slice(0,4));
-  const motherAge=age(requestId,"mother"),fatherAge=age(requestId,"father");
+  const {mother:motherAge,father:fatherAge}=parentAgesAtBirth(requestId);
   const motherBorn=year-motherAge,fatherBorn=year-fatherAge;
   const motherDecade=Math.floor(motherBorn/10)*10;
   const fatherDecade=Math.floor(fatherBorn/10)*10;

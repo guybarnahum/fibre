@@ -203,6 +203,41 @@ test("an interrupted Place save replays the committed authoring call",async(t)=>
   assert.equal(modelCalls,1,"Restart regenerated a committed Place authoring call");
 });
 
+test("a truncated Place response gets one concise repair, never a third call",async t=>{
+  const state=tempBirthState(t),storage=state.storage();
+  let time=Date.parse(AT);
+  const store=createBirthLifecycleStore(storage,{nowMs:()=>time});
+  t.after(()=>store.close());
+  const prompts=[];
+  const lifecycle=lifecycleFor(store,storage,{nowMs:()=>time,invoke:async args=>{
+    prompts.push(args.systemPrompt);
+    throw Object.assign(
+      new Error("OpenAI model response did not complete: incomplete (max_output_tokens)"),
+      {code:"MODEL_INCOMPLETE_RESPONSE",providerErrorCode:"max_output_tokens",retryable:false},
+    );
+  }});
+  const requestId="truncated-place";
+  store.enqueue(input(requestId));
+  store.progress(requestId,{stage:"place_resolved",status:"authoring",nextAttemptAt:time,
+    data:{
+      selector:{country:"United States",city:"Hilo",birthCity:"Hilo, United States",
+        key:"united-states/hilo",slug:"united-states_hilo",display:"United States/Hilo"},
+      chronology:{bornAt:"2004-01-01T00:00:00.000Z",chronologyEndsAt:"2026-01-01T00:00:00.000Z"},
+    },
+  });
+  await lifecycle.handleWake();
+  assert.equal(store.get(requestId).failureRetryable,true,
+    "Truncated Place was denied its one repair");
+  time+=5_000;
+  await lifecycle.handleWake();
+  assert.equal(prompts.length,2,"Truncated Place generated more than one repair call");
+  assert.match(prompts[1],/previous output was cut off.*more concise/iu,
+    "The repair ignored the truncated output");
+  assert.equal(store.get(requestId).failureRetryable,false);
+  assert.equal(store.get(requestId).threadId,null,
+    "A failed Place created a reserved Thread");
+});
+
 test("a failed birth cannot block another due birth",async(t)=>{
   const state=tempBirthState(t),storage=state.storage();
   const store=createBirthLifecycleStore(storage,{nowMs:()=>Date.parse(AT)});

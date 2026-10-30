@@ -668,6 +668,7 @@ export function createBirthCenterCloudflareRuntime({
     store:lifecycleStore,runtime,
     developmentService:development.developmentService,
     authorAdapter:reasoningAdapters.worldAuthoringAdapter??development.creativeAdapter,
+    populationAdapter:reasoningAdapters.populationAuthoringAdapter??reasoningAdapters.worldAuthoringAdapter??development.creativeAdapter,
     worldFetch:bindingFetch(worldBinding),
     presentationFetch,privateToken,
     geoNamesUsername:env?.GEONAMES_USERNAME??null,

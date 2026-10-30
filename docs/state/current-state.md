@@ -97,7 +97,22 @@ and distinct World/Presentation/location checks. The older Admin
 initiation route intentionally remains until Slice 3. Existing born
 Threads and pinned Slice 1 Place records are never rewritten.
 
-**ADR-0032 Slice 2 is implemented in source, pending local and staging verification.** New births use a shared Place Population per place and birth decade, an authored mixed-parent share and weighted couple selection. Naming traditions are journaled on first use for each drawn origin, with era-specific parent and child names. Named mother and father shape ancestry, names, upbringing languages and historical Genesis participants. Schema v5 adds naming versions and a per-place name index covering in-flight births. The Slice 2 review correction adds weighted household patterns to the same Place model call; each child draws caregiving parents and grandparents and zero to four individually situated siblings. Both biological parents remain named genetic ancestors even when absent from the home. Birth status now projects these pinned family details. The once-per-place World name seed uses a new identity-only `GET /internal/thread-directory/names?birthCity=...` read rather than the full directory and its location evidence. This narrowly scoped World route is the only new World code; no World schema migration is required. These remain source claims, not deployed evidence. Old pinned Slice 1 births retain their original Place versions. Admin unification and read-only Place inspection remain Slice 3; editing is deferred.
+**ADR-0032 Slice 2 requires corrected staging validation.** Two controlled
+attempts failed at Place authoring before reserving any Thread or reaching
+World: Hilo hit the OpenAI `max_output_tokens` incomplete-response ceiling
+during initial authoring and repair; Aswan failed physical reference ancestry validation
+during both attempts (the recorded error does not distinguish an unknown
+code from other invalid ancestry fields). No Thread was admitted. The follow-up
+source correction constrains population codes to Human Appearance's canonical
+enum, limits Place output to at most 40 couples and three ancestry references
+and heritage tags per origin, gives the population call alone a 32k-token
+ceiling, and makes an incomplete-output repair explicitly request a concise,
+complete JSON object. Deterministic older-sibling ages now preserve a minimum
+parental age of 18 at that sibling's birth. These corrections have not yet
+been validated in staging. Re-run with fresh birth request IDs; do not infer
+success from the two failed attempts.
+
+**Source capability before this staging correction:** New births use a shared Place Population per place and birth decade, an authored mixed-parent share and weighted couple selection. Naming traditions are journaled on first use for each drawn origin, with era-specific parent and child names. Named mother and father shape ancestry, names, upbringing languages and historical Genesis participants. Schema v5 adds naming versions and a per-place name index covering in-flight births. The Slice 2 review correction adds weighted household patterns to the same Place model call; each child draws caregiving parents and grandparents and zero to four individually situated siblings. Both biological parents remain named genetic ancestors even when absent from the home. Birth status now projects these pinned family details. The once-per-place World name seed uses a new identity-only `GET /internal/thread-directory/names?birthCity=...` read rather than the full directory and its location evidence. This narrowly scoped World route is the only new World code; no World schema migration is required. These remain source claims, not deployed evidence. Old pinned Slice 1 births retain their original Place versions. Admin unification and read-only Place inspection remain Slice 3; editing is deferred.
 
 ## Identity, Genesis and embodiment
 

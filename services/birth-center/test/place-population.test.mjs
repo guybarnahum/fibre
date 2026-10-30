@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {choosePlaceCouple,chooseHouseholdPattern,validatePlacePopulation} from "../src/place-population.mjs";
-import {composeParentage,drawBirthHousehold} from "../src/birth-parentage.mjs";
+import {PLACE_POPULATION_SCHEMA,choosePlaceCouple,chooseHouseholdPattern,validatePlacePopulation} from "../src/place-population.mjs";
+import {composeParentage,drawBirthHousehold,parentAgesAtBirth} from "../src/birth-parentage.mjs";
 import {composeBirthSubjectIdentity} from "../src/birth-material.mjs";
+import {referencePopulationIds,sampleFounderPhysicalGenome} from "../../../core/src/human-appearance/index.mjs";
 import {composeGenesisWorldSelection} from "../src/genesis-world-selection.mjs";
 import {createBirthLifecycleStore} from "../src/birth-lifecycle-store.mjs";
 import {tempBirthState} from "./support/birth-state-fixture.mjs";
@@ -61,6 +62,21 @@ const chronology={bornAt:"2004-04-04T00:00:00Z",chronologyEndsAt:"2026-04-04T00:
 const selector={country:"United States",city:"Hilo",key:"united-states/hilo",slug:"united-states_hilo",
   display:"United States/Hilo",birthCity:"Hilo, United States"};
 
+test("all schema-permitted physical origins produce valid founder genomes",()=>{
+  const codes=PLACE_POPULATION_SCHEMA.properties.originGroups.items.properties
+    .referencePopulations.items.properties.referencePopulation.enum;
+  assert.deepEqual(codes,referencePopulationIds,
+    "Birth authoring excludes or adds unsupported founder populations");
+  for(const code of codes){
+    const genome=sampleFounderPhysicalGenome({
+      ancestry:[{population:code,share:1,referencePopulation:code}],
+      seed:"population-schema:"+code,
+    });
+    assert.ok(genome.loci?.pigmentation?.length===2,
+      "Birth Place reference "+code+" cannot produce a founder genome");
+  }
+});
+
 test("a Place's mixed-parent frequency and sampled couples follow its own authored evidence",()=>{
   validatePlacePopulation(place);
   const known=new Set(place.couples.map(c=>c.motherOriginId+"|"+c.fatherOriginId));
@@ -99,6 +115,12 @@ test("weighted households vary siblings and caregiving without inventing a fixed
     if(household.siblings.some(s=>s.relativeAge==="younger"))younger=true;
     if(!household.caregivers.includes("father")||!household.caregivers.includes("mother"))
       nonCaregiving=true;
+    const ages=parentAgesAtBirth(requestId);
+    for(const sibling of household.siblings){
+      const whenBorn=sibling.relativeAge==="older"?-sibling.gapYears:sibling.gapYears;
+      assert.ok(ages.mother+whenBorn>=18&&ages.father+whenBorn>=18,
+        "A sampled sibling was born before a parent turned 18");
+    }
   }
   for(const pattern of place.householdPatterns){
     const key=[...pattern.caregivers].sort().join(":")+":"+pattern.siblings;

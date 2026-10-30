@@ -34,6 +34,10 @@ async function checkedResponse(response,what){
   return data;
 }
 function journalError(error){return error instanceof TypeError && error?.retryable!==true;}
+function truncatedPopulation(error){
+  return error?.code==="MODEL_INCOMPLETE_RESPONSE"
+    && ["max_output_tokens","max_tokens"].includes(error.providerErrorCode);
+}
 function birthPlaceKey(birth,chronology){
   // Preserve the old key for an already pinned Slice 1 birth; new Places
   // are shared across heritage filters within the same child-birth decade.
@@ -124,7 +128,7 @@ function birthFinalResult(birth,identity,worldInspection){
 // Each step commits before the next network wait. Development is one resumable
 // stage; its own durable journal retains already committed model invocations.
 export function createBirthLifecycle({
-  store,runtime,developmentService,authorAdapter,
+  store,runtime,developmentService,authorAdapter,populationAdapter=authorAdapter,
   worldFetch,presentationFetch,privateToken,geoNamesUsername=null,
   viewerOrigin="https://insidefibre.com",nowMs=Date.now,
   onWake=()=>{},
@@ -133,6 +137,7 @@ export function createBirthLifecycle({
      typeof worldFetch!=="function" || typeof presentationFetch!=="function")
     throw new TypeError("Birth lifecycle requires durable store, services and injected boundaries");
   const author=runtime.durableAdapter(authorAdapter);
+  const populationAuthor=populationAdapter===authorAdapter?author:runtime.durableAdapter(populationAdapter);
   const active=id=>!store.isTerminal(store.get(id)?.stage);
 
   async function world(path,options={}){
@@ -230,7 +235,7 @@ export function createBirthLifecycle({
       const version=chosenVersion??"place_"+sha256(key+":"+requestId).slice(0,16);
       try{
         const authored=await authorPlacePopulation({
-          adapter:author,selector,placeKey:key,version,
+          adapter:populationAuthor,selector,placeKey:key,version,
           repair:birth.data.authoringRepair??null,
         });
         if(!active(requestId))return "complete";
@@ -243,13 +248,13 @@ export function createBirthLifecycle({
           error:null,failureRetryable:null,nextAttemptAt:at,
         });
       }catch(error){
-        if(journalError(error)&&!birth.data.authoringRepair){
+        if((journalError(error)||truncatedPopulation(error))&&!birth.data.authoringRepair){
           store.progress(requestId,{data:{...birth.data,placeKey:key,
             chosenPlaceVersion:version,authoringRepair:message(error)},
             attemptCount:birth.attemptCount+1,
             error:message(error),failureRetryable:true,nextAttemptAt:at+5_000});
         }else{
-          if(journalError(error))error.retryable=false;
+          if(journalError(error)||truncatedPopulation(error))error.retryable=false;
           throw error;
         }
       }
