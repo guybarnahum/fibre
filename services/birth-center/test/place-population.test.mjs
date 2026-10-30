@@ -96,7 +96,7 @@ test("London packed school languages and origin evidence are split and pinned",(
   assert.deepEqual(fixed.originGroups[0].heritageTags,
     ["English","German","French","Spanish"]);
   assert.ok(fixed.provenance.normalizations.some(change=>
-    change.action==="split packed"&&change.path==="schoolingLanguages[2]"&&
+    change.action==="split packed"&&change.path==="foreignLanguagesOffered[1]"&&
     change.from==="Spanish」「German"),
     "The original rejected packed value was not retained in provenance");
   const schema=PLACE_POPULATION_SCHEMA.properties;

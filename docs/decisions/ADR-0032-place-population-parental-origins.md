@@ -2,12 +2,12 @@
 id: ADR-0032
 status: accepted
 canonical: true
-last-reviewed: 2026-10-29
+last-reviewed: 2026-10-30
 ---
 
 # ADR-0032 — Place Population: parents' origins drive the newborn
 
-**Accepted 2026-10-29; Slice 2 staging verified at `6831f3b`, with language atomicity correction awaiting fresh validation.** A place is not one household. Birth Center owns a shared **versioned Place record** for each canonical place × **child's birth decade**. It describes that era's civic World context and the origins of parents living there. A birth draws a couple, not a prewritten family profile. [ADR-0031](ADR-0031-birth-center-single-birth-authority.md) owns the lifecycle.
+**Accepted 2026-10-29; Slice 2 staging verified at `6831f3b`, with additional London and Hilo births verified at `4ac6aca`.** A place is not one household. Birth Center owns a shared **versioned Place record** for each canonical place × **child's birth decade**. It describes that era's civic World context and the origins of parents living there. A birth draws a couple, not a prewritten family profile. [ADR-0031](ADR-0031-birth-center-single-birth-authority.md) owns the lifecycle.
 
 ## One Place record; lazy names
 
