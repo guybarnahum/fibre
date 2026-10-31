@@ -30,6 +30,8 @@ function cloudflareStorage(){
 }
 
 async function proveScheduler(infraDriver){
+  assert.equal(EXPERIENCE_CONSOLIDATION_DELAY_MS,15*60_000,
+    "First unclaimed experience must allow the 15-minute grouping window");
   const now=Date.now();
   const runtime=createWorldReconciliationRuntime({
     infraDriver,

@@ -1,6 +1,6 @@
 import { assertId } from "./persistence-common.mjs";
 
-export const EXPERIENCE_CONSOLIDATION_DELAY_MS=30_000;
+export const EXPERIENCE_CONSOLIDATION_DELAY_MS=15*60_000;
 
 export function createExperienceConsolidationWakeScheduler({
   reconciliationRuntime,

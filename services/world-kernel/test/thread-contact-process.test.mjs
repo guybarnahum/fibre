@@ -566,6 +566,13 @@ test("unroutable delayed residue drains without cognition or frontier starvation
       "route absence unnecessarily reconciled LivedNow");
     assert.equal(contactStore.hasPendingAttempts(),false,
       "no-route contact left an incomplete attempt");
+    const db=new DatabaseSync(join(directory,"world.sqlite"),{readOnly:true});
+    try{
+      assert.equal(db.prepare("SELECT COUNT(*) AS n FROM thread_contact_attempts").get().n,0,
+        "No-route afterthoughts created contact attempts");
+      assert.equal(db.prepare("SELECT COUNT(*) AS n FROM thread_contact_attempt_stages").get().n,0,
+        "No-route afterthoughts created stages");
+    }finally{db.close();}
     assert.equal(process.hasPending(),false,
       "drained no-route residue kept World reconciliation alive");
   }finally{

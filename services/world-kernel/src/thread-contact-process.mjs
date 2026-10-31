@@ -118,6 +118,7 @@ export function createThreadContactProcess({
   requireMethod("contact contactStore",contactStore,"getAttemptByConsolidation");
   requireMethod("contact contactStore",contactStore,"claimAttempt");
   requireMethod("contact contactStore",contactStore,"listUnconsideredAfterthoughtSources");
+  requireMethod("contact contactStore",contactStore,"dismissUnroutableAfterthoughtSource");
   requireMethod("contact contactStore",contactStore,"listPendingAttempts");
   requireMethod("contact contactStore",contactStore,"recordStage");
   requireMethod("contact contactStore",contactStore,"getStage");
@@ -376,6 +377,16 @@ export function createThreadContactProcess({
           attempted+=1;
           let attempt=null;
           try{
+            if(candidates.length===0){
+              contactStore.dismissUnroutableAfterthoughtSource(source.consolidationId);
+              results.push(Object.freeze({
+                contactAttemptId:null,
+                consolidationId:source.consolidationId,
+                outcome:"no_route",
+                completed:true,
+              }));
+              continue;
+            }
             attempt=contactStore.claimAttempt({
               threadId:source.threadId,
               consolidationId:source.consolidationId,

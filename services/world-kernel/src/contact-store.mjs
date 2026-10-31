@@ -177,6 +177,16 @@ export class ContactStore {
     });
   }
 
+  dismissUnroutableAfterthoughtSource(consolidationId){
+    assertId("unroutable contact consolidationId",consolidationId);
+    // Only discard the derived work item. Its completed consolidation,
+    // private afterthoughts, and experience evidence remain immutable.
+    this.#database.prepare(`
+      DELETE FROM thread_contact_pending_work
+      WHERE kind='afterthought' AND reference=?
+    `).run(consolidationId);
+  }
+
   listUnconsideredAfterthoughtSources({limit=4}={}){
     if(!Number.isSafeInteger(limit)||limit<1||limit>256){
       throw new TypeError("contact source limit must be 1-256");

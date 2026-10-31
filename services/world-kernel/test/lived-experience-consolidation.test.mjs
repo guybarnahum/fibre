@@ -193,8 +193,10 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       "2026-10-07T19:00:04.000Z",
       "2026-10-07T19:00:05.000Z",
     ];
+    let consolidationClock=Date.parse("2026-10-07T18:05:00.000Z");
     const process=createExperienceConsolidationProcess({
       worldReader:world,
+      clock:()=>consolidationClock,
       livedNowStore:{
         getSituation(){
           return {
@@ -220,11 +222,24 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       groupWindowMs:15*60*1000,
     });
 
+    const early=await process.runOnce();
+    assert.equal(early.attempted,0,"Early alarm consolidated before the shared window");
+    assert.equal(early.nextDueAt,"2026-10-07T18:15:00.000Z",
+      "First experience did not anchor its reflection deadline");
+    assert.equal(early.hasPending,false,"Future reflection forced immediate retry");
+    assert.equal(calls.length,0,"Early World alarm called reflective cognition");
+    assert.equal(memoryStore.listCurrentMemories(thread.threadId).length,0,
+      "Memory formed before the window closed");
+    assert.equal(experienceStore.listUnclaimedExperienceConsolidationCandidates({limit:8}).length,3,
+      "Delaying reflection dropped raw lived experiences");
+    consolidationClock=Date.parse("2026-10-07T18:16:00.000Z");
     const firstRun=await process.runOnce();
     assert.equal(firstRun.completed,1,"first consolidation did not complete");
     assert.equal(firstRun.results[0].experienceCount,2,
       "nearby conversational experiences were not consolidated together");
-    assert.equal(firstRun.hasPending,true,"later experience should remain pending");
+    assert.equal(firstRun.hasPending,false,"Future cluster forced an immediate retry");
+    assert.equal(firstRun.nextDueAt,"2026-10-07T18:45:00.000Z",
+      "Later cluster lost its scheduled reflection deadline");
     assert.equal(calls.length,1,"one consolidation cluster used more than one cognition call");
     const book=await journalBook.read(thread.threadId);
     assert.equal(book?.profile.title,"Kaleo's Notebook",
@@ -262,6 +277,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
     assert.equal(memories[0].recordedAt,"2026-10-07T19:00:02.000Z",
       "delayed memory did not use its durable formation time");
 
+    consolidationClock=Date.parse("2026-10-07T18:46:00.000Z");
     const secondRun=await process.runOnce();
     assert.equal(secondRun.completed,1,"no-consequence consolidation did not complete");
     assert.equal(secondRun.hasPending,false,"consolidation frontier did not become quiescent");

@@ -341,6 +341,7 @@ export function createWorldReconciliationRuntime({
     if (!Number.isSafeInteger(value) || value < 0) {
       throw new TypeError("World reconciliation retry streak must be a non-negative integer");
     }
+    if(value===0&&await retryStreak()===0)return;
     await resolvedRetryState.set(value);
   }
 
@@ -400,6 +401,7 @@ export function createWorldReconciliationRuntime({
     }
     await setRetryStreak(0);
     const dueAt=[
+      result.experienceConsolidation?.result?.nextDueAt,
       result.environmentEvolution?.result?.nextDueAt,
       result.socialOpportunity?.result?.nextDueAt,
       result.livedBoundary?.result?.nextDueAt,

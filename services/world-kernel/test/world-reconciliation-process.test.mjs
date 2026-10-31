@@ -851,3 +851,41 @@ test("first request revives stale World alarm without SQL, next minute-bound req
   assert.equal(checks,1,"repeated requests inspected the same alarm");
   assert.equal(wakes,1,"second request scheduled another wake");
 });
+
+test("unchanged World retry streak writes no SQL rows",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-retry-noop-"));
+  const storage={
+    infraDriver:createLocalInfraDriver({stateScopes:{world:join(directory,"world.sqlite")}}),
+    stateScopeId:"world",
+  };
+  const retry=openWorldReconciliationRetryStore(storage);
+  try{
+    assert.equal(await retry.set("world",0),0,"Initial zero wrote a retry row");
+    assert.equal(await retry.set("world",2),1,"Changed retry streak was not persisted");
+    assert.equal(await retry.set("world",2),0,"Unchanged retry streak rewrote state");
+    assert.equal(await retry.set("world",0),1,"Retry recovery was not persisted");
+    assert.equal(await retry.set("world",0),0,"Unchanged zero rewrote state");
+    assert.equal(await retry.get("world"),0);
+  }finally{retry.close();rmSync(directory,{recursive:true,force:true});}
+});
+
+test("World waits for the consolidation deadline instead of retrying early",async()=>{
+  const at=Date.parse("2026-10-31T10:00:00.000Z");
+  const dueAt="2026-10-31T10:15:00.000Z";
+  const process=createWorldReconciliationProcess({
+    experienceConsolidationProcess:{
+      async runOnce(){
+        return {attempted:0,completed:0,failed:0,
+          hasPending:false,nextDueAt:dueAt,results:[]};
+      },
+    },
+  });
+  const {runtime,infraDriver}=createRuntimeFixture({process,now:()=>at});
+  try{
+    const result=await runtime.runNow();
+    assert.equal(result.reconciliationPending,true);
+    assert.equal(result.retryDelayMs,null,"Future reflection was treated as failure");
+    assert.equal(await infraDriver.scheduler.get("world"),Date.parse(dueAt),
+      "World did not preserve the Thread's due reflection deadline");
+  }finally{await runtime.stop();}
+});

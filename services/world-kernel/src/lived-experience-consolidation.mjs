@@ -1,3 +1,4 @@
+import {EXPERIENCE_CONSOLIDATION_DELAY_MS} from "./lived-experience-consolidation-scheduler.mjs";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
@@ -17,7 +18,7 @@ import {
 
 const DEFAULT_BATCH_LIMIT=4;
 const DEFAULT_GROUP_LIMIT=8;
-const DEFAULT_GROUP_WINDOW_MS=15*60*1000;
+const DEFAULT_GROUP_WINDOW_MS=EXPERIENCE_CONSOLIDATION_DELAY_MS;
 const MEMORY_LIMIT=6;
 
 function requireMethod(name,value,method){
@@ -279,6 +280,7 @@ export function createExperienceConsolidationProcess({
   journalBook=null,
   onAfterthoughts=null,
   now=()=>new Date().toISOString(),
+  clock=Date.now,
   batchLimit=DEFAULT_BATCH_LIMIT,
   groupLimit=DEFAULT_GROUP_LIMIT,
   groupWindowMs=DEFAULT_GROUP_WINDOW_MS,
@@ -313,14 +315,18 @@ export function createExperienceConsolidationProcess({
   if(!Number.isSafeInteger(groupWindowMs)||groupWindowMs<1||groupWindowMs>3_600_000){
     throw new TypeError("experience consolidation groupWindowMs must be 1-3600000");
   }
-  if(typeof now!=="function")throw new TypeError("experience consolidation now must be a function");
+  if(typeof now!=="function"||typeof clock!=="function")
+    throw new TypeError("experience consolidation clocks must be functions");
 
-  function claimGroups(limit){
+  function claimGroups(limit,atMs){
     const claimed=[];
     while(claimed.length<limit){
       const candidates=experienceStore.listUnclaimedExperienceConsolidationCandidates({limit:64});
       const group=groupCandidates(candidates,{groupLimit,groupWindowMs});
       if(group.length===0)break;
+      // Other World alarms may occur during the grouping window. Raw lived
+      // Experience stays immediately readable; reflection waits until due.
+      if(Date.parse(group[0].queuedAt)+groupWindowMs>atMs)break;
       const consolidation=experienceStore.createThreadExperienceConsolidation({
         threadId:group[0].threadId,
         experienceRefs:group.map((experience)=>experience.experienceId),
@@ -469,12 +475,13 @@ export function createExperienceConsolidationProcess({
 
   return Object.freeze({
     async runOnce(){
+      const atMs=clock();
       let pending=experienceStore.listPendingThreadExperienceConsolidations({
         limit:batchLimit,
       });
       let claimed=[];
       if(pending.length<batchLimit){
-        claimed=claimGroups(batchLimit-pending.length);
+        claimed=claimGroups(batchLimit-pending.length,atMs);
         if(claimed.length>0){
           pending=experienceStore.listPendingThreadExperienceConsolidations({
             limit:batchLimit,
@@ -497,14 +504,18 @@ export function createExperienceConsolidationProcess({
           }));
         }
       }
+      const next=experienceStore.listUnclaimedExperienceConsolidationCandidates({limit:1})[0];
+      const nextDueAt=next
+        ?new Date(Date.parse(next.queuedAt)+groupWindowMs).toISOString():null;
+      const hasUnfinished=failed>0||
+        experienceStore.listPendingThreadExperienceConsolidations({limit:1}).length>0;
       return Object.freeze({
         attempted:pending.length,
         completed:pending.length-failed,
         failed,
-        // No pending consolidation and no unclaimed experiences were found.
-        // With no await on that path, a second historical scan proves nothing.
-        hasPending:pending.length===0&&claimed.length===0
-          ?false:experienceStore.hasPendingExperienceConsolidation(),
+        // Future clusters need their deadline, not an immediate retry storm.
+        hasPending:hasUnfinished||(nextDueAt!==null&&Date.parse(nextDueAt)<=atMs),
+        nextDueAt,
         results:Object.freeze(results),
       });
     },

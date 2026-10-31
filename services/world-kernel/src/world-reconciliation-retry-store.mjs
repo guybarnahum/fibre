@@ -23,11 +23,19 @@ export function openWorldReconciliationRetryStore(storage) {
       return row === undefined ? 0 : Number(row.retry_streak);
     },
     async set(scopeId, value) {
+      if(value===0){
+        // Zero is also the absent-row default: no needless initial insert.
+        return database.prepare(`
+          UPDATE world_reconciliation_retry SET retry_streak=0
+          WHERE scope_id=? AND retry_streak<>0
+        `).run(scopeId).changes;
+      }
       database.prepare(`
         INSERT INTO world_reconciliation_retry(scope_id,retry_streak)
         VALUES(?,?)
         ON CONFLICT(scope_id) DO UPDATE SET retry_streak=excluded.retry_streak
-      `).run(scopeId, value);
+          WHERE retry_streak<>excluded.retry_streak
+      `).run(scopeId, value).changes;
     },
     close() { database.close(); },
   });
