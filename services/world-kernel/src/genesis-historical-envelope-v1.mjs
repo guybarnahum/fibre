@@ -176,6 +176,7 @@ function chooseStructure(windowPlan, {
   affordedRoles,
   placeAffordances,
   placeCounts,
+  externalRolesSeen,
 }) {
   const normalized = windowPlan.offeredEntries
     .map((entry) => structureCandidate(entry, { initialRoles, affordedRoles }))
@@ -218,6 +219,16 @@ function chooseStructure(windowPlan, {
     fail(`window ${windowPlan.window.windowId} exhausted structure repetition cap`);
   }
 
+  // The five mandatory outside encounters must provide distinct people, not
+  // accidentally resample one role throughout an otherwise varied place.
+  // Prefer a legal, unused role until the two-role coverage policy is met.
+  if (requireExternal && externalRolesSeen.size < GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumExternalRoleVariety) {
+    const fresh = candidates.filter((item) =>
+      placeCompatibleExternalRoles(item, availablePlaceRoles)
+        .some((role) => !externalRolesSeen.has(role)));
+    if (fresh.length > 0) candidates = fresh;
+  }
+
   const unseen = candidates.filter(({ entry }) =>
     count(structureCounts, entry.structure.structureId) === 0);
 
@@ -242,6 +253,10 @@ function chooseStructure(windowPlan, {
       selected.roles.filter((role) => availablePlaceRoles.has(role));
   }
 
+  if (requireExternal && externalRolesSeen.size < GENESIS_HISTORICAL_ENVELOPE_POLICY.minimumExternalRoleVariety) {
+    const fresh = counterpartRoles.filter((role) => !externalRolesSeen.has(role));
+    if (fresh.length > 0) counterpartRoles = fresh;
+  }
   const counterpartRole = counterpartRoles.length > 0
     ? ranked(`${seed}:counterpart-role`, counterpartRoles)[0]
     : null;
@@ -357,6 +372,7 @@ export function buildHistoricalEnvelopePlan({
         affordedRoles,
         placeAffordances: normalizedPlaceAffordances,
         placeCounts,
+        externalRolesSeen: new Set(generatedPersonByRole.keys()),
       });
     const counterpart = bindCounterpart({
       subjectId: subject.provisionalThreadId,

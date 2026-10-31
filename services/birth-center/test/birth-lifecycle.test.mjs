@@ -103,7 +103,8 @@ function lifecycleFor(store,storage,{nowMs=()=>Date.parse(AT),invoke=async()=>({
 }
 
 test("stored-place birth rehearsal validates without model, development or name reservation",t=>{
-  const state=tempBirthState(t),store=createBirthLifecycleStore(state.storage());
+  const state=tempBirthState(t);
+  const store=createBirthLifecycleStore(state.storage(),{now:()=>AT});
   t.after(()=>store.close());
   const key="united-states/hilo:2000";
   store.savePlace(key,"place_preflight_fixture",populationAuthored);
