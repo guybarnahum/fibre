@@ -30,7 +30,7 @@ export function openWorldReconciliationRetryStore(storage) {
           WHERE scope_id=? AND retry_streak<>0
         `).run(scopeId).changes;
       }
-      database.prepare(`
+      return database.prepare(`
         INSERT INTO world_reconciliation_retry(scope_id,retry_streak)
         VALUES(?,?)
         ON CONFLICT(scope_id) DO UPDATE SET retry_streak=excluded.retry_streak
