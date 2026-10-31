@@ -523,17 +523,22 @@ async function catchUpDormantInterval({
   });
 
   const priorPlan=personalPlanForSituation(livedNowStore,current);
-  const unobservedGap=Date.parse(at)-Date.parse(current.establishedAt)
-    >WORLD_LIFE_CONTINUITY_POLICY.unobservedGapMs;
+  const sinceHorizon=Date.parse(at)-Date.parse(priorPlan?.horizonEnd??"");
+  // Even after an hour without enacted scenes, a Flight Plan delivered only
+  // seconds after its horizon still has an admitted destination. Honor that
+  // final boundary rather than treating ordinary alarm latency as an outage.
+  const timelyHorizon=sinceHorizon>0&&sinceHorizon<=BOUNDARY_DELIVERY_GRACE_MS;
+  const unobservedGap=!timelyHorizon
+    &&Date.parse(at)-Date.parse(current.establishedAt)
+      >WORLD_LIFE_CONTINUITY_POLICY.unobservedGapMs;
   // A long outage is missing life, not permission to invent elapsed history.
   // Resume from the last enacted place; preserve the unobserved interval.
   // A last-observed transit can still resolve through its admitted final stop.
   let anchor=unobservedGap&&current.phase==="at_place"
     ?current:advanceThroughExistingPlan(livedNowStore,current,at);
   let placeRef=startingPlaceRef(anchor);
-  const sinceHorizon=Date.parse(at)-Date.parse(priorPlan?.horizonEnd??"");
   const boundaryDelivery=anchor.establishedAt===priorPlan?.horizonEnd
-    &&sinceHorizon>0&&sinceHorizon<=BOUNDARY_DELIVERY_GRACE_MS;
+    &&timelyHorizon;
   const windows=unobservedGap||boundaryDelivery
     ?[]:dormantWindows(anchor.establishedAt,at);
   let finalRetrospectivePlan = null;

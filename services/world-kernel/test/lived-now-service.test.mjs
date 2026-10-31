@@ -596,19 +596,19 @@ test("N1 refuses to present a stale scene when elapsed life has no plan coverage
   }));
 
 
-test("N2 restores a multi-day dormant Thread with historically honest bounded catch-up", async () =>
+test("a multi-day outage resumes without retroactive life or cognition", async () =>
   withDatabase(async (databasePath) => {
     const life = seedLife(databasePath);
     const storage = {...localWorldStateStorage(databasePath),schemaReady:true};
     const lived = openLivedNowStore(storage);
-    const initialPlan = lived.recordPlan(personalPlan(life));
+    lived.recordPlan(personalPlan(life));
 
     const world = openWorldStore(storage);
     const identity = openIdentityStore(storage);
     const semantic = openSemanticStateStore(storage);
     const memory = openAutobiographicalMemoryStore(storage);
     const situated = openSituatedLifeStore(storage);
-    let invocations = 0;
+    let invocations = 0,planningCalls=0;
     const modelAdapter = {
       async invoke(input) {
         invocations += 1;
@@ -622,6 +622,7 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
             },
           };
         }
+        planningCalls++;
         const context = input.input.concern.externalContext;
         const placeRef = context.startingPlaceRef ?? context.availablePlaces[0].ref;
         return {
@@ -675,48 +676,26 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
     });
 
     assert.equal(current.establishedAt, targetAt);
-    assert.equal(current.location.placeRef, life.libraryRef, "catch-up should continue from the last place actually reached");
-    assert.equal(current.materialization, undefined, "the requested present is current rather than retrospectively backdated");
+    assert.equal(current.location.placeRef, life.homeRef,
+      "unobserved time invented arrival at an un-enacted destination");
+    assert.equal(current.materialization, undefined,
+      "recovered present was backdated");
 
     const plans = lived.listPlans(life.thread.threadId, { kind: "personal" });
-    const retrospective = plans.filter((plan) => plan.materialization?.mode === "retrospective");
-    assert.equal(retrospective.length, 3, "a three-day gap should be reconstructed sparsely rather than minute by minute");
-    assert.ok(retrospective.length <= 4, "dormant reconciliation must remain bounded");
-    assert.ok(retrospective.every((plan) => plan.materialization.materializedAt === targetAt));
-    assert.ok(retrospective.every((plan) =>
-      Date.parse(plan.materialization.materializedAt) >= Date.parse(plan.horizonEnd)));
-    assert.equal(retrospective[0].stops[0].physicalPlaceRef, life.libraryRef, "retrospective planning must not teleport from the prior lived boundary");
-
-    const fresh = plans.find((plan) =>
-      plan.authoredAt === targetAt &&
-      plan.materialization === undefined &&
-      Date.parse(plan.horizonEnd) > Date.parse(targetAt));
-    assert.ok(fresh, "catch-up should leave a forward Flight Plan, not only a reconstructed past");
-    assert.deepEqual(current.sourcePlanRefs, [fresh.planId]);
-
-    const historicalBoundaries = [
-      {
-        at: initialPlan.horizonEnd,
-        governingPlanRef: initialPlan.planId,
-      },
-      ...retrospective.slice(0, -1).map((plan) => ({
-        at: plan.horizonEnd,
-        governingPlanRef: plan.planId,
-      })),
-    ];
-    const historicalSituations = historicalBoundaries.map(({ at, governingPlanRef }) =>
-      lived.getSituation(livedSituationId({
-        kind: "retrospective_lived_now_v1",
-        threadId: life.thread.threadId,
-        at,
-        governingPlanRef,
-        materializedAt: targetAt,
-      })));
-    assert.ok(historicalSituations.length >= 2);
-    assert.ok(historicalSituations.every((situation) =>
-      situation.materialization?.mode === "retrospective" &&
-      situation.materialization.materializedAt === targetAt &&
-      Date.parse(situation.establishedAt) < Date.parse(targetAt)));
+    assert.equal(plans.filter(plan=>plan.materialization?.mode==="retrospective").length,0,
+      "unobserved days became retrospective Flight Plans");
+    const fresh = plans.find(plan=>plan.authoredAt===targetAt
+      &&plan.materialization===undefined&&Date.parse(plan.horizonEnd)>Date.parse(targetAt));
+    assert.ok(fresh,"unobserved outage did not renew the future");
+    assert.deepEqual(current.sourcePlanRefs,[fresh.planId]);
+    assert.equal(planningCalls,1,"outage produced retrospective planning cognition");
+    assert.equal(lived.getSituation(livedSituationId({
+      kind:"retrospective_lived_now_v1",
+      threadId:life.thread.threadId,
+      at:"2026-09-10T06:30:00Z",
+      governingPlanRef:plans[0].planId,
+      materializedAt:targetAt,
+    }),{required:false}),null,"outage created a historical situation");
 
     const callsAfterCatchUp = invocations;
     const retry = await service.ensure({
