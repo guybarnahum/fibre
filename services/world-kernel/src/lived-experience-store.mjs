@@ -823,7 +823,7 @@ export class LivedExperienceStore {
 
   recordEnvironmentalFollowupDecision({sourceEncounterRef,decision}) {
     assertId("World follow-up source",sourceEncounterRef);
-    if(!["not_observable","no_change","changed"].includes(decision?.outcome)){
+    if(!["not_observable","no_change","changed","unobserved"].includes(decision?.outcome)){
       throw new TypeError("World follow-up outcome is invalid");
     }
     if((decision.outcome==="changed")!==(

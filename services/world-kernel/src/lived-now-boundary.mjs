@@ -1,4 +1,5 @@
 import { LivedNowCoverageError } from "./lived-now-service.mjs";
+import { WORLD_LIFE_CONTINUITY_POLICY } from "./world-life-continuity-policy.mjs";
 
 function futurePlanBoundaries(plan,after){
   if(plan===null)return [];
@@ -76,10 +77,11 @@ export function createLivedBoundaryProcess({
           const plannedAt=(item.failedAttempts??0)>0&&present!=null
             ?nextLivedBoundary(livedNowStore,present):null;
           const boundaryAt=plannedAt??item.dueAt;
-          // After a prolonged outage the elapsed life is unobserved.
-          // Resume at the real present instead of composing weeks of old plans.
+          // An unwitnessed long gap is not a sequence of lived events.
+          // Resume from the last enacted present without backdating scenes.
           const unobservedGap=present?.establishedAt
-            &&Date.parse(at)-Date.parse(present.establishedAt)>4*24*60*60_000;
+            &&Date.parse(at)-Date.parse(present.establishedAt)
+              >WORLD_LIFE_CONTINUITY_POLICY.unobservedGapMs;
           const enactAt=unobservedGap?at
             :present?.establishedAt
               &&Date.parse(present.establishedAt)>Date.parse(boundaryAt)

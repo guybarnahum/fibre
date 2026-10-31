@@ -735,7 +735,7 @@ test("N2 restores a multi-day dormant Thread with historically honest bounded ca
   }));
 
 
-test("a month without World wakes leaves an honest gap and resumes from the last witnessed place",async()=>
+test("three hours without World wakes preserves the gap and resumes at present",async()=>
   withDatabase(async databasePath=>{
     const life=seedLife(databasePath);
     const storage={...localWorldStateStorage(databasePath),schemaReady:true};
@@ -775,14 +775,14 @@ test("a month without World wakes leaves an honest gap and resumes from the last
     });
     try{
       await service.ensure({threadId:life.thread.threadId,at:"2026-09-10T05:10:00Z"});
-      const resumedAt="2026-10-21T05:10:00Z";
+      const resumedAt="2026-09-10T08:10:00Z";
       const current=await service.ensure({threadId:life.thread.threadId,at:resumedAt});
       const plans=lived.listPlans(life.thread.threadId,{kind:"personal"});
       assert.equal(current.establishedAt,resumedAt,"World failed to resume the present");
       assert.equal(current.location.placeRef,life.homeRef,
-        "World invented a destination during an unwitnessed month");
+        "World invented a destination during an unobserved outage");
       assert.equal(plans.filter(plan=>plan.materialization?.mode==="retrospective").length,0,
-        "World invented an unwitnessed month of biography");
+        "World invented retrospective life during an outage");
       assert.equal(planningCalls,1,"one recovery required more than one new personal plan");
       assert.equal(unobservedSince,"2026-09-10T05:10:00Z",
         "the Thread was not told that its intervening life is unobserved");
@@ -1870,4 +1870,36 @@ test("local discovery survives travel from a grounded home to its Genesis learni
   }),null,"an unrelated shared place acquired the Thread's city");
   assert.equal(anchorReads,1,
     "ungrounded shared place required a needless context lookup");
+});
+
+test("overdue life boundaries replay short delays but not unobserved hours",async()=>{
+  const at="2026-10-22T04:10:00.000Z";
+  const cases=[
+    {dueAt:"2026-10-22T01:10:00.000Z",enactAt:at},
+    {dueAt:"2026-10-22T04:00:00.000Z",enactAt:"2026-10-22T04:00:00.000Z"},
+  ];
+  for(const item of cases){
+    const enacted=[];
+    const process=createLivedBoundaryProcess({
+      livedNowStore:{
+        listDueLivedBoundaries:()=>[{
+          threadId:"thr_overdue",situationId:"sit_prior",dueAt:item.dueAt,
+        }],
+        getCurrentSituation:()=>({threadId:"thr_overdue",
+          situationId:"sit_prior",establishedAt:item.dueAt}),
+        nextLivedBoundaryAt:()=>null,
+        settleLivedBoundary:()=>true,
+        failLivedBoundary:()=>{throw Error("unexpected boundary failure");},
+      },
+      livedNow:{async ensure({at:time}){
+        enacted.push(time);
+        return {situationId:"sit_resumed",establishedAt:time};
+      }},
+      now:()=>at,
+    });
+    const result=await process.runOnce();
+    assert.equal(result.results[0].outcome,"advanced");
+    assert.deepEqual(enacted,[item.enactAt],
+      "Outage recovery enacted a past situation or lost a short Plan boundary");
+  }
 });

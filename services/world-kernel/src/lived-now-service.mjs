@@ -6,6 +6,7 @@ import {
   canonicalJson,
 } from "./persistence-common.mjs";
 import { formPersonalLivedPlan } from "./lived-plan-cognition.mjs";
+import { WORLD_LIFE_CONTINUITY_POLICY } from "./world-life-continuity-policy.mjs";
 import {
   livedInteroceptionForLivedHistory,
   runLivedNowRegulationPulse,
@@ -522,8 +523,9 @@ async function catchUpDormantInterval({
   });
 
   const priorPlan=personalPlanForSituation(livedNowStore,current);
-  const unobservedGap=Date.parse(at)-Date.parse(current.establishedAt)>4*DAY_MS;
-  // A long outage is missing life, not permission to invent weeks of history.
+  const unobservedGap=Date.parse(at)-Date.parse(current.establishedAt)
+    >WORLD_LIFE_CONTINUITY_POLICY.unobservedGapMs;
+  // A long outage is missing life, not permission to invent elapsed history.
   // Resume from the last enacted place; preserve the unobserved interval.
   // A last-observed transit can still resolve through its admitted final stop.
   let anchor=unobservedGap&&current.phase==="at_place"

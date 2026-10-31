@@ -1,5 +1,6 @@
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import { admitEncounterAttention } from "./lived-encounter-attention.mjs";
+import { WORLD_LIFE_CONTINUITY_POLICY } from "./world-life-continuity-policy.mjs";
 import {
   assertExactKeys,
   assertNonEmpty,
@@ -93,6 +94,15 @@ export function createWorldEnvironmentEvolution({
         try{
           const source=experienceStore.getEncounterStory(opportunity.sourceEncounterRef);
           let decision=opportunity.decision;
+          // A delayed, unobserved World change cannot be authored at yesterday's
+          // instant. A decision already durably made still completes on replay.
+          if(decision===null&&Date.parse(at)-Date.parse(opportunity.dueAt)
+            >WORLD_LIFE_CONTINUITY_POLICY.unobservedGapMs){
+            decision=experienceStore.recordEnvironmentalFollowupDecision({
+              sourceEncounterRef:opportunity.sourceEncounterRef,
+              decision:{outcome:"unobserved",occurrenceText:null,potentialObservers:[]},
+            });
+          }
           if(decision===null){
             const candidates=currentObservers(livedNowStore,opportunity.dueAt);
             if(candidates.length===0){

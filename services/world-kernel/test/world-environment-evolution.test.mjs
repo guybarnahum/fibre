@@ -223,6 +223,7 @@ test("E7.2 retries a persisted perceptible change without rerolling cognition",a
       queueThreadExperienceConsolidation:(args)=>
         f.experiences.queueThreadExperienceConsolidation(args),
     };
+    let clock=DUE;
     const process=createWorldEnvironmentEvolution({
       experienceStore:store,livedNowStore:f.livedNowStore,
       worldReader:f.worldReader,semanticStateStore:f.semanticStateStore,
@@ -240,10 +241,12 @@ test("E7.2 retries a persisted perceptible change without rerolling cognition",a
           potentialObserverThreadIds:[f.distant.threadId],
         }};
       }},
-      now:()=>DUE,
+      now:()=>clock,
     });
     const first=await process.runOnce();
     assert.equal(first.failed,1,"storage failure should retain pending work");
+    // An already-admitted decision must finish even after a longer outage.
+    clock="2026-10-08T19:30:00.000Z";
     const retry=await process.runOnce();
     assert.equal(retry.completed,1,"replay should finish the admitted decision");
     assert.equal(calls,1,"retry resampled objective World truth");
@@ -412,5 +415,32 @@ test("E7.3 resumes admitted attention after interrupted consolidation scheduling
       limit:8,
     }).length,1,"retry duplicated or lost subjective experience");
     assert.equal(second.nextDueAt,null,"resumed World work did not settle");
+  }finally{f.close();}
+});
+
+test("unobserved environmental follow-up does not invent an outage-time event",async()=>{
+  const f=fixture();
+  try{
+    const source=f.source("wpl_outage","A storm gathers over the valley.");
+    f.setCurrent([f.situation(f.local,"wpl_outage")]);
+    let calls=0;
+    const process=createWorldEnvironmentEvolution({
+      experienceStore:f.experiences,livedNowStore:f.livedNowStore,
+      worldReader:f.worldReader,semanticStateStore:f.semanticStateStore,
+      memoryStore:f.memoryStore,
+      modelAdapter:{async invoke(){calls++;throw Error("retroactive World cognition");}},
+      now:()=>"2026-10-08T19:30:00.000Z",
+    });
+    const result=await process.runOnce();
+    assert.equal(result.failed,0,"unobserved follow-up could not settle");
+    assert.equal(result.results[0].outcome,"unobserved",
+      "outage was mistaken for an objectively observed change");
+    assert.equal(result.nextDueAt,null,"unobserved event kept a retry frontier");
+    assert.equal(calls,0,"World invented environmental cognition during an outage");
+    assert.equal(f.experiences.getSharedEnvironmentalStory({
+      occurredAt:DUE,placeRef:"wpl_outage",
+    }),null,"World created a past-dated environmental occurrence");
+    assert.ok(f.experiences.getEncounterStory(source.encounterId),
+      "recovering a missed opportunity erased its source event");
   }finally{f.close();}
 });

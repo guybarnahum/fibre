@@ -67,6 +67,14 @@ to retain the recorded request time and durable Genesis work.
 The Birth Center staging Worker must be deployed with this CLI handshake
 before trying it.
 
+## Unobserved gaps after infrastructure outages
+
+World now uses one `WORLD_LIFE_CONTINUITY_POLICY.unobservedGapMs` policy value (60 minutes by default). A missed Flight Plan boundary delayed by at most that interval keeps its admitted event time; a longer gap resumes LivedNow at the real present without synthesizing retrospective personal plans or past-dated situations. Its last enacted place and the fact of the unobserved interval remain available to the Thread's next plan. This changes replay policy, not ordinary life frequency.
+
+The same cutoff prevents previously undecided environmental follow-ups from inventing past-dated occurrences after an outage; they settle as `unobserved` and leave their existing source witness intact. Already-durable decisions still complete idempotently. Ambient scene consideration and social opportunity processing already have one-hour freshness/expiry gates, and delayed consolidation operates only on admitted experiences. Objective arrival witnesses may still be materialized from already-enacted World arrivals, but personal attention is not newly inferred after its existing one-hour freshness cutoff.
+
+The Cloudflare World continuity cron runs at minute five of every hour (`5 * * * *`), avoiding a wake simultaneous with the 00:00 UTC free-tier reset. No outage suspension state, new table, or retry circuit breaker is required.
+
 ## Automatic continuity recovery
 
 World uses admitted Flight Plan deadlines as its normal event-driven clock.
