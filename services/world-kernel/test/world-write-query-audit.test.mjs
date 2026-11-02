@@ -178,7 +178,8 @@ function staticHotSql(tableNames=tables,scanAll=false){
       // LivedNow's delayed-event UNION); explain those instead of skipping.
       const statement=sql.replace(/^(?:\s*--[^\n]*\n)+/gu,"").trim();
       if(sql.includes("\${")||!/^(?:SELECT|INSERT|UPDATE|DELETE|WITH)\b/iu.test(statement)){
-        dynamic.push({path,line,reason:"dynamic SQL or non-DML"});
+        dynamic.push({path,line,reason:"dynamic SQL or non-DML",
+          tables:tableNames.filter(table=>sql.includes(table))});
       }else staticQueries.push({path,line,sql:statement});
     }
   }
@@ -280,6 +281,15 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
           reason:String(error?.message??error).slice(0,110)});
       }
     }
+    // Dynamic templates naming a retired table must be reviewed, not ignored.
+    const retiredTables=[
+      "thread_encounter_experiences","thread_encounter_attention",
+      "situated_evidence_witnesses","situated_life_lineage_heads",
+    ];
+    const unresolved=allReaders.dynamic.filter(entry=>
+      entry.tables.some(table=>retiredTables.includes(table)));
+    assert.deepEqual(unresolved,[],
+      "retired index has an unresolved dynamic SQL reader");
     const indexes=[];
     for(const table of tableNames){
       const escaped='"'+table.replaceAll('"','""')+'"';
@@ -295,6 +305,11 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
       }
     }
     indexes.sort((a,b)=>a.table.localeCompare(b.table)||a.index.localeCompare(b.index));
+    for(const index of [
+      "idx_thread_experience_time","idx_thread_attention_time",
+      "idx_situated_evidence_witness_thread","idx_situated_life_heads_thread",
+    ])assert.ok(!indexes.some(entry=>entry.index===index),
+      "unused hot index survived installation: "+index);
     reportTestEvidence("FIBRE-WORLD-INDEX-READERS",{
       indexes,withoutAuditedReader:indexes.filter(entry=>entry.readers.length===0)
         .map(({table,index})=>({table,index})),
