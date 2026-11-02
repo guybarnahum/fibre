@@ -176,6 +176,22 @@ test("transactional state rejects nonportable schema rewrites across providers a
             session.prepare("PRAGMA user_version").get();
             session.exec("PRAGMA user_version = 5");
           }
+          for(const query of [
+            "PRAGMA foreign_keys=OFF",
+            "PRAGMA foreign_keys = 0",
+            "PRAGMA main.foreign_keys=ON",
+            "SELECT '-- literal'; PRAGMA foreign_keys=OFF",
+            "PRAGMA foreign_keys(OFF)",
+          ]){
+            for(const operation of [()=>session.exec(query),()=>session.prepare(query)])
+              assert.throws(operation,/transactional state: foreign-key enforcement cannot be disabled/u,
+                "state port changed foreign-key enforcement");
+          }
+          if(sessionMode==="install"){
+            session.exec("PRAGMA defer_foreign_keys=ON");
+            session.prepare("PRAGMA foreign_keys").get();
+            session.exec("SELECT 'PRAGMA foreign_keys=OFF'");
+          }
           for(const query of ["PRAGMA user_version; SELECT 1",
             "SELECT 1; PRAGMA user_version = 5"]){
             for(const operation of [()=>session.exec(query),()=>session.prepare(query)])

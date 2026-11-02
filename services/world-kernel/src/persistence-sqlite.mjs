@@ -26,7 +26,7 @@ import { createAutobiographicalMemoryTables } from "./autobiographical-memory-sc
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 import { createContactTables } from "./contact-schema.mjs";
 import {worldStateInitialization,recoverInterruptedEventTable} from "./world-state-storage.mjs";
-import {createThreadEventsTable,installThreadEventGuards} from "./thread-event-schema.mjs";
+import {THREAD_EVENT_COLUMNS,createThreadEventsTable,installThreadEventGuards} from "./thread-event-schema.mjs";
 
 export function translateStorageError(error) {
   if (/database is locked|database is busy/i.test(error?.message ?? "")) return new StorageBusyError(error.message);
@@ -238,12 +238,14 @@ function rebuildEventTables(database) {
   `);
   createThreadEventsTable(database,"thread_events_event_upgrade");
   database.exec(`
-    INSERT INTO thread_events_event_upgrade SELECT * FROM thread_events;
+    INSERT INTO thread_events_event_upgrade (${THREAD_EVENT_COLUMNS})
+      SELECT ${THREAD_EVENT_COLUMNS} FROM thread_events;
     DROP TABLE thread_events;
   `);
   createThreadEventsTable(database);
   database.exec(`
-    INSERT INTO thread_events SELECT * FROM thread_events_event_upgrade;
+    INSERT INTO thread_events (${THREAD_EVENT_COLUMNS})
+      SELECT ${THREAD_EVENT_COLUMNS} FROM thread_events_event_upgrade;
     DROP TABLE thread_events_event_upgrade;
   `);
   installThreadEventGuards(database);
@@ -269,10 +271,11 @@ export function migrateDatabase(database) {
   }
 
   const rebuildEvents = currentVersion > 0 && needsEventSchemaUpgrade(database);
-  if (rebuildEvents) database.exec("PRAGMA foreign_keys=OFF");
-  try {
-    database.transaction(() => {
-      if (rebuildEvents) rebuildEventTables(database);
+  database.transaction(() => {
+      if (rebuildEvents) {
+        database.exec("PRAGMA defer_foreign_keys=ON");
+        rebuildEventTables(database);
+      }
       createAndRepairSchema(database);
       migrateLegacyConsumedObligations(database);
       if (currentVersion < WORLD_STORE_SCHEMA_VERSION) {
@@ -285,8 +288,5 @@ export function migrateDatabase(database) {
       const violations = database.prepare("PRAGMA foreign_key_check").all();
       if (violations.length !== 0) throw new IntegrityError("world-store migration produced foreign-key violations");
     });
-  } finally {
-    if (rebuildEvents) database.exec("PRAGMA foreign_keys=ON");
-  }
   if (initialization !== null) initialization.migrated = true;
 }

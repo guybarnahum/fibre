@@ -1,4 +1,11 @@
 // Shared event-table definition for creation, portable rebuild and recovery.
+export const THREAD_EVENT_COLUMNS=[
+  "event_id","thread_id","sequence","expected_version","resulting_version",
+  "event_type","command_id","command_digest","payload_json","actor_json",
+  "occurred_at","state_hash","authorization_id","causation_id",
+  "correlation_id","payload_schema_version","provenance_json",
+].join(",");
+
 export function createThreadEventsTable(database,name="thread_events"){
   database.exec(`
     CREATE TABLE IF NOT EXISTS "${name}" (

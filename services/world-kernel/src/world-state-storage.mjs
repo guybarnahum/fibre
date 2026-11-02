@@ -4,7 +4,7 @@ import {
   requireTransactionalStateGuarantees,
 } from "#infra";
 import { IntegrityError, assertNonEmpty } from "./persistence-common.mjs";
-import {createThreadEventsTable,installThreadEventGuards} from "./thread-event-schema.mjs";
+import {THREAD_EVENT_COLUMNS,createThreadEventsTable,installThreadEventGuards} from "./thread-event-schema.mjs";
 
 const INITIALIZATION_BY_STORAGE = new WeakMap();
 const INITIALIZATION_BY_DATABASE = new WeakMap();
@@ -63,7 +63,8 @@ export function recoverInterruptedEventTable(database) {
   withThreadEventTriggersDetached(database, () => {
     if (!hasEvents && hasUpgrade) {
       createThreadEventsTable(database);
-      database.exec("INSERT INTO thread_events SELECT * FROM thread_events_event_upgrade");
+      database.exec(`INSERT INTO thread_events (${THREAD_EVENT_COLUMNS})
+        SELECT ${THREAD_EVENT_COLUMNS} FROM thread_events_event_upgrade`);
       database.exec("DROP TABLE thread_events_event_upgrade");
     } else if (hasEvents && hasUpgrade) {
       const eventCount = Number(database.prepare("SELECT COUNT(*) AS count FROM thread_events").get().count);

@@ -155,7 +155,7 @@ The `state` port must advertise the guarantees it actually provides. It must nev
 
 The state port's relational contract uses the SQLite dialect across providers.
 
-**Portable schema statements.** Subject to the separate runtime schema-access policy, every provider and session mode supports CREATE/DROP tables, indexes and triggers, ALTER TABLE ... ADD COLUMN, and DML; it rejects ALTER TABLE ... RENAME TO, RENAME COLUMN, and DROP COLUMN. Some SQLite providers re-validate every trigger under tighter expression-depth limits during those schema rewrites. Domains rebuild tables with create/copy/drop rather than relying on provider-specific rewrite behavior.
+**Portable schema statements.** Subject to the separate runtime schema-access policy, every provider and session mode supports CREATE/DROP tables, indexes and triggers, ALTER TABLE ... ADD COLUMN, and DML; it rejects ALTER TABLE ... RENAME TO, RENAME COLUMN, and DROP COLUMN. Some SQLite providers re-validate every trigger under tighter expression-depth limits during those schema rewrites. Domains rebuild tables with create/copy/drop rather than relying on provider-specific rewrite behavior. Foreign-key enforcement remains on: `PRAGMA foreign_keys` assignments are forbidden. Rebuilds that temporarily orphan references use standalone `PRAGMA defer_foreign_keys=ON` inside their transaction, with constraints checked before commit.
 
 ### Ordered streams
 

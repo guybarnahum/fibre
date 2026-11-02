@@ -28,6 +28,8 @@ export function checkPortableSchemaSql(sql){
   if(/\bPRAGMA\s+user_version\b/iu.test(keywords)
     &&!/^\s*PRAGMA\s+user_version(?:\s*=\s*\d+)?\s*;?\s*$/iu.test(keywords))
     throw new Error("transactional state: PRAGMA user_version must be standalone");
+  if(/\bPRAGMA\s+(?:\w+\s*\.\s*)?foreign_keys\s*(?:=|\()/iu.test(keywords))
+    throw new Error("transactional state: foreign-key enforcement cannot be disabled; defer checks in transaction");
   if(/\bALTER\b/iu.test(keywords)&&NONPORTABLE_ALTER.test(keywords))
     throw new Error("transactional state: schema-rewriting ALTER is not portable; rebuild by create/copy/drop");
 }
