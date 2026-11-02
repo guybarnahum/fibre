@@ -1,5 +1,6 @@
 // Operator-only migration of per-Thread operational frontiers, not lived
 // evidence. Each frontier has at most one row per Thread.
+// No table renames: Cloudflare re-parses every trigger at expression depth 100.
 const TABLES=["current_situation_frontier","lived_now_next_boundaries"];
 
 function quote(name){return '"'+name.replaceAll('"','""')+'"';}
@@ -18,10 +19,7 @@ function compactTable(database,table,maxRows){
     throw new Error("World frontier is not one row per Thread: "+table);
 
   const shadow="__fibre_compact_"+table;
-  const create=schema.replace(
-    /^(CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?)(?:"[^"]+"|[\w]+)/iu,
-    (_,prefix)=>prefix+quote(shadow),
-  ).replace(/\)\s*STRICT\s*$/iu,") STRICT, WITHOUT ROWID");
+  const create=schema.replace(/\)\s*STRICT\s*$/iu,") STRICT, WITHOUT ROWID");
   if(create===schema||!/WITHOUT ROWID\s*$/iu.test(create))
     throw new Error("World frontier cannot be converted without schema loss: "+table);
   const indexes=database.prepare(`SELECT sql FROM sqlite_master
@@ -34,10 +32,11 @@ function compactTable(database,table,maxRows){
   database.transaction(()=>{
     for(const trigger of triggers)
       database.exec("DROP TRIGGER "+quote(trigger.name));
-    database.exec(create);
-    database.exec(`INSERT INTO ${quote(shadow)} SELECT * FROM ${quote(table)}`);
+    database.exec(`CREATE TABLE ${quote(shadow)} AS SELECT * FROM ${quote(table)}`);
     database.exec("DROP TABLE "+quote(table));
-    database.exec(`ALTER TABLE ${quote(shadow)} RENAME TO ${quote(table)}`);
+    database.exec(create);
+    database.exec(`INSERT INTO ${quote(table)} SELECT * FROM ${quote(shadow)}`);
+    database.exec("DROP TABLE "+quote(shadow));
     for(const sql of indexes)database.exec(sql);
     for(const {sql} of triggers)database.exec(sql);
     const after=Number(database.prepare(

@@ -5,6 +5,7 @@ import {
 
 // One-time operator repair: rebuild the small current projection from the
 // immutable lineage. Ordinary World reads never enumerate historical states.
+// No table renames: Cloudflare re-parses every trigger at expression depth 100.
 const lineageCount=`SELECT COUNT(*) AS n FROM semantic_state_records r
   WHERE r.staleness='current' AND NOT EXISTS (
     SELECT 1 FROM semantic_state_records newer
@@ -32,8 +33,10 @@ export function compactSemanticStateHeads(database){
   let rowsCopied=0;
   database.transaction(()=>{
     database.exec("DROP TRIGGER IF EXISTS semantic_state_current_head_insert");
-    createSemanticStateHeadsTable(database,"__fibre_compact_semantic_heads");
-    database.exec(`INSERT INTO __fibre_compact_semantic_heads
+    database.exec("DROP INDEX IF EXISTS idx_semantic_state_current_heads_thread");
+    if(schema)database.exec("DROP TABLE semantic_state_current_heads");
+    createSemanticStateHeadsTable(database);
+    database.exec(`INSERT INTO semantic_state_current_heads
       (thread_id,state_id,state_digest,as_of)
       SELECT r.thread_id,r.state_id,r.state_digest,r.as_of
       FROM semantic_state_records r
@@ -41,13 +44,7 @@ export function compactSemanticStateHeads(database){
         SELECT 1 FROM semantic_state_records newer
         WHERE newer.supersedes_state_id=r.state_id)`);
     rowsCopied=Number(database.prepare(`SELECT COUNT(*) AS n
-      FROM __fibre_compact_semantic_heads`).get().n);
-    if(schema){
-      database.exec("DROP INDEX IF EXISTS idx_semantic_state_current_heads_thread");
-      database.exec("DROP TABLE semantic_state_current_heads");
-    }
-    database.exec(`ALTER TABLE __fibre_compact_semantic_heads
-      RENAME TO semantic_state_current_heads`);
+      FROM semantic_state_current_heads`).get().n);
     installSemanticStateHeadTrigger(database);
     if(rowsCopied!==Number(database.prepare(lineageCount).get().n))
       throw new Error("semantic current-head migration lost lineage");

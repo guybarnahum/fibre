@@ -35,6 +35,8 @@ No indexes or triggers may be dropped until the remaining read paths and their p
 
 Each commit changes the accounting model, not the Thread event stream. The first post-change local `FIBRE-WORLD-BOUNDARY-UNIT` and `FIBRE-WORLD-WRITE-BUDGET` reports are still required before assigning any actual after-value or lowering the enforced budgets.
 
+World migrations never use `ALTER TABLE … RENAME`: Cloudflare re-parses every trigger under its SQLite expression-depth limit of 100.
+
 ## Bounded current-state reads
 
 A write saving must never introduce a hot-path read whose cost grows with a Thread's lived history. Current semantic-state queries are bounded by the number of current states, not the number of historical state records; immutable lineage scans belong only in explicit history reads or one-time operator migrations. This keeps the account-wide read quota viable as Threads age.
