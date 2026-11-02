@@ -13,6 +13,14 @@ import {openLivedNowStore} from "../src/lived-now-store.mjs";
 import {openLivedExperienceStore} from "../src/lived-experience-store.mjs";
 import {openAutobiographicalMemoryStore} from "../src/autobiographical-memory-store.mjs";
 import {openSemanticStateStore} from "../src/semantic-state-store.mjs";
+import {openSituatedLifeStore} from "../src/situated-life-store.mjs";
+import {openContactStore} from "../src/contact-store.mjs";
+import {lifeRelationId} from "../src/situated-life-domain.mjs";
+import {createThreadContactProcess} from "../src/thread-contact-process.mjs";
+import {createThreadContactPerception} from "../src/thread-contact-perception.mjs";
+import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs";
+import {createWorldEnvironmentEvolution} from "../src/world-environment-evolution.mjs";
+import {createWorldReconciliationProcess} from "../src/world-reconciliation-process.mjs";
 import {createLivedNowService} from "../src/lived-now-service.mjs";
 import {createLivedBoundaryProcess,nextLivedBoundary} from "../src/lived-now-boundary.mjs";
 import {createExperienceConsolidationProcess} from "../src/lived-experience-consolidation.mjs";
@@ -110,7 +118,7 @@ function auditWorldWrites(path){
 test("seven Tucson Threads one waking day has a measured World write budget",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-world-write-diet-"));
   const path=join(directory,"world.sqlite");
-  let audit=null,world=null,lived=null,experience=null,memory=null;
+  let audit=null,world=null,lived=null,experience=null,memory=null,contact=null,situated=null,semantic=null;
   try{
     const storage=localWorldStateStorage(path);
     installWorldSchemas(storage);
@@ -118,6 +126,9 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     lived=openLivedNowStore(storage);
     experience=openLivedExperienceStore(storage);
     memory=openAutobiographicalMemoryStore(storage);
+    contact=openContactStore(storage);
+    situated=openSituatedLifeStore(storage);
+    semantic=openSemanticStateStore(storage);
     const ids=Array.from({length:7},(_,i)=>`thr_write_diet_${i+1}`);
     const events=new Map();
     for(const threadId of ids){
@@ -229,13 +240,16 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         completedAt:at("16:20"),
       });
     });
+    let consolidationCalls=0;
     const consolidated=await audit.measure("consolidation",async()=>{
       const process=createExperienceConsolidationProcess({
         worldReader:world,livedNowStore:lived,
         semanticStateStore:{listCurrentState:()=>[]},
         memoryStore:memory,experienceStore:experience,
         modelAdapter:{async invoke(){
-          return {output:{journalEntry:null,afterthoughts:[],memory:{
+          return {output:{journalEntry:null,afterthoughts:consolidationCalls++===0
+            ?[{kind:"question",text:"I want to ask the other reader about her favorite passage."}]
+            :[],memory:{
             outcome:"retained",
             rememberedContent:"I remember hearing a thoughtful passage.",
             rememberedMeaning:"Reading beside others can redirect my interests.",
@@ -260,8 +274,137 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??310/7);
     assert.ok(report.rowsPerThreadDay<=budget,
       "World write budget exceeded "+report.total+"/7: "+JSON.stringify(report.byStore));
+    // New alarm activities are measured after the original day budget, so
+    // measuring wider World behavior does not silently relax that ceiling.
+    const sender=ids[0],recipient=ids[1];
+    situated.recordLifeRelation({
+      relationId:lifeRelationId({threadId:sender,partyId:recipient,role:"peer"}),
+      revision:1,threadId:sender,
+      relatedParty:{partyId:recipient,kind:"thread",displayName:"Another reader"},
+      relationKind:"social_contact",geneticContributionRole:"none",
+      factualRoleRefs:["peer"],relationshipFacts:["We have read in the same room."],
+      sourceReferences:[events.get(sender)],validFrom:at("08:00"),validTo:null,
+      visibility:"restricted",provenance:"world_recorded",recordedAt:at("16:30"),
+    });
+    const ensureCurrent=async({threadId})=>lived.getCurrentSituation(threadId);
+    const outreach=createThreadContactProcess({
+      worldReader:world,livedNow:{ensure:ensureCurrent},situatedLifeStore:situated,
+      semanticStateStore:semantic,memoryStore:memory,experienceStore:experience,
+      contactStore:contact,now:()=>at("17:05"),batchLimit:1,
+      modelAdapter:{async invoke(call){
+        return {output:call.clientRequestId.startsWith("later-contact-decision_")
+          ?{decision:"contact",recipientPartyId:recipient,
+            reason:"I want to ask about the passage."}
+          :{messageText:"Would you like to compare what we read?"},
+        provenance:{provider:"fixture",modelId:"write-map-contact"}};
+      }},
+    });
+    const sent=await audit.measure("contact-outreach",()=>outreach.runOnce());
+    assert.equal(sent.failed,0,"contact outreach failed in write map");
+    assert.equal(contact.listInbox(recipient).length,1,"contact was not delivered");
+    const perception=createThreadContactPerception({
+      contactStore:contact,livedNow:{ensure:ensureCurrent},livedNowStore:lived,
+      worldReader:world,semanticStateStore:semantic,memoryStore:memory,
+      experienceStore:experience,now:()=>at("17:06"),
+      modelAdapter:{async invoke(){
+        return {output:{outcome:"noticed",
+          experienceText:"My fellow reader asked to compare our books.",passedReason:null},
+          provenance:{provider:"fixture",modelId:"write-map-attention"}};
+      }},
+    });
+    const reception=await audit.measure("contact-reception-noticing",
+      ()=>perception.runOnce());
+    assert.equal(reception.noticed,1,"recipient did not notice delivered contact");
+    const observed=experience.enqueueObservedSocialOpportunity({
+      encounterRef:story.encounterId,threadId:ids[2],situationId:situations.get(ids[2]),
+      counterpartyThreadId:ids[3],venueRef:venue.physicalVenue.ref,
+      dueAt:at("16:10"),
+    });
+    assert.equal(observed.inserted,true,"observed social opportunity was not admitted");
+    const social=createWorldSocialOpportunity({
+      experienceStore:experience,livedNowStore:lived,now:()=>at("16:10"),
+      meetingService:{async meet(){
+        return {attempts:[{counterpartyThreadId:ids[3],outcome:"not_initiated",
+          salience:null,initiation:{act:"none",expression:null,
+            reason:"I choose to keep reading.",
+            decisionContext:null,cognition:{selectedEvidenceRefs:[],evidenceRefs:[]}},
+          stance:null,encounterStory:null}]};
+      }},
+    });
+    const socialResult=await audit.measure("social-observed",()=>social.runOnce());
+    assert.equal(socialResult.failed,0,"observed social decision failed");
+    assert.equal(socialResult.results[0]?.outcome,"not_initiated",
+      "observed opportunity lost voluntary non-participation");
+
+    const scene={storyVersion:"encounter-story-v0.1",beats:[
+      {actorThreadId:null,kind:"occurrence",
+        text:"A thundercloud develops beyond the city."},
+    ]};
+    const source=experience.recordEncounterStory({
+      occurredAt:at("17:00"),
+      threadPresence:[{threadId:ids[4],situationId:situations.get(ids[4])}],
+      story:scene,
+      visualization:createEncounterVisualization({
+        occurredAt:at("17:00"),story:scene,
+        scene:"Beyond the reading room windows.",
+        sourceReferences:[venue.ref],depictedThreadRefs:[],
+      }),
+    },{uniquePlaceOccurrenceRef:venue.physicalVenue.ref,followupAfterMs:30*60_000});
+    const environment=createWorldEnvironmentEvolution({
+      experienceStore:experience,livedNowStore:lived,worldReader:world,
+      semanticStateStore:semantic,memoryStore:memory,now:()=>at("17:30"),
+      modelAdapter:{async invoke(call){
+        return call.clientRequestId.startsWith("world-environment-followup_")
+          ?{output:{outcome:"changed",
+            occurrenceText:"A lightning flash illuminates the horizon.",
+            potentialObserverThreadIds:[ids[4]]}}
+          :{output:{outcome:"noticed",
+            experienceText:"I noticed lightning beyond the library.",
+            passedReason:null},provenance:{provider:"fixture",modelId:"write-map-attention"}};
+      }},
+    });
+    const changed=await audit.measure("environment-noticed",
+      ()=>environment.runOnce());
+    assert.equal(changed.failed,0,"World change was not observed");
+    assert.equal(changed.noticed,1,"environmental change did not become experience");
+
+    const idle=createWorldReconciliationProcess({
+      contactOutreachProcess:outreach,contactReceptionProcess:perception,
+      socialOpportunityProcess:social,environmentEvolutionProcess:environment,
+    });
+    const idleResult=await audit.measure("idle-reconciliation",()=>idle.runOnce());
+    assert.equal(idleResult.skipped,false,"idle reconciliation did not run");
+    assert.equal(idleResult.contactOutreach.result?.attempted,0,
+      "idle World repeated contact work");
+
+    const mapReport=audit.report(ids.length);
+    const calibration={
+      "lived-boundary":{units:14,ceiling:14},
+      "contact-outreach":{units:1,ceiling:49},
+      "contact-reception-noticing":{units:1,ceiling:42},
+      "social-observed":{units:1,ceiling:35},
+      "consolidation":{units:2,ceiling:27},
+      "environment-noticed":{units:1,ceiling:19},
+      "idle-reconciliation":{units:1,ceiling:3},
+    };
+    const activities=Object.fromEntries(Object.entries(calibration).map(([name,{units,ceiling}])=>{
+      const measured=mapReport.activities[name]??{weightedRows:0,tables:[]};
+      const rowsPerUnit=measured.weightedRows/units;
+      return [name,{...measured,units,rowsPerUnit,stagingRowsPerUnit:ceiling,
+        deviationPercent:Math.round(100*(rowsPerUnit/ceiling-1))}];
+    }));
+    const deviations=Object.entries(activities)
+      .filter(([,entry])=>Math.abs(entry.deviationPercent)>30)
+      .map(([name,entry])=>({name,local:entry.rowsPerUnit,staging:entry.stagingRowsPerUnit}));
+    reportTestEvidence("FIBRE-WORLD-WRITE-MAP",{activities,deviations});
+    for(const [name,{ceiling}] of Object.entries(calibration))
+      assert.ok(activities[name].rowsPerUnit<=ceiling,
+        name+" exceeded measured staging write ceiling: "
+          +activities[name].rowsPerUnit+" > "+ceiling);
+
   }finally{
-    audit?.close();memory?.close();experience?.close();lived?.close();world?.close();
+    audit?.close();contact?.close();situated?.close();semantic?.close();
+    memory?.close();experience?.close();lived?.close();world?.close();
     rmSync(directory,{recursive:true,force:true});
   }
 });
