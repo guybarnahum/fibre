@@ -1,16 +1,21 @@
 import {classifyCloudflareInfraError} from "#infra/providers/cloudflare";
 
-// A quota failure is not evidence of a missing or mismatched schema stamp.
-export function readWorldSchemaStatus(readStamp,expectedGitSha){
+// Only a real schema change requires expensive installation. Source Git SHA
+// still gates which serving revision can perform the migration.
+export function readWorldSchemaStatus(readStamp,expectedSchemaDigest){
   try{
-    const installedGitSha=readStamp()??null;
+    const stamp=readStamp();
+    const installedSchemaDigest=typeof stamp==="string"?stamp
+      :stamp?.installedSchemaDigest??null;
+    const installedGitSha=typeof stamp==="string"?null
+      :stamp?.installedGitSha??null;
     return Object.freeze({
-      ready:installedGitSha!==null&&installedGitSha===expectedGitSha,
-      installedGitSha,expectedGitSha,
+      ready:installedSchemaDigest!==null&&installedSchemaDigest===expectedSchemaDigest,
+      installedSchemaDigest,installedGitSha,expectedSchemaDigest,
     });
   }catch(error){
     return Object.freeze({
-      ready:false,installedGitSha:null,expectedGitSha,
+      ready:false,installedSchemaDigest:null,installedGitSha:null,expectedSchemaDigest,
       unavailable:classifyCloudflareInfraError(error,"WORLD_SCHEMA_STATUS_UNAVAILABLE"),
     });
   }
@@ -26,15 +31,13 @@ export async function deferAlarmForSchemaInstall(storage,at=Date.now()){
 
 export async function resumeAlarmAfterSchemaInstall(storage,at=Date.now()){
   const scheduled=await storage.getAlarm();
-  if(scheduled===null||scheduled<at-60_000){
-    await storage.setAlarm(at);
-  }
+  if(scheduled===null||scheduled<at-60_000)await storage.setAlarm(at);
 }
 
- 
-// Refuse a stale serving revision before opening World SQL or installing schema.
+// A superseded revision is refused before opening storage.
 export function installWorldSchemaForRevision({
-  expectedGitSha,deploymentGitSha,readInstalledGitSha,install,onSuperseded=()=>{},
+  expectedGitSha,deploymentGitSha,expectedSchemaDigest,
+  readInstalledSchemaDigest,install,onSuperseded=()=>{},
 }={}){
   if(!/^[0-9a-f]{40}$/u.test(expectedGitSha??""))
     return {status:400,body:{ok:false,code:"WORLD_EXPECTED_REVISION_INVALID"}};
@@ -44,10 +47,11 @@ export function installWorldSchemaForRevision({
       ok:false,code:"WORLD_REVISION_NOT_SERVING",deploymentGitSha:deploymentGitSha??null,
     }};
   }
-  const already=readInstalledGitSha()===deploymentGitSha;
+  const already=readInstalledSchemaDigest()===expectedSchemaDigest;
   if(!already)install();
   return {status:200,body:{
     ok:true,contract:"fibre-world-schema-installed-v1",
     deploymentGitSha,installed:!already,already,
+    schemaDigest:expectedSchemaDigest,
   }};
 }

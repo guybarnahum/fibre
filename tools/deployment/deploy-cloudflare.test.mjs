@@ -172,6 +172,7 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
   };
 
   const result = await deployCloudflareStack({
+    getWorldSchemaDigest:async()=>"d".repeat(64),
     checkDoHeadroom:async()=>{},
     repoRoot:root,
     environment:"staging",
@@ -231,6 +232,7 @@ test("full-stack Birth preflight rejects invalid composition before any upload",
   const {root,state}=await fixtureRepo();
   let uploaded=0,provisioned=0;
   await assert.rejects(deployCloudflareStack({
+    getWorldSchemaDigest:async()=>"d".repeat(64),
     checkDoHeadroom:async()=>{},
     repoRoot:root,environment:"staging",
     client:{async deployService(){uploaded++;}},
@@ -255,6 +257,7 @@ test("deployment fails before deploy when required Fibre secrets are incomplete"
     async deployService() { deployCalls += 1; },
   };
   await assert.rejects(deployCloudflareStack({
+    getWorldSchemaDigest:async()=>"d".repeat(64),
     checkDoHeadroom:async()=>{},
     repoRoot:root,
     environment:"staging",
@@ -416,6 +419,7 @@ function schemaGatedStackClient({failInstallAttempts=0}={}){
 async function deploySchemaGatedStack(gated){
   const {root,state}=await fixtureRepo();
   return deployCloudflareStack({
+    getWorldSchemaDigest:async()=>"d".repeat(64),
     checkDoHeadroom:async()=>{},
     repoRoot:root,environment:"staging",client:gated.client,
     validateRepository:async()=>{},provision:async()=>state,

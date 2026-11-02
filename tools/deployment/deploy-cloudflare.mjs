@@ -1,7 +1,8 @@
-import { readFile } from "node:fs/promises";
+import { readFile,writeFile } from "node:fs/promises";
 import { shortSha } from "../shared/repo-root.mjs";
 import {runLocalBirthPreflight} from "./birth-preflight.mjs";
 import {checkDoWriteHeadroom} from "./do-write-headroom.mjs";
+import {readWorldSchemaDigest} from "./world-schema-digest.mjs";
 import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 
@@ -339,6 +340,7 @@ export async function deployCloudflareStack({
   localBirthPreflight = runLocalBirthPreflight,
   bootstrapPreflight = false,
   checkDoHeadroom = checkDoWriteHeadroom,
+  getWorldSchemaDigest = readWorldSchemaDigest,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (typeof validateRepository !== "function") throw new TypeError("validateRepository callback is required");
@@ -373,6 +375,13 @@ export async function deployCloudflareStack({
     };
   }
 
+
+  const worldConfig=resolvedConfigs["world-kernel"];
+  const schemaDigest=await getWorldSchemaDigest({repoRoot});
+  if(!/^[0-9a-f]{64}$/u.test(schemaDigest))
+    throw new TypeError("World schema digest must be a SHA-256 fingerprint");
+  worldConfig.config.vars.FIBRE_WORLD_SCHEMA_DIGEST=schemaDigest;
+  await writeFile(worldConfig.path,JSON.stringify(worldConfig.config,null,2)+"\n");
 
   const deployments = [];
   for (const serviceId of deployOrder) {

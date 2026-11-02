@@ -45,7 +45,9 @@ test("World schema unavailability preserves Cloudflare quota diagnosis",()=>{
   assert.equal(worldSchemaStatusError(quota).code,"DURABLE_OBJECT_ROWS_READ_LIMIT",
     "World request hid the storage quota failure");
 
-  const mismatched=readWorldSchemaStatus(()=>"previous-revision",expected);
+  const mismatched=readWorldSchemaStatus(()=>({
+    installedGitSha:"previous-revision",installedSchemaDigest:"old-schema",
+  }),expected);
   assert.equal(mismatched.ready,false);
   assert.equal(mismatched.installedGitSha,"previous-revision");
   assert.equal(worldSchemaStatusError(mismatched).code,"WORLD_SCHEMA_NOT_INSTALLED",

@@ -485,11 +485,22 @@ export class FibreWorldDurableObject extends DurableObject {
         readOnly:true,storeName:"WorldSchemaStampRead",
       });
       try{
-        return database.prepare(
-          "SELECT installed_git_sha FROM world_schema_installation WHERE id=1",
-        ).get()?.installed_git_sha??null;
+        try{
+          const row=database.prepare(
+            "SELECT installed_git_sha,installed_schema_digest FROM world_schema_installation WHERE id=1",
+          ).get();
+          return {installedGitSha:row?.installed_git_sha??null,
+            installedSchemaDigest:row?.installed_schema_digest??null};
+        }catch(error){
+          if(!/no such column: installed_schema_digest/iu.test(String(error?.message??error)))
+            throw error;
+          // Previous World stamp schema, before this optimization.
+          return {installedGitSha:database.prepare(
+            "SELECT installed_git_sha FROM world_schema_installation WHERE id=1",
+          ).get()?.installed_git_sha??null,installedSchemaDigest:null};
+        }
       }finally{database.close();}
-    },this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local");
+    },this.env.FIBRE_WORLD_SCHEMA_DIGEST??this.env.FIBRE_DEPLOYMENT_GIT_SHA??"local");
     // A transient storage outage must not be cached as schema absence.
     if(!status.unavailable)this.schemaStatus=status;
     return status;
@@ -755,10 +766,13 @@ export class FibreWorldDurableObject extends DurableObject {
         // Storage and its durable alarm are intentionally untouched.
         onSuperseded:expected=>this.ctx.waitUntil(new Promise(resolve=>
           setTimeout(resolve,0)).then(()=>this.ctx.abort(`superseded by ${expected.slice(0,7)}`))),
-        readInstalledGitSha:()=>this.worldSchemaStatus().installedGitSha,
+        expectedSchemaDigest:this.env.FIBRE_WORLD_SCHEMA_DIGEST
+          ??deploymentGitSha,
+        readInstalledSchemaDigest:()=>this.worldSchemaStatus().installedSchemaDigest,
         install:()=>installWorldSchemas({
           infraDriver:this.infraDriver,stateScopeId:WORLD_SCOPE_ID,
-        },{deploymentGitSha}),
+        },{deploymentGitSha,schemaDigest:this.env.FIBRE_WORLD_SCHEMA_DIGEST
+          ??deploymentGitSha}),
       });
       if(result.body.installed){
         this.schemaStatus=null;

@@ -19,7 +19,7 @@ import {materializeLiveWorldPlacesForWorld} from "./live-world-place.mjs";
 // Called by the explicit deployment command, never by an ordinary World
 // request. Constructors retain local development setup, but skip this work
 // when their Cloudflare storage has schemaReady=true.
-export function installWorldSchemas(storage,{deploymentGitSha="local"}={}){
+export function installWorldSchemas(storage,{deploymentGitSha="local",schemaDigest=deploymentGitSha}={}){
   const worldReader=openWorldStore(storage);
   try{
   const constructors=[
@@ -53,8 +53,13 @@ export function installWorldSchemas(storage,{deploymentGitSha="local"}={}){
     stampDatabase.exec(`CREATE TABLE IF NOT EXISTS world_schema_installation (
       id INTEGER PRIMARY KEY CHECK(id=1),
       installed_git_sha TEXT NOT NULL,
-      installed_at TEXT NOT NULL
+      installed_at TEXT NOT NULL,
+      installed_schema_digest TEXT
     ) STRICT`);
+    // Legacy deployments stamped only the Git revision.
+    if(!stampDatabase.prepare("PRAGMA table_info(world_schema_installation)").all()
+      .some(column=>column.name==="installed_schema_digest"))
+      stampDatabase.exec("ALTER TABLE world_schema_installation ADD COLUMN installed_schema_digest TEXT");
   }finally{stampDatabase.close();}
   // Deployment must not acknowledge a World with missing queue frontiers.
   // Verify physical schema on the same state scope that serves alarms.
@@ -97,9 +102,11 @@ export function installWorldSchemas(storage,{deploymentGitSha="local"}={}){
         materializeLiveWorldPlacesForWorld(database,world_spec_id);
       // Stamp only after installation, materialization, and verification succeed.
       database.prepare(`INSERT INTO world_schema_installation
-        (id,installed_git_sha,installed_at) VALUES (1,?,?)
+        (id,installed_git_sha,installed_at,installed_schema_digest) VALUES (1,?,?,?)
         ON CONFLICT(id) DO UPDATE SET installed_git_sha=excluded.installed_git_sha,
-          installed_at=excluded.installed_at`).run(deploymentGitSha,new Date().toISOString());
+          installed_at=excluded.installed_at,
+          installed_schema_digest=excluded.installed_schema_digest`)
+        .run(deploymentGitSha,new Date().toISOString(),schemaDigest);
     });
   }finally{database.close();}
   }finally{worldReader.close();}

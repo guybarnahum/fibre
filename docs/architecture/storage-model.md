@@ -13,6 +13,8 @@ The long-term architecture may use several physical stores—relational state, a
 
 ## Three distinct costs and authorities
 
+**World schema fingerprint (November 2026).** The operator now computes a conservative SHA-256 fingerprint of schema-bearing World source files and the installation entrypoint. The digest travels in `FIBRE_WORLD_SCHEMA_DIGEST` and is recorded in `world_schema_installation`. The serving source revision remains a separate full Git SHA and is still checked before migration. A source deploy with an unchanged schema fingerprint does not repeat the installation scan and backfill. The fingerprint deliberately includes entire schema-bearing modules to avoid silently missing migrations; editing runtime logic inside such a module may therefore trigger a conservative installation. The first installation from a legacy Git-only stamp necessarily performs the normal migration once. This is a deployment optimization, not a change in Thread authority.
+
 1. **Schema shape belongs to installation.** Creation, migration, indexes,
    structural inspection, and the deployment revision stamp are operator/deploy
    operations. A ready World runs under a runtime SQL guard and does not probe

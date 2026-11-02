@@ -59,6 +59,7 @@ test("service deploy re-resolves current source config without provisioning", as
       repoRoot,
       environment: "staging",
       service: "world-kernel",
+      async getWorldSchemaDigest(){return "d".repeat(64);},
       async checkDoHeadroom(){calls.push(["do-headroom"]);},
       async resolveSource() { return SHA; },
       async resolveConfig() {
@@ -96,6 +97,8 @@ test("service deploy re-resolves current source config without provisioning", as
     assert.deepEqual(writes[0][1].migrations, [{ tag:"new-do", new_sqlite_classes:["NewDurableObject"] }]);
     assert.equal(writes[0][1].vars.FIBRE_ACTIVITY_ENV, "staging");
     assert.equal(writes[0][1].vars.FIBRE_DEPLOYMENT_GIT_SHA, SHA);
+    assert.equal(writes[0][1].vars.FIBRE_WORLD_SCHEMA_DIGEST,"d".repeat(64),
+      "deployment did not carry the schema fingerprint");
     const migrateIndex = calls.findIndex((entry) => entry[0] === "migrate");
     const wranglerIndex = calls.findIndex((entry) => entry[0] === "wrangler");
     const worldIndex=calls.findIndex(entry=>entry[0]==="world-schema");
@@ -127,6 +130,7 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
       repoRoot,
       environment:"staging",
       service:"birth-center",
+      async getWorldSchemaDigest(){return "d".repeat(64);},
       async checkDoHeadroom(){calls.push(["do-headroom"]);},
       async resolveSource() { return SHA; },
       async resolveConfig() {
@@ -174,6 +178,7 @@ test("failed local Birth Center rehearsal never uploads a worker",async()=>{
   try{
     await assert.rejects(deployCloudflareService({
       repoRoot,environment:"staging",service:"birth-center",
+      async getWorldSchemaDigest(){return "d".repeat(64);},
       async checkDoHeadroom(){},
       async resolveSource(){return SHA;},
       async resolveConfig(){
@@ -196,6 +201,7 @@ test("targeted World deploy shares bounded schema-install retry before health ac
   try{
     const result=await deployCloudflareService({
       repoRoot,environment:"staging",service:"world-kernel",
+      async getWorldSchemaDigest(){return "d".repeat(64);},
       async checkDoHeadroom(){},
       async resolveSource(){return SHA;},
       async resolveConfig(){

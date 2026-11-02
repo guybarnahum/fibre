@@ -18,6 +18,7 @@ import {
 import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
 import {runBirthPreflight,runLocalBirthPreflight} from "./birth-preflight.mjs";
 import {checkDoWriteHeadroom} from "./do-write-headroom.mjs";
+import {readWorldSchemaDigest} from "./world-schema-digest.mjs";
 import {
   d1BindingsFromConfig,
   ensureCloudflareD1Migrations,
@@ -67,7 +68,7 @@ export async function resolveCleanGitSha(repoRoot, { execFileImpl = execFile } =
   return gitSha;
 }
 
-export function prepareResolvedServiceConfig(config, { environment, service, gitSha } = {}) {
+export function prepareResolvedServiceConfig(config, { environment, service, gitSha, schemaDigest=null } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   const serviceId = normalizeService(service);
   if (!config || typeof config !== "object" || Array.isArray(config)) throw new TypeError("resolved Wrangler config is required");
@@ -81,6 +82,11 @@ export function prepareResolvedServiceConfig(config, { environment, service, git
   next.vars ??= {};
   next.vars.FIBRE_ACTIVITY_ENV = env;
   next.vars.FIBRE_DEPLOYMENT_GIT_SHA = gitSha;
+  if(serviceId==="world-kernel"&&schemaDigest!==null){
+    if(!/^[0-9a-f]{64}$/u.test(schemaDigest))
+      throw new TypeError("World schema digest must be a SHA-256 fingerprint");
+    next.vars.FIBRE_WORLD_SCHEMA_DIGEST=schemaDigest;
+  }
   return Object.freeze({ environment: env, serviceId, workerName: name, config: next });
 }
 
@@ -145,6 +151,7 @@ export async function deployCloudflareService({
   bootstrapPreflight = false,
   createDeploymentClient = createWranglerDeploymentClient,
   checkDoHeadroom = checkDoWriteHeadroom,
+  getWorldSchemaDigest = readWorldSchemaDigest,
   wait,
   print = console.log,
 } = {}) {
@@ -164,6 +171,8 @@ export async function deployCloudflareService({
     environment:env,
     service:serviceId,
     gitSha:sourceGitSha,
+    schemaDigest:serviceId==="world-kernel"
+      ?await getWorldSchemaDigest({repoRoot:root}):null,
   });
   if(serviceId==="birth-center")
     await localBirthPreflight({repoRoot:root,environment:env,bootstrapPreflight});
