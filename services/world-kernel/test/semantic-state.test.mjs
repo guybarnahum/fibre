@@ -8,6 +8,7 @@ import test from "node:test";
 
 import { openWorldStore } from "../src/persistence.mjs";
 import { openSemanticStateStore } from "../src/semantic-state-store.mjs";
+import {installWorldSchemas} from "../src/world-schema-installation.mjs";
 import {
   selectSemanticStateForAppraisal,
   SEMANTIC_STATE_SELECTION_POLICY,
@@ -177,40 +178,119 @@ test("Fibre-owned selection includes requester-specific relationship state and r
   });
 });
 
-test("current semantic truth comes from indexed lineage, not stale legacy heads",()=>{
+test("current semantic state remains independent of lived semantic history",()=>{
   withStores(({stateStore,databasePath})=>{
-    const first=stateStore.recordState(stateCandidate()).state;
+    const slots=[["need","autonomy"],["emotion","worry"],["emotion","contentment"]];
+    const latest=[];
+    for(const [domain,dimension] of slots){
+      let previous=null;
+      for(let i=0;i<101;i++){
+        const candidate=stateCandidate({domain,dimension,
+          state:"My experience in this situation has changed again, moment "+i+".",
+          evidenceReferences:["episode:semantic-history-"+dimension+"-"+i],
+          asOf:new Date(Date.parse("2026-08-07T20:00:00Z")+i*60_000).toISOString(),
+          supersedes:previous,
+        });
+        previous=stateStore.recordState(candidate).state.stateId;
+      }
+      latest.push(previous);
+    }
+    const db=new DatabaseSync(databasePath,{readOnly:true});
+    try{
+      const lineage=db.prepare(`SELECT r.state_id FROM semantic_state_records r
+        WHERE r.thread_id=? AND r.staleness='current'
+          AND NOT EXISTS (SELECT 1 FROM semantic_state_records newer
+            WHERE newer.supersedes_state_id=r.state_id)
+        ORDER BY r.domain,r.dimension,r.as_of,r.state_id`)
+        .all(mina.threadId).map(row=>row.state_id);
+      const actual=stateStore.listCurrentState(mina.threadId).map(row=>row.stateId);
+      assert.deepEqual(new Set(actual),new Set(latest),
+        "current semantic meaning lost its latest states");
+      assert.deepEqual(new Set(actual),new Set(lineage),
+        "current semantic state diverged from immutable lineage");
+      const plan=db.prepare(`EXPLAIN QUERY PLAN
+        SELECT r.state_id FROM semantic_state_current_heads h
+        JOIN semantic_state_records r ON r.state_id=h.state_id
+        WHERE h.thread_id=? ORDER BY r.domain,r.dimension,r.as_of,r.state_id`)
+        .all(mina.threadId).map(row=>String(row.detail));
+      assert.ok(plan.some(step=>/SEARCH h USING PRIMARY KEY.*thread_id=/u.test(step))
+        &&!plan.some(step=>/SEARCH r USING INDEX idx_semantic_state_thread_current/u.test(step)
+          ||/SCAN (?:r|h)(?: |$)/u.test(step)),
+        "current semantic state reads grow with history");
+    }finally{db.close();}
+  });
+});
+
+test("World schema repair rebuilds missing or stale semantic heads once",()=>{
+  withStores(({stateStore,databasePath})=>{
+    const older=stateStore.recordState(stateCandidate()).state;
+    const latest=stateStore.recordState(stateCandidate({
+      state:"I feel more control over my commitments now.",
+      asOf:"2026-08-07T22:00:00.000Z",supersedes:older.stateId,
+      evidenceReferences:["episode:new-autonomy-evidence"],
+    })).state;
+    const other=stateStore.recordState(stateCandidate({
+      domain:"emotion",dimension:"worry",
+      state:"I feel concerned about an unfinished commitment.",
+      evidenceReferences:["episode:unfinished-commitment"],
+    })).state;
     const legacy=new DatabaseSync(databasePath,{enableForeignKeyConstraints:true});
     try{
-      legacy.exec(`CREATE TABLE IF NOT EXISTS semantic_state_current_heads(
-        state_id TEXT PRIMARY KEY,thread_id TEXT NOT NULL,
-        state_digest TEXT NOT NULL,as_of TEXT NOT NULL) STRICT`);
+      legacy.exec(`DROP TRIGGER semantic_state_current_head_insert;
+        DROP TABLE semantic_state_current_heads;
+        CREATE TABLE semantic_state_current_heads(
+          state_id TEXT PRIMARY KEY,thread_id TEXT NOT NULL,
+          state_digest TEXT NOT NULL,as_of TEXT NOT NULL,
+          FOREIGN KEY(state_id) REFERENCES semantic_state_records(state_id),
+          FOREIGN KEY(thread_id) REFERENCES threads(thread_id)
+        ) STRICT;
+        CREATE INDEX idx_semantic_state_current_heads_thread
+          ON semantic_state_current_heads(thread_id,state_id);`);
       legacy.prepare(`INSERT INTO semantic_state_current_heads
         (state_id,thread_id,state_digest,as_of) VALUES(?,?,?,?)`)
-        .run(first.stateId,first.threadId,"legacy_archived_digest",first.asOf);
-      const latest=stateStore.recordState(stateCandidate({
-        state:"I feel more control over my commitments now.",
-        asOf:"2026-08-07T22:00:00.000Z",supersedes:first.stateId,
-        evidenceReferences:["episode:new-autonomy-evidence"],
-      })).state;
-      assert.deepEqual(stateStore.listCurrentState(mina.threadId)
-        .map(item=>item.stateId),[latest.stateId],
-      "legacy derived heads overrode the newest authoritative interior state");
-      assert.equal(legacy.prepare(`SELECT COUNT(*) AS n FROM semantic_state_current_heads`)
-        .get().n,1,"old projection records were rewritten");
+        .run(older.stateId,older.threadId,"stale_legacy_digest",older.asOf);
+      const first=installWorldSchemas(localWorldStateStorage(databasePath));
+      assert.equal(first.semanticHeads.rowsCopied,2,
+        "schema repair did not reconstruct current semantic meaning");
+      assert.deepEqual(new Set(stateStore.listCurrentState(mina.threadId)
+        .map(state=>state.stateId)),new Set([latest.stateId,other.stateId]),
+        "schema repair preserved a stale semantic head");
+      assert.equal(legacy.prepare(`SELECT wr FROM pragma_table_list
+        WHERE name='semantic_state_current_heads'`).get().wr,1,
+        "current semantic heads were not compacted");
       assert.equal(legacy.prepare(`SELECT name FROM sqlite_master
-        WHERE type='trigger' AND name='semantic_state_current_head_insert'`).get(),undefined,
-        "semantic state still maintains a duplicate current head");
-      const plan=legacy.prepare(`EXPLAIN QUERY PLAN
-        SELECT r.state_id FROM semantic_state_records r
-        WHERE r.thread_id=? AND r.staleness='current'
-          AND NOT EXISTS(SELECT 1 FROM semantic_state_records newer
-            WHERE newer.supersedes_state_id=r.state_id)`).all(mina.threadId)
-        .map(row=>String(row.detail));
-      assert.ok(plan.some(line=>line.includes("idx_semantic_state_thread_current"))
-        &&plan.some(line=>line.includes("idx_semantic_state_supersedes"))
-        &&plan.every(line=>!/SCAN (?:r|newer)(?: |$)/u.test(line)),
-        "current semantic read became a table scan: "+plan.join(" | "));
+        WHERE type='index' AND name='idx_semantic_state_current_heads_thread'`).get(),undefined,
+        "semantic heads still maintain a redundant thread index");
+      const second=installWorldSchemas(localWorldStateStorage(databasePath));
+      assert.deepEqual(second.semanticHeads,{rowsCopied:0,already:true},
+        "already compact semantic heads were rebuilt");
+      const newest=stateStore.recordState(stateCandidate({
+        state:"My commitments have changed with another experience.",
+        asOf:"2026-08-07T23:00:00.000Z",supersedes:latest.stateId,
+        evidenceReferences:["episode:next-commitment"],
+      })).state;
+      assert.ok(stateStore.listCurrentState(mina.threadId)
+        .some(state=>state.stateId===newest.stateId),
+        "repaired head trigger did not follow new semantic life");
+      legacy.exec(`DROP TRIGGER semantic_state_current_head_insert;
+        DROP TABLE semantic_state_current_heads;`);
+      const missing=installWorldSchemas(localWorldStateStorage(databasePath));
+      assert.equal(missing.semanticHeads.rowsCopied,2,
+        "missing current heads were not rebuilt from lineage");
     }finally{legacy.close();}
+  });
+});
+
+test("current semantic head witnesses still detect corrupted projections",()=>{
+  withStores(({stateStore,databasePath})=>{
+    const recorded=stateStore.recordState(stateCandidate()).state;
+    const db=new DatabaseSync(databasePath);
+    try{
+      db.prepare(`UPDATE semantic_state_current_heads SET state_digest=?
+        WHERE thread_id=? AND state_id=?`).run("wrong_digest",mina.threadId,recorded.stateId);
+      assert.throws(()=>stateStore.listCurrentState(mina.threadId),
+        /current-head witness mismatch/u,
+        "current semantic state ignored a corrupted witness");
+    }finally{db.close();}
   });
 });

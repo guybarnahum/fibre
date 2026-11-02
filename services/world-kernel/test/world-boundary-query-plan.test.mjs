@@ -50,11 +50,10 @@ test("World boundary indexes serve history, current presence and semantic heads"
         sql:`SELECT thread_id,situation_id FROM lived_now_next_boundaries
           WHERE due_at IS NOT NULL AND due_at<=? ORDER BY due_at LIMIT ?`,
         args:["2026-10-22T12:00:00Z",4]},
-      {name:"semantic-current-lineage",index:"idx_semantic_state_thread_current",
-        sql:`SELECT r.state_id FROM semantic_state_records r
-          WHERE r.thread_id=? AND r.staleness='current'
-          AND NOT EXISTS (SELECT 1 FROM semantic_state_records newer
-            WHERE newer.supersedes_state_id=r.state_id)
+      {name:"semantic-current-head",index:"USING PRIMARY KEY",
+        sql:`SELECT r.state_id FROM semantic_state_current_heads h
+          JOIN semantic_state_records r ON r.state_id=h.state_id
+          WHERE h.thread_id=?
           ORDER BY r.domain,r.dimension,r.as_of,r.state_id`,
         args:["thr_probe"]},
       {name:"semantic-supersession",index:"idx_semantic_state_supersedes",
@@ -72,9 +71,9 @@ test("World boundary indexes serve history, current presence and semantic heads"
       assert.ok(steps.some(detail=>detail.includes(index)
         ||(name==="current-thread-situation"&&detail.includes("USING PRIMARY KEY"))),
         name+" lost its indexed lookup: "+steps.join(" | "));
-      if(name==="semantic-current-lineage")
-        assert.ok(steps.every(detail=>!/SCAN (?:r|newer)(?: |$)/u.test(detail)),
-          "current semantic state regressed to scan: "+steps.join(" | "));
+      if(name==="semantic-current-head")
+        assert.ok(steps.some(detail=>/SEARCH h USING PRIMARY KEY.*thread_id=/u.test(detail)),
+          "current semantic state reads grow with history");
     }
     console.log("FIBRE-WORLD-BOUNDARY-QUERY-PLANS "+JSON.stringify({
       indexes,plans,

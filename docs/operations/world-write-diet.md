@@ -41,4 +41,4 @@ A write saving must never introduce a hot-path read whose cost grows with a Thre
 
 ## Enforced post-change cost ceilings
 
-The new cost-model ceilings are **13 weighted rows per arrival boundary** and **310/7 rows per Thread-day** for the original fixture. They are derived from the observed 19 and 352 baseline plus index/rowid/trigger entries removed; they are *not* yet post-change measurements. Tests enforce these upper bounds and print full breakdowns on failure. Confirm or correct the measured values before considering this optimization validated or staging-ready. Preserve the 17.6 staging comparison as independent external evidence.
+The provisional storage-only cost ceilings are **15 weighted rows per arrival boundary** and **310/7 rows per Thread-day** for the original fixture. The compact current-head trigger restores one primary-key write per new semantic record, replacing the former multi-index projection. These ceilings are *not* post-change measurements. Tests print their actual cost breakdowns and enforce the ceilings; ratchet to Guy's measured values after local validation. Preserve 17.6 as independent pre-change staging evidence.
