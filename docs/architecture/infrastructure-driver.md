@@ -153,6 +153,8 @@ A domain store may require some combination of:
 
 The `state` port must advertise the guarantees it actually provides. It must never silently weaken an application requirement because a provider lacks an equivalent product.
 
+**Portable schema statements.** In every provider and session mode, the state port permits CREATE/DROP tables, indexes and triggers, ALTER TABLE ... ADD COLUMN, and DML; it rejects ALTER TABLE ... RENAME TO, RENAME COLUMN, and DROP COLUMN. Some SQLite providers re-validate every trigger under tighter expression-depth limits during those schema rewrites. Domains rebuild tables with create/copy/drop rather than relying on provider-specific rewrite behavior.
+
 ### Ordered streams
 
 A service may require:

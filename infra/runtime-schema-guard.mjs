@@ -10,10 +10,21 @@ export class RuntimeSchemaAccessError extends Error {
   }
 }
 
-export function runtimeSchemaKind(sql){
+function schemaKeywords(sql){
   if(typeof sql!=="string")throw new TypeError("transactional state SQL must be text");
   // Ignore comments and quoted values, not quoted SQL identifiers.
-  const statement=sql.replace(/--[^\n]*|\/\*[\s\S]*?\*\/|(?:'(?:''|[^'])*')/gu," ");
+  return sql.replace(/--[^\n]*|\/\*[\s\S]*?\*\/|(?:'(?:''|[^'])*')/gu," ");
+}
+
+export function checkPortableSchemaSql(sql){
+  const statements=schemaKeywords(sql).split(";");
+  if(statements.some(statement=>
+    /\bALTER\s+TABLE\s+(?:"(?:[^"]|"")*"|\x60[^\x60]*\x60|\[[^\]]*\]|\w+)\s+(?:RENAME\s+(?:TO|COLUMN)|DROP\s+COLUMN)\b/iu.test(statement)))
+    throw new Error("transactional state: schema-rewriting ALTER is not portable; rebuild by create/copy/drop");
+}
+
+export function runtimeSchemaKind(sql){
+  const statement=schemaKeywords(sql);
   if(/\b(?:CREATE|ALTER|DROP)\b/iu.test(statement))return "ddl";
   if(/\b(?:sqlite_master|sqlite_schema)\b/iu.test(statement))return "catalogue";
   if(/\bPRAGMA\b/iu.test(statement)

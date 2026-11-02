@@ -6,6 +6,7 @@ import test from "node:test";
 
 import { assertInfraDriver } from "../infra-driver.mjs";
 import { createSqliteStateInfraDriver } from "../providers/local/sqlite-state.mjs";
+import {createCloudflareTransactionalStatePort} from "../providers/cloudflare/transactional-state.mjs";
 import {
   FIBRE_BIRTH_STATE_REQUIREMENTS,
   requireTransactionalStateGuarantees,
@@ -135,4 +136,47 @@ test("unconfigured state scopes fail explicitly instead of silently creating ano
   withDriver(({ infra }) => {
     assert.throws(() => infra.state.guarantees("other_world"), /not configured/);
     assert.throws(() => infra.state.open("other_world"), /not configured/);
+  }));
+
+test("transactional state rejects nonportable schema rewrites across providers and modes",()=>
+  withDriver(({infra})=>{
+    const durable={
+      sql:{exec(){return {toArray:()=>[],rowsRead:0,rowsWritten:0};}},
+      transactionSync:run=>run(),
+    };
+    const cloudflare=createCloudflareTransactionalStatePort({scopes:{world:durable}});
+    for(const state of [infra.state,cloudflare]){
+      for(const sessionMode of ["install","runtime"]){
+        const session=state.open("world",{sessionMode});
+        try{
+          if(sessionMode==="install"){
+            session.exec("CREATE TABLE proof (id TEXT PRIMARY KEY) STRICT");
+            session.exec("ALTER TABLE proof ADD COLUMN value TEXT");
+          }else{
+            // A runtime-mode rejection must be the portable rule even if
+            // its separate runtime DDL guard is configured to report.
+            assert.throws(()=>session.exec("ALTER TABLE proof ADD COLUMN extra TEXT"),
+              /runtime World schema access|schema-rewriting ALTER/u);
+          }
+          for(const sql of [
+            "ALTER TABLE proof RENAME TO renamed",
+            "ALTER TABLE proof RENAME COLUMN id TO identifier",
+            "ALTER TABLE proof DROP COLUMN value",
+          ]){
+            for(const query of [sql,"SELECT 'ALTER TABLE proof DROP COLUMN value'; "+sql]){
+              assert.throws(()=>session.exec(query),
+                /transactional state: schema-rewriting ALTER is not portable; rebuild by create\/copy\/drop/u,
+                "provider admitted a schema rewrite");
+              assert.throws(()=>session.prepare(query),
+                /transactional state: schema-rewriting ALTER is not portable; rebuild by create\/copy\/drop/u,
+                "prepared state admitted a schema rewrite");
+            }
+          }
+          if(sessionMode==="install"){
+            session.prepare("SELECT 'ALTER TABLE proof RENAME TO fiction' AS text");
+            session.exec("-- ALTER TABLE proof DROP COLUMN id\nSELECT 1");
+          }
+        }finally{session.close();}
+      }
+    }
   }));

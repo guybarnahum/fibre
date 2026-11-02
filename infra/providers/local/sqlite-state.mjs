@@ -1,7 +1,7 @@
 import { mkdirSync, realpathSync } from "node:fs";
 import { basename, dirname, resolve } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import {checkRuntimeSchemaSql,runtimeSchemaGuardMode} from "../../runtime-schema-guard.mjs";
+import {checkPortableSchemaSql,checkRuntimeSchemaSql,runtimeSchemaGuardMode} from "../../runtime-schema-guard.mjs";
 
 import {
   INFRA_DRIVER_VERSION,
@@ -88,6 +88,7 @@ function createSession(scopeId, databasePath, {
     readOnly,
     exec(sql) {
       assertOpen();
+      checkPortableSchemaSql(sql);
       checkRuntimeSchemaSql(sql,{mode:sessionMode,guard:guardMode,label:queryLabel});
       return database.exec(sql);
     },
