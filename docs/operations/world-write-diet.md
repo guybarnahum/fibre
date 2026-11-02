@@ -34,3 +34,7 @@ No indexes or triggers may be dropped until the remaining read paths and their p
 - **Deferred conversion:** `current_situation_records` and `semantic_state_records` remain ordinary rowid tables. Their conversion would copy **all historical rows**, plus rebuild their indexes; no such migration is justified by the available quota evidence. Determine the one-time cost from a live count and index inventory before reconsidering them.
 
 Each commit changes the accounting model, not the Thread event stream. The first post-change local `FIBRE-WORLD-BOUNDARY-UNIT` and `FIBRE-WORLD-WRITE-BUDGET` reports are still required before assigning any actual after-value or lowering the enforced budgets.
+
+## Enforced post-change cost ceilings
+
+The new cost-model ceilings are **13 weighted rows per arrival boundary** and **310/7 rows per Thread-day** for the original fixture. They are derived from the observed 19 and 352 baseline plus index/rowid/trigger entries removed; they are *not* yet post-change measurements. Tests enforce these upper bounds and print full breakdowns on failure. Confirm or correct the measured values before considering this optimization validated or staging-ready. Preserve the 17.6 staging comparison as independent external evidence.

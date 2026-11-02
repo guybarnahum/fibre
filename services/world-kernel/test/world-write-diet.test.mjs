@@ -238,9 +238,10 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       &&report.byStore.LivedExperienceStore>0,
     "World write measurement omitted lived and experience storage");
     console.log("FIBRE-WORLD-WRITE-BUDGET "+JSON.stringify(report));
-    // Baseline measured locally on November 1, 2026: 352 weighted rows
-    // for seven Threads, 50.2857 rows per Thread-day. Only ratchet downward.
-    const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??352/7);
+    // November 2 write-only projection: 352 baseline - 14 history index
+    // entries - 14 current-frontier rowid entries - 14 due-frontier rowids.
+    // The 310/7 ceiling must be confirmed by running this fixture locally.
+    const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??310/7);
     assert.ok(report.rowsPerThreadDay<=budget,
       "World write budget exceeded "+report.total+"/7: "+JSON.stringify(report.byStore));
   }finally{
@@ -366,8 +367,13 @@ test("a real arrival boundary includes semantic regulation, wake rearm and settl
     }));
     assert.ok(report.byStore.LivedNowStore>0&&report.byStore.SemanticStateStore>0,
       "boundary diet omitted lived or semantic writes: "+JSON.stringify(report.byStore));
-    assert.ok(report.total/outcomes.length>=14&&report.total/outcomes.length<=24,
-      "boundary cost diverges from staging ~18 rows: "+JSON.stringify(report.byStore));
+    // Previously measured: 19 rows/boundary, comprising one situation,
+    // current frontier, due frontier, semantic state and current head.
+    // The storage-only diet removes 1+1+1+3 of those weighted entries.
+    const bound=Number(process.env.FIBRE_WORLD_BOUNDARY_WRITE_BUDGET??13);
+    assert.ok(report.total/outcomes.length<=bound,
+      "boundary write budget "+report.total+"/"+outcomes.length+": "
+        +JSON.stringify(report.byStore));
   }finally{
     audit?.close();semantic?.close();lived?.close();world?.close();
     rmSync(directory,{recursive:true,force:true});
