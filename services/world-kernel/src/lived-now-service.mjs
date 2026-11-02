@@ -149,7 +149,9 @@ function currentSituationNeedsReconciliation(livedNowStore, situation, at) {
 
   const before = plannedPositionAt(governingPlan, situation.establishedAt);
   const now = plannedPositionAt(governingPlan, at);
-  return before === null || now === null || !samePlannedScene(before, now);
+  return before === null || now === null || !samePlannedScene(before, now)
+    ||crossesStopBoundary(personalPlan,situation.establishedAt,at)
+    ||crossesStopBoundary(carePlan,situation.establishedAt,at);
 }
 
 // A plan stop boundary is a real temporal transition even when consecutive
