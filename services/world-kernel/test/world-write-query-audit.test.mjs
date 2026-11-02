@@ -116,6 +116,32 @@ const queries=[
         WHERE newer.supersedes_state_id=r.state_id)
     ORDER BY r.domain,r.dimension,r.as_of,r.state_id`],
 ];
+function staticHotSql(){
+  const paths=[
+    "services/world-kernel/src/lived-now-store.mjs",
+    "services/world-kernel/src/lived-experience-store.mjs",
+    "services/world-kernel/src/semantic-state-store.mjs",
+    "services/world-kernel/src/genesis-first-life-store.mjs",
+    "services/world-kernel/src/world-event-observatory.mjs",
+    "services/world-kernel/src/world-integrity-audit.mjs",
+    "tools/inspect/inspect-identity-context.mjs",
+  ];
+  const staticQueries=[],dynamic=[];
+  for(const path of paths){
+    const source=readFileSync(join(root,path),"utf8");
+    const matches=source.matchAll(/\.prepare\(\s*(?:`([^`]*?)`|"([^"\n]*)"|'([^'\n]*)')/gu);
+    for(const match of matches){
+      const sql=(match[1]??match[2]??match[3]??"").trim();
+      if(!tables.some(table=>sql.includes(table)))continue;
+      const line=source.slice(0,match.index).split("\n").length;
+      if(sql.includes("\${")||!/^(?:SELECT|INSERT|UPDATE|DELETE|WITH)\b/iu.test(sql)){
+        dynamic.push({path,line,reason:"dynamic SQL or non-DML"});
+      }else staticQueries.push({path,line,sql});
+    }
+  }
+  return {staticQueries,dynamic};
+}
+
 function relevantSources(){
   const files=[];
   function scan(rootDir){
@@ -153,6 +179,18 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
       assert.ok(steps.length>0,statement+" has no query plan");
       plans.push({statement,steps});
     }
+    const {staticQueries,dynamic}=staticHotSql();
+    const preparedPlans=[];
+    for(const entry of staticQueries){
+      const args=Array((entry.sql.match(/\?/gu)??[]).length).fill("probe");
+      const steps=db.prepare("EXPLAIN QUERY PLAN "+entry.sql).all(...args)
+        .map(row=>String(row.detail));
+      preparedPlans.push({path:entry.path,line:entry.line,steps});
+    }
+    const usesStatic=index=>preparedPlans.filter(entry=>
+      entry.steps.some(step=>step.includes(index)));
+    assert.equal(usesStatic("idx_current_situations_place").length,0,
+      "a production prepared statement uses the historical place index");
     const uses=index=>plans.filter(entry=>entry.steps.some(step=>step.includes(index)))
       .map(entry=>entry.statement);
     assert.deepEqual(uses("idx_current_situations_place"),[],
@@ -164,7 +202,8 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
     db.exec("DROP INDEX idx_current_situations_place");
     const sourceFiles=relevantSources();
     console.log("FIBRE-WORLD-HOT-SQL-AUDIT "+JSON.stringify({
-      checked:plans.length,sourceFiles,plans,
+      checked:plans.length,staticPreparedStatements:preparedPlans.length,
+      dynamicPreparedStatements:dynamic,sourceFiles,plans,preparedPlans,
       retained:{
         currentFrontierRecent:uses("idx_current_frontier_recent"),
         semanticThread:uses("idx_semantic_state_thread_current"),
