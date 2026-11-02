@@ -761,8 +761,18 @@ export function createLivedNowService({
           &&current.sourcePlanRefs.includes(personalPlan.planId)
           &&!crossesStopBoundary(personalPlan,current.establishedAt,input.at)){
           const carePlan=livedNowStore.latestPlan(input.threadId,"care",{at:input.at});
-          if(unchangedPlannedPresent(current,personalPlan,carePlan,input.at))
+          if(unchangedPlannedPresent(current,personalPlan,carePlan,input.at)){
+            // Time can change felt regulation without changing the World
+            // scene. Evaluate at the requested time, as before, without
+            // minting a fictitious CurrentSituation for that evaluation.
+            if(regulationReady)await runLivedNowRegulationPulse({
+              threadId:current.threadId,previousSituation:current,
+              currentSituation:{...current,establishedAt:input.at},
+              worldStore,livedNowStore,semanticStateStore,modelAdapter,
+              experienceStore,
+            });
             return current;
+          }
         }
         return finalizePresent(
           current,
