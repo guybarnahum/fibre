@@ -11,6 +11,9 @@ import {openWorldStore} from "../src/persistence.mjs";
 import {openLivedNowStore} from "../src/lived-now-store.mjs";
 import {openLivedExperienceStore} from "../src/lived-experience-store.mjs";
 import {openAutobiographicalMemoryStore} from "../src/autobiographical-memory-store.mjs";
+import {openSemanticStateStore} from "../src/semantic-state-store.mjs";
+import {createLivedNowService} from "../src/lived-now-service.mjs";
+import {createLivedBoundaryProcess,nextLivedBoundary} from "../src/lived-now-boundary.mjs";
 import {createExperienceConsolidationProcess} from "../src/lived-experience-consolidation.mjs";
 import {createEncounterVisualization} from "../src/lived-encounter-visualization.mjs";
 import {livedPlanId,livedSituationId} from "../src/lived-now.mjs";
@@ -237,6 +240,131 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "World write budget exceeded "+report.total+"/7: "+JSON.stringify(report.byStore));
   }finally{
     audit?.close();memory?.close();experience?.close();lived?.close();world?.close();
+    rmSync(directory,{recursive:true,force:true});
+  }
+});
+
+ 
+// This is the deploy-style boundary unit, not the isolated storage API.
+test("a real arrival boundary includes semantic regulation, wake rearm and settlement",async()=>{
+  const directory=mkdtempSync(join(tmpdir(),"fibre-boundary-write-diet-"));
+  const path=join(directory,"world.sqlite");
+  let audit=null,world=null,lived=null,semantic=null;
+  try{
+    const storage=localWorldStateStorage(path);
+    installWorldSchemas(storage);
+    world=openWorldStore(storage);
+    lived=openLivedNowStore(storage);
+    semantic=openSemanticStateStore(storage);
+    const ids=Array.from({length:7},(_,i)=>`thr_boundary_cost_${i+1}`);
+    for(const threadId of ids){
+      const thread=structuredClone(seed);
+      thread.threadId=threadId;
+      thread.provenance.lastEventId="evt_"+threadId;
+      world.seedThread(thread);
+    }
+    const place=(identity,name,number)=>lived.admitPublicPlace({
+      venueIdentity:identity,displayName:name,
+      streetAddress:`${number} Example Street`,
+      locality:"Tucson",country:"United States",countryCode:"US",
+      lat:32.222,long:-110.975,timeZone:"America/Phoenix",
+      evidenceRef:"https://example.org/world-write-diet",
+      affordances:["Reading","Conversation"],
+    });
+    const origin=place("fixture:write-diet-home","Tucson community room",1);
+    const venue=place("fixture:write-diet-venue","Tucson reading library",2);
+    const modelCalls=[];
+    const service=createLivedNowService({
+      livedNowStore:lived,worldStore:world,semanticStateStore:semantic,
+      modelAdapter:{async invoke(call){
+        assert.ok(call.input?.interoception,
+          "boundary benchmark unexpectedly requested plan cognition");
+        modelCalls.push(call);
+        return {output:{states:[{
+          domain:"emotion",dimension:"contentment",
+          state:"I feel a quiet sense of arrival at the reading library.",
+        }]},provenance:{provider:"fixture",modelId:"world-boundary-write-diet",
+          providerRequestId:call.clientRequestId}};
+      }},
+      onSituationResolved:situation=>lived.scheduleNextLivedBoundary({
+        threadId:situation.threadId,situationId:situation.situationId,
+        dueAt:nextLivedBoundary(lived,situation),
+      }),
+    });
+    for(const threadId of ids){
+      const eventRef=world.listEvents(threadId)[0].eventId;
+      lived.recordPlan({
+        planId:livedPlanId({threadId,kind:"personal",authoredAt:at("08:00")}),
+        kind:"personal",subjectThreadId:threadId,
+        owner:{partyId:threadId,kind:"thread"},
+        authoredAt:at("08:00"),horizonStart:at("08:00"),horizonEnd:at("20:00"),
+        stops:[
+          {startAt:at("08:00"),endAt:at("08:15"),
+            physicalPlaceRef:origin.ref,mediatedContext:null,
+            activity:"Finish reading before setting out.",
+            purpose:"I want to spend the afternoon at the library.",
+            outwardActivity:"reading",wakefulness:"awake",
+            companionRefs:[],travelFromPrevious:null},
+          {startAt:at("08:30"),endAt:at("20:00"),
+            physicalPlaceRef:venue.ref,mediatedContext:null,
+            activity:"Read in the public library.",
+            purpose:"Learn something alongside other readers.",
+            outwardActivity:"reading",wakefulness:"awake",
+            companionRefs:[],travelFromPrevious:"Walk to the library."},
+        ],
+        sourceReferences:[eventRef,origin.ref,venue.ref],
+        cognition:{provider:"fixture",modelId:"write-diet",
+          providerRequestId:null},
+      });
+      const transit=await service.ensure({threadId,at:at("08:20")});
+      assert.equal(transit.phase,"in_transit",
+        "cost scenario did not establish its prior transit");
+    }
+    assert.equal(modelCalls.length,0,
+      "preparing an initial transit performed extra regulation cognition");
+    audit=auditWorldWrites(path);
+    const boundary=createLivedBoundaryProcess({
+      livedNowStore:lived,livedNow:service,now:()=>at("08:30"),
+    });
+    const outcomes=[];
+    await audit.measure("arrival-boundary",async()=>{
+      for(let pass=0;pass<2;pass++){
+        const step=await boundary.runOnce();
+        assert.equal(step.failed,0,"measured boundary had a failed pass");
+        outcomes.push(...step.results);
+      }
+    });
+    assert.equal(outcomes.length,ids.length,"missed one Thread's planned arrival");
+    assert.ok(outcomes.every(result=>result.outcome==="advanced"),
+      "World did not advance every admitted arrival");
+    assert.equal(modelCalls.length,ids.length,
+      "arrival regulation was not exercised once per Thread");
+    for(const threadId of ids){
+      assert.equal(lived.getCurrentSituation(threadId).location.placeRef,venue.ref);
+      assert.equal(semantic.listCurrentState(threadId).length,1,
+        "arriving Thread did not persist its independent semantic state");
+    }
+    const beforeReplay=audit.report(ids.length).total;
+    await audit.measure("idempotent-replay",async()=>{
+      for(const threadId of ids)
+        await service.ensure({threadId,at:at("08:30")});
+      const repeated=await boundary.runOnce();
+      assert.equal(repeated.attempted,0,
+        "settled boundaries were not removed from the due queue");
+    });
+    assert.equal(audit.report(ids.length).total,beforeReplay,
+      "retry rewrote an unchanged situation or semantic state");
+    const report=audit.report(ids.length);
+    console.log("FIBRE-WORLD-BOUNDARY-UNIT "+JSON.stringify({
+      advances:outcomes.length,semanticStates:modelCalls.length,
+      rowsPerBoundary:report.total/outcomes.length,...report,
+    }));
+    assert.ok(report.byStore.LivedNowStore>0&&report.byStore.SemanticStateStore>0,
+      "boundary diet omitted lived or semantic writes: "+JSON.stringify(report.byStore));
+    assert.ok(report.total/outcomes.length>=14&&report.total/outcomes.length<=24,
+      "boundary cost diverges from staging ~18 rows: "+JSON.stringify(report.byStore));
+  }finally{
+    audit?.close();semantic?.close();lived?.close();world?.close();
     rmSync(directory,{recursive:true,force:true});
   }
 });
