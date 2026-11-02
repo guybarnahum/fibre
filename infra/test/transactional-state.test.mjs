@@ -157,6 +157,8 @@ test("transactional state rejects nonportable schema rewrites across providers a
             "ALTER TABLE proof RENAME TO renamed",
             "ALTER TABLE proof RENAME COLUMN id TO identifier",
             "ALTER TABLE proof DROP COLUMN value",
+            "ALTER TABLE main.proof DROP COLUMN value",
+            'ALTER TABLE "main"."proof" RENAME TO renamed',
           ]){
             for(const query of [sql,"SELECT '-- literal'; "+sql,
               "-- ignored schema change\n"+sql]){

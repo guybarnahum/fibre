@@ -16,10 +16,15 @@ function schemaKeywords(sql){
   return sql.replace(/'(?:''|[^'])*'|--[^\n]*|\/\*[\s\S]*?\*\//gu," ");
 }
 
+const SQL_NAME=String.raw`(?:"(?:[^"]|"")*"|\x60[^\x60]*\x60|\[[^\]]*\]|\w+)`;
+const NONPORTABLE_ALTER=new RegExp(
+  String.raw`\bALTER\s+TABLE\s+`+SQL_NAME
+  +String.raw`(?:\s*\.\s*`+SQL_NAME+String.raw`)?\s+(?:RENAME\s+(?:TO|COLUMN)|DROP\s+COLUMN)\b`,"iu",
+);
+
 export function checkPortableSchemaSql(sql){
   if(typeof sql!=="string")throw new TypeError("transactional state SQL must be text");
-  if(!/\bALTER\b/iu.test(sql))return;
-  if(/\bALTER\s+TABLE\s+(?:"(?:[^"]|"")*"|\x60[^\x60]*\x60|\[[^\]]*\]|\w+)\s+(?:RENAME\s+(?:TO|COLUMN)|DROP\s+COLUMN)\b/iu.test(schemaKeywords(sql)))
+  if(/\bALTER\b/iu.test(sql)&&NONPORTABLE_ALTER.test(schemaKeywords(sql)))
     throw new Error("transactional state: schema-rewriting ALTER is not portable; rebuild by create/copy/drop");
 }
 
