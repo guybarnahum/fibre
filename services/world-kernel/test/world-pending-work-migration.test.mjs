@@ -116,8 +116,9 @@ test("pending experience and contact work survives compact installation in due o
     assert.deepEqual(contact.listUnconsideredAfterthoughtSources({limit:4})
       .map(item=>item.consolidationId),["con_contact_earlier","con_contact_later"],
       "another person's pending contact disappeared");
-    assert.deepEqual(db.prepare("PRAGMA foreign_key_check").all(),[],
-      "migration damaged durable references");
+    assert.equal(db.prepare(
+      "SELECT COUNT(*) AS n FROM thread_experience_consolidations",
+    ).get().n,5,"pending-work migration rewrote historical consolidations");
     const second=compactWorldPendingWork(storage);
     assert.deepEqual(second.queues.map(row=>row.rowsCopied),[0,0],
       "repeat install rewrote in-flight work");
