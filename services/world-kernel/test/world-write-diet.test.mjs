@@ -269,7 +269,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     reportTestEvidence("FIBRE-WORLD-WRITE-BUDGET",report);
     // Storage-only upper bound for the seven-Thread day; semantic heads add
     // writes only when a new semantic record is admitted.
-    const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??310/7);
+    const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??290/7);
     assert.ok(report.rowsPerThreadDay<=budget,
       "World write budget exceeded "+report.total+"/7: "+JSON.stringify(report.byStore));
     // New alarm activities are measured after the original day budget, so
@@ -635,14 +635,16 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "idle-reconciliation":{units:1,ceiling:3},
     };
     // Local ceilings use measured fixture writes, not fitted staging averages.
+    // Derived from the validated pre-change operation counts and the now
+    // single-B-tree pending queues / retired indexes. Guy validates after-map.
     const activityCeilings={
       plan:21,"lived-boundary":126,"social-act":14,
-      "noticed-experience":14,"consolidation-queue":12,
-      "social-opportunity":30,"ambient-scene":9,consolidation:84,
-      "contact-source":34,"contact-afterthought":25,
-      "contact-outreach":27,"contact-reception":3,"contact-noticing":25,
+      "noticed-experience":10,"consolidation-queue":8,
+      "social-opportunity":30,"ambient-scene":9,consolidation:72,
+      "contact-source":28,"contact-afterthought":17,
+      "contact-outreach":21,"contact-reception":3,"contact-noticing":21,
       "social-observed-setup":5,"social-observed":10,
-      "environment-source":12,"environment-noticed":28,
+      "environment-source":12,"environment-noticed":24,
       "idle-reconciliation":0,
       // First matched costs are recorded as evidence; add regression ceilings
       // after operator validation of the new cases.
