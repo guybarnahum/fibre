@@ -576,6 +576,15 @@ test("Inside Fibre availability is derived from enacted committed presence", asy
     assert.ok(during, "the enacted accepted shift should make the Thread available");
     assert.equal(during.commitmentId, state.accepted.commitmentId);
     assert.equal(during.planId, replanned.plan.planId);
+    const continued=await availability.current({
+      threadId:state.accepted.threadId,
+      at:"2026-09-23T19:35:00.000Z",
+    });
+    assert.equal(continued?.situationId,during.situationId,
+      "an unchanged committed shift lost availability");
+    assert.equal(state.livedNowStore.getCurrentSituation(state.accepted.threadId)
+      ?.situationId,during.situationId,
+    "availability lookup invented a second present");
 
     const current = state.livedNowStore.getCurrentSituation(state.accepted.threadId);
     assert.equal(current.situationId, during.situationId);

@@ -347,6 +347,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     assert.equal(contact.listInbox(recipient).length,1,"contact was not delivered");
     const due=contact.listDueContactReceptions({at:at("17:06"),limit:1})[0];
     assert.ok(due,"delivered contact has no reception opportunity");
+    await audit.measure("contact-reception-mid-stop",()=>
+      realLivedNow.ensure({threadId:recipient,at:at("17:06")}));
     const claim=await audit.measure("contact-reception",()=>contact.claimContactReception({
       messageId:due.messageId,threadId:recipient,
       situationId:situations.get(recipient),perceivedAt:at("17:06"),
@@ -659,6 +661,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "social-observed-setup":5,"social-observed":10,
       "environment-source":12,"environment-noticed":24,
       "idle-reconciliation":0,"social-mid-stop-presence":0,
+      "contact-reception-mid-stop":0,
       // First matched costs are recorded as evidence; add regression ceilings
       // after operator validation of the new cases.
     };
@@ -687,6 +690,15 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     });
     const rows=(...names)=>names.reduce((sum,name)=>
       sum+(activities[name]?.weightedRows??0),0);
+    const livedWrites=name=>(activities[name]?.tables??[])
+      .filter(row=>/^(lived_now_|current_situation_)/u.test(row.table))
+      .reduce((sum,row)=>sum+row.weightedRows,0);
+    reportTestEvidence("FIBRE-WORLD-MID-STOP",{
+      contactDecisionLivedRows:livedWrites("contact-outreach"),
+      contactReceptionLivedRows:livedWrites("contact-reception-mid-stop"),
+      socialPresenceLivedRows:livedWrites("social-mid-stop-presence"),
+      claim:"identical admitted scene; no new current situation",
+    });
     reportTestEvidence("FIBRE-WORLD-SOCIAL-CONTACT-MATCHED",{
       staging:{source:"Nov 2 fitted reconciliation stages; R2=0.94",
         outreach:49,reception:10,recipientNoticing:32,socialDecision:35},
