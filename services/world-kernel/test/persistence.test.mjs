@@ -154,6 +154,68 @@ test("applies a validated self-model command atomically and preserves lifecycle 
     store.close();
   }));
 
+test("event schema upgrade preserves command-linked history with foreign keys enforced",()=>
+  withDatabase(databasePath=>{
+    const store=openWorldStore(localWorldStateStorage(databasePath));
+    normalizedSeed(store);
+    const command=store.applyCommand(updateSelfModelCommand());
+    store.close();
+
+    // Recreate the prior event-type constraint without changing referential
+    // semantics. The next World open must perform the real schema upgrade.
+    const database=rawDatabase(databasePath);
+    try{
+      const beforeEvents=database.prepare(
+        "SELECT event_id,event_type FROM thread_events ORDER BY sequence",
+      ).all();
+      const beforeCommands=database.prepare(
+        "SELECT command_id,event_id FROM commands",
+      ).all();
+      assert.equal(beforeCommands[0]?.event_id,command.event.eventId,
+        "fixture lacks a command-linked event");
+
+      const current=database.prepare(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'",
+      ).get().sql;
+      const legacy=current.replaceAll(",'THREAD_PHYSICAL_GENOME_MIGRATED'","");
+      assert.notEqual(legacy,current,"fixture did not create an older event constraint");
+      const holding=legacy.replace('"thread_events"','"thread_events_legacy_fixture"');
+      database.exec("BEGIN IMMEDIATE");
+      try{
+        database.exec("PRAGMA defer_foreign_keys=ON");
+        database.exec("DROP TRIGGER thread_events_no_update; DROP TRIGGER thread_events_no_delete");
+        database.exec(holding);
+        database.exec(`
+          INSERT INTO thread_events_legacy_fixture SELECT * FROM thread_events;
+          DROP TABLE thread_events;
+        `);
+        database.exec(legacy);
+        database.exec(`
+          INSERT INTO thread_events SELECT * FROM thread_events_legacy_fixture;
+          DROP TABLE thread_events_legacy_fixture;
+        `);
+        database.exec("COMMIT");
+      }catch(error){database.exec("ROLLBACK");throw error;}
+      assert.equal(database.prepare("PRAGMA foreign_keys").get().foreign_keys,1,
+        "fixture disabled foreign-key enforcement");
+      database.close();
+
+      const reopened=openWorldStore(localWorldStateStorage(databasePath));
+      reopened.close();
+      const checked=rawDatabase(databasePath);
+      try{
+        assert.deepEqual(checked.prepare(
+          "SELECT event_id,event_type FROM thread_events ORDER BY sequence",
+        ).all(),beforeEvents,"event upgrade lost Thread history");
+        assert.deepEqual(checked.prepare(
+          "SELECT command_id,event_id FROM commands",
+        ).all(),beforeCommands,"event upgrade lost accepted commands");
+        assert.deepEqual(checked.prepare("PRAGMA foreign_key_check").all(),[],
+          "event upgrade broke command references");
+      }finally{checked.close();}
+    }finally{if(database.isOpen)database.close();}
+  }));
+
 test("UPDATE_SELF_MODEL permits dormant Threads without waking them", () =>
   withDatabase((databasePath) => {
     const dormant = structuredClone(fixture);
