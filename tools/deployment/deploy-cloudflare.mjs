@@ -338,6 +338,9 @@ export async function installWorldSchemaWithRetry({
           .map(item=>item.table+"="+item.rowsCopied).join(" "));
       if(installed?.semanticHeads)
         log("WORLD SEMANTIC HEAD COPIES "+installed.semanticHeads.rowsCopied);
+      if(installed?.pendingWork)
+        log("WORLD PENDING WORK COPIES "+installed.pendingWork.queues
+          .map(item=>item.table+"="+item.rowsCopied).join(" "));
       return installed;
     }catch(error){
       if(error?.terminal)throw error;

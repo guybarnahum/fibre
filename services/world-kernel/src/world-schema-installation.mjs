@@ -17,6 +17,7 @@ import {GenesisOriginAuthorityStore} from "./genesis-origin-authority-store.mjs"
 import {materializeLiveWorldPlacesForWorld} from "./live-world-place.mjs";
 import {compactWorldHotFrontiers} from "./world-hot-frontier-migration.mjs";
 import {compactSemanticStateHeads} from "./world-semantic-head-migration.mjs";
+import {compactWorldPendingWork} from "./world-pending-work-migration.mjs";
 
 // Called by the explicit deployment command, never by an ordinary World
 // request. Constructors retain local development setup, but skip this work
@@ -61,6 +62,10 @@ export function installWorldSchemas(storage,{deploymentGitSha="local",schemaDige
   let hotFrontiers;
   try{hotFrontiers=compactWorldHotFrontiers(compactDatabase);}
   finally{compactDatabase.close();}
+  const pendingDatabase=openWorldStateDatabase(storage,{storeName:"WorldPendingWorkMigration"});
+  let pendingWork;
+  try{pendingWork=compactWorldPendingWork(pendingDatabase);}
+  finally{pendingDatabase.close();}
     // Schema and its revision witness are installed only by an operator.
   const stampDatabase=openWorldStateDatabase(storage,{storeName:"WorldSchemaStamp"});
   try{
@@ -123,6 +128,6 @@ export function installWorldSchemas(storage,{deploymentGitSha="local",schemaDige
         .run(deploymentGitSha,new Date().toISOString(),schemaDigest);
     });
   }finally{database.close();}
-  return {hotFrontiers,semanticHeads};
+  return {hotFrontiers,semanticHeads,pendingWork};
   }finally{worldReader.close();}
 }

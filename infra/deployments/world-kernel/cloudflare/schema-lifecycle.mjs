@@ -55,5 +55,6 @@ export function installWorldSchemaForRevision({
     schemaDigest:expectedSchemaDigest,
     ...(installation?.hotFrontiers?{hotFrontiers:installation.hotFrontiers}:{}),
     ...(installation?.semanticHeads?{semanticHeads:installation.semanticHeads}:{}),
+    ...(installation?.pendingWork?{pendingWork:installation.pendingWork}:{}),
   }};
 }

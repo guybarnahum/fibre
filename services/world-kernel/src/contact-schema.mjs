@@ -88,9 +88,7 @@ export function createContactTables(database){
       reference TEXT NOT NULL,
       due_at TEXT NOT NULL,
       PRIMARY KEY(kind,reference)
-    ) STRICT;
-    CREATE INDEX IF NOT EXISTS idx_thread_contact_pending_due
-      ON thread_contact_pending_work(kind,due_at,reference);
+    ) STRICT, WITHOUT ROWID;
 
     CREATE TRIGGER IF NOT EXISTS thread_contact_pending_afterthought
       AFTER INSERT ON thread_experience_consolidation_stages

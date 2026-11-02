@@ -345,10 +345,6 @@ export function createLivedExperienceTables(database) {
       ON social_interaction_records(initiator_thread_id, occurred_at, interaction_id);
     CREATE INDEX IF NOT EXISTS idx_social_interaction_recipient_time
       ON social_interaction_records(recipient_thread_id, occurred_at, interaction_id);
-    CREATE INDEX IF NOT EXISTS idx_thread_attention_time
-      ON thread_encounter_attention(thread_id, occurred_at, encounter_ref);
-    CREATE INDEX IF NOT EXISTS idx_thread_experience_time
-      ON thread_encounter_experiences(thread_id, occurred_at, experience_id);
     CREATE INDEX IF NOT EXISTS idx_encounter_journal_time
       ON thread_encounter_journal_entries(thread_id, written_at, journal_entry_id);
 
@@ -369,9 +365,7 @@ export function createLivedExperienceTables(database) {
       reference TEXT NOT NULL,
       due_at TEXT NOT NULL,
       PRIMARY KEY(kind,reference)
-    ) STRICT;
-    CREATE INDEX IF NOT EXISTS idx_thread_experience_pending_due
-      ON thread_experience_pending_work(kind,due_at,reference);
+    ) STRICT, WITHOUT ROWID;
 
     CREATE TRIGGER IF NOT EXISTS thread_experience_pending_queued
       AFTER INSERT ON thread_experience_consolidation_queue BEGIN

@@ -70,8 +70,6 @@ export function createSituatedLifeTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
-    CREATE INDEX IF NOT EXISTS idx_situated_life_heads_thread
-      ON situated_life_lineage_heads(thread_id,ledger_kind,lineage_id,revision);
 
     -- One head per living relationship/place lineage. Old revisions remain
     -- immutable in their original tables.
@@ -123,8 +121,6 @@ export function createSituatedLifeTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
-    CREATE INDEX IF NOT EXISTS idx_situated_evidence_witness_thread
-      ON situated_evidence_witnesses(thread_id,witness_kind,source_id,revision);
 
     CREATE TRIGGER IF NOT EXISTS situated_evidence_witnesses_no_update
       BEFORE UPDATE ON situated_evidence_witnesses
