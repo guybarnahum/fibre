@@ -364,6 +364,20 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     const reception=await audit.measure("contact-noticing",
       ()=>perception.runOnce());
     assert.equal(reception.noticed,1,"recipient did not notice delivered contact");
+    const noticedReflection=await audit.measure("contact-noticed-reflection",()=>
+      createExperienceConsolidationProcess({
+        worldReader:world,livedNowStore:lived,semanticStateStore:semantic,
+        memoryStore:memory,experienceStore:experience,
+        now:()=>at("17:27"),clock:()=>Date.parse(at("17:27")),batchLimit:1,
+        modelAdapter:{async invoke(){
+          return {output:{journalEntry:null,afterthoughts:[],
+            memory:{outcome:"not_remembered",rememberedContent:null,
+              rememberedMeaning:null,confidence:null,salience:null,uncertainty:[]}},
+          provenance:{provider:"fixture",modelId:"write-map-noticed-reflection"}};
+        }},
+      }).runOnce());
+    assert.equal(noticedReflection.completed,1,
+      "recipient's noticed contact was not consolidated");
     // A second delivered message is available to its recipient but may never
     // enter attention. Keep this outcome's writes separate from noticed contact.
     const quietSender=ids[2],quietRecipient=ids[3];
@@ -522,10 +536,14 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         async invoke(call){
           if(call.input?.concern?.kind==="social_initiation"){
             initiationCalls++;
+            const greet=call.input.thread.threadId===socialActor;
             return {output:{result:{
-              act:"greet",expression:"Hello, what are you reading?",
-              experienceText:"I greeted the other reader with genuine curiosity.",
-              reason:"I would enjoy exchanging a few words.",
+              act:greet?"greet":"none",
+              expression:greet?"Hello, what are you reading?":null,
+              experienceText:greet
+                ?"I greeted the other reader with genuine curiosity.":null,
+              reason:greet?"I would enjoy exchanging a few words."
+                :"I prefer to return to my reading.",
               introducesSelf:false,
             },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
             provenance:{provider:"fixture",modelId:"write-map-social-choice"}};
@@ -549,8 +567,13 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "an initiated greeting did not become an outward social act");
     assert.equal(initiationCalls,1,"one greeting spent repeated initiation cognition");
     assert.equal(attentionCalls,1,"recipient lacked independent attention");
-    assert.equal(experience.listEncounterStories(socialActor).length>0,true,
+    assert.ok(experience.listEncounterStories(socialActor).length>0,
       "initiated greeting left no objective encounter history");
+    const reply=await audit.measure("social-reply-declined",()=>initiated.runOnce());
+    assert.equal(reply.results[0]?.outcome,"not_initiated",
+      "noticing a greeting forced the recipient to reciprocate");
+    assert.equal(initiationCalls,2,"reply choice spent repeated cognition");
+    assert.equal(attentionCalls,1,"declined reply manufactured attention");
 
     const scene={storyVersion:"encounter-story-v0.1",beats:[
       {actorThreadId:null,kind:"occurrence",
@@ -640,6 +663,49 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     // this fixture deliberately retains two memories, unlike the staging mix.
     reportTestEvidence("FIBRE-WORLD-WRITE-MAP",{
       activities,deviations,aboveStagingCeiling,
+    });
+    const rows=(...names)=>names.reduce((sum,name)=>
+      sum+(activities[name]?.weightedRows??0),0);
+    reportTestEvidence("FIBRE-WORLD-SOCIAL-CONTACT-MATCHED",{
+      staging:{source:"Nov 2 fitted reconciliation stages; R2=0.94",
+        outreach:49,reception:10,recipientNoticing:32,socialDecision:35},
+      local:{
+        contactInitiation:{
+          afterthought:rows("contact-afterthought"),
+          outreach:rows("contact-outreach"),
+          combined:rows("contact-afterthought","contact-outreach"),
+          sourceSetupExcluded:rows("contact-source"),
+        },
+        contactNoticed:{
+          reception:rows("contact-reception"),
+          attentionAndSettlement:rows("contact-noticing"),
+          combined:rows("contact-reception","contact-noticing"),
+          laterReflection:rows("contact-noticed-reflection"),
+        },
+        contactPassed:{
+          afterthought:rows("contact-pass-afterthought"),
+          outreach:rows("contact-pass-outreach"),
+          reception:rows("contact-pass-reception"),
+          attentionAndSettlement:rows("contact-passed"),
+          sourceSetupExcluded:rows("contact-pass-source"),
+        },
+        socialNotInitiated:{
+          setup:rows("social-observed-setup"),
+          decision:rows("social-observed"),
+        },
+        socialGreeted:{
+          setup:rows("social-initiated-setup"),
+          decisionAndConsequences:rows("social-initiated"),
+          independentReplyDeclined:rows("social-reply-declined"),
+        },
+        idleWorldProcess:rows("idle-reconciliation"),
+      },
+      comparability:{
+        outreach:"afterthought + outreach (52 in prior baseline) versus fitted 49",
+        reception:"claim + recipient attention is distinct from two fitted stages",
+        social:"non-initiation and greeting differ from staging's mixed outcomes",
+        idle:"local World process excludes Cloudflare alarm/retry storage",
+      },
     });
     for(const [name,ceiling] of Object.entries(activityCeilings)){
       assert.ok(activities[name].weightedRows<=ceiling,
