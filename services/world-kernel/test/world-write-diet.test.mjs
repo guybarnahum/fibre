@@ -567,8 +567,14 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "an initiated greeting did not become an outward social act");
     assert.equal(initiationCalls,1,"one greeting spent repeated initiation cognition");
     assert.equal(attentionCalls,1,"recipient lacked independent attention");
-    assert.ok(experience.listEncounterStories(socialActor).length>0,
-      "initiated greeting left no objective encounter history");
+    const greeting=experience.listEncounterStories(socialActor)
+      .find(story=>story.story.beats.some(beat=>
+        beat.actorThreadId===socialActor&&beat.kind==="utterance"
+        &&beat.text.includes("Hello, what are you reading?")));
+    assert.ok(greeting,"a chosen greeting left no objective shared encounter");
+    assert.equal(experience.getThreadEncounterAttention(
+      socialOther,greeting.encounterId)?.outcome,"noticed",
+    "the recipient's independent attention was not recorded");
     const reply=await audit.measure("social-reply-declined",()=>initiated.runOnce());
     assert.equal(reply.results[0]?.outcome,"not_initiated",
       "noticing a greeting forced the recipient to reciprocate");
