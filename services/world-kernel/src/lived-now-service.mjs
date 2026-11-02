@@ -14,6 +14,7 @@ import {
 import {
   livedSituationId,
   plannedPositionAt,
+  resolveCurrentSituation,
   FLIGHT_PLAN_TRAVEL_INFEASIBLE,
 } from "./lived-now.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
@@ -149,6 +150,26 @@ function currentSituationNeedsReconciliation(livedNowStore, situation, at) {
   const before = plannedPositionAt(governingPlan, situation.establishedAt);
   const now = plannedPositionAt(governingPlan, at);
   return before === null || now === null || !samePlannedScene(before, now);
+}
+
+// A plan stop boundary is a real temporal transition even when consecutive
+// stops happen to have identical observable activities.
+function crossesStopBoundary(plan,from,to){
+  const start=Date.parse(from),end=Date.parse(to);
+  return plan?.stops.some(stop=>[stop.startAt,stop.endAt]
+    .some(time=>Date.parse(time)>start&&Date.parse(time)<=end))??false;
+}
+
+function unchangedPlannedPresent(current,personalPlan,carePlan,at){
+  if(crossesStopBoundary(personalPlan,current.establishedAt,at)
+    ||crossesStopBoundary(carePlan,current.establishedAt,at))return false;
+  const governing=planForEnactment(personalPlan,carePlan,at);
+  const candidate=resolveCurrentSituation({
+    situationId:current.situationId,establishedAt:at,
+    personalPlan,carePlan,observation:observationFromPlan(governing,at),
+  });
+  return canonicalJson({...candidate,establishedAt:current.establishedAt})
+    ===canonicalJson(current);
 }
 
 function enact(livedNowStore, threadId, at, { materialization = null } = {}) {
@@ -735,6 +756,11 @@ export function createLivedNowService({
 
       const personalPlan = livedNowStore.latestPlan(input.threadId, "personal", { at: input.at });
       if (planCovers(personalPlan, input.at)) {
+        if(current!==null){
+          const carePlan=livedNowStore.latestPlan(input.threadId,"care",{at:input.at});
+          if(unchangedPlannedPresent(current,personalPlan,carePlan,input.at))
+            return current;
+        }
         return finalizePresent(
           current,
           enact(livedNowStore, input.threadId, input.at),

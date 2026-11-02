@@ -52,7 +52,9 @@ export function createWorldArrivalPerception({
           if(witnesses.length>0){
             const venueName=typeof place.physicalVenue.displayName==="string"
               &&place.physicalVenue.displayName.trim()
-              ?place.physicalVenue.displayName.trim():null;
+              ?place.physicalVenue.displayName.trim()
+              :typeof place.displayName==="string"&&place.displayName.trim()
+                ?place.displayName.trim():null;
             const describe=situation=>{
               const identity=worldReader.getThread(situation.threadId,{
                 required:false,

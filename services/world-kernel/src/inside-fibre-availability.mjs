@@ -28,12 +28,11 @@ export function createInsideFibreAvailabilityService({
   requireMethod(livedNowStore, "Inside Fibre livedNowStore", "getCurrentSituation");
   requireMethod(workStore, "Inside Fibre workStore", "listCommitments");
 
-  function derive({ threadId, at, situation, requireExactTime }) {
+  function derive({ threadId, at, situation }) {
     if (
       situation === null
       || situation.threadId !== threadId
       || Date.parse(situation.establishedAt) > Date.parse(at)
-      || (requireExactTime && situation.establishedAt !== at)
       || situation.resolution?.observedDivergence === true
       || situation.mediatedContext !== INSIDE_FIBRE_VISITOR_WORK.mediatedContext
     ) {
@@ -79,7 +78,7 @@ export function createInsideFibreAvailabilityService({
       assertId("Inside Fibre availability threadId", threadId);
       assertIsoTimestamp("Inside Fibre availability at", at);
       const situation = await livedNow.ensure({ threadId, at });
-      return derive({ threadId, at, situation, requireExactTime:true });
+      return derive({ threadId, at, situation });
     },
 
     currentFromSituation({ threadId, expectedSituationId, at }) {
@@ -88,7 +87,7 @@ export function createInsideFibreAvailabilityService({
       assertIsoTimestamp("Inside Fibre availability at", at);
       const situation = livedNowStore.getCurrentSituation(threadId);
       if (situation?.situationId !== expectedSituationId) return null;
-      return derive({ threadId, at, situation, requireExactTime:false });
+      return derive({ threadId, at, situation });
     },
   });
 }

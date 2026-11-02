@@ -354,6 +354,8 @@ export function createSocialMeetingService({
     const story={storyVersion:"encounter-story-v0.1",beats:[{
       actorThreadId:currentLeft.thread.threadId,
       kind:gesture?"action":"utterance",
+      // The cognition result is the observable act, not a conditional
+      // intention attributed to the actor by a narrative wrapper.
       text:gesture?described+" "+initiation.expression[0].toLowerCase()+initiation.expression.slice(1)
         :described+' says: "'+initiation.expression+'"',
       ...(initiation.disclosedName?{
