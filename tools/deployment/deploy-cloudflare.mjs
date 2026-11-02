@@ -188,13 +188,30 @@ export function createWranglerDeploymentClient({
         headers:{"x-fibre-private-token":token,"content-type":"application/json"},
         body:JSON.stringify({expectedGitSha:expectedSha}),
       });
-      const payload=await response.json();
+      const raw=await response.text();
+      let payload;
+      try{payload=JSON.parse(raw);}
+      catch{
+        const title=raw.match(/<title[^>]*>([^<]*)<\/title>/iu)?.[1]
+          ?.replace(/\s+/gu," ").trim().slice(0,120);
+        const ray=response.headers?.get?.("cf-ray")?.slice(0,80);
+        const error=new Error(serviceId+" schema endpoint returned non-JSON HTTP "
+          +response.status+(title?" ("+title+")":"")+(ray?" · cf-ray "+ray:""));
+        error.terminal=response.status<500&&response.status!==429;
+        throw error;
+      }
       if(!response.ok||payload?.ok!==true||payload?.deploymentGitSha!==expectedSha){
-        const error=new Error(serviceId+" schema installation did not confirm deployed revision");
+        const detail=payload?.code??payload?.error?.code??payload?.error?.message
+          ??payload?.detail??(typeof payload?.error==="string"?payload.error
+            :"confirmation mismatch");
+        const error=new Error(serviceId+" schema installation HTTP "+response.status
+          +": "+String(detail).slice(0,160));
         if(typeof payload?.deploymentGitSha==="string")
           error.deploymentGitSha=payload.deploymentGitSha;
         if(response.status===409&&payload?.code==="WORLD_REVISION_NOT_SERVING")
           error.code="WORLD_REVISION_NOT_SERVING";
+        error.terminal=response.status>=400&&response.status<500
+          &&response.status!==429&&error.code!=="WORLD_REVISION_NOT_SERVING";
         throw error;
       }
       const read=response.headers?.get?.("x-fibre-state-rows-read");
@@ -323,13 +340,15 @@ export async function installWorldSchemaWithRetry({
         log("WORLD SEMANTIC HEAD COPIES "+installed.semanticHeads.rowsCopied);
       return installed;
     }catch(error){
-      serving=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim()
-        ?shortSha(error.deploymentGitSha):serving;
+      if(error?.terminal)throw error;
+      const observed=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim();
+      if(observed)serving=shortSha(error.deploymentGitSha);
       const elapsed=now()-startedAt;
-      const message=String(error?.message??error).slice(0,150);
-      const state=serving===shortSha(expectedSha)
+      const message=String(error?.message??error).slice(0,180);
+      const state=observed&&serving===shortSha(expectedSha)
         ?`WORLD NEW VERSION ${shortSha(expectedSha)} IS SERVING WITHOUT ITS SCHEMA`
-        :`WORLD ${shortSha(expectedSha)} UPLOADED · SCHEMA NOT INSTALLED · serving ${serving}`;
+        :`WORLD ${shortSha(expectedSha)} UPLOADED · SCHEMA NOT INSTALLED · serving ${observed
+          ?serving:serving==="unknown"?"unknown":"unknown (last seen "+serving+")"}`;
       log(JSON.stringify({progress:`${state} · retry ${attempt}, ${Math.floor(elapsed/1_000)}s · ${message}`}));
       await wait(Math.min(60_000,1_500*2**(attempt-1)));
     }

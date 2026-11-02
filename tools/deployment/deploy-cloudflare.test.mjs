@@ -489,6 +489,45 @@ test("World schema installation waits past ten minutes without abandoning servin
   "World hid its unhealthy serving state");
 });
 
+test("World schema reports Cloudflare HTML and refuses terminal retries",async()=>{
+  const expectedSha="b".repeat(40),log=[];
+  let attempts=0;
+  const client=createWranglerDeploymentClient({
+    privateToken:"fixture-token",
+    fetchImpl:async()=>{
+      attempts++;
+      if(attempts===1)return new Response("<html><title>Cloudflare gateway error</title></html>",{
+        status:503,headers:{"cf-ray":"ray-123"},
+      });
+      return Response.json({ok:true,deploymentGitSha:expectedSha,installed:true});
+    },
+  });
+  await installWorldSchemaWithRetry({
+    client,serviceId:"world-kernel",baseUrl:"https://world.example",
+    expectedSha,wait:async()=>{},log:line=>log.push(line),
+  });
+  assert.equal(attempts,2,"transient gateway error was not retried");
+  assert.match(log[0],/non-JSON HTTP 503.*Cloudflare gateway error.*cf-ray ray-123/u,
+    "World schema diagnosis lost the HTTP gateway failure");
+  assert.match(log[0],/serving unknown/u,
+    "World schema log reported an unobserved serving revision");
+
+  let deniedCalls=0;
+  const denied=createWranglerDeploymentClient({
+    privateToken:"fixture-token",
+    fetchImpl:async()=>{
+      deniedCalls++;
+      return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
+    },
+  });
+  await assert.rejects(installWorldSchemaWithRetry({
+    client:denied,serviceId:"world-kernel",baseUrl:"https://world.example",
+    expectedSha,wait:async()=>{throw new Error("terminal rejection retried");},
+    log:()=>{},
+  }),/HTTP 403.*PRIVATE_TOKEN_REQUIRED/u);
+  assert.equal(deniedCalls,1,"terminal World rejection was retried");
+});
+
 test("World deployment waits through revision refusal without accepting stale installation",async()=>{
   const target="b".repeat(40);
   const stale="a".repeat(40);
