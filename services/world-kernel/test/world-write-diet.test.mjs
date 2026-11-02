@@ -300,7 +300,17 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     });
     const sent=await audit.measure("contact-outreach",()=>outreach.runOnce());
     assert.equal(sent.failed,0,"contact outreach failed in write map");
+    assert.equal(sent.attempted,1,"the afterthought did not prompt contact");
     assert.equal(contact.listInbox(recipient).length,1,"contact was not delivered");
+    const due=contact.listDueContactReceptions({at:at("17:06"),limit:1})[0];
+    assert.ok(due,"delivered contact has no reception opportunity");
+    const claim=await audit.measure("contact-reception",()=>contact.claimContactReception({
+      messageId:due.messageId,threadId:recipient,
+      situationId:situations.get(recipient),perceivedAt:at("17:06"),
+      senderName:world.getThread(sender).identity.name,
+    }));
+    assert.equal(claim.situationId,situations.get(recipient),
+      "reception was not bound to the recipient's lived situation");
     const perception=createThreadContactPerception({
       contactStore:contact,livedNow:{ensure:ensureCurrent},livedNowStore:lived,
       worldReader:world,semanticStateStore:semantic,memoryStore:memory,
@@ -311,7 +321,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
           provenance:{provider:"fixture",modelId:"write-map-attention"}};
       }},
     });
-    const reception=await audit.measure("contact-reception-noticing",
+    const reception=await audit.measure("contact-noticing",
       ()=>perception.runOnce());
     assert.equal(reception.noticed,1,"recipient did not notice delivered contact");
     const observed=experience.enqueueObservedSocialOpportunity({
@@ -380,7 +390,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     const calibration={
       "lived-boundary":{units:14,ceiling:14},
       "contact-outreach":{units:1,ceiling:49},
-      "contact-reception-noticing":{units:1,ceiling:42},
+      "contact-reception":{units:1,ceiling:10},
+      "contact-noticing":{units:1,ceiling:32},
       "social-observed":{units:1,ceiling:35},
       "consolidation":{units:2,ceiling:27},
       "environment-noticed":{units:1,ceiling:19},
