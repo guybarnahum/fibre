@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
+import {THREAD_EVENT_COLUMNS} from "../src/thread-event-schema.mjs";
 
 import {
   IdempotencyConflictError,
@@ -187,12 +188,14 @@ test("event schema upgrade preserves command-linked history with foreign keys en
         database.exec("DROP TRIGGER thread_events_no_update; DROP TRIGGER thread_events_no_delete");
         database.exec(holding);
         database.exec(`
-          INSERT INTO thread_events_legacy_fixture SELECT * FROM thread_events;
+          INSERT INTO thread_events_legacy_fixture (${THREAD_EVENT_COLUMNS})
+            SELECT ${THREAD_EVENT_COLUMNS} FROM thread_events;
           DROP TABLE thread_events;
         `);
         database.exec(legacy);
         database.exec(`
-          INSERT INTO thread_events SELECT * FROM thread_events_legacy_fixture;
+          INSERT INTO thread_events (${THREAD_EVENT_COLUMNS})
+            SELECT ${THREAD_EVENT_COLUMNS} FROM thread_events_legacy_fixture;
           DROP TABLE thread_events_legacy_fixture;
         `);
         database.exec("COMMIT");
@@ -204,7 +207,7 @@ test("event schema upgrade preserves command-linked history with foreign keys en
     const reopened=openWorldStore(localWorldStateStorage(databasePath));
     reopened.close();
     const checked=rawDatabase(databasePath);
-      try{
+    try{
         assert.deepEqual(checked.prepare(
           "SELECT event_id,event_type FROM thread_events ORDER BY sequence",
         ).all(),beforeEvents,"event upgrade lost Thread history");
