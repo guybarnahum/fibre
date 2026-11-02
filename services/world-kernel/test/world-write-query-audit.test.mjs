@@ -143,7 +143,7 @@ function unboundedThreadHistoryRead({path,sql}){
   const table=historicalTables.find(name=>new RegExp(`\\bFROM\\s+${name}\\b`,"iu").test(clean));
   return table?{path,table,sql:clean}:null;
 }
-function staticHotSql(){
+function staticHotSql(tableNames=tables,scanAll=false){
   const paths=[
     "services/world-kernel/src/lived-now-store.mjs",
     "services/world-kernel/src/lived-experience-store.mjs",
@@ -154,13 +154,24 @@ function staticHotSql(){
     "services/world-kernel/src/world-integrity-audit.mjs",
     "tools/inspect/inspect-identity-context.mjs",
   ];
+  if(scanAll){
+    function collect(dir){
+      for(const entry of readdirSync(dir,{withFileTypes:true})){
+        const file=join(dir,entry.name);
+        if(entry.isDirectory())collect(file);
+        else if(entry.isFile()&&entry.name.endsWith(".mjs"))
+          paths.push(relative(root,file));
+      }
+    }
+    collect(join(root,"services/world-kernel/src"));
+  }
   const staticQueries=[],dynamic=[];
-  for(const path of paths){
+  for(const path of [...new Set(paths)]){
     const source=readFileSync(join(root,path),"utf8");
     const matches=source.matchAll(/\.prepare\(\s*(?:`([^`]*?)`|"([^"\n]*)"|'([^'\n]*)')/gu);
     for(const match of matches){
       const sql=(match[1]??match[2]??match[3]??"").trim();
-      if(!tables.some(table=>sql.includes(table))
+      if(!tableNames.some(table=>sql.includes(table))
         &&!historicalTables.some(table=>sql.includes(table)))continue;
       const line=source.slice(0,match.index).split("\n").length;
       // Some legitimate prepared queries start with SQL comments (notably
@@ -245,6 +256,51 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
     assert.ok(uses("idx_current_frontier_recent").includes("lived.listRecentCurrentSituations"),
       "current recent-presence path lost its time index");
     db.exec("DROP INDEX idx_current_situations_place");
+    // Inspect every installed secondary index, a superset of the tables the
+    // write map mutates. This is a reader inventory, not an index-removal gate.
+    const tableNames=db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
+      .all().map(row=>row.name);
+    const allReaders=staticHotSql(tableNames,true);
+    const readerPlans=[...plans.map(item=>({
+      reader:item.statement,steps:item.steps,
+    })),...preparedPlans.map(item=>({
+      reader:item.path+":"+item.line,steps:item.steps,
+    }))];
+    const unplanned=[];
+    for(const entry of allReaders.staticQueries){
+      try{
+        const bindings=Array((entry.sql.match(/\?/gu)??[]).length).fill("probe");
+        readerPlans.push({
+          reader:entry.path+":"+entry.line,
+          steps:db.prepare("EXPLAIN QUERY PLAN "+entry.sql).all(...bindings)
+            .map(row=>String(row.detail)),
+        });
+      }catch(error){
+        unplanned.push({path:entry.path,line:entry.line,
+          reason:String(error?.message??error).slice(0,110)});
+      }
+    }
+    const indexes=[];
+    for(const table of tableNames){
+      const escaped='"'+table.replaceAll('"','""')+'"';
+      for(const index of db.prepare("PRAGMA index_list("+escaped+")").all()){
+        if(index.origin==="pk")continue; // WITHOUT ROWID's primary tree is not secondary.
+        const readers=[...new Set(readerPlans.filter(plan=>
+          plan.steps.some(step=>step.includes(index.name)))
+          .map(plan=>plan.reader))].sort();
+        indexes.push({
+          table,index:index.name,origin:index.origin,
+          readers,readerStatus:readers.length===0?"none in audited SQL":"indexed",
+        });
+      }
+    }
+    indexes.sort((a,b)=>a.table.localeCompare(b.table)||a.index.localeCompare(b.index));
+    reportTestEvidence("FIBRE-WORLD-INDEX-READERS",{
+      indexes,withoutAuditedReader:indexes.filter(entry=>entry.readers.length===0)
+        .map(({table,index})=>({table,index})),
+      queriesPlanned:readerPlans.length,dynamicSql:allReaders.dynamic.length,
+      unplanned,scope:"all World indexes; no reader does not prove unused",
+    });
     const sourceFiles=relevantSources();
     reportTestEvidence("FIBRE-WORLD-HOT-SQL-AUDIT",{
       checked:plans.length,staticPreparedStatements:preparedPlans.length,
