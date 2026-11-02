@@ -252,6 +252,50 @@ test("N1 ensure-LivedNow advances the Thread from its own plans and preserves ca
     lived.close();
   }));
 
+test("the present persists mid-stop without writes, but a real boundary enacts",async()=>
+  withDatabase(async(databasePath)=>{
+    const life=seedLife(databasePath);
+    const lived=openLivedNowStore({...localWorldStateStorage(databasePath),schemaReady:true});
+    lived.recordPlan(personalPlan(life));
+    const service=createLivedNowService({livedNowStore:lived,
+      onSituationResolved:situation=>lived.scheduleNextLivedBoundary({
+        threadId:situation.threadId,situationId:situation.situationId,
+        dueAt:nextLivedBoundary(lived,situation),
+      }),
+    });
+    const first=await service.ensure({
+      threadId:life.thread.threadId,at:"2026-09-10T05:10:00Z",
+    });
+    const database=new DatabaseSync(databasePath);
+    try{
+      database.exec(`CREATE TABLE _present_writes(n INTEGER NOT NULL);
+        CREATE TRIGGER _present_record AFTER INSERT ON current_situation_records
+          BEGIN INSERT INTO _present_writes VALUES(1); END;
+        CREATE TRIGGER _present_frontier AFTER UPDATE ON current_situation_frontier
+          BEGIN INSERT INTO _present_writes VALUES(1); END;
+        CREATE TRIGGER _present_wake AFTER UPDATE ON lived_now_next_boundaries
+          BEGIN INSERT INTO _present_writes VALUES(1); END;`);
+      const again=await service.ensure({
+        threadId:life.thread.threadId,at:"2026-09-10T05:12:00Z",
+      });
+      assert.equal(again.situationId,first.situationId,
+        "unchanged planned life created another present");
+      assert.equal(database.prepare("SELECT COUNT(*) AS n FROM _present_writes").get().n,0,
+        "looking at the same present wrote LivedNow state");
+      assert.equal(lived.listRecentSituations(life.thread.threadId).length,1,
+        "ordinary elapsed time crowded personal history");
+      const changed=await service.ensure({
+        threadId:life.thread.threadId,at:"2026-09-10T05:15:00Z",
+      });
+      assert.notEqual(changed.situationId,first.situationId,
+        "the planned departure did not enact");
+      assert.equal(changed.phase,"in_transit",
+        "a real departure was suppressed");
+      assert.equal(lived.listRecentSituations(life.thread.threadId).length,2,
+        "the planned transition did not enter history");
+    }finally{database.close();lived.close();}
+  }));
+
 test("World enacts sleep and waking from Thread-owned plan facts, not activity wording",async()=>
   withDatabase(async(databasePath)=>{
     const life=seedLife(databasePath);

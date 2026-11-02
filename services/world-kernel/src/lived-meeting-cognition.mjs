@@ -157,6 +157,12 @@ export async function formSocialEncounterRequest({
   }else{
     assertNonEmpty("social act expression",cognition.result.expression);
     assertNonEmpty("social act experience",cognition.result.experienceText);
+    // An intention to acknowledge is not an observed social act. The
+    // independent decision must describe something actually performed.
+    if(cognition.result.act==="acknowledge"
+      &&/\b(?:if|would|could|might|should|will)\b/iu.test(cognition.result.expression)){
+      throw new TypeError("social acknowledgment must be an observable act");
+    }
   }
 
   return Object.freeze({

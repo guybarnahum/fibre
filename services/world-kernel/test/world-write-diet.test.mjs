@@ -174,7 +174,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
               phase:"at_place",location:{kind:"place",placeRef:venue.ref},
               mediatedContext:null,activity:"Read in the public room.",
               outwardActivity:"reading",wakefulness:"awake",
-              reason:"Ordinary continued reading.",participantRefs:[],
+              reason:"Read independently alongside the others.",participantRefs:[],
               evidenceRefs:[events.get(threadId),venue.ref],
             },
           });
@@ -325,7 +325,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         }},
       }).runOnce());
     assert.equal(reflection.completed,1,"contact source did not become an afterthought");
-    const ensureCurrent=async({threadId})=>lived.getCurrentSituation(threadId);
+    const realLivedNow=createLivedNowService({livedNowStore:lived});
+    const ensureCurrent=input=>realLivedNow.ensure(input);
     const outreach=createThreadContactProcess({
       worldReader:world,livedNow:{ensure:ensureCurrent},situatedLifeStore:situated,
       semanticStateStore:semantic,memoryStore:memory,experienceStore:experience,
@@ -340,6 +341,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     });
     const sent=await audit.measure("contact-outreach",()=>outreach.runOnce());
     assert.equal(sent.failed,0,"contact outreach failed in write map");
+    assert.equal(lived.listRecentSituations(sender).length,2,
+      "mid-stop contact decision invented a new situation");
     assert.equal(sent.attempted,1,"the afterthought did not prompt contact");
     assert.equal(contact.listInbox(recipient).length,1,"contact was not delivered");
     const due=contact.listDueContactReceptions({at:at("17:06"),limit:1})[0];
@@ -364,6 +367,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     const reception=await audit.measure("contact-noticing",
       ()=>perception.runOnce());
     assert.equal(reception.noticed,1,"recipient did not notice delivered contact");
+    assert.equal(lived.listRecentSituations(recipient).length,2,
+      "mid-stop contact reception rewrote the recipient's present");
     const noticedReflection=await audit.measure("contact-noticed-reflection",()=>
       createExperienceConsolidationProcess({
         worldReader:world,livedNowStore:lived,semanticStateStore:semantic,
@@ -561,12 +566,20 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       experienceStore:experience,livedNowStore:lived,
       meetingService:meeting,worldReader:world,now:()=>at("16:10"),
     });
+    const beforeSocial=await audit.measure("social-mid-stop-presence",async()=>{
+      await realLivedNow.ensure({threadId:socialActor,at:at("16:10")});
+      await realLivedNow.ensure({threadId:socialOther,at:at("16:10")});
+      return lived.listRecentSituations(socialActor).length;
+    });
+    assert.equal(beforeSocial,2,"social presence lookup invented lived history");
     const initiatedResult=await audit.measure("social-initiated",()=>initiated.runOnce());
     assert.equal(initiatedResult.failed,0,"ordinary greeting failed");
     assert.equal(initiatedResult.results[0]?.outcome,"acted",
       "an initiated greeting did not become an outward social act");
     assert.equal(initiationCalls,1,"one greeting spent repeated initiation cognition");
     assert.equal(attentionCalls,1,"recipient lacked independent attention");
+    assert.equal(lived.listRecentSituations(socialActor).length,2,
+      "mid-stop social encounter minted a false situation");
     const greeting=experience.listEncounterStories(socialActor)
       .find(story=>story.story.beats.some(beat=>
         beat.actorThreadId===socialActor&&beat.kind==="utterance"
@@ -645,7 +658,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "contact-outreach":21,"contact-reception":3,"contact-noticing":21,
       "social-observed-setup":5,"social-observed":10,
       "environment-source":12,"environment-noticed":24,
-      "idle-reconciliation":0,
+      "idle-reconciliation":0,"social-mid-stop-presence":0,
       // First matched costs are recorded as evidence; add regression ceilings
       // after operator validation of the new cases.
     };
