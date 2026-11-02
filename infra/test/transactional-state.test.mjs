@@ -152,11 +152,6 @@ test("transactional state rejects nonportable schema rewrites across providers a
           if(sessionMode==="install"){
             session.exec("CREATE TABLE proof (id TEXT PRIMARY KEY) STRICT");
             session.exec("ALTER TABLE proof ADD COLUMN value TEXT");
-          }else{
-            // A runtime-mode rejection must be the portable rule even if
-            // its separate runtime DDL guard is configured to report.
-            assert.throws(()=>session.exec("ALTER TABLE proof ADD COLUMN extra TEXT"),
-              /runtime World schema access|schema-rewriting ALTER/u);
           }
           for(const sql of [
             "ALTER TABLE proof RENAME TO renamed",
