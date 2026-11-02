@@ -105,21 +105,41 @@ const queries=[
   ["semantic.history",`SELECT state_id FROM semantic_state_records
     WHERE thread_id=? ORDER BY as_of,state_id`],
   ["semantic.supersedes",`SELECT state_id FROM semantic_state_records WHERE supersedes_state_id=?`],
-  ["semantic.currentIndexedLineage",`SELECT r.state_id FROM semantic_state_records r
-    WHERE r.thread_id=? AND r.staleness='current'
-      AND NOT EXISTS(SELECT 1 FROM semantic_state_records newer
-        WHERE newer.supersedes_state_id=r.state_id)
-    ORDER BY r.domain,r.dimension,r.as_of,r.state_id`],
-  ["tools.inspectIdentityContext",`SELECT r.state_id FROM semantic_state_records r
-    WHERE r.thread_id=? AND r.staleness='current'
-      AND NOT EXISTS (SELECT 1 FROM semantic_state_records newer
-        WHERE newer.supersedes_state_id=r.state_id)
-    ORDER BY r.domain,r.dimension,r.as_of,r.state_id`],
+  ["semantic.currentHead",`SELECT r.state_id FROM semantic_state_current_heads h
+    JOIN semantic_state_records r ON r.state_id=h.state_id
+    WHERE h.thread_id=? ORDER BY r.domain,r.dimension,r.as_of,r.state_id`],
+  ["tools.inspectIdentityContext",`SELECT r.state_id FROM semantic_state_current_heads h
+    JOIN semantic_state_records r ON r.state_id=h.state_id
+    WHERE h.thread_id=? ORDER BY r.domain,r.dimension,r.as_of,r.state_id`],
 ];
+// Explicit historical inspection may enumerate a Thread's entire history.
+// Production current-state readers must not do so.
+const historicalTables=[
+  "semantic_state_records","current_situation_records","lived_now_plans",
+  "lived_encounter_records","thread_encounter_experiences",
+  "autobiographical_memory_records",
+];
+const historicalScanAllowlist=new Map([
+  ["services/world-kernel/src/semantic-state-store.mjs:semantic_state_records",
+    "listStateHistory intentionally returns the complete semantic history"],
+  ["services/world-kernel/src/lived-now-store.mjs:lived_now_plans",
+    "listPlans intentionally returns a Thread's entire plan history"],
+  ["services/world-kernel/src/lived-experience-store.mjs:lived_encounter_records",
+    "listLegacyEncounters explicitly returns one Thread's encounter history"],
+]);
+function unboundedThreadHistoryRead({path,sql}){
+  const clean=sql.replace(/--[^\n]*/gu," ").replace(/\s+/gu," ").trim();
+  if(!/^SELECT\b/iu.test(clean)||/\bLIMIT\b/iu.test(clean))return null;
+  if((clean.match(/\?/gu)??[]).length!==1
+    ||!/\b(?:thread_id|subject_thread_id)\s*=\s*\?/iu.test(clean))return null;
+  const table=historicalTables.find(name=>new RegExp(`\\bFROM\\s+${name}\\b`,"iu").test(clean));
+  return table?{path,table}:null;
+}
 function staticHotSql(){
   const paths=[
     "services/world-kernel/src/lived-now-store.mjs",
     "services/world-kernel/src/lived-experience-store.mjs",
+    "services/world-kernel/src/autobiographical-memory-store.mjs",
     "services/world-kernel/src/semantic-state-store.mjs",
     "services/world-kernel/src/genesis-first-life-store.mjs",
     "services/world-kernel/src/world-event-observatory.mjs",
@@ -132,11 +152,15 @@ function staticHotSql(){
     const matches=source.matchAll(/\.prepare\(\s*(?:`([^`]*?)`|"([^"\n]*)"|'([^'\n]*)')/gu);
     for(const match of matches){
       const sql=(match[1]??match[2]??match[3]??"").trim();
-      if(!tables.some(table=>sql.includes(table)))continue;
+      if(!tables.some(table=>sql.includes(table))
+        &&!historicalTables.some(table=>sql.includes(table)))continue;
       const line=source.slice(0,match.index).split("\n").length;
-      if(sql.includes("\${")||!/^(?:SELECT|INSERT|UPDATE|DELETE|WITH)\b/iu.test(sql)){
+      // Some legitimate prepared queries start with SQL comments (notably
+      // LivedNow's delayed-event UNION); explain those instead of skipping.
+      const statement=sql.replace(/^(?:\s*--[^\n]*\n)+/gu,"").trim();
+      if(sql.includes("\${")||!/^(?:SELECT|INSERT|UPDATE|DELETE|WITH)\b/iu.test(statement)){
         dynamic.push({path,line,reason:"dynamic SQL or non-DML"});
-      }else staticQueries.push({path,line,sql});
+      }else staticQueries.push({path,line,sql:statement});
     }
   }
   return {staticQueries,dynamic};
@@ -180,6 +204,10 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
       plans.push({statement,steps});
     }
     const {staticQueries,dynamic}=staticHotSql();
+    const unbounded=staticQueries.map(unboundedThreadHistoryRead).filter(Boolean);
+    for(const entry of unbounded)
+      assert.ok(historicalScanAllowlist.has(entry.path+":"+entry.table),
+        "unbounded lived-history read: "+entry.path);
     const preparedPlans=[];
     for(const entry of staticQueries){
       const args=Array((entry.sql.match(/\?/gu)??[]).length).fill("probe");
@@ -203,7 +231,10 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
     const sourceFiles=relevantSources();
     console.log("FIBRE-WORLD-HOT-SQL-AUDIT "+JSON.stringify({
       checked:plans.length,staticPreparedStatements:preparedPlans.length,
-      dynamicPreparedStatements:dynamic,sourceFiles,plans,preparedPlans,
+      dynamicPreparedStatements:dynamic,
+      unboundedHistoryReaders:unbounded.map(({path,table})=>({
+        path,table,reason:historicalScanAllowlist.get(path+":"+table),
+      })),sourceFiles,plans,preparedPlans,
       retained:{
         currentFrontierRecent:uses("idx_current_frontier_recent"),
         semanticThread:uses("idx_semantic_state_thread_current"),
