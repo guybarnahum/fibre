@@ -245,10 +245,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         worldReader:world,livedNowStore:lived,
         semanticStateStore:{listCurrentState:()=>[]},
         memoryStore:memory,experienceStore:experience,
-        modelAdapter:{async invoke(call){
-          return {output:{journalEntry:null,afterthoughts:call.input.thread.threadId===ids[0]
-            ?[{kind:"question",text:"I want to ask the other reader about her favorite passage."}]
-            :[],memory:{
+        modelAdapter:{async invoke(){
+          return {output:{journalEntry:null,afterthoughts:[],memory:{
             outcome:"retained",
             rememberedContent:"I remember hearing a thoughtful passage.",
             rememberedMeaning:"Reading beside others can redirect my interests.",
@@ -276,7 +274,31 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     // New alarm activities are measured after the original day budget, so
     // measuring wider World behavior does not silently relax that ceiling.
     const sender=ids[0],recipient=ids[1];
-    situated.recordLifeRelation({
+    await audit.measure("contact-source",()=>{
+      const note={storyVersion:"encounter-story-v0.1",beats:[
+        {actorThreadId:sender,kind:"utterance",
+          text:"I kept thinking about the passage we read together."},
+      ]};
+      const encounter=experience.recordEncounterStory({
+        occurredAt:at("16:32"),
+        threadPresence:[{threadId:sender,situationId:situations.get(sender)}],
+        story:note,
+        visualization:createEncounterVisualization({
+          occurredAt:at("16:32"),story:note,
+          scene:"At the reading room.",sourceReferences:[venue.ref],
+          depictedThreadRefs:[],
+        }),
+      });
+      const attention=experience.recordThreadEncounterAttention({
+        threadId:sender,encounterRef:encounter.encounterId,
+        situationId:situations.get(sender),occurredAt:at("16:32"),
+        outcome:"noticed",
+        experienceText:"I still want to know what the other reader thought.",
+      });
+      experience.queueThreadExperienceConsolidation({
+        experienceId:attention.experience.experienceId,queuedAt:at("16:32"),
+      });
+      situated.recordLifeRelation({
       relationId:lifeRelationId({threadId:sender,partyId:recipient,role:"peer"}),
       revision:1,threadId:sender,
       relatedParty:{partyId:recipient,kind:"thread",displayName:"Another reader"},
@@ -284,7 +306,24 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       factualRoleRefs:["peer"],relationshipFacts:["We have read in the same room."],
       sourceReferences:[events.get(sender)],validFrom:at("08:00"),validTo:null,
       visibility:"restricted",provenance:"world_recorded",recordedAt:at("16:30"),
+      });
     });
+    const reflection=await audit.measure("contact-afterthought",()=>
+      createExperienceConsolidationProcess({
+        worldReader:world,livedNowStore:lived,semanticStateStore:semantic,
+        memoryStore:memory,experienceStore:experience,
+        now:()=>at("17:04"),clock:()=>Date.parse(at("17:04")),batchLimit:1,
+        modelAdapter:{async invoke(){
+          return {output:{
+            journalEntry:null,
+            afterthoughts:[{kind:"question",
+              text:"I want to ask the other reader about her favorite passage."}],
+            memory:{outcome:"not_remembered",rememberedContent:null,
+              rememberedMeaning:null,confidence:null,salience:null,uncertainty:[]},
+          },provenance:{provider:"fixture",modelId:"write-map-afterthought"}};
+        }},
+      }).runOnce());
+    assert.equal(reflection.completed,1,"contact source did not become an afterthought");
     const ensureCurrent=async({threadId})=>lived.getCurrentSituation(threadId);
     const outreach=createThreadContactProcess({
       worldReader:world,livedNow:{ensure:ensureCurrent},situatedLifeStore:situated,
