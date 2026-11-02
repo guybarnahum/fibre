@@ -161,8 +161,7 @@ function crossesStopBoundary(plan,from,to){
 }
 
 function unchangedPlannedPresent(current,personalPlan,carePlan,at){
-  if(crossesStopBoundary(personalPlan,current.establishedAt,at)
-    ||crossesStopBoundary(carePlan,current.establishedAt,at))return false;
+  if(crossesStopBoundary(carePlan,current.establishedAt,at))return false;
   const governing=planForEnactment(personalPlan,carePlan,at);
   const candidate=resolveCurrentSituation({
     situationId:current.situationId,establishedAt:at,
@@ -756,7 +755,11 @@ export function createLivedNowService({
 
       const personalPlan = livedNowStore.latestPlan(input.threadId, "personal", { at: input.at });
       if (planCovers(personalPlan, input.at)) {
-        if(current!==null){
+        // A new plan or a real personal stop boundary must enact. Avoid
+        // extra care-plan reads on that ordinary World boundary path.
+        if(current!==null
+          &&current.sourcePlanRefs.includes(personalPlan.planId)
+          &&!crossesStopBoundary(personalPlan,current.establishedAt,input.at)){
           const carePlan=livedNowStore.latestPlan(input.threadId,"care",{at:input.at});
           if(unchangedPlannedPresent(current,personalPlan,carePlan,input.at))
             return current;
