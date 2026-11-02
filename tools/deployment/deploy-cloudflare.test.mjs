@@ -485,7 +485,7 @@ test("World schema installation waits past ten minutes without abandoning servin
   assert.equal(attempts,20,"World stopped retrying while its new version was serving");
   assert.ok(waits.every(ms=>ms<=60_000),"World hammered an exhausted quota");
   assert.ok(logs.slice(0,-1).every(line=>
-    (progressDetailFromLine(line)??"").includes("IS SERVING WITHOUT ITS SCHEMA")),
+    (progressDetailFromLine(line)??"").includes("SCHEMA NOT INSTALLED")),
   "World hid its unhealthy serving state");
 });
 
@@ -525,8 +525,8 @@ test("World deployment waits through revision refusal without accepting stale in
   assert.equal(result.rowsWritten,17);
   assert.equal(logs.length,3,"schema retry diagnostics missing");
   assert.ok(logs.slice(0,-1).every(line=>
-    (progressDetailFromLine(line)??"").includes("WORLD NEW VERSION bbbbbbb IS SERVING WITHOUT ITS SCHEMA")),
-    "schema retry progress hid the blocked new World");
+    (progressDetailFromLine(line)??"").includes("WORLD bbbbbbb UPLOADED · SCHEMA NOT INSTALLED · serving aaaaaaa")),
+    "schema retry progress confused old and new serving revisions");
   assert.equal(progressDetailFromLine(logs.at(-1)),null,
     "schema installation outcome became progress");
   assert.match(logs.at(-1),/STATE SCHEMA INSTALLED world-kernel after \d+s \(rows read 50321, written 17\)/u,

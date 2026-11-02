@@ -322,7 +322,10 @@ export async function installWorldSchemaWithRetry({
         ?shortSha(error.deploymentGitSha):serving;
       const elapsed=now()-startedAt;
       const message=String(error?.message??error).slice(0,150);
-      log(JSON.stringify({progress:`WORLD NEW VERSION ${shortSha(expectedSha)} IS SERVING WITHOUT ITS SCHEMA · serving ${serving} · retry ${attempt}, ${Math.floor(elapsed/1_000)}s · ${message}`}));
+      const state=serving===shortSha(expectedSha)
+        ?`WORLD NEW VERSION ${shortSha(expectedSha)} IS SERVING WITHOUT ITS SCHEMA`
+        :`WORLD ${shortSha(expectedSha)} UPLOADED · SCHEMA NOT INSTALLED · serving ${serving}`;
+      log(JSON.stringify({progress:`${state} · retry ${attempt}, ${Math.floor(elapsed/1_000)}s · ${message}`}));
       await wait(Math.min(60_000,1_500*2**(attempt-1)));
     }
   }
