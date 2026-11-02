@@ -121,14 +121,8 @@ function createTables(database) {
 
     CREATE INDEX IF NOT EXISTS idx_current_situations_recent
       ON current_situation_records(established_at DESC);
-    -- Public venue presence is discovered by the enacted place ref, not by
-    -- scanning every Thread or relying on legacy per-Thread venue bindings.
-    CREATE INDEX IF NOT EXISTS idx_current_situations_place
-      ON current_situation_records(
-        json_extract(record_json,'$.location.placeRef'),
-        established_at DESC,thread_id
-      )
-      WHERE json_extract(record_json,'$.location.kind')='place';
+    -- Historical queries use thread/time or global recency. Current public
+    -- co-presence is indexed on current_situation_frontier, not this history.
 
     -- One authoritative current record per Thread; history stays immutable.
     CREATE TABLE IF NOT EXISTS current_situation_frontier (
@@ -197,6 +191,9 @@ function createTables(database) {
       next_due_at TEXT NOT NULL
     ) STRICT;
   `);
+  // No reader addresses history by the JSON place expression: co-presence
+  // reads the indexed current frontier. Remove this costly legacy index.
+  database.exec("DROP INDEX IF EXISTS idx_current_situations_place");
   // One-time migration from append-only evidence, using the existing
   // (thread_id,established_at,situation_id) index. Never replay histories
   // during ordinary runtime initialization after the frontier exists.
