@@ -94,6 +94,7 @@ function createSession(scopeId, databasePath, {
     },
     prepare(sql) {
       assertOpen();
+      checkPortableSchemaSql(sql);
       checkRuntimeSchemaSql(sql,{mode:sessionMode,guard:guardMode,label:queryLabel});
       const statement = database.prepare(sql);
       return Object.freeze({

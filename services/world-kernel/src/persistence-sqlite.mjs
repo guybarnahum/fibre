@@ -25,7 +25,8 @@ import { ensureEmbodimentIntegrity } from "./embodiment-integrity.mjs";
 import { createAutobiographicalMemoryTables } from "./autobiographical-memory-schema.mjs";
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 import { createContactTables } from "./contact-schema.mjs";
-import { worldStateInitialization } from "./world-state-storage.mjs";
+import {worldStateInitialization,recoverInterruptedEventTable} from "./world-state-storage.mjs";
+import {createThreadEventsTable,installThreadEventGuards} from "./thread-event-schema.mjs";
 
 export function translateStorageError(error) {
   if (/database is locked|database is busy/i.test(error?.message ?? "")) return new StorageBusyError(error.message);
@@ -49,34 +50,6 @@ function dropThreadEventDependentTriggers(database) {
   }
 }
 
-function recoverInterruptedEventSchema(database) {
-  const rows = database.prepare(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name IN ('threads','thread_events','thread_events_event_upgrade')",
-  ).all();
-  const names = new Set(rows.map((row) => row.name));
-  const hasThreads = names.has("threads");
-  const hasEvents = names.has("thread_events");
-  const hasUpgrade = names.has("thread_events_event_upgrade");
-
-  if (!hasEvents && hasUpgrade) {
-    dropThreadEventDependentTriggers(database);
-    database.exec(`
-      ALTER TABLE thread_events_event_upgrade RENAME TO thread_events;
-      CREATE INDEX IF NOT EXISTS idx_thread_events_thread_sequence ON thread_events(thread_id, sequence);
-      CREATE TRIGGER IF NOT EXISTS thread_events_no_update BEFORE UPDATE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
-      CREATE TRIGGER IF NOT EXISTS thread_events_no_delete BEFORE DELETE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
-    `);
-    return;
-  }
-  if (hasEvents && hasUpgrade) {
-    database.exec("DROP TABLE thread_events_event_upgrade");
-    return;
-  }
-  if (hasThreads && !hasEvents) {
-    throw new IntegrityError("World event schema is incomplete: thread_events is missing and no recoverable upgrade table exists");
-  }
-}
-
 function createBaseSchema(database) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS threads (
@@ -90,32 +63,9 @@ function createBaseSchema(database) {
       updated_at TEXT NOT NULL
     ) STRICT;
 
-    CREATE TABLE IF NOT EXISTS thread_events (
-      event_id TEXT PRIMARY KEY,
-      thread_id TEXT NOT NULL,
-      sequence INTEGER NOT NULL CHECK (sequence >= 1),
-      expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
-      resulting_version INTEGER NOT NULL CHECK (resulting_version >= 1),
-      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED','THREAD_PHYSICAL_GENOME_MIGRATED')),
-      command_id TEXT,
-      command_digest TEXT,
-      payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
-      actor_json TEXT NOT NULL CHECK (json_valid(actor_json)),
-      occurred_at TEXT NOT NULL,
-      state_hash TEXT NOT NULL CHECK (state_hash LIKE 'sha256:%'),
-      authorization_id TEXT,
-      causation_id TEXT NOT NULL,
-      correlation_id TEXT NOT NULL,
-      payload_schema_version INTEGER NOT NULL CHECK (payload_schema_version >= 1),
-      provenance_json TEXT NOT NULL CHECK (json_valid(provenance_json)),
-      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
-      UNIQUE (thread_id, sequence),
-      CHECK (
-        (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED','THREAD_PHYSICAL_GENOME_MIGRATED') AND command_id IS NULL AND command_digest IS NULL)
-        OR
-        (event_type IN ('SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED') AND command_id IS NOT NULL AND command_digest IS NOT NULL)
-      )
-    ) STRICT;
+`);
+  createThreadEventsTable(database);
+  database.exec(`
 
     CREATE TABLE IF NOT EXISTS commands (
       thread_id TEXT NOT NULL,
@@ -130,12 +80,10 @@ function createBaseSchema(database) {
       FOREIGN KEY (event_id) REFERENCES thread_events(event_id)
     ) STRICT;
 
-    CREATE INDEX IF NOT EXISTS idx_thread_events_thread_sequence ON thread_events(thread_id, sequence);
-    CREATE TRIGGER IF NOT EXISTS thread_events_no_update BEFORE UPDATE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
-    CREATE TRIGGER IF NOT EXISTS thread_events_no_delete BEFORE DELETE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
     CREATE TRIGGER IF NOT EXISTS commands_no_update BEFORE UPDATE ON commands BEGIN SELECT RAISE(ABORT, 'commands is append-only'); END;
     CREATE TRIGGER IF NOT EXISTS commands_no_delete BEFORE DELETE ON commands BEGIN SELECT RAISE(ABORT, 'commands is append-only'); END;
   `);
+  installThreadEventGuards(database);
 }
 
 function createPrivateParticipationSchema(database) {
@@ -289,53 +237,24 @@ function rebuildEventTables(database) {
     DROP TRIGGER IF EXISTS thread_events_no_update;
     DROP TRIGGER IF EXISTS thread_events_no_delete;
     DROP INDEX IF EXISTS idx_thread_events_thread_sequence;
-    CREATE TABLE thread_events_event_upgrade (
-      event_id TEXT PRIMARY KEY,
-      thread_id TEXT NOT NULL,
-      sequence INTEGER NOT NULL CHECK (sequence >= 1),
-      expected_version INTEGER NOT NULL CHECK (expected_version >= 0),
-      resulting_version INTEGER NOT NULL CHECK (resulting_version >= 1),
-      event_type TEXT NOT NULL CHECK (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED','THREAD_PHYSICAL_GENOME_MIGRATED')),
-      command_id TEXT,
-      command_digest TEXT,
-      payload_json TEXT NOT NULL CHECK (json_valid(payload_json)),
-      actor_json TEXT NOT NULL CHECK (json_valid(actor_json)),
-      occurred_at TEXT NOT NULL,
-      state_hash TEXT NOT NULL CHECK (state_hash LIKE 'sha256:%'),
-      authorization_id TEXT,
-      causation_id TEXT NOT NULL,
-      correlation_id TEXT NOT NULL,
-      payload_schema_version INTEGER NOT NULL CHECK (payload_schema_version >= 1),
-      provenance_json TEXT NOT NULL CHECK (json_valid(provenance_json)),
-      FOREIGN KEY (thread_id) REFERENCES threads(thread_id),
-      UNIQUE (thread_id, sequence),
-      CHECK (
-        (event_type IN ('THREAD_SEEDED','THREAD_LIFE_EPISODE_RECORDED','GENESIS_SEX_MIGRATED','THREAD_IDENTITY_UPDATED','THREAD_PHYSICAL_GENOME_MIGRATED') AND command_id IS NULL AND command_digest IS NULL)
-        OR
-        (event_type IN ('SELF_MODEL_UPDATED','THREAD_FROZEN','COMPELLED_EPISODE_INTERRUPTED','AUTOBIOGRAPHICAL_MEMORY_RECORDED') AND command_id IS NOT NULL AND command_digest IS NOT NULL)
-      )
-    ) STRICT;
-    INSERT INTO thread_events_event_upgrade(
-      event_id,thread_id,sequence,expected_version,resulting_version,event_type,
-      command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
-      authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-    )
-    SELECT event_id,thread_id,sequence,expected_version,resulting_version,event_type,
-      command_id,command_digest,payload_json,actor_json,occurred_at,state_hash,
-      authorization_id,causation_id,correlation_id,payload_schema_version,provenance_json
-    FROM thread_events;
-    DROP TABLE thread_events;
-    ALTER TABLE thread_events_event_upgrade RENAME TO thread_events;
-    CREATE INDEX idx_thread_events_thread_sequence ON thread_events(thread_id, sequence);
-    CREATE TRIGGER thread_events_no_update BEFORE UPDATE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
-    CREATE TRIGGER thread_events_no_delete BEFORE DELETE ON thread_events BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
   `);
+  createThreadEventsTable(database,"thread_events_event_upgrade");
+  database.exec(`
+    INSERT INTO thread_events_event_upgrade SELECT * FROM thread_events;
+    DROP TABLE thread_events;
+  `);
+  createThreadEventsTable(database);
+  database.exec(`
+    INSERT INTO thread_events SELECT * FROM thread_events_event_upgrade;
+    DROP TABLE thread_events_event_upgrade;
+  `);
+  installThreadEventGuards(database);
 }
 
 export function migrateDatabase(database) {
   const initialization = worldStateInitialization(database);
   if (initialization?.migrated) return;
-  if (initialization?.recovered !== true) recoverInterruptedEventSchema(database);
+  if (initialization?.recovered !== true) recoverInterruptedEventTable(database);
 
   const row = database.prepare("PRAGMA user_version").get();
   const currentVersion = Number(row.user_version);

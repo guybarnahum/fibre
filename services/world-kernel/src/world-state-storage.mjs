@@ -4,6 +4,7 @@ import {
   requireTransactionalStateGuarantees,
 } from "#infra";
 import { IntegrityError, assertNonEmpty } from "./persistence-common.mjs";
+import {createThreadEventsTable,installThreadEventGuards} from "./thread-event-schema.mjs";
 
 const INITIALIZATION_BY_STORAGE = new WeakMap();
 const INITIALIZATION_BY_DATABASE = new WeakMap();
@@ -45,7 +46,7 @@ function tableNames(database) {
   ).all().map((row) => row.name));
 }
 
-function recoverInterruptedEventTable(database) {
+export function recoverInterruptedEventTable(database) {
   const before = tableNames(database);
   if (!before.has("threads")) return;
 
@@ -61,7 +62,9 @@ function recoverInterruptedEventTable(database) {
 
   withThreadEventTriggersDetached(database, () => {
     if (!hasEvents && hasUpgrade) {
-      database.exec("ALTER TABLE thread_events_event_upgrade RENAME TO thread_events");
+      createThreadEventsTable(database);
+      database.exec("INSERT INTO thread_events SELECT * FROM thread_events_event_upgrade");
+      database.exec("DROP TABLE thread_events_event_upgrade");
     } else if (hasEvents && hasUpgrade) {
       const eventCount = Number(database.prepare("SELECT COUNT(*) AS count FROM thread_events").get().count);
       const upgradeCount = Number(database.prepare("SELECT COUNT(*) AS count FROM thread_events_event_upgrade").get().count);
@@ -74,15 +77,7 @@ function recoverInterruptedEventTable(database) {
     }
   });
 
-  database.exec(`
-    CREATE INDEX IF NOT EXISTS idx_thread_events_thread_sequence ON thread_events(thread_id, sequence);
-    CREATE TRIGGER IF NOT EXISTS thread_events_no_update
-      BEFORE UPDATE ON thread_events
-      BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
-    CREATE TRIGGER IF NOT EXISTS thread_events_no_delete
-      BEFORE DELETE ON thread_events
-      BEGIN SELECT RAISE(ABORT, 'thread_events is append-only'); END;
-  `);
+  installThreadEventGuards(database);
 }
 
 function initializationFor(storage) {

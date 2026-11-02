@@ -236,6 +236,7 @@ function createSession(scopeId, storage, { readOnly, label, cost, sessionMode, g
     },
     prepare(sql) {
       assertOpen();
+      checkPortableSchemaSql(sql);
       checkRuntimeSchemaSql(sql,{mode:sessionMode,guard:guardMode,label});
       return Object.freeze({
         run(...params) {

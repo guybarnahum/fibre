@@ -1,6 +1,6 @@
 // Operator-only migration of per-Thread operational frontiers, not lived
 // evidence. Each frontier has at most one row per Thread.
-// No table renames: Cloudflare re-parses every trigger at expression depth 100.
+// Table rebuilds follow InfraDriver.state's portable-schema contract.
 const TABLES=["current_situation_frontier","lived_now_next_boundaries"];
 
 function quote(name){return '"'+name.replaceAll('"','""')+'"';}

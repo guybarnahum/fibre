@@ -5,7 +5,7 @@ import {
 
 // One-time operator repair: rebuild the small current projection from the
 // immutable lineage. Ordinary World reads never enumerate historical states.
-// No table renames: Cloudflare re-parses every trigger at expression depth 100.
+// Table rebuilds follow InfraDriver.state's portable-schema contract.
 const lineageCount=`SELECT COUNT(*) AS n FROM semantic_state_records r
   WHERE r.staleness='current' AND NOT EXISTS (
     SELECT 1 FROM semantic_state_records newer

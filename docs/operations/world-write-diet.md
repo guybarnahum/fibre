@@ -35,7 +35,7 @@ No indexes or triggers may be dropped until the remaining read paths and their p
 
 Each commit changes the accounting model, not the Thread event stream. The first post-change local `FIBRE-WORLD-BOUNDARY-UNIT` and `FIBRE-WORLD-WRITE-BUDGET` reports are still required before assigning any actual after-value or lowering the enforced budgets.
 
-World migrations never use `ALTER TABLE … RENAME`: Cloudflare re-parses every trigger under its SQLite expression-depth limit of 100.
+World schema migrations follow the InfraDriver.state portable-schema rule (create/copy/drop).
 
 ## Bounded current-state reads
 
