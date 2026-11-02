@@ -397,12 +397,17 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "environment-noticed":{units:1,ceiling:19},
       "idle-reconciliation":{units:1,ceiling:3},
     };
-    const activities=Object.fromEntries(Object.entries(calibration).map(([name,{units,ceiling}])=>{
-      const measured=mapReport.activities[name]??{weightedRows:0,tables:[]};
-      const rowsPerUnit=measured.weightedRows/units;
-      return [name,{...measured,units,rowsPerUnit,stagingRowsPerUnit:ceiling,
-        deviationPercent:Math.round(100*(rowsPerUnit/ceiling-1))}];
-    }));
+    const activities=Object.fromEntries(Object.entries(mapReport.activities)
+      .concat(Object.keys(calibration).filter(name=>!(name in mapReport.activities))
+        .map(name=>[name,{weightedRows:0,tables:[]}]))
+      .map(([name,measured])=>{
+        const reference=calibration[name]??null;
+        if(reference===null)return [name,measured];
+        const rowsPerUnit=measured.weightedRows/reference.units;
+        return [name,{...measured,units:reference.units,rowsPerUnit,
+          stagingRowsPerUnit:reference.ceiling,
+          deviationPercent:Math.round(100*(rowsPerUnit/reference.ceiling-1))}];
+      }));
     const deviations=Object.entries(activities)
       .filter(([,entry])=>Math.abs(entry.deviationPercent)>30)
       .map(([name,entry])=>({name,local:entry.rowsPerUnit,staging:entry.stagingRowsPerUnit}));
