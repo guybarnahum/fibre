@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { shortSha } from "../shared/repo-root.mjs";
 import {runLocalBirthPreflight} from "./birth-preflight.mjs";
+import {checkDoWriteHeadroom} from "./do-write-headroom.mjs";
 import { resolve } from "node:path";
 import { spawn } from "node:child_process";
 
@@ -307,15 +308,8 @@ export async function installWorldSchemaWithRetry({
   client,serviceId,baseUrl,expectedSha,wait=delay,log=console.log,now=Date.now,
 }={}){
   const startedAt=now();
-  const budgetMs=10*60_000;
-  let lastError=null;
   let serving="unknown";
-  const timeout=()=>new Error(
-    `World schema not installed for ${shortSha(expectedSha)} after 10 minutes; serving ${serving}; last: ${lastError?.message??"no confirmation"}`,
-    {cause:lastError},
-  );
   for(let attempt=1;;attempt++){
-    if(attempt>1&&now()-startedAt>=budgetMs)throw timeout();
     try{
       const installed=await client.migrateWorldOrFid({serviceId,baseUrl,expectedSha});
       const rows=Number.isFinite(installed?.rowsRead)
@@ -323,13 +317,12 @@ export async function installWorldSchemaWithRetry({
       log(`STATE SCHEMA ${installed?.already===true?"ALREADY INSTALLED":"INSTALLED"} world-kernel after ${Math.floor((now()-startedAt)/1_000)}s${rows}`);
       return installed;
     }catch(error){
-      lastError=error;
       serving=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim()
-        ?shortSha(error.deploymentGitSha):"unknown";
+        ?shortSha(error.deploymentGitSha):serving;
       const elapsed=now()-startedAt;
-      if(elapsed>=budgetMs)throw timeout();
-      log(JSON.stringify({progress:`World serving ${serving} · waiting for ${shortSha(expectedSha)} (attempt ${attempt}, ${Math.floor(elapsed/1_000)}s)`}));
-      await wait(Math.min(15_000,1_500*2**(attempt-1),budgetMs-elapsed));
+      const message=String(error?.message??error).slice(0,150);
+      log(JSON.stringify({progress:`WORLD NEW VERSION ${shortSha(expectedSha)} IS SERVING WITHOUT ITS SCHEMA · serving ${serving} · retry ${attempt}, ${Math.floor(elapsed/1_000)}s · ${message}`}));
+      await wait(Math.min(60_000,1_500*2**(attempt-1)));
     }
   }
 }
@@ -345,6 +338,7 @@ export async function deployCloudflareStack({
   birthPreflight = null,
   localBirthPreflight = runLocalBirthPreflight,
   bootstrapPreflight = false,
+  checkDoHeadroom = checkDoWriteHeadroom,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);
   if (typeof validateRepository !== "function") throw new TypeError("validateRepository callback is required");
@@ -384,6 +378,8 @@ export async function deployCloudflareStack({
   for (const serviceId of deployOrder) {
     const workerName = resourceState.resources.deployManaged.workers[serviceId];
     const resolved = resolvedConfigs[serviceId];
+    if(serviceId==="world-kernel"||serviceId==="birth-center")
+      await checkDoHeadroom({log});
     const deployed = await client.deployService({
       serviceId,
       workerName,

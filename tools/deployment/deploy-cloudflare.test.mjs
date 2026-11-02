@@ -172,6 +172,7 @@ test("cloud deployment accepts the Fibre service stack after shallow and durable
   };
 
   const result = await deployCloudflareStack({
+    checkDoHeadroom:async()=>{},
     repoRoot:root,
     environment:"staging",
     client,
@@ -230,6 +231,7 @@ test("full-stack Birth preflight rejects invalid composition before any upload",
   const {root,state}=await fixtureRepo();
   let uploaded=0,provisioned=0;
   await assert.rejects(deployCloudflareStack({
+    checkDoHeadroom:async()=>{},
     repoRoot:root,environment:"staging",
     client:{async deployService(){uploaded++;}},
     validateRepository:async()=>{},
@@ -253,6 +255,7 @@ test("deployment fails before deploy when required Fibre secrets are incomplete"
     async deployService() { deployCalls += 1; },
   };
   await assert.rejects(deployCloudflareStack({
+    checkDoHeadroom:async()=>{},
     repoRoot:root,
     environment:"staging",
     client,
@@ -413,6 +416,7 @@ function schemaGatedStackClient({failInstallAttempts=0}={}){
 async function deploySchemaGatedStack(gated){
   const {root,state}=await fixtureRepo();
   return deployCloudflareStack({
+    checkDoHeadroom:async()=>{},
     repoRoot:root,environment:"staging",client:gated.client,
     validateRepository:async()=>{},provision:async()=>state,
     localBirthPreflight:async()=>{},
@@ -455,14 +459,15 @@ test("World schema confirmation can arrive after the former retry limit",async()
     gated.confirmation,"late World schema confirmation lost");
 });
 
-test("World schema timeout is bounded by elapsed time and names the serving revision",async()=>{
+test("World schema installation waits past ten minutes without abandoning serving code",async()=>{
   const target="b".repeat(40),stale="a".repeat(40);
   let clock=0,attempts=0;
   const waits=[],logs=[];
-  await assert.rejects(installWorldSchemaWithRetry({
+  const installed=await installWorldSchemaWithRetry({
     client:{async migrateWorldOrFid(){
       attempts++;
-      const error=new Error("prior World revision still served");
+      if(attempts>19)return {deploymentGitSha:target,installed:true};
+      const error=new Error("quota still exhausted");
       error.deploymentGitSha=stale;
       throw error;
     }},
@@ -470,20 +475,16 @@ test("World schema timeout is bounded by elapsed time and names the serving revi
     expectedSha:target,now:()=>clock,
     wait:async ms=>{waits.push(ms);clock+=ms;},
     log:line=>logs.push(line),
-  }),error=>{
-    assert.match(error.message,/not installed for bbbbbbb.*serving aaaaaaa/u,
-      "World timeout lost revision identity");
-    assert.match(error.message,/last: prior World revision still served/u,
-      "World timeout lost the last reason");
-    return true;
   });
-  assert.equal(clock,600_000,"World retry exceeded ten-minute budget");
-  assert.ok(attempts>16,"World retained a fixed retry-count limit");
-  assert.ok(waits.every(ms=>ms<=15_000),"World retry exceeded its backoff cap");
-  assert.equal(logs.length,attempts,"World retry lost attempt progress");
+  assert.equal(installed.installed,true,"World never confirmed its schema");
+  assert.ok(clock>600_000,"World gave up at the former ten-minute cutoff");
+  assert.equal(attempts,20,"World stopped retrying while its new version was serving");
+  assert.ok(waits.every(ms=>ms<=60_000),"World hammered an exhausted quota");
+  assert.ok(logs.slice(0,-1).every(line=>
+    (progressDetailFromLine(line)??"").includes("IS SERVING WITHOUT ITS SCHEMA")),
+  "World hid its unhealthy serving state");
 });
 
- 
 test("World deployment waits through revision refusal without accepting stale installation",async()=>{
   const target="b".repeat(40);
   const stale="a".repeat(40);
@@ -519,8 +520,9 @@ test("World deployment waits through revision refusal without accepting stale in
   assert.equal(result.rowsRead,50321);
   assert.equal(result.rowsWritten,17);
   assert.equal(logs.length,3,"schema retry diagnostics missing");
-  assert.ok(logs.slice(0,-1).every(line=>/^World serving aaaaaaa · waiting for bbbbbbb \(attempt \d+, \d+s\)$/u
-    .test(progressDetailFromLine(line)??"")),"schema retry progress lost revision identity");
+  assert.ok(logs.slice(0,-1).every(line=>
+    (progressDetailFromLine(line)??"").includes("WORLD NEW VERSION bbbbbbb IS SERVING WITHOUT ITS SCHEMA")),
+    "schema retry progress hid the blocked new World");
   assert.equal(progressDetailFromLine(logs.at(-1)),null,
     "schema installation outcome became progress");
   assert.match(logs.at(-1),/STATE SCHEMA INSTALLED world-kernel after \d+s \(rows read 50321, written 17\)/u,

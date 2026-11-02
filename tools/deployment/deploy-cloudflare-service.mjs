@@ -17,6 +17,7 @@ import {
 } from "./cloudflare-operator.mjs";
 import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
 import {runBirthPreflight,runLocalBirthPreflight} from "./birth-preflight.mjs";
+import {checkDoWriteHeadroom} from "./do-write-headroom.mjs";
 import {
   d1BindingsFromConfig,
   ensureCloudflareD1Migrations,
@@ -143,6 +144,7 @@ export async function deployCloudflareService({
   localBirthPreflight = runLocalBirthPreflight,
   bootstrapPreflight = false,
   createDeploymentClient = createWranglerDeploymentClient,
+  checkDoHeadroom = checkDoWriteHeadroom,
   wait,
   print = console.log,
 } = {}) {
@@ -179,6 +181,8 @@ export async function deployCloudflareService({
     generatedConfigPath:deployConfigPath,
   });
   await writeFileImpl(deployConfigPath, `${JSON.stringify(deployConfig, null, 2)}\n`, { mode:0o600 });
+  if(serviceId==="world-kernel"||serviceId==="birth-center")
+    await checkDoHeadroom({log:print});
   await ensureD1MigrationsImpl({
     repoRoot:root,
     databases:d1BindingsFromConfig(deployConfig),

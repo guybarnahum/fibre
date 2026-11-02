@@ -59,6 +59,7 @@ test("service deploy re-resolves current source config without provisioning", as
       repoRoot,
       environment: "staging",
       service: "world-kernel",
+      async checkDoHeadroom(){calls.push(["do-headroom"]);},
       async resolveSource() { return SHA; },
       async resolveConfig() {
         calls.push(["resolve-current"]);
@@ -126,6 +127,7 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
       repoRoot,
       environment:"staging",
       service:"birth-center",
+      async checkDoHeadroom(){calls.push(["do-headroom"]);},
       async resolveSource() { return SHA; },
       async resolveConfig() {
         return {
@@ -172,6 +174,7 @@ test("failed local Birth Center rehearsal never uploads a worker",async()=>{
   try{
     await assert.rejects(deployCloudflareService({
       repoRoot,environment:"staging",service:"birth-center",
+      async checkDoHeadroom(){},
       async resolveSource(){return SHA;},
       async resolveConfig(){
         return {sourceConfigPath:"infra/deployments/birth-center/cloudflare/wrangler.jsonc",
@@ -193,6 +196,7 @@ test("targeted World deploy shares bounded schema-install retry before health ac
   try{
     const result=await deployCloudflareService({
       repoRoot,environment:"staging",service:"world-kernel",
+      async checkDoHeadroom(){},
       async resolveSource(){return SHA;},
       async resolveConfig(){
         return {
