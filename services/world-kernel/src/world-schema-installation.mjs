@@ -15,6 +15,7 @@ import {ThreadHealthProjectionStore} from "./thread-health-projection-store.mjs"
 import {ThreadVisualPublicationWorksetStore} from "./thread-visual-publication-workset-store.mjs";
 import {GenesisOriginAuthorityStore} from "./genesis-origin-authority-store.mjs";
 import {materializeLiveWorldPlacesForWorld} from "./live-world-place.mjs";
+import {compactWorldHotFrontiers} from "./world-hot-frontier-migration.mjs";
 
 // Called by the explicit deployment command, never by an ordinary World
 // request. Constructors retain local development setup, but skip this work
@@ -47,7 +48,13 @@ export function installWorldSchemas(storage,{deploymentGitSha="local",schemaDige
     const store=open();
     store.close();
   }
-  // Schema and its revision witness are installed only by an operator.
+  // Compact only the two bounded per-Thread projections, never historical
+  // situation, semantic-state or encounter records.
+  const compactDatabase=openWorldStateDatabase(storage,{storeName:"WorldHotFrontierMigration"});
+  let hotFrontiers;
+  try{hotFrontiers=compactWorldHotFrontiers(compactDatabase);}
+  finally{compactDatabase.close();}
+    // Schema and its revision witness are installed only by an operator.
   const stampDatabase=openWorldStateDatabase(storage,{storeName:"WorldSchemaStamp"});
   try{
     stampDatabase.exec(`CREATE TABLE IF NOT EXISTS world_schema_installation (
@@ -109,5 +116,6 @@ export function installWorldSchemas(storage,{deploymentGitSha="local",schemaDige
         .run(deploymentGitSha,new Date().toISOString(),schemaDigest);
     });
   }finally{database.close();}
+  return {hotFrontiers};
   }finally{worldReader.close();}
 }

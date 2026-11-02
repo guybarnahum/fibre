@@ -39,9 +39,14 @@ function auditWorldWrites(path){
       AND name!='_fibre_write_audit' ORDER BY name`).all()
     .filter(row=>!/^CREATE VIRTUAL TABLE\b/iu.test(row.sql??""));
   const weights=new Map();
+  const withoutRowid=new Set(db.prepare("PRAGMA table_list").all()
+    .filter(table=>table.wr===1).map(table=>table.name));
   for(const {name} of tables){
     const tableName='"'+name.replaceAll('"','""')+'"';
-    weights.set(name,1+db.prepare(`PRAGMA index_list(${tableName})`).all().length);
+    // WITHOUT ROWID's primary index IS its table B-tree, not a second
+    // index entry. Its secondary indexes still count as writes.
+    weights.set(name,(withoutRowid.has(name)?0:1)
+      +db.prepare(`PRAGMA index_list(${tableName})`).all().length);
     for(const operation of ["INSERT","UPDATE","DELETE"]){
       const trigger='"_fibre_audit_'+operation.toLowerCase()+'_'+name.replaceAll('"','""')+'"';
       const literal=name.replaceAll("'","''");

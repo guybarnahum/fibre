@@ -48,10 +48,11 @@ export function installWorldSchemaForRevision({
     }};
   }
   const already=readInstalledSchemaDigest()===expectedSchemaDigest;
-  if(!already)install();
+  const installation=already?null:install();
   return {status:200,body:{
     ok:true,contract:"fibre-world-schema-installed-v1",
     deploymentGitSha,installed:!already,already,
     schemaDigest:expectedSchemaDigest,
+    ...(installation?.hotFrontiers?{hotFrontiers:installation.hotFrontiers}:{}),
   }};
 }

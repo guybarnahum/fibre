@@ -66,7 +66,8 @@ test("World boundary indexes serve history, current presence and semantic heads"
       const steps=db.prepare("EXPLAIN QUERY PLAN "+sql).all(...args)
         .map(row=>String(row.detail));
       plans[name]=steps;
-      assert.ok(steps.some(detail=>detail.includes(index)),
+      assert.ok(steps.some(detail=>detail.includes(index)
+        ||(name==="current-thread-situation"&&detail.includes("USING PRIMARY KEY"))),
         name+" lost its indexed lookup: "+steps.join(" | "));
     }
     console.log("FIBRE-WORLD-BOUNDARY-QUERY-PLANS "+JSON.stringify({
