@@ -8,7 +8,10 @@ import {join,relative,resolve} from "node:path";
 const SCHEMA_SQL=/\b(?:CREATE\s+(?:UNIQUE\s+)?(?:TABLE|INDEX|TRIGGER|VIEW)|ALTER\s+TABLE|DROP\s+(?:TABLE|INDEX|TRIGGER|VIEW))\b/iu;
 const DEFINITIONS=["services/world-kernel/src"];
 const INSTALLER="services/world-kernel/src/world-schema-installation.mjs";
-const MIGRATIONS=new Set(["services/world-kernel/src/world-hot-frontier-migration.mjs"]);
+const MIGRATIONS=new Set([
+  "services/world-kernel/src/world-hot-frontier-migration.mjs",
+  "services/world-kernel/src/world-semantic-head-migration.mjs",
+]);
 
 async function filesUnder(dir){
   const files=[];

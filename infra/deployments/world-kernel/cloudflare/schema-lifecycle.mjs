@@ -54,5 +54,6 @@ export function installWorldSchemaForRevision({
     deploymentGitSha,installed:!already,already,
     schemaDigest:expectedSchemaDigest,
     ...(installation?.hotFrontiers?{hotFrontiers:installation.hotFrontiers}:{}),
+    ...(installation?.semanticHeads?{semanticHeads:installation.semanticHeads}:{}),
   }};
 }

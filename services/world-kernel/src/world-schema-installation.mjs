@@ -16,6 +16,7 @@ import {ThreadVisualPublicationWorksetStore} from "./thread-visual-publication-w
 import {GenesisOriginAuthorityStore} from "./genesis-origin-authority-store.mjs";
 import {materializeLiveWorldPlacesForWorld} from "./live-world-place.mjs";
 import {compactWorldHotFrontiers} from "./world-hot-frontier-migration.mjs";
+import {compactSemanticStateHeads} from "./world-semantic-head-migration.mjs";
 
 // Called by the explicit deployment command, never by an ordinary World
 // request. Constructors retain local development setup, but skip this work
@@ -23,6 +24,12 @@ import {compactWorldHotFrontiers} from "./world-hot-frontier-migration.mjs";
 export function installWorldSchemas(storage,{deploymentGitSha="local",schemaDigest=deploymentGitSha}={}){
   const worldReader=openWorldStore(storage);
   try{
+  // Repair legacy or missing semantic heads before constructors can create
+  // an empty compact projection and hide the need for lineage backfill.
+  const semanticDatabase=openWorldStateDatabase(storage,{storeName:"WorldSemanticHeadMigration"});
+  let semanticHeads;
+  try{semanticHeads=compactSemanticStateHeads(semanticDatabase);}
+  finally{semanticDatabase.close();}
   const constructors=[
     ()=>new GenesisStore(storage),
     ()=>openLivedNowStore(storage),
@@ -116,6 +123,6 @@ export function installWorldSchemas(storage,{deploymentGitSha="local",schemaDige
         .run(deploymentGitSha,new Date().toISOString(),schemaDigest);
     });
   }finally{database.close();}
-  return {hotFrontiers};
+  return {hotFrontiers,semanticHeads};
   }finally{worldReader.close();}
 }

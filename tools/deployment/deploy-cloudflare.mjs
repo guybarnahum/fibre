@@ -319,6 +319,8 @@ export async function installWorldSchemaWithRetry({
       if(installed?.hotFrontiers)
         log("WORLD HOT FRONTIER COPIES "+installed.hotFrontiers
           .map(item=>item.table+"="+item.rowsCopied).join(" "));
+      if(installed?.semanticHeads)
+        log("WORLD SEMANTIC HEAD COPIES "+installed.semanticHeads.rowsCopied);
       return installed;
     }catch(error){
       serving=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim()

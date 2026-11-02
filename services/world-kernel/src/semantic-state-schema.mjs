@@ -1,5 +1,33 @@
 import { BUILTIN_SEMANTIC_DIMENSIONS } from "./semantic-state.mjs";
 
+// The current-head projection is bounded by live semantic slots, not history.
+// These definitions are shared by new databases and the operator migration.
+export function createSemanticStateHeadsTable(database,name="semantic_state_current_heads") {
+  database.exec(`CREATE TABLE IF NOT EXISTS "${name}" (
+    thread_id TEXT NOT NULL,
+    state_id TEXT NOT NULL,
+    state_digest TEXT NOT NULL,
+    as_of TEXT NOT NULL,
+    PRIMARY KEY (thread_id,state_id),
+    FOREIGN KEY (state_id) REFERENCES semantic_state_records(state_id),
+    FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+  ) STRICT, WITHOUT ROWID`);
+}
+
+export function installSemanticStateHeadTrigger(database) {
+  database.exec(`
+    CREATE TRIGGER IF NOT EXISTS semantic_state_current_head_insert
+      AFTER INSERT ON semantic_state_records
+      BEGIN
+        DELETE FROM semantic_state_current_heads
+          WHERE thread_id=NEW.thread_id AND state_id=NEW.supersedes_state_id;
+        INSERT INTO semantic_state_current_heads(thread_id,state_id,state_digest,as_of)
+          SELECT NEW.thread_id,NEW.state_id,NEW.state_digest,NEW.as_of
+          WHERE NEW.staleness='current';
+      END;
+  `);
+}
+
 export function createSemanticStateTables(database) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS semantic_state_dimensions (
@@ -51,9 +79,10 @@ export function createSemanticStateTables(database) {
 
   `);
 
-  // Legacy heads remain untouched for historical inspection. No rebuild,
-  // backfill or future write is required for current state.
-  database.exec("DROP TRIGGER IF EXISTS semantic_state_current_head_insert");
+  createSemanticStateHeadsTable(database);
+  installSemanticStateHeadTrigger(database);
+  // Historical backfills are operator-only: installWorldSchemas performs them
+  // before store construction, not on ordinary World opens.
 
   const insert = database.prepare(`
     INSERT OR IGNORE INTO semantic_state_dimensions(
