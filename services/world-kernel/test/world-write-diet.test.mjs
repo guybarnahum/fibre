@@ -34,7 +34,8 @@ const at=(time)=>{
 // conservative Cloudflare accounting model (not a provider invoice).
 function auditWorldWrites(path){
   const db=new DatabaseSync(path,{enableForeignKeyConstraints:true});
-  db.exec(`CREATE TABLE _fibre_write_audit(id INTEGER PRIMARY KEY,table_name TEXT NOT NULL)`);
+  db.exec(`CREATE TABLE _fibre_write_audit(id INTEGER PRIMARY KEY,
+    table_name TEXT NOT NULL,operation TEXT NOT NULL)`);
   const tables=db.prepare(`SELECT name,sql FROM sqlite_master
     WHERE type='table' AND name NOT LIKE 'sqlite_%'
       AND name!='_fibre_write_audit' ORDER BY name`).all()
@@ -52,12 +53,13 @@ function auditWorldWrites(path){
       const trigger='"_fibre_audit_'+operation.toLowerCase()+'_'+name.replaceAll('"','""')+'"';
       const literal=name.replaceAll("'","''");
       db.exec(`CREATE TRIGGER ${trigger} AFTER ${operation} ON ${tableName}
-        BEGIN INSERT INTO _fibre_write_audit(table_name) VALUES('${literal}'); END`);
+        BEGIN INSERT INTO _fibre_write_audit(table_name,operation)
+          VALUES('${literal}','${operation}'); END`);
     }
   }
   const latest=db.prepare("SELECT COALESCE(MAX(id),0) AS id FROM _fibre_write_audit");
-  const delta=db.prepare(`SELECT table_name,COUNT(*) AS writes
-    FROM _fibre_write_audit WHERE id>? GROUP BY table_name`);
+  const delta=db.prepare(`SELECT table_name,operation,COUNT(*) AS writes
+    FROM _fibre_write_audit WHERE id>? GROUP BY table_name,operation`);
   function storeOf(table){
     if(/^(lived_now_|current_situation_)/u.test(table))return "LivedNowStore";
     if(table.startsWith("semantic_state_"))return "SemanticStateStore";
@@ -72,6 +74,7 @@ function auditWorldWrites(path){
   const byEvent={};
   const byStore={};
   const byTable={};
+  const byActivity=new Map();
   async function measure(kind,action){
     const result=await action();
     const next=latest.get().id;
@@ -81,13 +84,26 @@ function auditWorldWrites(path){
       byTable[row.table_name]=(byTable[row.table_name]??0)+cost;
       byStore[store]=(byStore[store]??0)+cost;
       byEvent[kind]=(byEvent[kind]??0)+cost;
+      const entry=byActivity.get(kind)??new Map();
+      const item=entry.get(row.table_name)??{table:row.table_name,weight:weights.get(row.table_name),operations:{}};
+      item.operations[row.operation]=(item.operations[row.operation]??0)+Number(row.writes);
+      entry.set(row.table_name,item);
+      byActivity.set(kind,entry);
     }
     cursor=next;
     return result;
   }
   return {measure,report(threads){
     const total=Object.values(byTable).reduce((sum,x)=>sum+x,0);
-    return {rowsPerThreadDay:total/threads,total,byStore,byEvent,byTable};
+    const activities=Object.fromEntries([...byActivity].map(([name,entries])=>{
+      const tables=[...entries.values()].sort((a,b)=>a.table.localeCompare(b.table))
+        .map(({table,weight,operations})=>({
+          table,operations,weight,
+          weightedRows:Object.values(operations).reduce((sum,rows)=>sum+rows,0)*weight,
+        }));
+      return [name,{weightedRows:tables.reduce((sum,table)=>sum+table.weightedRows,0),tables}];
+    }));
+    return {rowsPerThreadDay:total/threads,total,byStore,byEvent,byTable,activities};
   },close(){db.close();}};
 }
 
