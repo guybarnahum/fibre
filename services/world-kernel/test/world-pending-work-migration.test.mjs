@@ -8,8 +8,8 @@ import {DatabaseSync} from "node:sqlite";
 import {localWorldStateStorage} from "./support/world-state-storage-fixture.mjs";
 import {createLivedExperienceTables} from "../src/lived-experience-schema.mjs";
 import {createContactTables} from "../src/contact-schema.mjs";
-import {openLivedExperienceStore} from "../src/lived-experience-store.mjs";
-import {openContactStore} from "../src/contact-store.mjs";
+import {openLivedExperienceInspectionStore} from "../src/lived-experience-store.mjs";
+import {openContactInspectionStore} from "../src/contact-store.mjs";
 import {compactWorldPendingWork} from "../src/world-pending-work-migration.mjs";
 
 test("pending experience and contact work survives compact installation in due order",()=>{
@@ -84,8 +84,8 @@ test("pending experience and contact work survives compact installation in due o
     const state=localWorldStateStorage(path);
     // Readers only: this intentionally minimal pre-installation fixture is
     // not a complete World event store and must not run general migrations.
-    experience=openLivedExperienceStore(state,{readOnly:true});
-    contact=openContactStore(state,{readOnly:true});
+    experience=openLivedExperienceInspectionStore(state);
+    contact=openContactInspectionStore(state);
     assert.deepEqual(experience.listPendingThreadExperienceConsolidations({limit:4})
       .map(item=>item.consolidationId),["con_earlier","con_later"],
       "pending experience lost due order");
