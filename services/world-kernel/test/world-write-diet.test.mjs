@@ -680,7 +680,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
           afterthought:rows("contact-afterthought"),
           outreach:rows("contact-outreach"),
           combined:rows("contact-afterthought","contact-outreach"),
-          sourceSetupExcluded:rows("contact-source"),
+          sourceSetupNotInCombined:rows("contact-source"),
         },
         contactNoticed:{
           reception:rows("contact-reception"),
@@ -693,7 +693,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
           outreach:rows("contact-pass-outreach"),
           reception:rows("contact-pass-reception"),
           attentionAndSettlement:rows("contact-passed"),
-          sourceSetupExcluded:rows("contact-pass-source"),
+          sourceSetupNotInCombined:rows("contact-pass-source"),
         },
         socialNotInitiated:{
           setup:rows("social-observed-setup"),
