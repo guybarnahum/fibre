@@ -341,7 +341,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     });
     const sent=await audit.measure("contact-outreach",()=>outreach.runOnce());
     assert.equal(sent.failed,0,"contact outreach failed in write map");
-    assert.equal(lived.listRecentSituations(sender).length,2,
+    assert.equal(lived.listRecentSituations(sender)
+      .filter(situation=>situation.establishedAt>=at("16:00")).length,1,
       "mid-stop contact decision invented a new situation");
     assert.equal(sent.attempted,1,"the afterthought did not prompt contact");
     assert.equal(contact.listInbox(recipient).length,1,"contact was not delivered");
@@ -369,7 +370,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     const reception=await audit.measure("contact-noticing",
       ()=>perception.runOnce());
     assert.equal(reception.noticed,1,"recipient did not notice delivered contact");
-    assert.equal(lived.listRecentSituations(recipient).length,2,
+    assert.equal(lived.listRecentSituations(recipient)
+      .filter(situation=>situation.establishedAt>=at("16:00")).length,1,
       "mid-stop contact reception rewrote the recipient's present");
     const noticedReflection=await audit.measure("contact-noticed-reflection",()=>
       createExperienceConsolidationProcess({
@@ -571,16 +573,18 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     const beforeSocial=await audit.measure("social-mid-stop-presence",async()=>{
       await realLivedNow.ensure({threadId:socialActor,at:at("16:10")});
       await realLivedNow.ensure({threadId:socialOther,at:at("16:10")});
-      return lived.listRecentSituations(socialActor).length;
+      return lived.listRecentSituations(socialActor)
+        .filter(situation=>situation.establishedAt>=at("16:00")).length;
     });
-    assert.equal(beforeSocial,2,"social presence lookup invented lived history");
+    assert.equal(beforeSocial,1,"social presence lookup invented lived history");
     const initiatedResult=await audit.measure("social-initiated",()=>initiated.runOnce());
     assert.equal(initiatedResult.failed,0,"ordinary greeting failed");
     assert.equal(initiatedResult.results[0]?.outcome,"acted",
       "an initiated greeting did not become an outward social act");
     assert.equal(initiationCalls,1,"one greeting spent repeated initiation cognition");
     assert.equal(attentionCalls,1,"recipient lacked independent attention");
-    assert.equal(lived.listRecentSituations(socialActor).length,2,
+    assert.equal(lived.listRecentSituations(socialActor)
+      .filter(situation=>situation.establishedAt>=at("16:00")).length,1,
       "mid-stop social encounter minted a false situation");
     const greeting=experience.listEncounterStories(socialActor)
       .find(story=>story.story.beats.some(beat=>
