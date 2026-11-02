@@ -395,7 +395,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       visualization:createEncounterVisualization({
         occurredAt:at("16:20"),story:scene,
         scene:"Beyond the reading room windows.",
-        sourceReferences:[venue.ref],depictedThreadRefs:[],
+        sourceReferences:[venue.physicalVenue.ref],depictedThreadRefs:[],
       }),
     },{uniquePlaceOccurrenceRef:venue.physicalVenue.ref,followupAfterMs:30*60_000});
     const environment=createWorldEnvironmentEvolution({
