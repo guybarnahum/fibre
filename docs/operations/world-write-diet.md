@@ -11,7 +11,7 @@ The World write-diet test exercises seven fixture Threads in a Tucson reading ro
 
 Local-only audit triggers observe INSERT, UPDATE and DELETE operations on each ordinary table after installation. This includes existing SQL trigger side effects. The estimate per table is `writes * (1 + PRAGMA index_list count)`. Event-kind and store subtotals are available as `FIBRE-WORLD-WRITE-BUDGET` evidence; the activity map includes per-table operation counts and weights. Audit tables and audit-trigger overhead are excluded. This is **not** Cloudflare's reported bill; it is the approved deterministic attribution model.
 
-The first locally measured fixture baseline is **352 weighted rows across seven Thread-days**, or **50.285714 rows per Thread-day** (November 1, 2026). The harness now enforces that upper bound by default; `FIBRE_WORLD_WRITE_BUDGET` can impose a stricter temporary budget, and the checked-in baseline should ratchet downward after validated storage-only improvements. Baseline by store: LivedNow 189, LivedExperience 123, Memory 16, Other 24. This is not an estimate of staging account totals, which include other Durable Objects and different workloads. Existing behavioral/semantic tests remain independent release gates.
+The November 1 original fixture baseline was **352 weighted rows across seven Thread-days**. After the storage-only changes, November 2 measurement is **310 rows**, or **44.29 per Thread-day** (LivedNow 147, Experience 123, Memory 16, Other 24). The harness enforces 310/7 by default; `FIBRE_WORLD_WRITE_BUDGET` may impose a stricter ceiling. These are deterministic fixture values, not staging account totals.
 
 The audit must precede index drops, derived-table de-maintenance or stage-row changes. An index is eligible for removal only after `EXPLAIN QUERY PLAN` for every prepared statement in each relevant hot store demonstrates that it is unused, including exceptional and historical-reader paths. Keep `current_situation_frontier` until an equally indexed venue co-presence lookup is demonstrated. Historical records must not be rewritten merely to save quota.
 
@@ -19,7 +19,7 @@ The audit must precede index drops, derived-table de-maintenance or stage-row ch
 
 Staging evidence from 01:09–03:03 UTC: 155 lived-boundary advances incurred about 1,848 LivedNow rows and 879 SemanticState rows, or **17.6 rows per boundary** (11.9 lived + 5.7 semantic). The first isolated harness counted 168 rows for 14 direct situation enactments (**12.0 per boundary**) because it bypassed the LivedNow service's semantic regulation.
 
-The additional `FIBRE-WORLD-BOUNDARY-UNIT` fixture now measures actual transit-to-arrival enactment via `createLivedBoundaryProcess`, `createLivedNowService`, and `openSemanticStateStore`. It includes the durable due frontier's re-arm and settlement, semantic-record and current-head triggers, checks independent state per person, and proves retry produces no further writes. It uses stubbed deterministic cognition and no remote calls. The arrival-unit total is expected to be near the staging 17.6; **its first measured value is pending operator execution**. Horizon-renewal costs are separate from arrival-boundary costs and must not be silently pooled into the 17.6 comparison.
+The `FIBRE-WORLD-BOUNDARY-UNIT` fixture measures real boundary enactment, semantic regulation, durable frontier re-arm and settlement, and replay idempotence. The validated November 2 result is **14 weighted rows per arrival** (98 across seven), compared with ~14 fitted from the same-day staging alarms; the earlier staging sample measured 17.6. Horizon-renewal costs remain separate.
 
 `FIBRE-WORLD-BOUNDARY-QUERY-PLANS` reports installed indexes and nine `EXPLAIN QUERY PLAN` checks for historical, present, venue-presence, due-queue, and semantic-state lookups. This is **targeted evidence only**, not yet an exhaustive audit of every prepared statement or a license to drop an index. The historical thread-time index, global-recent index, and indexed current frontier protect distinct reads.
 
@@ -42,9 +42,43 @@ Staging: **184 reconciliation alarms, 01:09–05:30 UTC**. The World Durable Obj
 
 The enhanced day harness measures these paths with real World stores and processes. It reports `FIBRE-WORLD-WRITE-MAP` with **weighted rows per activity**, `INSERT`/`UPDATE`/`DELETE` counts, per-table index weights and comparisons with staging. Recipient reception claim and the recipient's independently formed noticing are separately measured (**10** and **32** staging rows per unit). The real reception process completes and settles the previously claimed addressed message. Local values differing by more than **30%** are listed in its `deviations` field; `aboveStagingCeiling` lists every activity exceeding the fitted staging reference. These are **measurement flags, not local regression gates**: the staging values are averages inferred from actual work, while the local test uses a deterministic mix. The original seven-Thread day ceiling (310/7) and separate boundary ceiling (15) remain enforced.
 
-The first partial local result is **42 weighted rows per retained-memory consolidation**, against the fitted staging average of **27** (**+56%**). The fixture retains memories in both consolidations; the staging outcome mix has not been established as equivalent. This is a confirmed *local-versus-staging difference*, not proof of new write amplification. Other activities and the index inventory await a passing full measurement run.
+The validated detailed local cost map, staging deviations, and ceilings are recorded below. The two retained-memory consolidations cost 42 rows per unit versus staging's fitted 27 (+56%); this is a workload comparison, not evidence of new write amplification.
 
 The companion `FIBRE-WORLD-INDEX-READERS` inventory reports each installed World secondary index, the *statically plannable* readers observed to use it, and indexes with no reader found. It covers all World tables (therefore every map-written table), but dynamic SQL and queries that cannot be planned are explicitly reported. **“None in audited SQL” is not evidence an index is unused**; no index removal is authorized in this slice.
+
+## Validated local write map and regression ceilings (November 2)
+
+The focused measurement and full validation passed: **1,861/1,861 tests**. The seven-Thread day cost **310** weighted rows (LivedNow 147, Experience 123, Memory 16, Other 24), versus its November 1 historical baseline of 352. The full service arrival boundary cost **14** rows (98 over seven arrivals); direct situation enactment costs 9, excluding semantic regulation. The separate full-boundary ceiling remains 15.
+
+One **local ceiling per measured activity** is now enforced on weighted writes for the complete fixture activity, without per-table assertions. Staging-fit unit costs are separate calibration data, never used as hard local regression ceilings.
+
+| Fixture activity | Measured ceiling | Fixture activity | Measured ceiling |
+| --- | ---: | --- | ---: |
+| Plan | 21 | Direct lived boundaries (14) | 126 |
+| Social act | 14 | Noticed experiences | 14 |
+| Consolidation queue | 12 | Initial social opportunities | 30 |
+| Ambient scene | 9 | Consolidation (two retained memories) | 84 |
+| Contact source and relation | 34 | Contact afterthought | 25 |
+| Contact outreach | 27 | Contact reception claim | 3 |
+| Recipient noticing | 25 | Observed social setup | 5 |
+| Observed social decision | 10 | Environmental source | 12 |
+| Environment noticed | 28 | Idle reconciliation | 0 |
+
+Measured deviations beyond ~30% relative to the November 2 staging fit:
+
+| Activity | Local/unit | Staging/unit | Difference | Interpretation |
+| --- | ---: | ---: | ---: | --- |
+| Direct lived enactment | 9 | 14 | −36% | Not a full boundary; full service costs 14 |
+| Consolidation | 42 | 27 | +56% | Local case retains two memories |
+| Contact outreach | 27 | 49 | −45% | Narrow deterministic one-contact fixture |
+| Contact reception claim | 3 | 10 | −70% | Reception work not necessarily identical |
+| Observed social decision | 10 | 35 | −71% | Non-initiation, not completed social encounter |
+| Environmental noticing | 28 | 19 | +47% | Objective event plus one noticed Experience |
+| Idle reconciliation | 0 | 3 | −100% | Local process excludes Cloudflare retry/alarm storage |
+
+Recipient noticing costs **25** versus **32** (−22%, within 30%). Do not infer net production savings from these nonidentical workloads.
+
+The reader inventory planned **697** query statements, with 27 dynamic SQL cases and one migration-only statement that cannot be planned against the installed schema. It found **165** secondary indexes: **21 explicit indexes** and **30 uniqueness-enforcing indexes** with no observed query-plan reader. Four explicit no-reader indexes are written in this measured workload: `idx_thread_attention_time`, `idx_thread_experience_time`, `idx_situated_evidence_witness_thread`, and `idx_situated_life_heads_thread`. This is a **report, not permission to drop indexes**; unique constraints and unobserved read paths must be preserved.
 
 ## Storage-only reductions pending staging validation
 
@@ -64,4 +98,4 @@ A write saving must never introduce a hot-path read whose cost grows with a Thre
 
 ## Enforced post-change cost ceilings
 
-The provisional storage-only cost ceilings are **15 weighted rows per arrival boundary** and **310/7 rows per Thread-day** for the original fixture. The compact current-head trigger restores one primary-key write per new semantic record, replacing the former multi-index projection. These ceilings are *not* post-change measurements. Tests enforce the ceilings on every run. To print actual cost breakdowns and query-plan evidence, run with `FIBRE_TEST_EVIDENCE=1`; ratchet to Guy's measured values after local validation. Preserve 17.6 as independent pre-change staging evidence.
+The enforced limits are **15 weighted rows per full arrival boundary** (measured 14), **310/7 rows per Thread-day**, and the complete per-activity ceilings above. Per-table writes are reported but are not independently asserted. `FIBRE_TEST_EVIDENCE=1` prints the cost breakdown, index-reader inventory, and query plans. Keep the historical 17.6 staging boundary sample as independent external evidence.

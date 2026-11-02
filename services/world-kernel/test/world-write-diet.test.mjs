@@ -438,14 +438,26 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "environment-noticed":{units:1,ceiling:19},
       "idle-reconciliation":{units:1,ceiling:3},
     };
+    // Local ceilings use measured fixture writes, not fitted staging averages.
+    const activityCeilings={
+      plan:21,"lived-boundary":126,"social-act":14,
+      "noticed-experience":14,"consolidation-queue":12,
+      "social-opportunity":30,"ambient-scene":9,consolidation:84,
+      "contact-source":34,"contact-afterthought":25,
+      "contact-outreach":27,"contact-reception":3,"contact-noticing":25,
+      "social-observed-setup":5,"social-observed":10,
+      "environment-source":12,"environment-noticed":28,
+      "idle-reconciliation":0,
+    };
     const activities=Object.fromEntries(Object.entries(mapReport.activities)
-      .concat(Object.keys(calibration).filter(name=>!(name in mapReport.activities))
+      .concat(Object.keys(activityCeilings).filter(name=>!(name in mapReport.activities))
         .map(name=>[name,{weightedRows:0,tables:[]}]))
       .map(([name,measured])=>{
         const reference=calibration[name]??null;
-        if(reference===null)return [name,measured];
+        const localCeiling=activityCeilings[name];
+        if(reference===null)return [name,{...measured,localCeiling}];
         const rowsPerUnit=measured.weightedRows/reference.units;
-        return [name,{...measured,units:reference.units,rowsPerUnit,
+        return [name,{...measured,localCeiling,units:reference.units,rowsPerUnit,
           stagingRowsPerUnit:reference.ceiling,
           deviationPercent:Math.round(100*(rowsPerUnit/reference.ceiling-1))}];
       }));
@@ -460,6 +472,10 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     reportTestEvidence("FIBRE-WORLD-WRITE-MAP",{
       activities,deviations,aboveStagingCeiling,
     });
+    for(const [name,ceiling] of Object.entries(activityCeilings)){
+      assert.ok(activities[name].weightedRows<=ceiling,
+        name+" exceeded local write ceiling: "+activities[name].weightedRows+" > "+ceiling);
+    }
 
   }finally{
     audit?.close();contact?.close();situated?.close();semantic?.close();
