@@ -119,21 +119,28 @@ const historicalTables=[
   "lived_encounter_records","thread_encounter_experiences",
   "autobiographical_memory_records",
 ];
-const historicalScanAllowlist=new Map([
-  ["services/world-kernel/src/semantic-state-store.mjs:semantic_state_records",
-    "listStateHistory intentionally returns the complete semantic history"],
-  ["services/world-kernel/src/lived-now-store.mjs:lived_now_plans",
-    "listPlans intentionally returns a Thread's entire plan history"],
-  ["services/world-kernel/src/lived-experience-store.mjs:lived_encounter_records",
-    "listLegacyEncounters explicitly returns one Thread's encounter history"],
-]);
+const historicalScanAllowlist=[
+  {path:"services/world-kernel/src/semantic-state-store.mjs",
+    sql:/\bFROM semantic_state_records WHERE thread_id=\? ORDER BY as_of,state_id$/iu,
+    reason:"listStateHistory explicitly returns complete semantic history"},
+  {path:"services/world-kernel/src/lived-now-store.mjs",
+    sql:/\bFROM lived_now_plans WHERE subject_thread_id=\? ORDER BY authored_at,plan_id$/iu,
+    reason:"listPlans explicitly returns one Thread's complete plan history"},
+  {path:"services/world-kernel/src/lived-experience-store.mjs",
+    sql:/\bFROM lived_encounter_records WHERE thread_id=\? ORDER BY occurred_at,event_id$/iu,
+    reason:"listLegacyEncounters explicitly returns historical encounters"},
+];
+function historyScanJustification(entry){
+  return historicalScanAllowlist.find(item=>item.path===entry.path
+    &&item.sql.test(entry.sql))?.reason??null;
+}
 function unboundedThreadHistoryRead({path,sql}){
   const clean=sql.replace(/--[^\n]*/gu," ").replace(/\s+/gu," ").trim();
   if(!/^SELECT\b/iu.test(clean)||/\bLIMIT\b/iu.test(clean))return null;
   if((clean.match(/\?/gu)??[]).length!==1
     ||!/\b(?:thread_id|subject_thread_id)\s*=\s*\?/iu.test(clean))return null;
   const table=historicalTables.find(name=>new RegExp(`\\bFROM\\s+${name}\\b`,"iu").test(clean));
-  return table?{path,table}:null;
+  return table?{path,table,sql:clean}:null;
 }
 function staticHotSql(){
   const paths=[
@@ -187,6 +194,15 @@ function relevantSources(){
   }
   return files.sort();
 }
+test("unbounded current semantic reads cannot masquerade as history inspection",()=>{
+  const query=unboundedThreadHistoryRead({
+    path:"services/world-kernel/src/semantic-state-store.mjs",
+    sql:"SELECT state_id FROM semantic_state_records WHERE thread_id=? AND staleness='current' ORDER BY as_of",
+  });
+  assert.ok(query&&!historyScanJustification(query),
+    "current semantic history scan escaped the hot-path guard");
+});
+
 test("World hot-table SQL keeps indexed historical and co-presence readers",()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-write-query-audit-"));
   let db=null;
@@ -206,7 +222,7 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
     const {staticQueries,dynamic}=staticHotSql();
     const unbounded=staticQueries.map(unboundedThreadHistoryRead).filter(Boolean);
     for(const entry of unbounded)
-      assert.ok(historicalScanAllowlist.has(entry.path+":"+entry.table),
+      assert.ok(historyScanJustification(entry),
         "unbounded lived-history read: "+entry.path);
     const preparedPlans=[];
     for(const entry of staticQueries){
@@ -232,8 +248,8 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
     console.log("FIBRE-WORLD-HOT-SQL-AUDIT "+JSON.stringify({
       checked:plans.length,staticPreparedStatements:preparedPlans.length,
       dynamicPreparedStatements:dynamic,
-      unboundedHistoryReaders:unbounded.map(({path,table})=>({
-        path,table,reason:historicalScanAllowlist.get(path+":"+table),
+      unboundedHistoryReaders:unbounded.map(({path,table,sql})=>({
+        path,table,reason:historyScanJustification({path,table,sql}),
       })),sourceFiles,plans,preparedPlans,
       retained:{
         currentFrontierRecent:uses("idx_current_frontier_recent"),
