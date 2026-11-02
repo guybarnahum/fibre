@@ -710,7 +710,7 @@ test("acknowledgment records a performed act, never conditional intent",async()=
       :{output:{outcome:"not_noticed",experienceText:null,
         passedReason:"I remained focused on the page."},
       provenance:{provider:"fixture",modelId:"attention"}},
-  })});
+  });
   const performed=make("nods briefly toward the reader.");
   try{
     const [actor,other]=performed.people;
