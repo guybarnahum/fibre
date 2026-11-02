@@ -162,8 +162,9 @@ test("targeted Birth Center deploy runs state migration and runtime acceptance a
       print:()=>{},
     });
 
-    assert.deepEqual(calls, ["local-preflight","d1","wrangler:deploy","service-revision",
-      "birth-migrate-and-accept","birth-preflight"]);
+    assert.deepEqual(calls, ["local-preflight",["do-headroom"],"d1","wrangler:deploy",
+      "service-revision","birth-migrate-and-accept","birth-preflight"],
+      "Birth Center must check DO write headroom after local rehearsal but before upload");
     assert.equal(result.schemaAcceptance.migration.toVersion, 2);
     assert.equal(result.schemaAcceptance.runtimeAcceptance.status, 404);
   } finally {
