@@ -21,9 +21,12 @@ export function compactSemanticStateHeads(database){
     const pk=database.prepare("PRAGMA table_info(semantic_state_current_heads)")
       .all().filter(column=>column.pk>0).sort((a,b)=>a.pk-b.pk)
       .map(column=>column.name);
-    if(/\\bWITHOUT\\s+ROWID\\b/iu.test(schema)
-      &&pk.join(",")==="thread_id,state_id")
+    if(/\bWITHOUT\s+ROWID\b/iu.test(schema)
+      &&pk.join(",")==="thread_id,state_id"){
+      // A compact projection still needs its current-head trigger.
+      installSemanticStateHeadTrigger(database);
       return {rowsCopied:0,already:true};
+    }
   }
 
   let rowsCopied=0;
