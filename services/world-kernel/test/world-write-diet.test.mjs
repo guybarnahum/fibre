@@ -19,6 +19,7 @@ import {lifeRelationId} from "../src/situated-life-domain.mjs";
 import {createThreadContactProcess} from "../src/thread-contact-process.mjs";
 import {createThreadContactPerception} from "../src/thread-contact-perception.mjs";
 import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs";
+import {createSocialMeetingService} from "../src/lived-social-meeting.mjs";
 import {createWorldEnvironmentEvolution} from "../src/world-environment-evolution.mjs";
 import {createWorldReconciliationProcess} from "../src/world-reconciliation-process.mjs";
 import {createLivedNowService} from "../src/lived-now-service.mjs";
@@ -363,6 +364,94 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     const reception=await audit.measure("contact-noticing",
       ()=>perception.runOnce());
     assert.equal(reception.noticed,1,"recipient did not notice delivered contact");
+    // A second delivered message is available to its recipient but may never
+    // enter attention. Keep this outcome's writes separate from noticed contact.
+    const quietSender=ids[2],quietRecipient=ids[3];
+    await audit.measure("contact-pass-source",()=>{
+      const note={storyVersion:"encounter-story-v0.1",beats:[
+        {actorThreadId:quietSender,kind:"utterance",
+          text:"I wonder what the other person is reading."},
+      ]};
+      const encounter=experience.recordEncounterStory({
+        occurredAt:at("17:10"),
+        threadPresence:[{threadId:quietSender,situationId:situations.get(quietSender)}],
+        story:note,visualization:createEncounterVisualization({
+          occurredAt:at("17:10"),story:note,scene:"In the reading room.",
+          sourceReferences:[venue.ref],depictedThreadRefs:[],
+        }),
+      });
+      const attention=experience.recordThreadEncounterAttention({
+        threadId:quietSender,encounterRef:encounter.encounterId,
+        situationId:situations.get(quietSender),occurredAt:at("17:10"),
+        outcome:"noticed",experienceText:"I am curious about their book.",
+      });
+      experience.queueThreadExperienceConsolidation({
+        experienceId:attention.experience.experienceId,queuedAt:at("17:10"),
+      });
+      situated.recordLifeRelation({
+        relationId:lifeRelationId({
+          threadId:quietSender,partyId:quietRecipient,role:"peer",
+        }),
+        revision:1,threadId:quietSender,
+        relatedParty:{partyId:quietRecipient,kind:"thread",displayName:"A quiet reader"},
+        relationKind:"social_contact",geneticContributionRole:"none",
+        factualRoleRefs:["peer"],relationshipFacts:["We read in the same room."],
+        sourceReferences:[events.get(quietSender)],validFrom:at("08:00"),validTo:null,
+        visibility:"restricted",provenance:"world_recorded",recordedAt:at("17:10"),
+      });
+    });
+    const quietReflection=await audit.measure("contact-pass-afterthought",()=>
+      createExperienceConsolidationProcess({
+        worldReader:world,livedNowStore:lived,semanticStateStore:semantic,
+        memoryStore:memory,experienceStore:experience,
+        now:()=>at("17:35"),clock:()=>Date.parse(at("17:35")),batchLimit:1,
+        modelAdapter:{async invoke(){
+          return {output:{journalEntry:null,afterthoughts:[{
+            kind:"question",text:"Perhaps we can exchange reading recommendations.",
+          }],memory:{outcome:"not_remembered",rememberedContent:null,
+            rememberedMeaning:null,confidence:null,salience:null,uncertainty:[]}},
+          provenance:{provider:"fixture",modelId:"write-map-quiet-afterthought"}};
+        }},
+      }).runOnce());
+    assert.equal(quietReflection.completed,1,"quiet contact source lost its afterthought");
+    const quietOutreach=createThreadContactProcess({
+      worldReader:world,livedNow:{ensure:ensureCurrent},situatedLifeStore:situated,
+      semanticStateStore:semantic,memoryStore:memory,experienceStore:experience,
+      contactStore:contact,now:()=>at("17:36"),batchLimit:1,
+      modelAdapter:{async invoke(call){
+        return {output:call.clientRequestId.startsWith("later-contact-decision_")
+          ?{decision:"contact",recipientPartyId:quietRecipient,
+            reason:"I want to exchange reading recommendations."}
+          :{messageText:"Have you found a book you would recommend?"},
+        provenance:{provider:"fixture",modelId:"write-map-quiet-contact"}};
+      }},
+    });
+    const quietSent=await audit.measure("contact-pass-outreach",()=>
+      quietOutreach.runOnce());
+    assert.equal(quietSent.attempted,1,"quiet contact was not sent");
+    const quietDue=contact.listDueContactReceptions({at:at("17:37"),limit:1})[0];
+    assert.ok(quietDue,"quiet message has no reception opportunity");
+    await audit.measure("contact-pass-reception",()=>contact.claimContactReception({
+      messageId:quietDue.messageId,threadId:quietRecipient,
+      situationId:situations.get(quietRecipient),perceivedAt:at("17:37"),
+      senderName:world.getThread(quietSender).identity.name,
+    }));
+    const quietPerception=createThreadContactPerception({
+      contactStore:contact,livedNow:{ensure:ensureCurrent},livedNowStore:lived,
+      worldReader:world,semanticStateStore:semantic,memoryStore:memory,
+      experienceStore:experience,now:()=>at("17:37"),
+      modelAdapter:{async invoke(){
+        return {output:{outcome:"not_noticed",experienceText:null,
+          passedReason:"I stayed absorbed in the book before me."},
+          provenance:{provider:"fixture",modelId:"write-map-unnoticed-contact"}};
+      }},
+    });
+    const passed=await audit.measure("contact-passed",()=>quietPerception.runOnce());
+    assert.equal(passed.results[0]?.outcome,"not_noticed",
+      "an unremarked message was forced into personal experience");
+    assert.equal(passed.results[0]?.experienceId,null,
+      "passing on a message manufactured a personal experience");
+
     const observed=await audit.measure("social-observed-setup",()=>
       experience.enqueueObservedSocialOpportunity({
         encounterRef:story.encounterId,threadId:ids[2],situationId:situations.get(ids[2]),
@@ -384,6 +473,84 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     assert.equal(socialResult.failed,0,"observed social decision failed");
     assert.equal(socialResult.results[0]?.outcome,"not_initiated",
       "observed opportunity lost voluntary non-participation");
+
+    // An independently noticed gesture creates an ordinary chance to greet.
+    // The World process delegates to the real meeting service, which records
+    // the outward act and each person's independently appraised attention.
+    const socialActor=ids[5],socialOther=ids[6];
+    await audit.measure("social-initiated-setup",()=>{
+      const gesture={storyVersion:"encounter-story-v0.1",beats:[
+        {actorThreadId:socialOther,kind:"action",
+          text:"Another reader waves briefly across the table."},
+      ]};
+      const source=experience.recordEncounterStory({
+        occurredAt:at("16:09"),
+        threadPresence:[socialActor,socialOther].map(threadId=>({
+          threadId,situationId:situations.get(threadId),
+        })),
+        story:gesture,visualization:createEncounterVisualization({
+          occurredAt:at("16:09"),story:gesture,
+          scene:"At the shared reading table.",
+          sourceReferences:[venue.ref],depictedThreadRefs:[],
+        }),
+      });
+      experience.recordThreadEncounterAttention({
+        threadId:socialActor,encounterRef:source.encounterId,
+        situationId:situations.get(socialActor),occurredAt:at("16:09"),
+        outcome:"noticed",experienceText:"Another reader waved in my direction.",
+      });
+      const queued=experience.enqueueObservedSocialOpportunity({
+        encounterRef:source.encounterId,threadId:socialActor,
+        situationId:situations.get(socialActor),
+        counterpartyThreadId:socialOther,venueRef:venue.physicalVenue.ref,
+        dueAt:at("16:10"),
+      });
+      assert.equal(queued.inserted,true,"noticed social gesture was not actionable");
+    });
+    let initiationCalls=0,attentionCalls=0;
+    const meeting=createSocialMeetingService({
+      worldReader:world,livedNow:{async ensure(){
+        throw Error("social cognition must not advance lived time");
+      }},
+      livedNowStore:lived,
+      identityStore:{getCurrentIdentityView:threadId=>({
+        threadId,assertions:[],
+      })},
+      situatedLifeStore:situated,semanticStateStore:semantic,
+      memoryStore:memory,experienceStore:experience,boundedVenueDiscovery:true,
+      modelAdapter:{
+        async invoke(call){
+          if(call.input?.concern?.kind==="social_initiation"){
+            initiationCalls++;
+            return {output:{result:{
+              act:"greet",expression:"Hello, what are you reading?",
+              experienceText:"I greeted the other reader with genuine curiosity.",
+              reason:"I would enjoy exchanging a few words.",
+              introducesSelf:false,
+            },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+            provenance:{provider:"fixture",modelId:"write-map-social-choice"}};
+          }
+          attentionCalls++;
+          return {output:{outcome:"noticed",
+            experienceText:"I noticed the greeting and considered responding.",
+            passedReason:null},
+            provenance:{provider:"fixture",modelId:"write-map-social-attention"}};
+        },
+        async *streamExpression(){throw Error("greeting must not invoke live conversation");},
+      },
+    });
+    const initiated=createWorldSocialOpportunity({
+      experienceStore:experience,livedNowStore:lived,
+      meetingService:meeting,worldReader:world,now:()=>at("16:10"),
+    });
+    const initiatedResult=await audit.measure("social-initiated",()=>initiated.runOnce());
+    assert.equal(initiatedResult.failed,0,"ordinary greeting failed");
+    assert.equal(initiatedResult.results[0]?.outcome,"acted",
+      "an initiated greeting did not become an outward social act");
+    assert.equal(initiationCalls,1,"one greeting spent repeated initiation cognition");
+    assert.equal(attentionCalls,1,"recipient lacked independent attention");
+    assert.equal(experience.listEncounterStories(socialActor).length>0,true,
+      "initiated greeting left no objective encounter history");
 
     const scene={storyVersion:"encounter-story-v0.1",beats:[
       {actorThreadId:null,kind:"occurrence",
@@ -448,6 +615,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "social-observed-setup":5,"social-observed":10,
       "environment-source":12,"environment-noticed":28,
       "idle-reconciliation":0,
+      // First matched costs are recorded as evidence; add regression ceilings
+      // after operator validation of the new cases.
     };
     const activities=Object.fromEntries(Object.entries(mapReport.activities)
       .concat(Object.keys(activityCeilings).filter(name=>!(name in mapReport.activities))
