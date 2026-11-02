@@ -53,8 +53,8 @@ export function createWorldArrivalPerception({
             const venueName=typeof place.physicalVenue.displayName==="string"
               &&place.physicalVenue.displayName.trim()
               ?place.physicalVenue.displayName.trim()
-              :typeof place.displayName==="string"&&place.displayName.trim()
-                ?place.displayName.trim():null;
+              :place.displayName?.trim()??null;
+            if(!venueName)throw new TypeError("admitted arrival venue has no name");
             const describe=situation=>{
               const identity=worldReader.getThread(situation.threadId,{
                 required:false,
@@ -70,9 +70,7 @@ export function createWorldArrivalPerception({
             const story={storyVersion:"encounter-story-v0.1",
               beats:[
                 {actorThreadId:arrival.threadId,kind:"action",
-                  text:venueName
-                    ?`${describe(arrival)} arrives at ${venueName}.`
-                    :`${describe(arrival)} arrives here.`},
+                  text:`${describe(arrival)} arrives at ${venueName}.`},
                 ...witnesses.map(situation=>({
                   actorThreadId:situation.threadId,kind:"occurrence",
                   text:situation.outwardActivity

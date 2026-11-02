@@ -697,6 +697,52 @@ test("social cognition prefers the encountered person's factual relation and ret
   }
 });
 
+test("acknowledgment records a performed act, never conditional intent",async()=>{
+  const at="2026-10-23T10:00:00.000Z";
+  const make=expression=>groundedReconsiderationFixture({onInvoke:request=>
+    request.input?.concern?.kind==="social_initiation"
+      ?{output:{result:{
+        act:"acknowledge",expression,
+        experienceText:"I briefly acknowledged the nearby reader.",
+        reason:"I felt a small moment of recognition.",introducesSelf:false,
+      },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+      provenance:{provider:"fixture",modelId:"acknowledgment"}}
+      :{output:{outcome:"not_noticed",experienceText:null,
+        passedReason:"I remained focused on the page."},
+      provenance:{provider:"fixture",modelId:"attention"}},
+  })});
+  const performed=make("nods briefly toward the reader.");
+  try{
+    const [actor,other]=performed.people;
+    performed.enact(actor,at,"Reading.",[other]);
+    performed.enact(other,at,"Reading.");
+    const result=await performed.meeting.meet({
+      initiatorThreadId:actor,at,counterpartyThreadId:other,
+    });
+    assert.equal(result.attempts[0]?.outcome,"acted",
+      "a chosen acknowledgment was not performed");
+    const story=result.attempts[0]?.encounterStory;
+    assert.equal(story?.story.beats[0]?.actorThreadId,actor,
+      "an acknowledgment lost its acting person");
+    assert.equal(story?.story.beats[0]?.kind,"action",
+      "acknowledgment was recorded as speech instead of an act");
+    assert.match(story.story.beats[0].text,/nods briefly/u,
+      "the observable acknowledgment disappeared");
+  }finally{performed.close();}
+  const conditional=make("I would nod if the other reader looked over.");
+  try{
+    const [actor,other]=conditional.people;
+    conditional.enact(actor,at,"Reading.",[other]);
+    conditional.enact(other,at,"Reading.");
+    await assert.rejects(
+      ()=>conditional.meeting.meet({initiatorThreadId:actor,at,counterpartyThreadId:other}),
+      /acknowledgment must be an observable act/u,
+      "a conditional intention became an objective World action");
+    assert.equal(conditional.experience.listEncounterStories(actor).length,0,
+      "an unperformed intention entered shared history");
+  }finally{conditional.close();}
+});
+
 test("a shared visit owns one Body-band obligation across activity changes",async()=>{
   let decisions=0;
   const f=groundedReconsiderationFixture({onInvoke:()=>({
