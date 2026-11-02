@@ -25,6 +25,28 @@ The `FIBRE-WORLD-BOUNDARY-UNIT` fixture measures real boundary enactment, semant
 
 No indexes or triggers may be dropped until the remaining read paths and their plans have been audited and the before/after rows-per-boundary have actually been measured.
 
+## A persistent present, not a time-tick event (November 2)
+
+An already enacted `CurrentSituation` remains authoritative when a later `LivedNow.ensure({threadId,at})` falls **inside the same admitted stop** and its would-be observation, governing plan, source plan refs, resolution, and other durable facts are identical. Comparing the full candidate (except time/ID) prevents losing care-plan changes, observation divergence, new plans, transit progression or any other meaning-bearing difference. Crossing a stop start/end still enacts, even if adjacent stops appear identical. Missing coverage still invokes existing first-life or catch-up; inclusive plan-horizon renewal is unchanged. A repeated present produces neither another history row nor any LivedNow frontier update.
+
+The independent staging fit attributed approximately **10 LivedNow weighted rows per contact decision** and **15 per reception** to unnecessarily refreshed situations. Those are fitted stage allocations, not direct before/after observations. The direct local write map charges **9 weighted rows per ordinary reenactment** (4 historical situation + 3 current frontier + 2 next-boundary maintenance); the new mid-stop paths should charge **zero**. `FIBRE-WORLD-MID-STOP` reports the measured LivedNow rows for contact decision, reception check and social presence. The seven-Thread baseline remains **290** until Guy validates a new measured run; the change removes redundant work after that baseline, not the initial planned boundaries.
+
+**Caller audit** (no new freshness proxies or synthesized situations):
+
+| Caller | Result of reusing the existing situation |
+| --- | --- |
+| `thread-contact-process` | Two ensure calls per attempt; neither requires a fresh ID or `establishedAt===at`; both see the same authoritative situation |
+| `thread-contact-perception` | Uses the returned situation ID for the recipient's reception claim; independently evaluated attention still occurs at `perceivedAt` |
+| `lived-social-meeting` | General /meet ensures both parties then rereads present; bounded World social path skips ensure and checks due-life and actual co-presence |
+| `lived-environmental-encounter` | Ensures, then loads the current context; the event occurs at the requested instant, not at situation establishment |
+| `lived-commons` | Uses current place and resolution, not new situation identity |
+| `inside-fibre-availability` | Removed the `establishedAt===at` requirement; an unchanged committed shift remains available, still requiring the active plan and commitment |
+| `genesis-first-life-process` | Initial first-life path is unchanged; a repeat returns the existing authoritative situation |
+| `lived-now-boundary` | Scheduled stop boundaries still cross the explicit boundary check; existing ID is already tolerated for overtaken wakes |
+| `lived-now-write-api` | Publishes the returned current situation; same-ID publication already valid |
+
+**Text facts:** An admitted arrival names its recorded venue (and does not create a nameless arrival beat); a chosen `acknowledge` must describe an outwardly performed action. A conditional intention must never be written into the objective Encounter Story as if performed. Neither change compels a Thread to socialize or adds cognition calls.
+
 ## Reconciliation write map (staging calibration, November 2)
 
 Staging: **184 reconciliation alarms, 01:09–05:30 UTC**. The World Durable Object accounted for **96% of account writes**, attributed to those alarms. Per-alarm stage-count fitting against `world-state-cost` had **R² = 0.94**. These are **external observations**, not local write-audit results or exact per-statement Cloudflare bills.

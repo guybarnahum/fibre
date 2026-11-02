@@ -25,9 +25,10 @@ assert that the rest of reality stopped happening.
 One objectively admitted arrival into an occupied public venue gives one
 short sentence for the arriving Thread and one for each real witness.
 Public observable appearance uses a bounded human-readable description;
-witness presence can add only World-enacted `outwardActivity`. For
-example: "A man in his twenties arrives at the venue." and "A woman
-in her thirties is reading." Old situations without outward activity
+witness presence can add only World-enacted `outwardActivity`. An arrival
+beat names the admitted physical venue, for example: "A man in his twenties
+arrives at Riverside Park." A witness might be "A woman in her thirties is
+reading." Old situations without outward activity
 describe presence only. Private planning intent or expectation never
 appears. Each person sees the same objective Story, but attention
 cognition marks the person's own beat `self:true` and may render
