@@ -16,17 +16,18 @@ export function worldAlarmNeedsRevival({
 }
 
 // Recover a stale alarm without opening SQL or changing the reconciliation
-// cadence. The caller rate-limits checks per Durable Object process.
+// cadence. The caller rate-limits checks per World process.
 export async function reviveStaleWorldAlarm({
-  scheduler,at=Date.now(),lastCheckedAt=null,running=false,
+  scheduler,scopeId=WORLD_RECONCILIATION_SCOPE_ID,
+  at=Date.now(),lastCheckedAt=null,running=false,
 }={}){
   if(lastCheckedAt!==null&&at-lastCheckedAt<60_000)
     return {checked:false,revived:false};
   if(running)return {checked:false,revived:false};
-  const scheduledTimeMs=await scheduler.getAlarm();
+  const scheduledTimeMs=await scheduler.get(scopeId);
   if(scheduledTimeMs===null||scheduledTimeMs>at-60_000)
     return {checked:true,revived:false};
-  await scheduler.setAlarm(at);
+  await scheduler.schedule(scopeId,at);
   return {checked:true,revived:true,staleAt:scheduledTimeMs};
 }
 

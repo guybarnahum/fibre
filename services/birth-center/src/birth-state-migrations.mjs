@@ -193,7 +193,7 @@ function migrateToV4(session) {
     ) STRICT;
     CREATE INDEX IF NOT EXISTS idx_birth_place_latest ON birth_place_records(place_key,created_at DESC,version DESC);
   `);
-  // Cloudflare's transactional-state port virtualizes PRAGMA user_version.
+  // Schema versions use the shared transactional state port.
   // It must be issued alone, not embedded in a multi-statement exec.
   session.exec("PRAGMA user_version = 4");
 }

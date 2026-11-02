@@ -29,7 +29,7 @@ import { createWorldCloudflareRuntime } from "./runtime.mjs";
 import {installWorldSchemas} from "#services/world-kernel/src/world-schema-installation.mjs";
 import {openWorldStateDatabase} from "#services/world-kernel/src/world-state-storage.mjs";
 import {auditWorldIntegrityBatch} from "#services/world-kernel/src/world-integrity-audit.mjs";
-import {reviveStaleWorldAlarm} from "#services/world-kernel/src/world-reconciliation-process.mjs";
+import {reviveStaleWorldAlarm,WORLD_RECONCILIATION_SCOPE_ID} from "#services/world-kernel/src/world-reconciliation-process.mjs";
 import {
   readWorldSchemaStatus,worldSchemaStatusError,
   deferAlarmForSchemaInstall,resumeAlarmAfterSchemaInstall,
@@ -447,6 +447,7 @@ export class FibreWorldDurableObject extends DurableObject {
     this.runtime = null;
     this.infraDriver = createCloudflareInfraDriver({
       stateScopes:{[WORLD_SCOPE_ID]:ctx.storage},
+      schedulerScopes:{[WORLD_RECONCILIATION_SCOPE_ID]:ctx.storage},
       runtimeSchemaGuard:env.FIBRE_RUNTIME_SCHEMA_GUARD??null,
     });
     this.worldStorage = Object.freeze({
@@ -1080,8 +1081,7 @@ export class FibreWorldDurableObject extends DurableObject {
       &&request.method==="POST")
       return this.withStateCost({kind:"request",method:"POST",path:url.pathname},
         ()=>this.fetchWorldRequest(request,url));
-    // A stale past-due DO alarm must recover even when the SQL quota has
-    // temporarily prevented reconciliation. This uses DO scheduling only.
+    // Revive a stale alarm independently of World SQL availability.
     const at=Date.now();
     if(this.lastStaleAlarmCheckAt===null
       ||at-this.lastStaleAlarmCheckAt>=60_000){
@@ -1089,7 +1089,8 @@ export class FibreWorldDurableObject extends DurableObject {
       this.lastStaleAlarmCheckAt=at;
       try{
         const recovery=await reviveStaleWorldAlarm({
-          scheduler:this.ctx.storage,at,lastCheckedAt:previous,
+          scheduler:this.infraDriver.scheduler,scopeId:WORLD_RECONCILIATION_SCOPE_ID,
+          at,lastCheckedAt:previous,
           running:this.runtime?.reconciliationProcess?.running===true,
         });
         if(recovery.revived)console.warn(JSON.stringify({

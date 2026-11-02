@@ -837,19 +837,23 @@ test("schema-ready World reconciliation does not repeat schema work on a cold ru
 
 test("first request revives stale World alarm without SQL, next minute-bound request does not",async()=>{
   const at=Date.parse("2026-10-26T14:00:00Z");
-  let scheduled=at-10*60_000,checks=0,wakes=0;
-  const scheduler={
-    async getAlarm(){checks++;return scheduled;},
-    async setAlarm(value){wakes++;scheduled=value;},
-  };
-  const first=await reviveStaleWorldAlarm({scheduler,at});
-  assert.equal(first.revived,true,"expired World alarm was left stranded");
-  const second=await reviveStaleWorldAlarm({
-    scheduler,at:at+20_000,lastCheckedAt:at,
-  });
-  assert.equal(second.checked,false,"second request repeated stale-alarm probe");
-  assert.equal(checks,1,"repeated requests inspected the same alarm");
-  assert.equal(wakes,1,"second request scheduled another wake");
+  const scheduler=createLocalInfraDriver({
+    schedulerScopes:{world:{onWake:async()=>{}}},
+  }).scheduler;
+  try{
+    await scheduler.schedule("world",at-10*60_000);
+    const first=await reviveStaleWorldAlarm({scheduler,scopeId:"world",at});
+    assert.equal(first.revived,true,"expired World alarm was left stranded");
+    assert.equal(await scheduler.get("world"),at,"stale wake was not rearmed");
+    const second=await reviveStaleWorldAlarm({
+      scheduler,scopeId:"world",at:at+20_000,lastCheckedAt:at,
+    });
+    assert.equal(second.checked,false,"second request repeated stale-alarm probe");
+    assert.equal(await scheduler.get("world"),at,"second request changed the wake");
+    assert.equal((await reviveStaleWorldAlarm({
+      scheduler,scopeId:"world",at:at+30_000,running:true,
+    })).checked,false,"running reconciliation repeated the check");
+  }finally{await scheduler.cancel("world");}
 });
 
 test("unchanged World retry streak writes no SQL rows",async()=>{

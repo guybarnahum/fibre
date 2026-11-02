@@ -173,6 +173,14 @@ test("transactional state rejects nonportable schema rewrites across providers a
           if(sessionMode==="install"){
             session.prepare("SELECT 'ALTER TABLE proof RENAME TO fiction' AS text");
             session.exec("-- ALTER TABLE proof DROP COLUMN id\nSELECT 1");
+            session.prepare("PRAGMA user_version").get();
+            session.exec("PRAGMA user_version = 5");
+          }
+          for(const query of ["PRAGMA user_version; SELECT 1",
+            "SELECT 1; PRAGMA user_version = 5"]){
+            for(const operation of [()=>session.exec(query),()=>session.prepare(query)])
+              assert.throws(operation,/transactional state: PRAGMA user_version must be standalone/u,
+                "state port admitted mixed schema-version SQL");
           }
         }finally{session.close();}
       }

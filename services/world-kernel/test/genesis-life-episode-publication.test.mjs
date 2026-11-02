@@ -381,5 +381,5 @@ test("Genesis publication is the only operational thread_events writer that name
     .map(({ name }) => basename(name))
     .sort();
 
-  assert.deepEqual(namedWriters, ["genesis-store.mjs", "persistence-sqlite.mjs"]);
+  assert.deepEqual(namedWriters, ["genesis-store.mjs"]);
 });

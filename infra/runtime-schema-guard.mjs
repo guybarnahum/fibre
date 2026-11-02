@@ -24,7 +24,11 @@ const NONPORTABLE_ALTER=new RegExp(
 
 export function checkPortableSchemaSql(sql){
   if(typeof sql!=="string")throw new TypeError("transactional state SQL must be text");
-  if(/\bALTER\b/iu.test(sql)&&NONPORTABLE_ALTER.test(schemaKeywords(sql)))
+  const keywords=schemaKeywords(sql);
+  if(/\bPRAGMA\s+user_version\b/iu.test(keywords)
+    &&!/^\s*PRAGMA\s+user_version(?:\s*=\s*\d+)?\s*;?\s*$/iu.test(keywords))
+    throw new Error("transactional state: PRAGMA user_version must be standalone");
+  if(/\bALTER\b/iu.test(keywords)&&NONPORTABLE_ALTER.test(keywords))
     throw new Error("transactional state: schema-rewriting ALTER is not portable; rebuild by create/copy/drop");
 }
 
