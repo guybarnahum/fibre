@@ -82,8 +82,10 @@ test("pending experience and contact work survives compact installation in due o
     assert.deepEqual(queueRows("thread_contact_pending_work"),before.contact,
       "pending contacts changed during migration");
     const state=localWorldStateStorage(path);
-    experience=openLivedExperienceStore(state);
-    contact=openContactStore(state);
+    // Readers only: this intentionally minimal pre-installation fixture is
+    // not a complete World event store and must not run general migrations.
+    experience=openLivedExperienceStore(state,{readOnly:true});
+    contact=openContactStore(state,{readOnly:true});
     assert.deepEqual(experience.listPendingThreadExperienceConsolidations({limit:4})
       .map(item=>item.consolidationId),["con_earlier","con_later"],
       "pending experience lost due order");

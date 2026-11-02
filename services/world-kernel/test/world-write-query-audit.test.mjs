@@ -178,7 +178,8 @@ function staticHotSql(tableNames=tables,scanAll=false){
       // LivedNow's delayed-event UNION); explain those instead of skipping.
       const statement=sql.replace(/^(?:\s*--[^\n]*\n)+/gu,"").trim();
       if(sql.includes("\${")||!/^(?:SELECT|INSERT|UPDATE|DELETE|WITH)\b/iu.test(statement)){
-        dynamic.push({path,line,reason:"dynamic SQL or non-DML",
+        dynamic.push({path,line,
+          reason:/^(?:SELECT|WITH)\b/iu.test(statement)?"dynamic reader":"non-reader SQL",
           tables:tableNames.filter(table=>sql.includes(table))});
       }else staticQueries.push({path,line,sql:statement});
     }
@@ -287,7 +288,8 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
       "situated_evidence_witnesses","situated_life_lineage_heads",
     ];
     const unresolved=allReaders.dynamic.filter(entry=>
-      entry.tables.some(table=>retiredTables.includes(table)));
+      entry.reason==="dynamic reader"
+      &&entry.tables.some(table=>retiredTables.includes(table)));
     assert.deepEqual(unresolved,[],
       "retired index has an unresolved dynamic SQL reader");
     const indexes=[];
