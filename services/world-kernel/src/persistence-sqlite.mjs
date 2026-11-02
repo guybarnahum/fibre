@@ -62,11 +62,9 @@ function createBaseSchema(database) {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     ) STRICT;
-
-`);
+  `);
   createThreadEventsTable(database);
   database.exec(`
-
     CREATE TABLE IF NOT EXISTS commands (
       thread_id TEXT NOT NULL,
       command_id TEXT NOT NULL,

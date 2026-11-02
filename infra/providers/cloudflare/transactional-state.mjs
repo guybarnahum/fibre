@@ -221,7 +221,6 @@ function createSession(scopeId, storage, { readOnly, label, cost, sessionMode, g
 
   function execute(sql, params = [], { mutation = false } = {}) {
     assertOpen();
-    checkPortableSchemaSql(sql);
     checkRuntimeSchemaSql(sql,{mode:sessionMode,guard:guardMode,label});
     if (readOnly && mutation) throw new Error(`transactional state scope ${scopeId} is read-only`);
     if (readOnly) assertReadOnlySql(sql);
@@ -232,6 +231,7 @@ function createSession(scopeId, storage, { readOnly, label, cost, sessionMode, g
     scopeId,
     readOnly,
     exec(sql) {
+      checkPortableSchemaSql(sql);
       observeCursor(cost, label, execute(sql, [], { mutation: !readOnly }));
     },
     prepare(sql) {

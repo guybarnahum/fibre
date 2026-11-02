@@ -17,6 +17,8 @@ function schemaKeywords(sql){
 }
 
 export function checkPortableSchemaSql(sql){
+  if(typeof sql!=="string")throw new TypeError("transactional state SQL must be text");
+  if(!/\bALTER\b/iu.test(sql))return;
   const statements=schemaKeywords(sql).split(";");
   if(statements.some(statement=>
     /\bALTER\s+TABLE\s+(?:"(?:[^"]|"")*"|\x60[^\x60]*\x60|\[[^\]]*\]|\w+)\s+(?:RENAME\s+(?:TO|COLUMN)|DROP\s+COLUMN)\b/iu.test(statement)))
