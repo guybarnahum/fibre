@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import {DatabaseSync} from "node:sqlite";
 
 import { createSqliteStateInfraDriver } from "#infra/providers/local/sqlite-state";
 
@@ -20,6 +21,20 @@ function database() {
     scopes: { world: ":memory:" },
   });
   return infraDriver.state.open("world");
+}
+
+// These tests exercise obligation SQL guards, not the complete World authority
+// chain. Minimal referenced parents keep foreign-key enforcement active.
+function obligationGuardDatabase() {
+  const db = new DatabaseSync(":memory:", {enableForeignKeyConstraints:true});
+  db.exec(`
+    CREATE TABLE threads(thread_id TEXT PRIMARY KEY);
+    CREATE TABLE authorization_consumptions(authorization_id TEXT PRIMARY KEY);
+    INSERT INTO threads(thread_id) VALUES ('thr_mina_001'),('thr_other');
+    INSERT INTO authorization_consumptions(authorization_id) VALUES ('auth_legacy');
+  `);
+  createObligationTables(db);
+  return db;
 }
 
 test("world migrations provide Structured Obligation storage", () => {
@@ -112,10 +127,8 @@ test("legacy consumption rows map to deterministic spent-authority tombstones", 
 });
 
 test("legacy tombstones and obligation records are append-only and spent legacy authority cannot reactivate", () => {
-  const db = database();
+  const db = obligationGuardDatabase();
   try {
-    migrateDatabase(db);
-    db.exec("PRAGMA foreign_keys=OFF");
     const legacyReference = "Read a case study on identity-system failures";
     const legacyDigest = legacyObligationReferenceDigest("thr_mina_001", legacyReference);
     db.prepare(`
@@ -175,10 +188,8 @@ test("legacy tombstones and obligation records are append-only and spent legacy 
 });
 
 test("obligation storage rejects terms that are more public than standing", () => {
-  const db = database();
+  const db = obligationGuardDatabase();
   try {
-    migrateDatabase(db);
-    db.exec("PRAGMA foreign_keys=OFF");
     assert.throws(
       () => db.prepare(`
         INSERT INTO obligation_records(
@@ -209,10 +220,8 @@ test("obligation storage rejects terms that are more public than standing", () =
 });
 
 test("SQL backstops preserve aggregate identity, legacy origin, and terminal status", () => {
-  const db = database();
+  const db = obligationGuardDatabase();
   try {
-    migrateDatabase(db);
-    db.exec("PRAGMA foreign_keys=OFF");
     const obligationId = `obl_${"3".repeat(64)}`;
     const secondObligationId = `obl_${"4".repeat(64)}`;
     const insert = db.prepare(`
