@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import {DatabaseSync} from "node:sqlite";
 import test from "node:test";
 
 import { openWorldStore } from "../src/persistence.mjs";
@@ -23,7 +24,7 @@ function withStores(run) {
   const stateStore = openSemanticStateStore(localWorldStateStorage(databasePath));
   try {
     worldStore.seedThread(mina);
-    return run({ worldStore, stateStore });
+    return run({ worldStore, stateStore,databasePath });
   } finally {
     stateStore.close();
     worldStore.close();
@@ -173,5 +174,43 @@ test("Fibre-owned selection includes requester-specific relationship state and r
     assert.ok(selection.included.some((item) => item.state === need.state));
     assert.ok(selection.included.some((item) => item.state === matching.state));
     assert.ok(!selection.included.some((item) => item.stateId === otherRequester.stateId));
+  });
+});
+
+test("current semantic truth comes from indexed lineage, not stale legacy heads",()=>{
+  withStores(({stateStore,databasePath})=>{
+    const first=stateStore.recordState(stateCandidate()).state;
+    const legacy=new DatabaseSync(databasePath,{enableForeignKeyConstraints:true});
+    try{
+      legacy.exec(`CREATE TABLE IF NOT EXISTS semantic_state_current_heads(
+        state_id TEXT PRIMARY KEY,thread_id TEXT NOT NULL,
+        state_digest TEXT NOT NULL,as_of TEXT NOT NULL) STRICT`);
+      legacy.prepare(`INSERT INTO semantic_state_current_heads
+        (state_id,thread_id,state_digest,as_of) VALUES(?,?,?,?)`)
+        .run(first.stateId,first.threadId,"legacy_archived_digest",first.asOf);
+      const latest=stateStore.recordState(stateCandidate({
+        state:"I feel more control over my commitments now.",
+        asOf:"2026-08-07T22:00:00.000Z",supersedes:first.stateId,
+        evidenceReferences:["episode:new-autonomy-evidence"],
+      })).state;
+      assert.deepEqual(stateStore.listCurrentState(mina.threadId)
+        .map(item=>item.stateId),[latest.stateId],
+      "legacy derived heads overrode the newest authoritative interior state");
+      assert.equal(legacy.prepare(`SELECT COUNT(*) AS n FROM semantic_state_current_heads`)
+        .get().n,1,"old projection records were rewritten");
+      assert.equal(legacy.prepare(`SELECT name FROM sqlite_master
+        WHERE type='trigger' AND name='semantic_state_current_head_insert'`).get(),undefined,
+        "semantic state still maintains a duplicate current head");
+      const plan=legacy.prepare(`EXPLAIN QUERY PLAN
+        SELECT r.state_id FROM semantic_state_records r
+        WHERE r.thread_id=? AND r.staleness='current'
+          AND NOT EXISTS(SELECT 1 FROM semantic_state_records newer
+            WHERE newer.supersedes_state_id=r.state_id)`).all(mina.threadId)
+        .map(row=>String(row.detail));
+      assert.ok(plan.some(line=>line.includes("idx_semantic_state_thread_current"))
+        &&plan.some(line=>line.includes("idx_semantic_state_supersedes"))
+        &&plan.every(line=>!/SCAN (?:r|newer)(?: |$)/u.test(line)),
+        "current semantic read became a table scan: "+plan.join(" | "));
+    }finally{legacy.close();}
   });
 });

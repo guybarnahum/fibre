@@ -316,6 +316,9 @@ export async function installWorldSchemaWithRetry({
       const rows=Number.isFinite(installed?.rowsRead)
         ?` (rows read ${installed.rowsRead}, written ${installed.rowsWritten})`:"";
       log(`STATE SCHEMA ${installed?.already===true?"ALREADY INSTALLED":"INSTALLED"} world-kernel after ${Math.floor((now()-startedAt)/1_000)}s${rows}`);
+      if(installed?.hotFrontiers)
+        log("WORLD HOT FRONTIER COPIES "+installed.hotFrontiers
+          .map(item=>item.table+"="+item.rowsCopied).join(" "));
       return installed;
     }catch(error){
       serving=typeof error?.deploymentGitSha==="string"&&error.deploymentGitSha.trim()

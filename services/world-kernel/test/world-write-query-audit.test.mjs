@@ -105,9 +105,11 @@ const queries=[
   ["semantic.history",`SELECT state_id FROM semantic_state_records
     WHERE thread_id=? ORDER BY as_of,state_id`],
   ["semantic.supersedes",`SELECT state_id FROM semantic_state_records WHERE supersedes_state_id=?`],
-  ["semantic.currentHead",`SELECT r.state_id FROM semantic_state_current_heads h
-    JOIN semantic_state_records r ON r.state_id=h.state_id
-    WHERE h.thread_id=? ORDER BY r.domain,r.dimension,r.as_of,r.state_id`],
+  ["semantic.currentIndexedLineage",`SELECT r.state_id FROM semantic_state_records r
+    WHERE r.thread_id=? AND r.staleness='current'
+      AND NOT EXISTS(SELECT 1 FROM semantic_state_records newer
+        WHERE newer.supersedes_state_id=r.state_id)
+    ORDER BY r.domain,r.dimension,r.as_of,r.state_id`],
   ["tools.inspectIdentityContext",`SELECT r.state_id FROM semantic_state_records r
     WHERE r.thread_id=? AND r.staleness='current'
       AND NOT EXISTS (SELECT 1 FROM semantic_state_records newer

@@ -22,7 +22,6 @@ test("World boundary indexes serve history, current presence and semantic heads"
     for(const table of [
       "current_situation_records","current_situation_frontier",
       "lived_now_next_boundaries","semantic_state_records",
-      "semantic_state_current_heads",
     ]){
       indexes[table]=db.prepare(`PRAGMA index_list("${table}")`).all()
         .map(row=>row.name).sort();
@@ -51,8 +50,12 @@ test("World boundary indexes serve history, current presence and semantic heads"
         sql:`SELECT thread_id,situation_id FROM lived_now_next_boundaries
           WHERE due_at IS NOT NULL AND due_at<=? ORDER BY due_at LIMIT ?`,
         args:["2026-10-22T12:00:00Z",4]},
-      {name:"semantic-current-head",index:"idx_semantic_state_current_heads_thread",
-        sql:"SELECT state_id FROM semantic_state_current_heads WHERE thread_id=?",
+      {name:"semantic-current-lineage",index:"idx_semantic_state_thread_current",
+        sql:`SELECT r.state_id FROM semantic_state_records r
+          WHERE r.thread_id=? AND r.staleness='current'
+          AND NOT EXISTS (SELECT 1 FROM semantic_state_records newer
+            WHERE newer.supersedes_state_id=r.state_id)
+          ORDER BY r.domain,r.dimension,r.as_of,r.state_id`,
         args:["thr_probe"]},
       {name:"semantic-supersession",index:"idx_semantic_state_supersedes",
         sql:"SELECT state_id FROM semantic_state_records WHERE supersedes_state_id=?",
@@ -69,6 +72,9 @@ test("World boundary indexes serve history, current presence and semantic heads"
       assert.ok(steps.some(detail=>detail.includes(index)
         ||(name==="current-thread-situation"&&detail.includes("USING PRIMARY KEY"))),
         name+" lost its indexed lookup: "+steps.join(" | "));
+      if(name==="semantic-current-lineage")
+        assert.ok(steps.every(detail=>!/SCAN (?:r|newer)(?: |$)/u.test(detail)),
+          "current semantic state regressed to scan: "+steps.join(" | "));
     }
     console.log("FIBRE-WORLD-BOUNDARY-QUERY-PLANS "+JSON.stringify({
       indexes,plans,

@@ -8,6 +8,7 @@ import {join,relative,resolve} from "node:path";
 const SCHEMA_SQL=/\b(?:CREATE\s+(?:UNIQUE\s+)?(?:TABLE|INDEX|TRIGGER|VIEW)|ALTER\s+TABLE|DROP\s+(?:TABLE|INDEX|TRIGGER|VIEW))\b/iu;
 const DEFINITIONS=["services/world-kernel/src"];
 const INSTALLER="services/world-kernel/src/world-schema-installation.mjs";
+const MIGRATIONS=new Set(["services/world-kernel/src/world-hot-frontier-migration.mjs"]);
 
 async function filesUnder(dir){
   const files=[];
@@ -28,7 +29,7 @@ export async function readWorldSchemaDigest({repoRoot}={}){
   for(const file of files){
     const content=await readFile(file,"utf8");
     const path=relative(root,file).replaceAll("\\","/");
-    if(path!==INSTALLER&&!SCHEMA_SQL.test(content))continue;
+    if(path!==INSTALLER&&!MIGRATIONS.has(path)&&!SCHEMA_SQL.test(content))continue;
     hash.update(path+"\0"+content+"\0");
     counted++;
   }
