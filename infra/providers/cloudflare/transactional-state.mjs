@@ -1,4 +1,5 @@
 import {checkPortableSchemaSql,checkRuntimeSchemaSql,runtimeSchemaGuardMode} from "../../runtime-schema-guard.mjs";
+import {cloudflareCapacityError} from "./capacity.mjs";
 import {
   INFRA_DRIVER_VERSION,
   assertInfraDriver,
@@ -224,7 +225,8 @@ function createSession(scopeId, storage, { readOnly, label, cost, sessionMode, g
     checkRuntimeSchemaSql(sql,{mode:sessionMode,guard:guardMode,label});
     if (readOnly && mutation) throw new Error(`transactional state scope ${scopeId} is read-only`);
     if (readOnly) assertReadOnlySql(sql);
-    return executeCloudflareSql(storage, sql, params, { readOnly, cost, label });
+    try{return executeCloudflareSql(storage,sql,params,{readOnly,cost,label});}
+    catch(error){throw cloudflareCapacityError(error,"state");}
   }
 
   const session = {
@@ -257,7 +259,8 @@ function createSession(scopeId, storage, { readOnly, label, cost, sessionMode, g
       if (transactionActive) throw new Error(`transactional state scope ${scopeId} already has an active transaction`);
       transactionActive = true;
       try {
-        return storage.transactionSync(() => assertSynchronousTransactionResult(callback(session)));
+        try{return storage.transactionSync(() => assertSynchronousTransactionResult(callback(session)));}
+        catch(error){throw cloudflareCapacityError(error,"state");}
       } finally {
         transactionActive = false;
       }

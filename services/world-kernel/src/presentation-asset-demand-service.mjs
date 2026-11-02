@@ -4,6 +4,7 @@ import {
   fibreShortRef,
 } from "#services/asset-generator/src/index.mjs";
 import {
+  InfraCapacityExhaustedError,
   InfraImmutableObjectConflictError,
   InfraWorkflowConflictError,
   requireInfraCapabilities,
@@ -37,12 +38,6 @@ function nullableText(name, value) {
   return value;
 }
 
-function isD1DailyWriteQuotaError(error) {
-  const message = error?.message ?? String(error);
-  return Number(error?.code) === 7500
-    || message.includes("exceeded D1's free tier daily row write limit");
-}
-
 function openCatalogWriteCircuit(key, nowMs, backoffMs) {
   const openUntilMs = nowMs + backoffMs;
   presentationCatalogWriteCircuits.set(key, openUntilMs);
@@ -61,21 +56,14 @@ function assertCatalogWriteCircuitClosed(key, nowMs) {
     return;
   }
   const error = new Error(
-    `Presentation catalog D1 write circuit is open until ${new Date(openUntilMs).toISOString()}`,
+    `Presentation catalog capacity circuit is open until ${new Date(openUntilMs).toISOString()}`,
   );
-  error.name = "PresentationCatalogWriteCircuitOpenError";
-  error.code = "PRESENTATION_CATALOG_WRITE_CIRCUIT_OPEN";
+  error.name = "PresentationCatalogCapacityCircuitOpenError";
+  error.code = "PRESENTATION_CATALOG_CAPACITY_CIRCUIT_OPEN";
   error.retryable = true;
   error.suppressActivity = true;
   error.retryAfterAt = new Date(openUntilMs).toISOString();
   throw error;
-}
-
-function quotaFailure(error, openUntilMs) {
-  error.code = "D1_WRITE_QUOTA_EXHAUSTED";
-  error.retryable = true;
-  error.retryAfterAt = new Date(openUntilMs).toISOString();
-  return error;
 }
 
 export function normalizePresentationAssetDemandScope(value) {
@@ -390,9 +378,10 @@ export function createPresentationAssetDemandService({
           await infra.catalog.upsert(catalogKey, projection);
           clearCatalogWriteCircuit(writeCircuitKey);
         } catch (error) {
-          if (!isD1DailyWriteQuotaError(error)) throw error;
+          if (!(error instanceof InfraCapacityExhaustedError)) throw error;
           const openUntilMs = openCatalogWriteCircuit(writeCircuitKey, nowMs(), writeQuotaBackoffMs);
-          throw quotaFailure(error, openUntilMs);
+          error.retryAfterAt = new Date(openUntilMs).toISOString();
+          throw error;
         }
       }
       return Object.freeze({

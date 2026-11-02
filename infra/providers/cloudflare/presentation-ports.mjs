@@ -1,3 +1,5 @@
+import {cloudflareCapacityError} from "./capacity.mjs";
+import {InfraCapacityExhaustedError} from "../../infra-driver.mjs";
 import {
   InfraIdempotencyConflictError,
   InfraSequenceConflictError,
@@ -134,40 +136,28 @@ function prefixEnd(prefix) {
   return prefix + "\uFFFF";
 }
 
-function isD1WriteQuotaError(error) {
-  const message = error?.message ?? String(error);
-  return Number(error?.code) === 7500
-    || message.includes("exceeded D1's free tier daily row write limit");
-}
-
-function quotaCircuitError(openUntilMs) {
-  const error = new Error(`Cloudflare D1 catalog write circuit is open until ${new Date(openUntilMs).toISOString()}`);
-  error.name = "CloudflareD1CatalogWriteCircuitOpenError";
-  error.code = "D1_WRITE_QUOTA_CIRCUIT_OPEN";
-  error.retryable = true;
-  error.suppressActivity = true;
-  error.retryAfterAt = new Date(openUntilMs).toISOString();
+function quotaCircuitError(until){
+  const error=new InfraCapacityExhaustedError("catalog",{
+    retryAfterAt:new Date(until).toISOString(),
+  });
+  error.suppressActivity=true;
   return error;
 }
 
-function assertD1WriteCircuitClosed(database) {
-  const openUntilMs = d1WriteCircuitByDatabase.get(database) ?? null;
-  if (openUntilMs === null) return;
-  if (Date.now() >= openUntilMs) {
-    d1WriteCircuitByDatabase.delete(database);
-    return;
-  }
-  throw quotaCircuitError(openUntilMs);
+function assertD1WriteCircuitClosed(database){
+  const until=d1WriteCircuitByDatabase.get(database)??null;
+  if(until===null)return;
+  if(Date.now()>=until){d1WriteCircuitByDatabase.delete(database);return;}
+  throw quotaCircuitError(until);
 }
 
-function classifyD1WriteFailure(database, error) {
-  if (!isD1WriteQuotaError(error)) throw error;
-  const openUntilMs = Date.now() + D1_WRITE_QUOTA_BACKOFF_MS;
-  d1WriteCircuitByDatabase.set(database, openUntilMs);
-  error.code = "D1_WRITE_QUOTA_EXHAUSTED";
-  error.retryable = true;
-  error.retryAfterAt = new Date(openUntilMs).toISOString();
-  throw error;
+function classifyD1WriteFailure(database,error){
+  const capacity=cloudflareCapacityError(error,"catalog");
+  if(!(capacity instanceof InfraCapacityExhaustedError))throw error;
+  const until=Date.now()+D1_WRITE_QUOTA_BACKOFF_MS;
+  d1WriteCircuitByDatabase.set(database,until);
+  capacity.retryAfterAt=new Date(until).toISOString();
+  throw capacity;
 }
 
 async function runD1Write(database, operation) {

@@ -28,6 +28,16 @@ export class InfraSnapshotConflictError extends Error {}
 export class InfraIdempotencyConflictError extends Error {}
 export class InfraImmutableObjectConflictError extends Error {}
 export class InfraWorkflowConflictError extends Error {}
+export class InfraCapacityExhaustedError extends Error {
+  constructor(capability,{retryAfterAt=null,cause=null}={}){
+    super("infrastructure capacity exhausted: "+capability,{cause});
+    this.name="InfraCapacityExhaustedError";
+    this.code="INFRA_CAPACITY_EXHAUSTED";
+    this.capability=capability;
+    this.retryable=true;
+    this.retryAfterAt=retryAfterAt;
+  }
+}
 export class InfraServiceCallError extends Error {
   constructor(message,{serviceName=null,operation=null,retryable=true,status=null}={}){
     super(message);
