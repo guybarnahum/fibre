@@ -158,7 +158,8 @@ test("transactional state rejects nonportable schema rewrites across providers a
             "ALTER TABLE proof RENAME COLUMN id TO identifier",
             "ALTER TABLE proof DROP COLUMN value",
           ]){
-            for(const query of [sql,"SELECT 'ALTER TABLE proof DROP COLUMN value'; "+sql]){
+            for(const query of [sql,"SELECT '-- literal'; "+sql,
+              "-- ignored schema change\n"+sql]){
               assert.throws(()=>session.exec(query),
                 /transactional state: schema-rewriting ALTER is not portable; rebuild by create\/copy\/drop/u,
                 "provider admitted a schema rewrite");

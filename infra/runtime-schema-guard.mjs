@@ -13,15 +13,13 @@ export class RuntimeSchemaAccessError extends Error {
 function schemaKeywords(sql){
   if(typeof sql!=="string")throw new TypeError("transactional state SQL must be text");
   // Ignore comments and quoted values, not quoted SQL identifiers.
-  return sql.replace(/--[^\n]*|\/\*[\s\S]*?\*\/|(?:'(?:''|[^'])*')/gu," ");
+  return sql.replace(/'(?:''|[^'])*'|--[^\n]*|\/\*[\s\S]*?\*\//gu," ");
 }
 
 export function checkPortableSchemaSql(sql){
   if(typeof sql!=="string")throw new TypeError("transactional state SQL must be text");
   if(!/\bALTER\b/iu.test(sql))return;
-  const statements=schemaKeywords(sql).split(";");
-  if(statements.some(statement=>
-    /\bALTER\s+TABLE\s+(?:"(?:[^"]|"")*"|\x60[^\x60]*\x60|\[[^\]]*\]|\w+)\s+(?:RENAME\s+(?:TO|COLUMN)|DROP\s+COLUMN)\b/iu.test(statement)))
+  if(/\bALTER\s+TABLE\s+(?:"(?:[^"]|"")*"|\x60[^\x60]*\x60|\[[^\]]*\]|\w+)\s+(?:RENAME\s+(?:TO|COLUMN)|DROP\s+COLUMN)\b/iu.test(schemaKeywords(sql)))
     throw new Error("transactional state: schema-rewriting ALTER is not portable; rebuild by create/copy/drop");
 }
 
