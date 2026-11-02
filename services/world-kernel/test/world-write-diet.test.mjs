@@ -240,14 +240,13 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         completedAt:at("16:20"),
       });
     });
-    let consolidationCalls=0;
     const consolidated=await audit.measure("consolidation",async()=>{
       const process=createExperienceConsolidationProcess({
         worldReader:world,livedNowStore:lived,
         semanticStateStore:{listCurrentState:()=>[]},
         memoryStore:memory,experienceStore:experience,
-        modelAdapter:{async invoke(){
-          return {output:{journalEntry:null,afterthoughts:consolidationCalls++===0
+        modelAdapter:{async invoke(call){
+          return {output:{journalEntry:null,afterthoughts:call.input.thread.threadId===ids[0]
             ?[{kind:"question",text:"I want to ask the other reader about her favorite passage."}]
             :[],memory:{
             outcome:"retained",
@@ -341,18 +340,18 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         text:"A thundercloud develops beyond the city."},
     ]};
     const source=experience.recordEncounterStory({
-      occurredAt:at("17:00"),
+      occurredAt:at("16:20"),
       threadPresence:[{threadId:ids[4],situationId:situations.get(ids[4])}],
       story:scene,
       visualization:createEncounterVisualization({
-        occurredAt:at("17:00"),story:scene,
+        occurredAt:at("16:20"),story:scene,
         scene:"Beyond the reading room windows.",
         sourceReferences:[venue.ref],depictedThreadRefs:[],
       }),
     },{uniquePlaceOccurrenceRef:venue.physicalVenue.ref,followupAfterMs:30*60_000});
     const environment=createWorldEnvironmentEvolution({
       experienceStore:experience,livedNowStore:lived,worldReader:world,
-      semanticStateStore:semantic,memoryStore:memory,now:()=>at("17:30"),
+      semanticStateStore:semantic,memoryStore:memory,now:()=>at("16:50"),
       modelAdapter:{async invoke(call){
         return call.clientRequestId.startsWith("world-environment-followup_")
           ?{output:{outcome:"changed",
