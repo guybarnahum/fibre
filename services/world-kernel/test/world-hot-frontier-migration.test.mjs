@@ -1,3 +1,4 @@
+import {reportTestEvidence} from "../../../tools/test-infra/test-evidence.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {mkdtempSync,rmSync} from "node:fs";
@@ -73,6 +74,6 @@ test("bounded World frontier conversion preserves current presence and due wakes
       prepare:sql=>db.prepare(sql),exec:sql=>db.exec(sql),
       transaction:()=>{throw Error("already compacted frontiers were recopied");},
     }).map(row=>row.rowsCopied),[0,0]);
-    console.log("FIBRE-WORLD-HOT-FRONTIER-COPIES "+JSON.stringify(copies));
+    reportTestEvidence("FIBRE-WORLD-HOT-FRONTIER-COPIES",copies);
   }finally{db?.close();rmSync(directory,{recursive:true,force:true});}
 });

@@ -1,3 +1,4 @@
+import {reportTestEvidence} from "../../../tools/test-infra/test-evidence.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {mkdtempSync,rmSync,readdirSync,readFileSync} from "node:fs";
@@ -245,7 +246,7 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
       "current recent-presence path lost its time index");
     db.exec("DROP INDEX idx_current_situations_place");
     const sourceFiles=relevantSources();
-    console.log("FIBRE-WORLD-HOT-SQL-AUDIT "+JSON.stringify({
+    reportTestEvidence("FIBRE-WORLD-HOT-SQL-AUDIT",{
       checked:plans.length,staticPreparedStatements:preparedPlans.length,
       dynamicPreparedStatements:dynamic,
       unboundedHistoryReaders:unbounded.map(({path,table,sql})=>({
@@ -256,6 +257,6 @@ test("World hot-table SQL keeps indexed historical and co-presence readers",()=>
         semanticThread:uses("idx_semantic_state_thread_current"),
       },
       dropped:"idx_current_situations_place",
-    }));
+    });
   }finally{db?.close();rmSync(directory,{recursive:true,force:true});}
 });

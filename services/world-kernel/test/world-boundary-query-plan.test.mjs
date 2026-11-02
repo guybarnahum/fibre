@@ -1,3 +1,4 @@
+import {reportTestEvidence} from "../../../tools/test-infra/test-evidence.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {mkdtempSync,rmSync} from "node:fs";
@@ -75,8 +76,8 @@ test("World boundary indexes serve history, current presence and semantic heads"
         assert.ok(steps.some(detail=>/SEARCH h USING PRIMARY KEY.*thread_id=/u.test(detail)),
           "current semantic state reads grow with history");
     }
-    console.log("FIBRE-WORLD-BOUNDARY-QUERY-PLANS "+JSON.stringify({
+    reportTestEvidence("FIBRE-WORLD-BOUNDARY-QUERY-PLANS",{
       indexes,plans,
-    }));
+    });
   }finally{db?.close();rmSync(directory,{recursive:true,force:true});}
 });

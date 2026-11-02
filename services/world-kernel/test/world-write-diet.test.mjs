@@ -1,3 +1,4 @@
+import {reportTestEvidence} from "../../../tools/test-infra/test-evidence.mjs";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {mkdtempSync,readFileSync,rmSync} from "node:fs";
@@ -237,7 +238,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     assert.ok(report.total>0&&report.byStore.LivedNowStore>0
       &&report.byStore.LivedExperienceStore>0,
     "World write measurement omitted lived and experience storage");
-    console.log("FIBRE-WORLD-WRITE-BUDGET "+JSON.stringify(report));
+    reportTestEvidence("FIBRE-WORLD-WRITE-BUDGET",report);
     // Storage-only upper bound for the seven-Thread day; semantic heads add
     // writes only when a new semantic record is admitted.
     const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??310/7);
@@ -360,10 +361,10 @@ test("a real arrival boundary includes semantic regulation, wake rearm and settl
     assert.equal(audit.report(ids.length).total,beforeReplay,
       "retry rewrote an unchanged situation or semantic state");
     const report=audit.report(ids.length);
-    console.log("FIBRE-WORLD-BOUNDARY-UNIT "+JSON.stringify({
+    reportTestEvidence("FIBRE-WORLD-BOUNDARY-UNIT",{
       advances:outcomes.length,semanticStates:modelCalls.length,
       rowsPerBoundary:report.total/outcomes.length,...report,
-    }));
+    });
     assert.ok(report.byStore.LivedNowStore>0&&report.byStore.SemanticStateStore>0,
       "boundary diet omitted lived or semantic writes: "+JSON.stringify(report.byStore));
     // The compact semantic head is one PK B-tree write per new state, not
