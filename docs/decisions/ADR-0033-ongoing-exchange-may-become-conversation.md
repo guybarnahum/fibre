@@ -1,13 +1,13 @@
 ---
 id: adr-0033-ongoing-exchange-conversation
-status: proposed
-last-reviewed: 2026-11-02
-canonical: false
+status: accepted
+last-reviewed: 2026-11-03
+canonical: true
 ---
 
 # ADR-0033 — An ongoing exchange may become a conversation
 
-**Proposed for Guy's acceptance.** A Thread already speaking back and forth
+**Accepted by Guy November 3, 2026; deployed to staging at `2ef5d24`. Actual Thread-chosen continuation in staging remains unobserved.** A Thread already speaking back and forth
 with another may *choose* to continue as a live conversation. Replying is
 never inferred consent. The reciprocal exchange is an observable opportunity,
 not a relationship, obligation, or prescribed social trajectory.
@@ -83,5 +83,4 @@ The local comparison `FIBRE-WORLD-WRITE-MAP` measures four individual
 small-act utterances versus two prior utterances followed by a single live
 conversation. The staging estimate of 45–50 weighted rows per remark and
 35–55 for a single live Story is **calibration only**, not a local result.
-Guy validates the local tests and approves or rejects this proposed ADR
-before deployment.
+Guy accepted this ADR on November 3, 2026, and deployed `2ef5d24` to staging; direct staging evidence of an actual voluntarily continued exchange remains pending.

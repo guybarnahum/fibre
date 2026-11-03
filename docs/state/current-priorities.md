@@ -9,6 +9,8 @@ canonical: true
 
 **North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
 
+**November 3 Thread-to-Thread:** Guy accepted [ADR-0033](../decisions/ADR-0033-ongoing-exchange-may-become-conversation.md) and deployed `2ef5d24` to staging, allowing an ongoing spoken exchange to become one live conversation by the Thread's own choice. Next evidence: witness an actual voluntary continuation in staging; deployment alone does not establish that behavior.
+
 **October 24 readable social perception — source-only, validation pending:**
 Abrehot Library (Addis Ababa) staging evidence reported **0 of 5**
 already-present witnesses noticing newcomers on October 24 (and 2 of 4
