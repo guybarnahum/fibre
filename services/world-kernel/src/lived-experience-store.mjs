@@ -472,6 +472,7 @@ export class LivedExperienceStore {
       SELECT 1 FROM world_observed_social_opportunities
       WHERE encounter_ref=? AND thread_id=? AND counterparty_thread_id=?
         AND source_kind='social_act' AND started_at IS NOT NULL
+        AND completed_at IS NULL
       LIMIT 1
     `).get(encounterRef,threadId,counterpartyThreadId)!==undefined;
   }
