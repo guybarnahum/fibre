@@ -4,6 +4,7 @@ import {
   meetingPresenceCompatible,
 } from "./lived-meeting-cognition.mjs";
 import { runThreadLiveSocialEncounter } from "./lived-social-live-encounter.mjs";
+import { assertExpressionModelAdapter } from "./guardian-model-adapter.mjs";
 import { appraiseEncounterAttention,admitEncounterAttention } from "./lived-encounter-attention.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
@@ -201,8 +202,9 @@ export function createSocialMeetingService({
   requireMethod("experienceStore", experienceStore, "getThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "recordThreadEncounterAttention");
   requireMethod("experienceStore", experienceStore, "queueThreadExperienceConsolidation");
-  requireMethod("modelAdapter", modelAdapter, "invoke");
-  requireMethod("modelAdapter", modelAdapter, "streamExpression");
+  // Fail at composition, not silently mid-conversation: live speech streams
+  // through this adapter and requires its provenance metadata.
+  assertExpressionModelAdapter(modelAdapter);
   if (liveEncounterRegistry !== null && (
     typeof liveEncounterRegistry.register !== "function"
     || typeof liveEncounterRegistry.publishAfterthoughts !== "function"

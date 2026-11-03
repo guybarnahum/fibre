@@ -2,7 +2,7 @@ import baseWorker, { FibreWorldDurableObject as BaseWorldDurableObject } from ".
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
-import { selectReasoningIntegration } from "../../integration-selection.mjs";
+import { lazyReasoningIntegration,selectReasoningIntegration } from "../../integration-selection.mjs";
 import { createLivedEncounterWriteApi } from "#services/world-kernel/src/lived-encounter-write-api.mjs";
 import { createEnvironmentalEncounterService } from "#services/world-kernel/src/lived-environmental-encounter.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
@@ -330,21 +330,13 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         onSituationEnacted:(situation,previous)=>this.enqueueWorldOpportunity(situation,previous),
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
       });
-      let socialModelAdapter=null;
-      const encounterModelAdapter=()=>{
-        socialModelAdapter??=selectReasoningIntegration(
-          deployment.integrations.encounter,{environment:this.env},
-        );
-        return socialModelAdapter;
-      };
       const meetingService=createSocialMeetingService({
         worldReader:runtime.worldStore,livedNow,livedNowStore,
         identityStore,situatedLifeStore,semanticStateStore,memoryStore,experienceStore,
         embodimentStore:openEmbodimentStore(runtime.worldStorage),
-        modelAdapter:{
-          invoke:(request)=>encounterModelAdapter().invoke(request),
-          streamExpression:(request)=>encounterModelAdapter().streamExpression(request),
-        },
+        modelAdapter:lazyReasoningIntegration(
+          deployment.integrations.encounter,{environment:this.env},
+        ),
         boundedVenueDiscovery:true,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });

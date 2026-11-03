@@ -149,6 +149,22 @@ export function selectImageProviderProfile(serviceDeployment, {
   return defaults[0].profile;
 }
 
+// Defer secrets until first use while exposing the provenance metadata that
+// streaming cognition validates when a service is composed.
+export function lazyReasoningIntegration(value, options = {}) {
+  const chosen = selection("reasoning integration", value, "ai.reasoning");
+  const modelId = configured("reasoning integration config.model", chosen.config?.model);
+  let adapter = null;
+  const resolve = () => adapter ??= selectReasoningIntegration(value, options);
+  return Object.freeze({
+    provider: chosen.provider,
+    modelId,
+    configuration: Object.freeze({ ...chosen.config }),
+    invoke: (request) => resolve().invoke(request),
+    streamExpression: (request) => resolve().streamExpression(request),
+  });
+}
+
 export function selectReasoningIntegration(value, { environment = process.env, fetchImpl = globalThis.fetch, observer = null } = {}) {
   const chosen = selection("reasoning integration", value, "ai.reasoning");
   const modelId = configured("reasoning integration config.model", chosen.config?.model);

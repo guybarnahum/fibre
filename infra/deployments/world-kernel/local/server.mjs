@@ -72,7 +72,7 @@ import {
   listenWorldKernelHttpServer,
 } from "#services/world-kernel/src/http-server.mjs";
 import { createStructuredObligationInspectionHttpServer } from "#services/world-kernel/src/structured-obligation-inspection-http-server.mjs";
-import { selectReasoningIntegration } from "../../integration-selection.mjs";
+import { lazyReasoningIntegration,selectReasoningIntegration } from "../../integration-selection.mjs";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
 import { createThreadPresentationPublisher } from "./thread-presentation-publisher.mjs";
 
@@ -485,26 +485,12 @@ export async function startWorldKernelFromEnvironment(
     workStore:firstLifeStore,livedNow:contactLivedNow,
     livedNowStore,situatedLifeStore,worldReader:store,
   });
-  let socialModelAdapter=null;
   const socialMeetingService=createSocialMeetingService({
     worldReader:store,livedNow:contactLivedNow,livedNowStore,
     identityStore,situatedLifeStore,semanticStateStore,embodimentStore,
     memoryStore:autobiographicalMemoryStore,
     experienceStore:livedExperienceStore,
-    modelAdapter:{
-      invoke(request){
-        socialModelAdapter??=selectReasoningIntegration(
-          DEPLOYMENT.integrations.encounter,{environment},
-        );
-        return socialModelAdapter.invoke(request);
-      },
-      streamExpression(request){
-        socialModelAdapter??=selectReasoningIntegration(
-          DEPLOYMENT.integrations.encounter,{environment},
-        );
-        return socialModelAdapter.streamExpression(request);
-      },
-    },
+    modelAdapter:lazyReasoningIntegration(DEPLOYMENT.integrations.encounter,{environment}),
     boundedVenueDiscovery:true,
     onExperienceQueued:(queued)=>experienceConsolidationWakeScheduler(queued),
   });

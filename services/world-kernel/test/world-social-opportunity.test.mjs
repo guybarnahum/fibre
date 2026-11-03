@@ -2045,6 +2045,7 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       memoryStore:{listCurrentMemories:()=>[]},
       experienceStore:experience,
       modelAdapter:{
+        provider:"fixture",modelId:"social-fixture",configuration:{transport:"fixture"},
         async invoke(){throw Error("ordinary quiet co-presence forced cognition");},
         async *streamExpression(){throw Error("ordinary quiet scene forced speech");},
       },

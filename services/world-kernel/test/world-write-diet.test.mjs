@@ -542,6 +542,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       situatedLifeStore:situated,semanticStateStore:semantic,
       memoryStore:memory,experienceStore:experience,boundedVenueDiscovery:true,
       modelAdapter:{
+        provider:"fixture",modelId:"social-fixture",configuration:{transport:"fixture"},
         async invoke(call){
           if(call.input?.concern?.kind==="social_initiation"){
             initiationCalls++;

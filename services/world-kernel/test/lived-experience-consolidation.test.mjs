@@ -667,6 +667,7 @@ test("retained lived Memory, not archived history, changes a later voluntary soc
         semanticStateStore:{listCurrentState:()=>[]},
         memoryStore,experienceStore,
         modelAdapter:{
+          provider:"fixture",modelId:"social-fixture",configuration:{transport:"fixture"},
           async invoke({input}){
             const kind=input?.concern?.kind;
             if(kind==="social_initiation"){

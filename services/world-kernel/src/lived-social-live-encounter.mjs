@@ -177,7 +177,14 @@ export async function runThreadLiveSocialEncounter({
       }finally{
         activeControllers.delete(participantId);
       }
-    }catch{
+    }catch(error){
+      // Never end a conversation silently: report the failure without any
+      // private or spoken content, then stop as before.
+      console.warn(JSON.stringify({
+        event:"live-social-encounter-stopped",reason:"cognition_error",
+        errorName:error?.name??null,errorCode:error?.code??null,
+        message:String(error?.message??error).slice(0,160),
+      }));
       stop("cognition_error");
     }
   }

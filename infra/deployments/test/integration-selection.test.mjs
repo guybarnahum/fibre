@@ -10,8 +10,10 @@ import {
   selectImageIntegration,
   selectImageProviderProfile,
   selectImageProviderRoute,
+  lazyReasoningIntegration,
   selectReasoningIntegration,
 } from "../integration-selection.mjs";
+import { assertExpressionModelAdapter } from "../../../services/world-kernel/src/guardian-model-adapter.mjs";
 
 const local = parseDeploymentManifest(
   readFileSync(new URL("../environments/local.yaml", import.meta.url), "utf8"),
@@ -28,6 +30,17 @@ test("deployment composition constructs selected reasoning integration", () => {
   });
   assert.equal(adapter.provider, "openai");
   assert.equal(adapter.modelId, "gpt-5.1-2025-11-13");
+});
+
+test("deployed social meeting adapter can stream live speech before secrets are read", () => {
+  const worldKernel = resolveServiceDeployment(cloudflare, "world-kernel");
+  let constructed = false;
+  const adapter = lazyReasoningIntegration(worldKernel.integrations.encounter, {
+    environment: new Proxy({}, { get: () => { constructed = true; return undefined; } }),
+  });
+  assert.doesNotThrow(() => assertExpressionModelAdapter(adapter),
+    "live conversation cannot speak with the deployed meeting adapter");
+  assert.equal(constructed, false, "meeting adapter read secrets before first cognition");
 });
 
 test("deployment composition constructs selected image integrations", () => {
