@@ -749,7 +749,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         worldReader:world,livedNow:{async ensure(){
           throw Error("social encounter must not re-enact life");
         }},
-        livedNowStore:lived,identityStore:{getCurrentIdentityView:()=>({assertions:[]})},
+        livedNowStore:lived,
+        identityStore:{getCurrentIdentityView:threadId=>({threadId,assertions:[]})},
         situatedLifeStore:situated,semanticStateStore:semantic,memoryStore:memory,
         experienceStore:experience,boundedVenueDiscovery:true,modelAdapter:adapter,
       });
