@@ -130,7 +130,7 @@ export async function formSocialEncounterRequest({
     adapter:continuationEligible?{
       ...SOCIAL_INITIATION_ADAPTER,
       instruction:SOCIAL_INITIATION_ADAPTER.instruction+
-        "\nThis is an ongoing exchange of voluntary spoken small acts. You may continue it as a live conversation, make one more brief remark, or say nothing. None is preferable. If you choose continue_conversation, expression is what you say aloud now, not a request for the other person to consent.",
+        "\nThis is an ongoing exchange of voluntary spoken small acts. You may continue it as a live conversation, make one more brief remark, or say nothing. None is preferable. If you choose continue_conversation, expression is what you say aloud now, not a request for the other person to consent. An introduction requires your own name actually spoken in those words.",
       resultSchema:{
         ...SOCIAL_INITIATION_ADAPTER.resultSchema,
         properties:{...SOCIAL_INITIATION_ADAPTER.resultSchema.properties,
