@@ -89,7 +89,7 @@ test("four act-triggered reply opportunities bound one shared visit, not future 
 });
 
 
-function groundedReconsiderationFixture({onInvoke=null,speakerName=null}={}){
+function groundedReconsiderationFixture({onInvoke=null,onStream=null,speakerName=null}={}){
   const directory=mkdtempSync(join(tmpdir(),"fibre-reconsideration-"));
   const path=join(directory,"world.sqlite");
   const storage=installedWorldStateStorage(path);
@@ -178,7 +178,10 @@ function groundedReconsiderationFixture({onInvoke=null,speakerName=null}={}){
         if(onInvoke===null)throw Error("unearned social decision spent cognition");
         return onInvoke(request);
       },
-      async *streamExpression(){throw Error("unearned speech");},
+      async *streamExpression(call){
+        if(onStream===null)throw Error("unearned speech");
+        yield* onStream(call);
+      },
     },
   });
   function close(){
@@ -741,6 +744,126 @@ test("acknowledgment records a performed act, never conditional intent",async()=
     assert.equal(conditional.experience.listEncounterStories(actor).length,0,
       "an unperformed intention entered shared history");
   }finally{conditional.close();}
+});
+
+test("only a witnessed ongoing exchange can become a voluntary conversation",async()=>{
+  const visit="2026-10-23T09:00:00.000Z";
+  const firstAt="2026-10-23T09:58:00.000Z";
+  const spokenAt="2026-10-23T10:00:00.000Z";
+  const at="2026-10-23T10:00:10.000Z";
+  const modes=["continue_conversation","remark"];
+  for(const mode of modes){
+    let offered=false,decisions=0,liveCalls=0,experienceCalls=0;
+    const f=groundedReconsiderationFixture({onInvoke:call=>{
+      if(call.input?.concern?.kind==="social_initiation"){
+        decisions++;
+        offered=JSON.stringify(call.responseSchema).includes("continue_conversation");
+        return {output:{result:{
+          act:mode,expression:mode==="remark"?"That is interesting.":"Tell me more.",
+          experienceText:"I chose how to respond to the other reader.",
+          reason:"I want to respond in my own way.",introducesSelf:false,
+        },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+        provenance:{provider:"fixture",modelId:"ongoing-choice"}};
+      }
+      if(call.clientRequestId?.startsWith("social-live-contribution_")){
+        liveCalls++;
+        return {output:{decision:"silent",actionText:null},
+          provenance:{provider:"fixture",modelId:"voluntary-silence"}};
+      }
+      if(call.clientRequestId?.startsWith("encounter-experience_")){
+        experienceCalls++;
+        return {output:{experienceText:"I experienced this exchange."},
+          provenance:{provider:"fixture",modelId:"whole-exchange-experience"}};
+      }
+      return {output:{outcome:"not_noticed",experienceText:null,
+        passedReason:"I stayed with my own thoughts."},
+        provenance:{provider:"fixture",modelId:"independent-attention"}};
+    }});
+    try{
+      const [actor,other]=f.people;
+      const a=f.enact(actor,visit,"Reading.",[other]);
+      const b=f.enact(other,visit,"Reading.",[actor]);
+      const utter=(speaker,when,text)=>{
+        const story={storyVersion:"encounter-story-v0.1",
+          beats:[{kind:"utterance",actorThreadId:speaker,text}]};
+        return f.experience.recordEncounterStory({
+          occurredAt:when,
+          threadPresence:[a,b].map(scene=>({
+            threadId:scene.threadId,situationId:scene.situationId,
+          })),
+          story,visualization:createEncounterVisualization({
+            occurredAt:when,story,scene:"At the shared library.",
+            sourceReferences:[a.situationId,b.situationId],
+            depictedThreadRefs:[],
+          }),
+        });
+      };
+      const former=utter(actor,firstAt,"I was comparing two explanations.");
+      const source=utter(other,spokenAt,"What did you discover?");
+      f.experience.recordThreadEncounterAttention({
+        threadId:actor,encounterRef:source.encounterId,
+        situationId:a.situationId,occurredAt:spokenAt,outcome:"noticed",
+        experienceText:"I heard a question addressed to me.",
+      });
+      const queued=f.experience.enqueueObservedSocialOpportunity({
+        encounterRef:source.encounterId,threadId:actor,
+        situationId:a.situationId,counterpartyThreadId:other,
+        venueRef:f.place.physicalVenue.ref,dueAt:spokenAt,
+        sourceKind:"social_act",visitSince:visit,
+      });
+      assert.equal(queued.inserted,true,"a spoken reply had no opportunity");
+      const social=createWorldSocialOpportunity({
+        experienceStore:f.experience,livedNowStore:f.lived,
+        worldReader:f.world,meetingService:f.meeting,now:()=>at,
+      });
+      const result=await social.runOnce();
+      assert.equal(result.failed,0,result.results[0]?.message??"social reply failed");
+      assert.equal(offered,true,"ongoing exchange lacked a continuation choice");
+      assert.equal(decisions,1,"one reply spent multiple decisions");
+      if(mode==="continue_conversation"){
+        assert.equal(result.results[0]?.outcome,"met",
+          "the chosen conversation did not enter the live loop");
+        const conversation=f.experience.listEncounterStories(actor)
+          .find(item=>item.encounterId!==former.encounterId
+            &&item.encounterId!==source.encounterId);
+        assert.ok(conversation,"one continued conversation Story was not recorded");
+        assert.deepEqual(conversation.story.beats.map(beat=>beat.actorThreadId),
+          [other,actor],"the live conversation lost its two seeded speakers");
+        assert.equal(conversation.story.beats.length,2,
+          "the counterpart's chosen silence was overridden");
+        for(const person of [actor,other]){
+          assert.equal(f.experience.getThreadEncounterAttention(
+            person,conversation.encounterId)?.outcome,"noticed",
+          "one participant lost whole-conversation Experience");
+        }
+        assert.ok(conversation.visualization.visualizationSourceReferences
+          .includes(former.encounterId)
+          &&conversation.visualization.visualizationSourceReferences
+            .includes(source.encounterId),
+        "the conversation lost the previous outward exchange");
+        assert.equal(liveCalls,1,"silence spent additional live turns");
+        assert.equal(experienceCalls,2,"conversation did not form two experiences");
+        assert.equal(f.experience.listDueSocialOpportunities({
+          at:"2026-10-23T10:00:11.000Z",limit:8,
+        }).length,0,"continued conversation reopened one-shot opportunities");
+      }else{
+        assert.equal(result.results[0]?.outcome,"acted",
+          "a chosen brief remark was forced into conversation");
+        assert.equal(liveCalls,0,"a remark opened the live loop");
+        const remarks=f.experience.listEncounterStories(actor);
+        assert.ok(remarks.some(item=>item.story.beats.length===1
+          &&item.story.beats[0].actorThreadId===actor
+          &&item.encounterId!==former.encounterId),
+        "a brief reply did not remain an ordinary small act");
+      }
+      const life=openSituatedLifeStore(f.storage);
+      try{
+        assert.ok(!life.listCurrentLifeRelations(actor).some(item=>
+          item.relationKind==="social_contact"),
+        "an uninvited exchange manufactured acquaintance");
+      }finally{life.close();}
+    }finally{f.close();}
+  }
 });
 
 test("a shared visit owns one Body-band obligation across activity changes",async()=>{
