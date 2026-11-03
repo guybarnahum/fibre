@@ -467,6 +467,15 @@ export class LivedExperienceStore {
     }));
   }
 
+  isClaimedSpokenSocialOpportunity({encounterRef,threadId,counterpartyThreadId}){
+    return this.#database.prepare(`
+      SELECT 1 FROM world_observed_social_opportunities
+      WHERE encounter_ref=? AND thread_id=? AND counterparty_thread_id=?
+        AND source_kind='social_act' AND started_at IS NOT NULL
+      LIMIT 1
+    `).get(encounterRef,threadId,counterpartyThreadId)!==undefined;
+  }
+
   claimDueSocialOpportunity({at,selected=null}){
     assertIsoTimestamp("social opportunity now",at);
     return this.#database.transaction(()=>{

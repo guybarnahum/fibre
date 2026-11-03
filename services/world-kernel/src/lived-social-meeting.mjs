@@ -323,7 +323,12 @@ export function createSocialMeetingService({
   // never consent; only this Thread's earlier speech makes continuation a
   // possible choice within the same proven shared visit.
   function ongoingExchange({initiator,counterparty,at,sourceKind,sourceEncounterRef}){
-    if(sourceKind!=="social_act"||sourceEncounterRef===null)return null;
+    if(sourceKind!=="social_act"||sourceEncounterRef===null
+      ||!experienceStore.isClaimedSpokenSocialOpportunity?.({
+        encounterRef:sourceEncounterRef,
+        threadId:initiator.thread.threadId,
+        counterpartyThreadId:counterparty.thread.threadId,
+      }))return null;
     const venue=initiator.situation.location?.kind==="place"
       ?livedNowStore.getWorldPlace(initiator.thread.threadId,
         initiator.situation.location.placeRef,{required:false})?.physicalVenue?.ref??null
