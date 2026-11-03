@@ -130,6 +130,12 @@ function normalizeStory(candidate, participantIds) {
         }
       }
       assertNonEmpty("encounter story beat.text", beat.text);
+      const spokenText=beat.spokenText??null;
+      if(spokenText!==null){
+        if(beat.kind!=="utterance")
+          throw new TypeError("only an utterance can contain spoken words");
+        assertNonEmpty("encounter story beat.spokenText",spokenText);
+      }
       const disclosesSpeakerName=beat.disclosesSpeakerName??false;
       if(typeof disclosesSpeakerName!=="boolean"
         ||(disclosesSpeakerName&&beat.kind!=="utterance")){
@@ -145,6 +151,7 @@ function normalizeStory(candidate, participantIds) {
         actorThreadId:beat.actorThreadId ?? null,
         kind:beat.kind,
         text:beat.text,
+        ...(spokenText===null?{}:{spokenText}),
         ...(disclosesSpeakerName?{disclosesSpeakerName:true}:{}),
         ...(disclosesSpeakerName&&typeof beat.disclosedName==="string"
           ?{disclosedName:beat.disclosedName}:{}),
@@ -970,7 +977,7 @@ export class LivedExperienceStore {
       const name=speaker===undefined?null:JSON.parse(speaker.state_json)
         .identity?.name;
       // World only admits the name part present in spoken, attributed words.
-      const heard=spokenNameDisclosure(beat.text,name);
+      const heard=spokenNameDisclosure(beat.spokenText??beat.text,name);
       if(heard===null){
         delete beat.disclosesSpeakerName;
         delete beat.disclosedName;

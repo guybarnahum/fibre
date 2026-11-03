@@ -81,7 +81,6 @@ export async function runThreadLiveSocialEncounter({
     beats:[],
   };
   const busy=new Set();
-  const disengaged=new Set();
   const deferred=new Map();
   const activeControllers=new Map();
   const pending=new Set();
@@ -149,10 +148,7 @@ export async function runThreadLiveSocialEncounter({
         modelAdapter,
       });
       if(stopped)return;
-      if(choice.decision==="silent"){
-        disengaged.add(participantId); // silence ends this person's contribution
-        return;
-      }
+      if(choice.decision==="silent")return;
       contributionCount+=1;
 
       if(choice.decision==="act"){
@@ -188,12 +184,6 @@ export async function runThreadLiveSocialEncounter({
 
   function schedule(participantId,opportunity){
     if(stopped)return;
-    if(disengaged.has(participantId)){
-      // Silence ends ordinary turns, not the person's capacity to reconsider
-      // when a new private thought arises during this encounter.
-      if(opportunity.reason!=="afterthought")return;
-      disengaged.delete(participantId);
-    }
     if(busy.has(participantId)){
       deferred.set(participantId,opportunity);
       return;

@@ -339,6 +339,8 @@ export function createSocialMeetingService({
     const pairStory=story=>story.threadPresence.length===2
       &&[first,second].every(id=>story.threadPresence.some(p=>p.threadId===id))
       &&story.story.beats.length===1&&story.story.beats[0].kind==="utterance"
+      &&typeof story.story.beats[0].spokenText==="string"
+      &&story.story.beats[0].spokenText.trim()!==""
       &&[first,second].includes(story.story.beats[0].actorThreadId)
       &&Date.parse(story.occurredAt)>=Date.parse(since)
       &&Date.parse(story.occurredAt)<=Date.parse(at);
@@ -354,7 +356,7 @@ export function createSocialMeetingService({
     if(!stories.some(story=>story.story.beats[0].actorThreadId===first
       &&Date.parse(story.occurredAt)<Date.parse(source.occurredAt)))return null;
     return Object.freeze({
-      utterance:source.story.beats[0].text,
+      utterance:source.story.beats[0].spokenText,
       storyRefs:Object.freeze(stories.filter(story=>
         Date.parse(story.occurredAt)<=Date.parse(source.occurredAt))
         .map(story=>story.encounterId)),
@@ -400,6 +402,7 @@ export function createSocialMeetingService({
       // intention attributed to the actor by a narrative wrapper.
       text:gesture?described+" "+initiation.expression[0].toLowerCase()+initiation.expression.slice(1)
         :described+' says: "'+initiation.expression+'"',
+      ...(gesture?{}:{spokenText:initiation.expression}),
       ...(initiation.disclosedName?{
         disclosesSpeakerName:true,disclosedName:initiation.disclosedName,
       }:{}),
