@@ -752,6 +752,7 @@ test("continuation is unavailable for arrivals, gestures or an unanswered first 
     {sourceKind:"arrival",sourceBeat:"utterance",earlier:true},
     {sourceKind:"social_act",sourceBeat:"action",earlier:true},
     {sourceKind:"social_act",sourceBeat:"utterance",earlier:false},
+    {sourceKind:"social_act",sourceBeat:"utterance",earlier:true},
   ]){
     let offered=null,judgments=0;
     const f=groundedReconsiderationFixture({onInvoke:call=>{
