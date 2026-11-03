@@ -319,6 +319,40 @@ export function createSocialMeetingService({
       :new Date(Math.max(Date.parse(a),Date.parse(b))).toISOString();
   }
 
+  // One bounded look at actual spoken World Stories. A response alone is
+  // never consent; only this Thread's earlier speech makes continuation a
+  // possible choice within the same proven shared visit.
+  function ongoingExchange({initiator,counterparty,at,sourceKind,sourceEncounterRef}){
+    if(sourceKind!=="social_act"||sourceEncounterRef===null)return null;
+    const venue=initiator.situation.location?.kind==="place"
+      ?livedNowStore.getWorldPlace(initiator.thread.threadId,
+        initiator.situation.location.placeRef,{required:false})?.physicalVenue?.ref??null
+      :null;
+    const since=venue===null?null:sharedVisitSince(initiator,counterparty,venue);
+    if(since===null)return null;
+    const first=initiator.thread.threadId,second=counterparty.thread.threadId;
+    const pairStory=story=>story.threadPresence.length===2
+      &&[first,second].every(id=>story.threadPresence.some(p=>p.threadId===id))
+      &&story.story.beats.length===1&&story.story.beats[0].kind==="utterance"
+      &&[first,second].includes(story.story.beats[0].actorThreadId)
+      &&Date.parse(story.occurredAt)>=Date.parse(since)
+      &&Date.parse(story.occurredAt)<=Date.parse(at);
+    const stories=experienceStore.listEncounterStories(first,{limit:16})
+      .filter(pairStory).reverse();
+    const source=stories.find(story=>story.encounterId===sourceEncounterRef);
+    if(!source||source.story.beats[0].actorThreadId!==second
+      ||experienceStore.getThreadEncounterAttention(first,sourceEncounterRef)
+        ?.outcome!=="noticed")return null;
+    if(!stories.some(story=>story.story.beats[0].actorThreadId===first
+      &&Date.parse(story.occurredAt)<Date.parse(source.occurredAt)))return null;
+    return Object.freeze({
+      utterance:source.story.beats[0].text,
+      storyRefs:Object.freeze(stories.filter(story=>
+        Date.parse(story.occurredAt)<=Date.parse(source.occurredAt))
+        .map(story=>story.encounterId)),
+    });
+  }
+
   async function enactSmallSocialAct({initiator,counterparty,at,salience,initiation}){
     const currentLeft=contextFor({
       threadId:initiator.thread.threadId,worldReader,livedNowStore,
@@ -428,6 +462,7 @@ export function createSocialMeetingService({
     request,
     stance,
     interaction,
+    continuation=null,
   }) {
     const latestInitiator=contextFor({
       threadId:initiator.thread.threadId,
@@ -465,8 +500,8 @@ export function createSocialMeetingService({
     const participantContexts = [latestInitiator, latestCounterparty];
     const allContexts = [...participantContexts, ...witnesses];
     const liveResult=await runThreadLiveSocialEncounter({
-      initiator:latestInitiator,
-      counterparty:latestCounterparty,
+      initiator:continuation===null?latestInitiator:latestCounterparty,
+      counterparty:continuation===null?latestCounterparty:latestInitiator,
       request,
       stance,
       modelAdapter,
@@ -476,7 +511,8 @@ export function createSocialMeetingService({
       ...liveResult.story,
       beats:liveResult.story.beats.map(beat=>
         beat.actorThreadId===initiator.thread.threadId
-        &&beat.kind==="utterance"&&beat.text===request.text
+        &&beat.kind==="utterance"
+        &&beat.text===(continuation===null?request.text:stance.expression)
           ?{...beat,disclosesSpeakerName:true,
             disclosedName:initiation.disclosedName}:beat),
     }:liveResult.story;
@@ -496,7 +532,8 @@ export function createSocialMeetingService({
         occurredAt:at,
         story,
         scene:"A small social encounter among people whose independent World-owned current situations establish compatible presence.",
-        sourceReferences:threadPresence.map((presence) => presence.situationId),
+        sourceReferences:[...threadPresence.map((presence) => presence.situationId),
+          ...(continuation?.storyRefs??[])],
         depictedThreadRefs,
       }),
     });
@@ -506,7 +543,7 @@ export function createSocialMeetingService({
         initiator.thread.threadId,latestInitiator.situation.location.placeRef,
         {required:false},
       )??null:null;
-    recordWorldAcquaintance({
+    if(continuation===null)recordWorldAcquaintance({
       situatedLifeStore,worldReader,encounterStory,interaction,
       initiatorThreadId:initiator.thread.threadId,
       counterpartyThreadId:counterparty.thread.threadId,at,
@@ -604,12 +641,16 @@ export function createSocialMeetingService({
       assertPlainObject("social meeting input", input);
       const counterpartyThreadId=input.counterpartyThreadId??null;
       const visitSince=input.reconsiderationVisitSince??null;
+      const sourceKind=input.sourceKind??null;
+      const sourceEncounterRef=input.sourceEncounterRef??null;
       assertExactKeys("social meeting input", input,
-        visitSince!==null
-          ?["initiatorThreadId","at","counterpartyThreadId","reconsiderationVisitSince"]
-          :counterpartyThreadId===null
-            ?["initiatorThreadId","at"]
-            :["initiatorThreadId","at","counterpartyThreadId"]);
+        sourceKind!==null
+          ?["initiatorThreadId","at","counterpartyThreadId","sourceKind","sourceEncounterRef"]
+          :visitSince!==null
+            ?["initiatorThreadId","at","counterpartyThreadId","reconsiderationVisitSince"]
+            :counterpartyThreadId===null
+              ?["initiatorThreadId","at"]
+              :["initiatorThreadId","at","counterpartyThreadId"]);
       if(visitSince!==null)assertIsoTimestamp("social revisit start",visitSince);
       assertId("social meeting initiatorThreadId", input.initiatorThreadId);
       assertIsoTimestamp("social meeting at", input.at);
@@ -700,6 +741,9 @@ export function createSocialMeetingService({
           )?.physicalVenue?.ref??null:null;
         const decisionVisitSince=visitSince??(venue===null?null
           :sharedVisitSince(initiator,counterparty,venue));
+        const continuation=ongoingExchange({
+          initiator,counterparty,at:input.at,sourceKind,sourceEncounterRef,
+        });
         const initiation = await formSocialEncounterRequest({
           threadId:initiator.thread.threadId,
           at:input.at,
@@ -724,6 +768,7 @@ export function createSocialMeetingService({
             experienceStore,
           },
           modelAdapter,
+          continuationEligible:continuation!==null,
         });
 
         if (initiation.act === "none") {
@@ -737,6 +782,24 @@ export function createSocialMeetingService({
             encounterStory:null,
             aftermath:null,
           }));
+          continue;
+        }
+
+        if(initiation.act==="continue_conversation"){
+          const request=Object.freeze({
+            initiatorThreadId:counterparty.thread.threadId,
+            text:continuation.utterance,
+          });
+          const stance=Object.freeze({
+            decision:"accept",expression:initiation.expression,
+            suggestedAt:null,reason:initiation.reason,
+            cognition:initiation.cognition,
+          });
+          attemptByActor.set(counterparty.thread.threadId,
+            await formAcceptedEncounter({
+              initiator,counterparty,witnesses:[],at:input.at,
+              salience,initiation,request,stance,interaction:null,continuation,
+            }));
           continue;
         }
 
