@@ -384,7 +384,9 @@ export function createWorldSocialOpportunity({
                   reconsiderationVisitSince:opportunity.visitSince}
                 :observed
                   ?{initiatorThreadId:opportunity.threadId,at,
-                    counterpartyThreadId:opportunity.counterpartyThreadId}
+                    counterpartyThreadId:opportunity.counterpartyThreadId,
+                    sourceKind:opportunity.sourceKind,
+                    sourceEncounterRef:opportunity.sourceEncounterRef}
                   :{initiatorThreadId:opportunity.threadId,at});
               const attempt=result.attempts?.[0]??null;
               outcome=attempt?.outcome??(unresolvedVenueCompany(opportunity,at)

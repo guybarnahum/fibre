@@ -81,6 +81,7 @@ export async function runThreadLiveSocialEncounter({
     beats:[],
   };
   const busy=new Set();
+  const disengaged=new Set();
   const deferred=new Map();
   const activeControllers=new Map();
   const pending=new Set();
@@ -148,7 +149,10 @@ export async function runThreadLiveSocialEncounter({
         modelAdapter,
       });
       if(stopped)return;
-      if(choice.decision==="silent")return;
+      if(choice.decision==="silent"){
+        disengaged.add(participantId); // silence ends this person's contribution
+        return;
+      }
       contributionCount+=1;
 
       if(choice.decision==="act"){
@@ -183,7 +187,7 @@ export async function runThreadLiveSocialEncounter({
   }
 
   function schedule(participantId,opportunity){
-    if(stopped)return;
+    if(stopped||disengaged.has(participantId))return;
     if(busy.has(participantId)){
       deferred.set(participantId,opportunity);
       return;

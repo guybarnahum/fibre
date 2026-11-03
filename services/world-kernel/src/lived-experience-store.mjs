@@ -252,7 +252,7 @@ export class LivedExperienceStore {
       ORDER BY w.due_at,w.situation_id LIMIT 1
     `).get(at);
     return row===undefined?[]:[Object.freeze({
-      situationId:row.situation_id,venueRef:row.venue_ref,dueAt:row.due_at,
+      situationId:row.situation_id,venueRef:row.venue_ref,sourceKind:row.source_kind,dueAt:row.due_at,
       witnesses:Object.freeze(JSON.parse(row.witness_situations_json)),
     })];
   }
@@ -446,12 +446,12 @@ export class LivedExperienceStore {
         SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,
           COALESCE(anchor_situation_id,situation_id) AS situation_id,
           situation_id AS opportunity_id,trigger_kind,need_band,visit_since,
-          NULL AS counterparty_thread_id,NULL AS venue_ref,due_at
+          NULL AS counterparty_thread_id,NULL AS venue_ref,NULL AS source_kind,due_at
         FROM world_social_opportunities WHERE started_at IS NULL AND due_at<=?
         UNION ALL
         SELECT 'observed' AS kind,encounter_ref,thread_id,situation_id,
           NULL AS opportunity_id,'observed' AS trigger_kind,NULL AS need_band,
-          NULL AS visit_since,counterparty_thread_id,venue_ref,due_at
+          NULL AS visit_since,counterparty_thread_id,venue_ref,source_kind,due_at
         FROM world_observed_social_opportunities
         WHERE started_at IS NULL AND due_at<=?
       ) o
@@ -463,7 +463,7 @@ export class LivedExperienceStore {
       opportunityId:row.opportunity_id,trigger:row.trigger_kind,
       needBand:row.need_band,visitSince:row.visit_since,
       counterpartyThreadId:row.counterparty_thread_id,
-      venueRef:row.venue_ref,dueAt:row.due_at,
+      venueRef:row.venue_ref,sourceKind:row.source_kind,dueAt:row.due_at,
     }));
   }
 
@@ -475,13 +475,13 @@ export class LivedExperienceStore {
           SELECT 'arrival' AS kind,NULL AS encounter_ref,thread_id,
             COALESCE(anchor_situation_id,situation_id) AS situation_id,
             situation_id AS opportunity_id,trigger_kind,need_band,visit_since,
-            NULL AS counterparty_thread_id,NULL AS venue_ref,due_at
+            NULL AS counterparty_thread_id,NULL AS venue_ref,NULL AS source_kind,due_at
           FROM world_social_opportunities
           WHERE started_at IS NULL AND due_at<=?
           UNION ALL
           SELECT 'observed' AS kind,encounter_ref,thread_id,situation_id,
             NULL AS opportunity_id,'observed' AS trigger_kind,NULL AS need_band,
-            NULL AS visit_since,counterparty_thread_id,venue_ref,due_at
+            NULL AS visit_since,counterparty_thread_id,venue_ref,source_kind,due_at
           FROM world_observed_social_opportunities
           WHERE started_at IS NULL AND due_at<=?
         ) o
@@ -510,7 +510,7 @@ export class LivedExperienceStore {
         opportunityId:row.opportunity_id,trigger:row.trigger_kind,
         needBand:row.need_band,visitSince:row.visit_since,
         counterpartyThreadId:row.counterparty_thread_id,
-        venueRef:row.venue_ref,dueAt:row.due_at,
+        venueRef:row.venue_ref,sourceKind:row.source_kind,dueAt:row.due_at,
       });
     });
   }

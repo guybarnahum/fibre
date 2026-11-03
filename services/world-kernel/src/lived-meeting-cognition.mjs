@@ -100,6 +100,7 @@ export async function formSocialEncounterRequest({
   priorSocialChoicesThisVisit=[],
   sourceStores,
   modelAdapter,
+  continuationEligible=false,
 }) {
   assertId("social encounter initiator Thread.threadId", threadId);
   assertIsoTimestamp("social encounter at", at);
@@ -126,7 +127,16 @@ export async function formSocialEncounterRequest({
         remainingFlightPlan:plan === null ? null : structuredClone(plan),
       },
     },
-    adapter:SOCIAL_INITIATION_ADAPTER,
+    adapter:continuationEligible?{
+      ...SOCIAL_INITIATION_ADAPTER,
+      instruction:SOCIAL_INITIATION_ADAPTER.instruction+
+        "\nThis is an ongoing exchange of voluntary spoken small acts. You may continue it as a live conversation, make one more brief remark, or say nothing. None is preferable. If you choose continue_conversation, expression is what you say aloud now, not a request for the other person to consent.",
+      resultSchema:{
+        ...SOCIAL_INITIATION_ADAPTER.resultSchema,
+        properties:{...SOCIAL_INITIATION_ADAPTER.resultSchema.properties,
+          act:{type:"string",enum:[...SOCIAL_ACTS,"continue_conversation"]}},
+      },
+    }:SOCIAL_INITIATION_ADAPTER,
     sourceStores,
     modelAdapter,
   });
@@ -135,7 +145,8 @@ export async function formSocialEncounterRequest({
   assertExactKeys("social act output",cognition.result,[
     "act","expression","experienceText","reason","introducesSelf",
   ]);
-  if(!SOCIAL_ACTS.includes(cognition.result.act)){
+  if(!(SOCIAL_ACTS.includes(cognition.result.act)
+    ||(continuationEligible&&cognition.result.act==="continue_conversation"))){
     throw new TypeError("social act is invalid");
   }
   assertNonEmpty("social act reason",cognition.result.reason);
@@ -143,7 +154,7 @@ export async function formSocialEncounterRequest({
     throw new TypeError("social introduction choice must be boolean");
   }
   const requestedIntroduction=cognition.result.introducesSelf;
-  const spoken=["greet","remark","invite_conversation"].includes(cognition.result.act);
+  const spoken=["greet","remark","invite_conversation","continue_conversation"].includes(cognition.result.act);
   const disclosedName=requestedIntroduction&&spoken
     ?spokenNameDisclosure(cognition.result.expression,
       sourceStores.worldStore.getThread(threadId)?.identity?.name)
