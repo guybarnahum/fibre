@@ -819,8 +819,9 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       "environment-source":12,"environment-noticed":24,
       "idle-reconciliation":0,"social-mid-stop-presence":0,
       "contact-reception-mid-stop":0,
-      // First matched costs are recorded as evidence; add regression ceilings
-      // after operator validation of the new cases.
+      "social-four-remarks":178,"social-continued-conversation":126,
+      // Matched per-activity write ceilings from the November 3 local map.
+      // The continued path must also prove audible post-seeding speech.
     };
     const activities=Object.fromEntries(Object.entries(mapReport.activities)
       .concat(Object.keys(activityCeilings).filter(name=>!(name in mapReport.activities))
@@ -845,6 +846,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     reportTestEvidence("FIBRE-WORLD-WRITE-MAP",{
       activities,deviations,aboveStagingCeiling,
       exchangeComparison:{
+        savedWeightedRows:(activities["social-four-remarks"]?.weightedRows??0)
+          -(activities["social-continued-conversation"]?.weightedRows??0),
         fourRemarks:{rows:activities["social-four-remarks"]?.weightedRows??0,
           modelCalls:fourCalls.invocations+fourCalls.streams,breakdown:fourCalls},
         continuedConversation:{
