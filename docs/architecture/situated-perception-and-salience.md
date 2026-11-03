@@ -350,6 +350,25 @@ unforced social choice.
 Social initiation uses strict structured output: `introducesSelf` is always
 present as a boolean, false when no introduction is chosen.
 
+### A spoken exchange may become a conversation (proposed November 2)
+
+The ordinary repertoire stays unchanged for first contact, arrivals, gestures,
+and one-way remarks. When an observed `social_act` is a noticed spoken small
+act from a counterpart this Thread **itself spoke to** earlier during the
+same demonstrably uninterrupted shared venue visit, the social mind also
+has `continue_conversation` as a genuine choice. The Thread can still choose
+silence or a brief remark. Reciprocal speech is an opportunity, not consent.
+
+Choosing continuation seeds the existing live encounter with the counterpart's
+last actual utterance and this Thread's chosen words. Each later contribution
+is independently voluntary, and silence ends that participant's part.
+One shared Story then bears the earlier small-act Story references; each
+participant receives one Experience and consolidation entry for the whole
+conversation. No act-triggered reply fanout occurs for its live turns.
+This is **not** an explicitly accepted invitation, so no factual
+`social_contact` acquaintance is established. See
+[proposed ADR-0033](../decisions/ADR-0033-ongoing-exchange-may-become-conversation.md).
+
 ## Familiarity, introductions, and person-owned social history (October 23 source)
 
 When a Thread sees a real co-present person, Situated Percept may include

@@ -25,6 +25,31 @@ The `FIBRE-WORLD-BOUNDARY-UNIT` fixture measures real boundary enactment, semant
 
 No indexes or triggers may be dropped until the remaining read paths and their plans have been audited and the before/after rows-per-boundary have actually been measured.
 
+## Ongoing social exchange: one-shot replies versus live conversation (proposed)
+
+The write-map fixture now compares **four independent spoken small acts** with
+a matched exchange where two initial acts are followed by a Thread's chosen
+`continue_conversation`, whose live loop adds the final outward turn.
+Both routes use the actual World meeting and attention stores with
+deterministic cognition; the comparison tracks individual SQL writes and
+counts structured cognition calls plus streamed speech invocations.
+
+`FIBRE-WORLD-WRITE-MAP.exchangeComparison` reports:
+`fourRemarks.rows`, `continuedConversation.rows` and
+`modelCalls` with decision/attention/experience/live breakdowns. Common
+initial setup (plans, current situations, an external stimulus) is recorded
+under `social-exchange-setup` but is **excluded** from these two comparable
+activity costs. The staging probe's approximately 45–50 weighted rows per
+one-shot remark and 35–55 for one live conversation are only calibration,
+not a local measurement. The new activity ceilings must be ratcheted from
+Guy's confirmed local results, not from the staging fit. Earlier Stories
+and their independent first-person Experiences remain in history.
+
+The tradeoff is decided by the **Thread**, never by write optimization.
+Long conversations must not become compulsory merely because fewer writes
+are needed. There is no new queue, table, poller, or model architecture.
+See [proposed ADR-0033](../decisions/ADR-0033-ongoing-exchange-may-become-conversation.md).
+
 ## A persistent present, not a time-tick event (November 2)
 
 An already enacted `CurrentSituation` remains authoritative when a later `LivedNow.ensure({threadId,at})` falls **inside the same admitted stop** and its would-be observation, governing plan, source plan refs, resolution, and other durable facts are identical. Comparing the full candidate (except time/ID) prevents losing care-plan changes, observation divergence, new plans, transit progression or any other meaning-bearing difference. Crossing a stop start/end still enacts, even if adjacent stops appear identical. Missing coverage still invokes existing first-life or catch-up; inclusive plan-horizon renewal is unchanged. A repeated present produces neither another history row nor any LivedNow frontier update.
