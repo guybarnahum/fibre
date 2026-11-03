@@ -746,6 +746,61 @@ test("acknowledgment records a performed act, never conditional intent",async()=
   }finally{conditional.close();}
 });
 
+test("continuation is unavailable for arrivals, gestures or an unanswered first remark",async()=>{
+  const at="2026-10-23T10:00:10.000Z";
+  for(const {sourceKind,sourceBeat,earlier} of [
+    {sourceKind:"arrival",sourceBeat:"utterance",earlier:true},
+    {sourceKind:"social_act",sourceBeat:"action",earlier:true},
+    {sourceKind:"social_act",sourceBeat:"utterance",earlier:false},
+  ]){
+    let offered=null,judgments=0;
+    const f=groundedReconsiderationFixture({onInvoke:call=>{
+      assert.equal(call.input?.concern?.kind,"social_initiation",
+        "a source observation forced unrelated cognition");
+      judgments++;
+      offered=JSON.stringify(call.responseSchema).includes("continue_conversation");
+      return {output:{result:{
+        act:"remark",expression:"I will return to my notes.",
+        experienceText:"I offered only a short reply.",
+        reason:"I prefer to keep this brief.",introducesSelf:false,
+      },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+      provenance:{provider:"fixture",modelId:"independent-brief-reply"}};
+    }});
+    try{
+      const [actor,other]=f.people;
+      const a=f.enact(actor,"2026-10-23T09:00:00.000Z","Reading.",[other]);
+      const b=f.enact(other,"2026-10-23T09:00:00.000Z","Reading.",[actor]);
+      const make=(speaker,occurredAt,kind)=>{
+        const story={storyVersion:"encounter-story-v0.1",
+          beats:[{actorThreadId:speaker,kind,text:"A short outward act."}]};
+        return f.experience.recordEncounterStory({
+          occurredAt,threadPresence:[a,b].map(person=>({
+            threadId:person.threadId,situationId:person.situationId,
+          })),story,visualization:createEncounterVisualization({
+            occurredAt,story,scene:"At the library.",
+            sourceReferences:[a.situationId,b.situationId],depictedThreadRefs:[],
+          }),
+        });
+      };
+      if(earlier)make(actor,"2026-10-23T09:58:00.000Z","utterance");
+      const source=make(other,"2026-10-23T10:00:00.000Z",sourceBeat);
+      f.experience.recordThreadEncounterAttention({
+        threadId:actor,encounterRef:source.encounterId,
+        situationId:a.situationId,occurredAt:source.occurredAt,
+        outcome:"noticed",experienceText:"I noticed the other reader.",
+      });
+      const result=await f.meeting.meet({
+        initiatorThreadId:actor,counterpartyThreadId:other,at,
+        sourceKind,sourceEncounterRef:source.encounterId,
+      });
+      assert.equal(judgments,1,"a brief choice was not independently considered");
+      assert.equal(offered,false,"a non-exchange was offered live continuation");
+      assert.equal(result.attempts[0]?.outcome,"acted",
+        "declining continuation suppressed the brief social act");
+    }finally{f.close();}
+  }
+});
+
 test("only a witnessed ongoing exchange can become a voluntary conversation",async()=>{
   const visit="2026-10-23T09:00:00.000Z";
   const firstAt="2026-10-23T09:58:00.000Z";
