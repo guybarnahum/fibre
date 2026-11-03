@@ -174,6 +174,8 @@ function groundedReconsiderationFixture({onInvoke=null,onStream=null,speakerName
     memoryStore:{listCurrentMemories:()=>[]},
     experienceStore:experience,boundedVenueDiscovery:true,
     modelAdapter:{
+      provider:"fixture",modelId:"grounded-reconsideration",
+      configuration:{transport:"fixture"},
       async invoke(request){
         if(onInvoke===null)throw Error("unearned social decision spent cognition");
         return onInvoke(request);
@@ -821,7 +823,7 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
     {mode:"remark",laterTurns:0},
   ];
   for(const {mode,laterTurns} of modes){
-    let offered=false,decisions=0,liveCalls=0,experienceCalls=0;
+    let offered=false,decisions=0,liveCalls=0,streamCalls=0,experienceCalls=0;
     const f=groundedReconsiderationFixture({onInvoke:call=>{
       if(call.input?.concern?.kind==="social_initiation"){
         decisions++;
@@ -848,7 +850,8 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
         passedReason:"I stayed with my own thoughts."},
         provenance:{provider:"fixture",modelId:"independent-attention"}};
     },onStream:async function*(){
-      yield {type:"expression_delta",text:"One further thought."};
+      streamCalls++;
+      yield {type:"expression_delta",text:"One further thought"};
       yield {type:"expression_complete",
         provenance:{provider:"fixture",modelId:"voluntary-live-speech"}};
     }});
@@ -916,6 +919,8 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
             .includes(source.encounterId),
         "the conversation lost the previous outward exchange");
         assert.equal(liveCalls,laterTurns+1,"live turns did not stop at silence");
+        assert.equal(streamCalls,laterTurns,
+          "chosen live speech did not become audible turns");
         assert.equal(experienceCalls,2,"conversation did not form two experiences");
         assert.equal(f.experience.listDueSocialOpportunities({
           at:"2026-10-23T10:00:11.000Z",limit:8,
@@ -924,6 +929,7 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
         assert.equal(result.results[0]?.outcome,"acted",
           "a chosen brief remark was forced into conversation");
         assert.equal(liveCalls,0,"a remark opened the live loop");
+        assert.equal(streamCalls,0,"a brief remark triggered live speech");
         const remarks=f.experience.listEncounterStories(actor);
         assert.ok(remarks.some(item=>item.story.beats.length===1
           &&item.story.beats[0].actorThreadId===actor
