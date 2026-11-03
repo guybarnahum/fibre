@@ -776,6 +776,11 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         .filter(story=>Date.parse(story.occurredAt)>=Date.parse(at("17:45"))).length;
       assert.equal(storyCount,mode==="continued"?3:4,
         "exchange produced an unexpected number of independent Stories");
+      if(mode==="continued")assert.ok(
+        !situated.listCurrentLifeRelations(pair[0]).some(relation=>
+          relation.relationKind==="social_contact"
+          &&relation.relatedParty.partyId===pair[1]),
+        "continued speech invented acquaintance without an invitation");
       return counts;
     };
     const fourCalls=await compare("remarks",["thr_write_compare_a","thr_write_compare_b"]);
