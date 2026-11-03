@@ -39,11 +39,20 @@ counts structured cognition calls plus streamed speech invocations.
 `modelCalls` with decision/attention/experience/live breakdowns. Common
 initial setup (plans, current situations, an external stimulus) is recorded
 under `social-exchange-setup` but is **excluded** from these two comparable
-activity costs. The staging probe's approximately 45–50 weighted rows per
-one-shot remark and 35–55 for one live conversation are only calibration,
-not a local measurement. The new activity ceilings must be ratcheted from
-Guy's confirmed local results, not from the staging fit. Earlier Stories
-and their independent first-person Experiences remain in history.
+activity costs. Guy's November 3 focused run measured **178 weighted rows**
+for four separate remarks and **126** for two separate remarks followed by
+a live Story, a 52-row (29.2%) storage difference. The initial live fixture,
+however, lacked streaming-adapter metadata: its Story stopped at the two
+seeded utterances, and `streams=0`. That run establishes the SQL accounting
+baseline, **not** yet the claim that later turns were actually spoken.
+The fixtures now require real streaming and the additional recorded beat
+before passing; the measured activity ceilings are 178 and 126, pending
+the corrected local run. The initial model-call comparison (8 versus 8)
+is not a valid cost of a spoken continuation and must be replaced by the
+next evidence output. The staging probe's approximately 45–50 weighted
+rows per one-shot remark and 35–55 per live conversation remain independent
+calibration, not local measurements. Earlier Stories and their independent
+first-person Experiences remain in history.
 
 The tradeoff is decided by the **Thread**, never by write optimization.
 Long conversations must not become compulsory merely because fewer writes
