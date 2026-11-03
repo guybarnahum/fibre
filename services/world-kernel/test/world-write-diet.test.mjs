@@ -642,6 +642,143 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     assert.equal(idleResult.contactOutreach.result?.attempted,0,
       "idle World repeated contact work");
 
+    // Compare matched four-utterance exchanges. Only the first external
+    // stimulus belongs to setup; each chosen act and its consequences are
+    // measured through the real meeting and World opportunity processes.
+    const compare=async(mode,pair)=>{
+      const sceneIds=new Map();
+      await audit.measure("social-exchange-setup",()=>{
+        for(const threadId of pair){
+          const thread=structuredClone(seed);
+          thread.threadId=threadId;
+          thread.provenance.lastEventId="evt_"+threadId;
+          world.seedThread(thread);
+          const source=world.listEvents(threadId)[0].eventId;
+          lived.recordPlan({
+            planId:livedPlanId({threadId,kind:"personal",authoredAt:at("08:00")}),
+            kind:"personal",subjectThreadId:threadId,
+            owner:{partyId:threadId,kind:"thread"},
+            authoredAt:at("08:00"),horizonStart:at("08:00"),horizonEnd:at("20:00"),
+            stops:[{startAt:at("08:00"),endAt:at("20:00"),
+              physicalPlaceRef:venue.ref,mediatedContext:null,
+              activity:"Read and reflect at the shared library.",
+              outwardActivity:"reading",wakefulness:"awake",
+              purpose:"Explore questions at my own pace.",
+              companionRefs:[],travelFromPrevious:null}],
+            sourceReferences:[source,venue.ref],
+            cognition:{provider:"fixture",modelId:"exchange-cost",providerRequestId:null},
+          });
+          const current=lived.enactCurrentSituation({
+            threadId,situationId:livedSituationId({threadId,at:at("16:00")}),
+            establishedAt:at("16:00"),
+            observation:{phase:"at_place",location:{kind:"place",placeRef:venue.ref},
+              mediatedContext:null,activity:"Read and reflect at the shared library.",
+              outwardActivity:"reading",wakefulness:"awake",
+              reason:"Explore questions at my own pace.",participantRefs:[],
+              evidenceRefs:[source,venue.ref]},
+          });
+          sceneIds.set(threadId,current.situationId);
+          lived.scheduleNextLivedBoundary({
+            threadId,situationId:current.situationId,dueAt:at("20:00"),
+          });
+        }
+        const event={storyVersion:"encounter-story-v0.1",
+          beats:[{actorThreadId:pair[1],kind:"utterance",
+            text:"I noticed a question about the reading."}]};
+        const source=experience.recordEncounterStory({
+          occurredAt:at("17:40"),
+          threadPresence:pair.map(threadId=>({
+            threadId,situationId:sceneIds.get(threadId),
+          })),
+          story:event,visualization:createEncounterVisualization({
+            occurredAt:at("17:40"),story:event,
+            scene:"At the shared library.",sourceReferences:[venue.ref],
+            depictedThreadRefs:[],
+          }),
+        });
+        experience.recordThreadEncounterAttention({
+          threadId:pair[0],encounterRef:source.encounterId,
+          situationId:sceneIds.get(pair[0]),occurredAt:at("17:40"),
+          outcome:"noticed",experienceText:"I noticed the other reader's question.",
+        });
+      });
+      const counts={invocations:0,streams:0,decisions:0,live:0,attention:0,experiences:0};
+      const adapter={
+        async invoke(call){
+          counts.invocations++;
+          if(call.input?.concern?.kind==="social_initiation"){
+            counts.decisions++;
+            const offered=JSON.stringify(call.responseSchema)
+              .includes("continue_conversation");
+            const act=mode==="continued"&&counts.decisions>=3&&offered
+              ?"continue_conversation":"remark";
+            return {output:{result:{
+              act,expression:"I have a thought about that evidence.",
+              experienceText:"I chose to share a thought.",reason:"I remain interested.",
+              introducesSelf:false,
+            },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+            provenance:{provider:"fixture",modelId:"exchange-choice"}};
+          }
+          if(call.clientRequestId?.startsWith("encounter-attention_")){
+            counts.attention++;
+            return {output:{outcome:"noticed",
+              experienceText:"I heard the other reader's reply.",passedReason:null},
+              provenance:{provider:"fixture",modelId:"exchange-attention"}};
+          }
+          if(call.clientRequestId?.startsWith("encounter-experience_")){
+            counts.experiences++;
+            return {output:{experienceText:"I followed the exchange as it unfolded."},
+              provenance:{provider:"fixture",modelId:"exchange-experience"}};
+          }
+          if(call.clientRequestId?.startsWith("social-live-contribution_")){
+            counts.live++;
+            return {output:{
+              decision:counts.live===1?"speak":"silent",actionText:null,
+            },provenance:{provider:"fixture",modelId:"exchange-live-choice"}};
+          }
+          throw Error("unrecognized exchange cognition");
+        },
+        async *streamExpression(){
+          counts.streams++;
+          yield {type:"expression_delta",text:"One more piece of evidence matters."};
+          yield {type:"expression_complete",
+            provenance:{provider:"fixture",modelId:"exchange-speech"}};
+        },
+      };
+      const meeting=createSocialMeetingService({
+        worldReader:world,livedNow:{async ensure(){
+          throw Error("social encounter must not re-enact life");
+        }},
+        livedNowStore:lived,identityStore:{getCurrentIdentityView:()=>({assertions:[]})},
+        situatedLifeStore:situated,semanticStateStore:semantic,memoryStore:memory,
+        experienceStore:experience,boundedVenueDiscovery:true,modelAdapter:adapter,
+      });
+      const process=minute=>createWorldSocialOpportunity({
+        experienceStore:experience,livedNowStore:lived,
+        worldReader:world,meetingService:meeting,now:()=>at(minute),
+      });
+      await audit.measure(mode==="continued"?"social-continued-conversation":"social-four-remarks",
+        async()=>{
+          const initial=await meeting.meet({
+            initiatorThreadId:pair[0],counterpartyThreadId:pair[1],at:at("17:45"),
+          });
+          assert.equal(initial.attempts[0]?.outcome,"acted","first remark failed");
+          const times=mode==="continued"?["17:46","17:47"]
+            :["17:46","17:47","17:48"];
+          for(const time of times){
+            const step=await process(time).runOnce();
+            assert.equal(step.failed,0,"reciprocal exchange failed");
+            assert.equal(step.attempted,1,"reply was not considered");
+          }
+        });
+      const storyCount=experience.listEncounterStories(pair[0])
+        .filter(story=>Date.parse(story.occurredAt)>=Date.parse(at("17:45"))).length;
+      assert.equal(storyCount,mode==="continued"?3:4,
+        "exchange produced an unexpected number of independent Stories");
+      return counts;
+    };
+    const fourCalls=await compare("remarks",["thr_write_compare_a","thr_write_compare_b"]);
+    const conversationCalls=await compare("continued",["thr_write_compare_c","thr_write_compare_d"]);
     const mapReport=audit.report(ids.length);
     const calibration={
       "lived-boundary":{units:14,ceiling:14},
@@ -691,6 +828,14 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     // this fixture deliberately retains two memories, unlike the staging mix.
     reportTestEvidence("FIBRE-WORLD-WRITE-MAP",{
       activities,deviations,aboveStagingCeiling,
+      exchangeComparison:{
+        fourRemarks:{rows:activities["social-four-remarks"]?.weightedRows??0,
+          modelCalls:fourCalls.invocations+fourCalls.streams,breakdown:fourCalls},
+        continuedConversation:{
+          rows:activities["social-continued-conversation"]?.weightedRows??0,
+          modelCalls:conversationCalls.invocations+conversationCalls.streams,
+          breakdown:conversationCalls},
+      },
     });
     const rows=(...names)=>names.reduce((sum,name)=>
       sum+(activities[name]?.weightedRows??0),0);
