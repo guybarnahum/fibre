@@ -360,9 +360,12 @@ has `continue_conversation` as a genuine choice. The Thread can still choose
 silence or a brief remark. Reciprocal speech is an opportunity, not consent.
 
 Choosing continuation seeds the existing live encounter with the counterpart's
-last actual utterance and this Thread's chosen words. Each later contribution
-is independently voluntary, and silence ends that participant's part.
-One shared Story then bears the earlier small-act Story references; each
+exact `spokenText` and this Thread's chosen words. Ordinary small-act beats
+retain their narrated public `text`; old beats without independently stored
+`spokenText` do not qualify, and no quotes are parsed. Each later contribution
+is independently voluntary. Silence declines the present opportunity, but
+a later independent opportunity may still be considered. One shared Story
+then bears the earlier small-act Story references; each
 participant receives one Experience and consolidation entry for the whole
 conversation. No act-triggered reply fanout occurs for its live turns.
 This is **not** an explicitly accepted invitation, so no factual

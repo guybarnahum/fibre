@@ -21,7 +21,12 @@ small act from the counterpart, and World history proves the choosing Thread
 has itself spoken to this same person earlier during the current uninterrupted,
 co-present venue visit. An arrival, gesture, initial remark without reciprocal
 speech, unobserved act, or speech from a previous visit cannot qualify.
-The bounded historical Story read supplies the actual earlier utterance and
+A spoken small-act beat retains its existing narrated `text` as observable
+history and a separate `spokenText` containing exactly the words spoken.
+Only beats with this independently recorded spoken text qualify for
+continuation; older stories lacking it stay intact but cannot authorize
+a live request. No quotation parsing or retrospective reconstruction.
+The bounded historical Story read supplies these actual earlier words and
 source references; it does not create a new memory or social-relation fact.
 
 Interior Cognition authors the choice and the words this Thread says now.
@@ -33,11 +38,13 @@ When this Thread chooses to continue, its decision to speak and continue is
 its own affirmative participation stance. The other person's last **actually
 spoken** words seed the live request, attributed to that person; the choosing
 Thread's actual expression seeds its accepted reply. The existing
-`runThreadLiveSocialEncounter` controls subsequent voluntary contributions;
-`silent` permanently ends that participant's part of this encounter. No
-separate invitation-response cognition or extra social scheduler is introduced.
-A counterpart is not committed to speaking again merely because they spoke
-earlier. Scene-change checks and the existing bounded opportunity budget remain.
+`runThreadLiveSocialEncounter` controls subsequent voluntary contributions.
+`silent` contributes nothing at the present opportunity; it is not
+permanent withdrawal from all future speaking opportunities. If no one
+speaks again, the encounter ends quiescent. No separate invitation-response
+cognition or extra social scheduler is introduced. A counterpart is not
+committed to speaking again merely because they spoke earlier. Scene-change
+checks and the existing bounded opportunity budget remain.
 
 World admits **one** new conversation Story, bearing the source references of
 the prior one-shot spoken Stories without modifying any of them. Both
