@@ -1,11 +1,11 @@
 ---
-id: adr-0031-ongoing-exchange-conversation
+id: adr-0033-ongoing-exchange-conversation
 status: proposed
 last-reviewed: 2026-11-02
 canonical: false
 ---
 
-# ADR-0031 — An ongoing exchange may become a conversation
+# ADR-0033 — An ongoing exchange may become a conversation
 
 **Proposed for Guy's acceptance.** A Thread already speaking back and forth
 with another may *choose* to continue as a live conversation. Replying is
