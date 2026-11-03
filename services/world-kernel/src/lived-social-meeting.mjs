@@ -337,12 +337,15 @@ export function createSocialMeetingService({
       &&[first,second].includes(story.story.beats[0].actorThreadId)
       &&Date.parse(story.occurredAt)>=Date.parse(since)
       &&Date.parse(story.occurredAt)<=Date.parse(at);
-    const stories=experienceStore.listEncounterStories(first,{limit:16})
-      .filter(pairStory).reverse();
-    const source=stories.find(story=>story.encounterId===sourceEncounterRef);
-    if(!source||source.story.beats[0].actorThreadId!==second
+    const source=experienceStore.getEncounterStory(sourceEncounterRef);
+    if(!source||!pairStory(source)
+      ||source.story.beats[0].actorThreadId!==second
       ||experienceStore.getThreadEncounterAttention(first,sourceEncounterRef)
         ?.outcome!=="noticed")return null;
+    // Only inspect the tiny recent exchange when the incoming act actually
+    // qualifies; gestures and unrelated World events cost a single lookup.
+    const stories=experienceStore.listEncounterStories(first,{limit:12})
+      .filter(pairStory).reverse();
     if(!stories.some(story=>story.story.beats[0].actorThreadId===first
       &&Date.parse(story.occurredAt)<Date.parse(source.occurredAt)))return null;
     return Object.freeze({
