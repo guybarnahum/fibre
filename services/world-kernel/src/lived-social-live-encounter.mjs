@@ -1,4 +1,5 @@
 import { createLiveEncounter } from "./live-encounter.mjs";
+import { spokenWords } from "./live-encounter-expression.mjs";
 import {
   chooseLiveSocialContribution,
   streamLiveSocialSpeech,
@@ -111,7 +112,7 @@ export async function runThreadLiveSocialEncounter({
         story.beats.push({
           actorThreadId:event.actorId,
           kind:"utterance",
-          text:event.text,
+          text:spokenWords(event.text),
           ...(event.completion==="interrupted"?{completion:"interrupted"}:{}),
         });
       }
@@ -156,7 +157,7 @@ export async function runThreadLiveSocialEncounter({
           actorId:participantId,
           text:choice.actionText,
         });
-        return;
+        return true;
       }
 
       const controller=new AbortController();
@@ -174,6 +175,7 @@ export async function runThreadLiveSocialEncounter({
           modelAdapter,
           signal:controller.signal,
         });
+        return true;
       }finally{
         activeControllers.delete(participantId);
       }
@@ -202,13 +204,19 @@ export async function runThreadLiveSocialEncounter({
 
     opportunityAppraisals+=1;
     busy.add(participantId);
+    let contributed=false;
     const task=handleOpportunity(participantId,opportunity)
+      .then(result=>{contributed=result===true;})
       .finally(()=>{
         busy.delete(participantId);
         pending.delete(task);
         const next=deferred.get(participantId)??null;
         deferred.delete(participantId);
-        if(next!==null&&!stopped)schedule(participantId,next);
+        // A sentence-level chance may start a reply before the speaker ends;
+        // the same utterance's later "end" chance is already answered.
+        const answered=contributed&&next?.speechRef!=null
+          &&next.speechRef===opportunity.speechRef;
+        if(next!==null&&!stopped&&!answered)schedule(participantId,next);
       });
     pending.add(task);
   }

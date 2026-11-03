@@ -373,6 +373,25 @@ export class LivedExperienceStore {
     `).get(threadId,visitSince,counterpartyThreadId).n;
   }
 
+  // A conversation between two people answers the one-shot chances they still
+  // held toward each other; settle them rather than start a parallel talk.
+  supersedePairSocialOpportunities({threadIds,at,encounterRef}){
+    const [first,second]=threadIds;
+    assertId("conversation participant",first);
+    assertId("conversation participant",second);
+    assertIsoTimestamp("conversation time",at);
+    assertId("conversation encounterRef",encounterRef);
+    return this.#database.prepare(`
+      UPDATE world_observed_social_opportunities
+      SET started_at=?,completed_at=?,outcome='superseded_by_conversation',
+        decision_json=json_object('counterpartyThreadId',counterparty_thread_id,
+          'encounterRef',?)
+      WHERE started_at IS NULL
+        AND ((thread_id=? AND counterparty_thread_id=?)
+          OR (thread_id=? AND counterparty_thread_id=?))
+    `).run(at,at,encounterRef,first,second,second,first).changes;
+  }
+
   enqueueObservedSocialOpportunity({
     encounterRef,threadId,situationId,counterpartyThreadId,venueRef,dueAt,
     sourceKind="arrival",visitSince=null,

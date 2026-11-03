@@ -5,6 +5,13 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 
+// Models sometimes wrap a spoken line in quotation marks; the Story records
+// the words themselves. Only a single fully enclosing pair is removed.
+export function spokenWords(text){
+  const match=/^\s*["\u201c]([^"\u201c\u201d]+)["\u201d]\s*$/u.exec(text);
+  return match===null?text:match[1].trim();
+}
+
 function liveEncounterMethod(encounter,name){
   if(!encounter||typeof encounter!=="object"||typeof encounter[name]!=="function"){
     throw new TypeError(`live encounter must expose ${name}()`);

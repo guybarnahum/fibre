@@ -312,3 +312,46 @@ test("delayed private thought can originate speech during an active encounter", 
     "finished encounter remained registered as live");
 });
 
+
+test("a reply begun mid-sentence answers that utterance once, in the speaker's own words",async()=>{
+  const mina=context("thr_live_once_mina","Mina");
+  const noor=context("thr_live_once_noor","Noor");
+  const choices=new Map();
+  const modelAdapter={
+    provider:"fixture",modelId:"fixture-live-once",configuration:{transport:"fixture"},
+    async invoke(call){
+      const name=call.input.thread.name;
+      const count=(choices.get(name)??0)+1;
+      choices.set(name,count);
+      // Mina starts deciding after Noor's first sentence; Noor finishes meanwhile.
+      if(name==="Mina")await new Promise((resolve)=>setTimeout(resolve,20));
+      // Like a real model, Mina would answer the same heard line again if asked.
+      const willing=name==="Mina"?count<=2:count===1;
+      return {output:{decision:willing?"speak":"silent",actionText:null},
+        provenance:{provider:"fixture",modelId:"fixture-live-once-choice"}};
+    },
+    async *streamExpression(call){
+      const name=call.input.thread.name;
+      if(name==="Noor"){
+        yield {type:"expression_delta",text:"Usually I walk."};
+        await new Promise((resolve)=>setTimeout(resolve,1));
+        yield {type:"expression_delta",text:" What do you prefer?"};
+      }else{
+        yield {type:"expression_delta",text:"\u201cMuch the same, actually.\u201d"};
+      }
+      yield {type:"expression_complete",
+        provenance:{provider:"fixture",modelId:"fixture-live-once-speech"}};
+    },
+  };
+  const result=await runThreadLiveSocialEncounter({
+    initiator:mina,counterparty:noor,
+    request:{initiatorThreadId:mina.thread.threadId,text:"Do you walk here often?"},
+    stance:{decision:"accept",expression:null,suggestedAt:null,reason:"I am willing."},
+    modelAdapter,
+  });
+  const minaLines=result.story.beats.filter((beat)=>
+    beat.actorThreadId===mina.thread.threadId&&beat.kind==="utterance")
+    .map((beat)=>beat.text);
+  assert.deepEqual(minaLines,["Do you walk here often?","Much the same, actually."],
+    "one heard utterance produced a repeated reply or quoted speech");
+});

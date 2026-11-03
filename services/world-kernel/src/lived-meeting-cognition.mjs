@@ -7,6 +7,7 @@ import {
 } from "./persistence-common.mjs";
 import { runInteriorCognition } from "./interior-cognition.mjs";
 import { spokenNameDisclosure } from "./spoken-name.mjs";
+import { spokenWords } from "./live-encounter-expression.mjs";
 
 const DECISIONS = Object.freeze(["accept", "decline", "defer"]);
 const SOCIAL_ACTS = Object.freeze(["none","acknowledge","greet","remark","invite_conversation"]);
@@ -180,7 +181,7 @@ export async function formSocialEncounterRequest({
     act:cognition.result.act,
     introducesSelf,
     disclosedName,
-    expression:cognition.result.expression,
+    expression:spoken?spokenWords(cognition.result.expression):cognition.result.expression,
     experienceText:cognition.result.experienceText,
     reason:cognition.result.reason,
     decisionContext:Object.freeze({

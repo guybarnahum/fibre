@@ -551,6 +551,10 @@ export function createSocialMeetingService({
       }),
     });
 
+    experienceStore.supersedePairSocialOpportunities?.({
+      threadIds:[initiator.thread.threadId,counterparty.thread.threadId],
+      at,encounterRef:encounterStory.encounterId,
+    });
     const place=latestInitiator.situation.location?.kind==="place"
       ?livedNowStore.getWorldPlace?.(
         initiator.thread.threadId,latestInitiator.situation.location.placeRef,

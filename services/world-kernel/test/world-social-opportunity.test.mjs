@@ -909,6 +909,14 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
         sourceKind:"social_act",visitSince:visit,
       });
       assert.equal(queued.inserted,true,"a spoken reply had no opportunity");
+      // The other person still holds a pending chance to answer the earlier
+      // remark; a conversation between them must answer it, not race it.
+      f.experience.enqueueObservedSocialOpportunity({
+        encounterRef:former.encounterId,threadId:other,
+        situationId:b.situationId,counterpartyThreadId:actor,
+        venueRef:f.place.physicalVenue.ref,dueAt:"2026-10-23T10:00:05.000Z",
+        sourceKind:"social_act",visitSince:visit,
+      });
       const social=createWorldSocialOpportunity({
         experienceStore:f.experience,livedNowStore:f.lived,
         worldReader:f.world,meetingService:f.meeting,now:()=>at,
@@ -951,6 +959,10 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
         assert.equal(f.experience.listDueSocialOpportunities({
           at:"2026-10-23T10:00:11.000Z",limit:8,
         }).length,0,"continued conversation reopened one-shot opportunities");
+        assert.equal(f.experience.inspectSocialOpportunities(other)
+          .find(row=>row.sourceEncounterRef===former.encounterId)?.outcome,
+        "superseded_by_conversation",
+        "a pending reply raced the conversation that already answered it");
       }else{
         assert.equal(result.results[0]?.outcome,"acted",
           "a chosen brief remark was forced into conversation");
