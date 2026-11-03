@@ -187,7 +187,13 @@ export async function runThreadLiveSocialEncounter({
   }
 
   function schedule(participantId,opportunity){
-    if(stopped||disengaged.has(participantId))return;
+    if(stopped)return;
+    if(disengaged.has(participantId)){
+      // Silence ends ordinary turns, not the person's capacity to reconsider
+      // when a new private thought arises during this encounter.
+      if(opportunity.reason!=="afterthought")return;
+      disengaged.delete(participantId);
+    }
     if(busy.has(participantId)){
       deferred.set(participantId,opportunity);
       return;
