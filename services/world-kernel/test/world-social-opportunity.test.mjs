@@ -756,16 +756,24 @@ test("continuation is unavailable for arrivals, gestures or an unanswered first 
   ]){
     let offered=null,judgments=0;
     const f=groundedReconsiderationFixture({onInvoke:call=>{
-      assert.equal(call.input?.concern?.kind,"social_initiation",
-        "a source observation forced unrelated cognition");
-      judgments++;
-      offered=JSON.stringify(call.responseSchema).includes("continue_conversation");
-      return {output:{result:{
-        act:"remark",expression:"I will return to my notes.",
-        experienceText:"I offered only a short reply.",
-        reason:"I prefer to keep this brief.",introducesSelf:false,
-      },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
-      provenance:{provider:"fixture",modelId:"independent-brief-reply"}};
+      if(call.input?.concern?.kind==="social_initiation"){
+        judgments++;
+        offered=JSON.stringify(call.responseSchema).includes("continue_conversation");
+        return {output:{result:{
+          act:"remark",expression:"I will return to my notes.",
+          experienceText:"I offered only a short reply.",
+          reason:"I prefer to keep this brief.",introducesSelf:false,
+        },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+        provenance:{provider:"fixture",modelId:"independent-brief-reply"}};
+      }
+      // A chosen ordinary remark still receives the other person's
+      // independent attention appraisal, without assuming it is noticed.
+      if(call.clientRequestId?.startsWith("encounter-attention_")){
+        return {output:{outcome:"not_noticed",experienceText:null,
+          passedReason:"I remained absorbed in my book."},
+        provenance:{provider:"fixture",modelId:"unnoticed-brief-reply"}};
+      }
+      throw Error("unexpected social cognition");
     }});
     try{
       const [actor,other]=f.people;
