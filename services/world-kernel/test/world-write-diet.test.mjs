@@ -704,6 +704,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       });
       const counts={invocations:0,streams:0,decisions:0,live:0,attention:0,experiences:0};
       const adapter={
+        provider:"fixture",modelId:"exchange-cost",
+        configuration:{transport:"fixture"},
         async invoke(call){
           counts.invocations++;
           if(call.input?.concern?.kind==="social_initiation"){
@@ -740,7 +742,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         },
         async *streamExpression(){
           counts.streams++;
-          yield {type:"expression_delta",text:"One more piece of evidence matters."};
+          yield {type:"expression_delta",text:"One more piece of evidence matters"};
           yield {type:"expression_complete",
             provenance:{provider:"fixture",modelId:"exchange-speech"}};
         },
@@ -776,11 +778,19 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
         .filter(story=>Date.parse(story.occurredAt)>=Date.parse(at("17:45"))).length;
       assert.equal(storyCount,mode==="continued"?3:4,
         "exchange produced an unexpected number of independent Stories");
-      if(mode==="continued")assert.ok(
-        !situated.listCurrentLifeRelations(pair[0]).some(relation=>
+      if(mode==="continued"){
+        const conversation=experience.listEncounterStories(pair[0])
+          .find(story=>Date.parse(story.occurredAt)>=Date.parse(at("17:45"))
+            &&story.story.beats.length>2);
+        assert.equal(conversation?.story.beats.length,3,
+          "continued conversation did not record a voluntary later turn");
+        assert.equal(counts.streams,1,
+          "continued exchange cost omitted streamed speech");
+        assert.ok(!situated.listCurrentLifeRelations(pair[0]).some(relation=>
           relation.relationKind==="social_contact"
           &&relation.relatedParty.partyId===pair[1]),
         "continued speech invented acquaintance without an invitation");
+      }
       return counts;
     };
     const fourCalls=await compare("remarks",["thr_write_compare_a","thr_write_compare_b"]);
