@@ -750,11 +750,15 @@ test("acknowledgment records a performed act, never conditional intent",async()=
 
 test("continuation is unavailable for arrivals, gestures or an unanswered first remark",async()=>{
   const at="2026-10-23T10:00:10.000Z";
-  for(const {sourceKind,sourceBeat,earlier} of [
+  for(const {sourceKind,sourceBeat,earlier,claimed=false,sourceSpoken=false,earlierSpoken=false} of [
     {sourceKind:"arrival",sourceBeat:"utterance",earlier:true},
     {sourceKind:"social_act",sourceBeat:"action",earlier:true},
     {sourceKind:"social_act",sourceBeat:"utterance",earlier:false},
     {sourceKind:"social_act",sourceBeat:"utterance",earlier:true},
+    {sourceKind:"social_act",sourceBeat:"utterance",earlier:true,
+      earlierSpoken:true,claimed:true},
+    {sourceKind:"social_act",sourceBeat:"utterance",earlier:true,
+      sourceSpoken:true,claimed:true},
   ]){
     let offered=null,judgments=0;
     const f=groundedReconsiderationFixture({onInvoke:call=>{
@@ -781,9 +785,11 @@ test("continuation is unavailable for arrivals, gestures or an unanswered first 
       const [actor,other]=f.people;
       const a=f.enact(actor,"2026-10-23T09:00:00.000Z","Reading.",[other]);
       const b=f.enact(other,"2026-10-23T09:00:00.000Z","Reading.",[actor]);
-      const make=(speaker,occurredAt,kind)=>{
+      const make=(speaker,occurredAt,kind,spoken=false)=>{
         const story={storyVersion:"encounter-story-v0.1",
-          beats:[{actorThreadId:speaker,kind,text:"A short outward act."}]};
+          beats:[{actorThreadId:speaker,kind,
+            text:'A person says: "A short outward act."',
+            ...(spoken?{spokenText:"A short outward act."}:{})}]};
         return f.experience.recordEncounterStory({
           occurredAt,threadPresence:[a,b].map(person=>({
             threadId:person.threadId,situationId:person.situationId,
@@ -793,13 +799,27 @@ test("continuation is unavailable for arrivals, gestures or an unanswered first 
           }),
         });
       };
-      if(earlier)make(actor,"2026-10-23T09:58:00.000Z","utterance");
-      const source=make(other,"2026-10-23T10:00:00.000Z",sourceBeat);
+      if(earlier)make(actor,"2026-10-23T09:58:00.000Z","utterance",earlierSpoken);
+      const source=make(other,"2026-10-23T10:00:00.000Z",sourceBeat,sourceSpoken);
       f.experience.recordThreadEncounterAttention({
         threadId:actor,encounterRef:source.encounterId,
         situationId:a.situationId,occurredAt:source.occurredAt,
         outcome:"noticed",experienceText:"I noticed the other reader.",
       });
+      if(claimed){
+        const created=f.experience.enqueueObservedSocialOpportunity({
+          encounterRef:source.encounterId,threadId:actor,
+          situationId:a.situationId,counterpartyThreadId:other,
+          venueRef:f.place.physicalVenue.ref,
+          dueAt:source.occurredAt,sourceKind:"social_act",
+          visitSince:"2026-10-23T09:00:00.000Z",
+        });
+        assert.equal(created.inserted,true,"no observed reply opportunity");
+        assert.ok(f.experience.claimDueSocialOpportunity({
+          at,selected:{kind:"observed",threadId:actor,
+            situationId:a.situationId,sourceEncounterRef:source.encounterId},
+        }),"the reply opportunity was not claimed");
+      }
       const result=await f.meeting.meet({
         initiatorThreadId:actor,counterpartyThreadId:other,at,
         sourceKind,sourceEncounterRef:source.encounterId,
@@ -861,7 +881,8 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
       const b=f.enact(other,visit,"Reading.",[actor]);
       const utter=(speaker,when,text)=>{
         const story={storyVersion:"encounter-story-v0.1",
-          beats:[{kind:"utterance",actorThreadId:speaker,text}]};
+          beats:[{kind:"utterance",actorThreadId:speaker,
+            text:'A person says: "'+text+'"',spokenText:text}]};
         return f.experience.recordEncounterStory({
           occurredAt:when,
           threadPresence:[a,b].map(scene=>({
@@ -903,6 +924,11 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
           .find(item=>item.encounterId!==former.encounterId
             &&item.encounterId!==source.encounterId);
         assert.ok(conversation,"one continued conversation Story was not recorded");
+        assert.equal(conversation.story.beats[0].text,"What did you discover?",
+          "live conversation seeded narration instead of spoken words");
+        assert.ok(conversation.story.beats.every(beat=>
+          beat.kind!=="utterance"||!beat.text.includes("says:")),
+        "narration entered the live conversation as speech");
         assert.deepEqual(conversation.story.beats.map(beat=>beat.actorThreadId),
           laterTurns===0?[other,actor]:[other,actor,other,actor],
           "the live conversation lost the participants' chosen turns");
@@ -933,8 +959,9 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
         const remarks=f.experience.listEncounterStories(actor);
         assert.ok(remarks.some(item=>item.story.beats.length===1
           &&item.story.beats[0].actorThreadId===actor
+          &&item.story.beats[0].spokenText==="That is interesting."
           &&item.encounterId!==former.encounterId),
-        "a brief reply did not remain an ordinary small act");
+        "a brief reply did not retain its exact spoken words");
       }
       const life=openSituatedLifeStore(f.storage);
       try{
