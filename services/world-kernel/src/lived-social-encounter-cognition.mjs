@@ -103,6 +103,7 @@ Do not invent another person's interior, a relationship, a new place, or hidden 
       },
     },
     clientRequestId:requestId("social-live-contribution",input),
+    cacheKey:`social-live-contribution:${thread.threadId}`,
   });
 
   assertPlainObject("live social contribution",invocation.output);
@@ -156,6 +157,7 @@ Do not narrate private thoughts or system state. Do not describe another person'
 Produce only the words this Thread says aloud now. There is no requirement to finish a thought before another participant speaks.`,
     input,
     clientRequestId:requestId("social-live-expression",input),
+    cacheKey:`social-live-expression:${thread.threadId}`,
     signal,
   });
 }

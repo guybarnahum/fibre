@@ -73,11 +73,12 @@ export async function decideLaterContact({
       selfModel:thread.currentState?.selfModel??"",
       unresolvedIntentions:[...(thread.currentState?.unresolvedIntentions??[])],
     },
-    delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
-    currentSituation:currentSituation===null?null:structuredClone(currentSituation),
+    // Stable self first and this moment's residue last, for a shared prompt prefix.
     semanticStates:semanticContext(semanticStates),
     autobiographicalMemories:boundedMemories(memories),
     routableKnownParties:routableCandidates,
+    currentSituation:currentSituation===null?null:structuredClone(currentSituation),
+    delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
   };
   const invocation=await modelAdapter.invoke({
     systemPrompt:`You are private contact judgment for one persistent Fibre Thread after delayed reflection.
@@ -100,6 +101,7 @@ If decision is keep_private, recipientPartyId must be null.`,
       },
     },
     clientRequestId:requestId("later-contact-decision",input),
+    cacheKey:`later-contact-decision:${thread.threadId}`,
   });
   assertPlainObject("later contact decision",invocation.output);
   assertExactKeys("later contact decision",invocation.output,[
@@ -152,10 +154,10 @@ export async function expressLaterContact({
       selfDescription:thread.identity?.selfDescription??"",
       selfModel:thread.currentState?.selfModel??"",
     },
-    delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
-    currentSituation:currentSituation===null?null:structuredClone(currentSituation),
     semanticStates:semanticContext(semanticStates),
     autobiographicalMemories:boundedMemories(memories),
+    currentSituation:currentSituation===null?null:structuredClone(currentSituation),
+    delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
     recipient:{
       partyId:candidate.partyId,
       recipientKind:candidate.recipientKind,
@@ -184,6 +186,7 @@ Keep the message natural and bounded. A question, greeting, request, observation
       },
     },
     clientRequestId:requestId("later-contact-expression",input),
+    cacheKey:`later-contact-expression:${thread.threadId}`,
   });
   assertPlainObject("later contact expression",invocation.output);
   assertExactKeys("later contact expression",invocation.output,["messageText"]);

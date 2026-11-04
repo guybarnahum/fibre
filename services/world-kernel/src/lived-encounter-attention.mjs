@@ -54,6 +54,14 @@ export async function appraiseEncounterAttention({
       stableTendencies:structuredClone(thread.genome?.textualTraits ?? {}),
       unresolvedIntentions:[...(thread.currentState?.unresolvedIntentions ?? [])],
     },
+    // Stable self first and the event last, so successive appraisals share a prefix.
+    semanticStates:semanticStates.map((state) => ({
+      domain:state.domain,
+      dimension:state.dimension,
+      target:state.target ?? null,
+      state:state.state,
+    })),
+    autobiographicalMemories:boundedMemories(memories),
     currentSituation:structuredClone(situation),
     encounterStory:{
       occurredAt:encounterStory.occurredAt,
@@ -74,13 +82,6 @@ export async function appraiseEncounterAttention({
         }),
       },
     },
-    semanticStates:semanticStates.map((state) => ({
-      domain:state.domain,
-      dimension:state.dimension,
-      target:state.target ?? null,
-      state:state.state,
-    })),
-    autobiographicalMemories:boundedMemories(memories),
   };
 
   const invocation = await modelAdapter.invoke({
@@ -103,6 +104,7 @@ Do not add objective facts absent from the Encounter Story. Do not claim lasting
       },
     },
     clientRequestId:requestId(input),
+    cacheKey:`encounter-attention:${thread.threadId}`,
   });
 
   assertPlainObject("attention output", invocation.output);

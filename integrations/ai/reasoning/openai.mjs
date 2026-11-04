@@ -192,6 +192,15 @@ function parseOutput(text) {
   }
 }
 
+// A caller may name which of its prompts share a stable prefix (one cognitive job
+// for one Thread) so the provider can route them to the same prompt cache. The
+// key is opaque and bounded; it never changes what the model sees.
+function promptCacheField(cacheKey) {
+  if (cacheKey === undefined || cacheKey === null) return {};
+  assertNonEmpty("model cacheKey", cacheKey);
+  return { prompt_cache_key: `fibre_${sha256(cacheKey).slice(0, 40)}` };
+}
+
 function providerString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -315,7 +324,7 @@ export function createOpenAIModelAdapter({
     provider: "openai",
     modelId,
     configuration,
-    async *streamExpression({ systemPrompt, input, clientRequestId, signal = null }) {
+    async *streamExpression({ systemPrompt, input, clientRequestId, cacheKey = null, signal = null }) {
       assertNonEmpty("expression systemPrompt", systemPrompt);
       assertPlainObject("expression input", input);
       assertId("expression clientRequestId", clientRequestId);
@@ -346,6 +355,7 @@ export function createOpenAIModelAdapter({
               model:modelId,
               store:false,
               stream:true,
+              ...promptCacheField(cacheKey),
               ...(maxOutputTokens === null ? {} : { max_output_tokens:maxOutputTokens }),
               temperature,
               top_p:topP,
@@ -416,7 +426,7 @@ export function createOpenAIModelAdapter({
         signal?.removeEventListener?.("abort", onAbort);
       }
     },
-    async invoke({ systemPrompt, input, responseSchema, clientRequestId }) {
+    async invoke({ systemPrompt, input, responseSchema, clientRequestId, cacheKey = null }) {
       assertNonEmpty("model systemPrompt", systemPrompt);
       assertPlainObject("model input", input);
       assertPlainObject("model responseSchema", responseSchema);
@@ -447,6 +457,7 @@ export function createOpenAIModelAdapter({
               body: JSON.stringify({
                 model: modelId,
                 store: false,
+                ...promptCacheField(cacheKey),
                 ...(maxOutputTokens === null ? {} : { max_output_tokens: maxOutputTokens }),
                 temperature,
                 top_p: topP,

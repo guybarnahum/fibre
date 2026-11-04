@@ -48,11 +48,7 @@ export async function formThreadEncounterExperience({
       stableTendencies:structuredClone(thread.genome?.textualTraits ?? {}),
       unresolvedIntentions:[...(thread.currentState?.unresolvedIntentions ?? [])],
     },
-    currentSituation:structuredClone(situation),
-    encounterStory:{
-      occurredAt:encounterStory.occurredAt,
-      story:structuredClone(encounterStory.story),
-    },
+    // Stable self first and the event last, so successive experiences share a prefix.
     semanticStates:semanticStates.map((state) => ({
       domain:state.domain,
       dimension:state.dimension,
@@ -60,6 +56,11 @@ export async function formThreadEncounterExperience({
       state:state.state,
     })),
     autobiographicalMemories:boundedMemories(memories),
+    currentSituation:structuredClone(situation),
+    encounterStory:{
+      occurredAt:encounterStory.occurredAt,
+      story:structuredClone(encounterStory.story),
+    },
   };
 
   const invocation = await modelAdapter.invoke({
@@ -78,6 +79,7 @@ Do not add objective events, dialogue or actions absent from the Encounter Story
       },
     },
     clientRequestId:requestId(input),
+    cacheKey:`encounter-experience:${thread.threadId}`,
   });
 
   assertPlainObject("Thread Experience output", invocation.output);

@@ -153,6 +153,38 @@ test("Interior Cognition lets different lived meaning bend the same private conc
 });
 
 
+test("one Thread's repeated private judgments share a cacheable prefix and cite only its own evidence", async () => {
+  const calls = [];
+  const stores = sourceStores({
+    threadId:"thr_person_a",
+    memoryId:"mem-person-a",
+    rememberedMeaning:"After a long solitary stretch, quiet company restored me without disrupting my work.",
+  });
+  const adapter = {
+    provider:"fixture",
+    modelId:"fixture-interior",
+    async invoke(call) {
+      calls.push(call);
+      return {
+        output:{ result:{ stance:"welcome" }, evidenceRefs:["mem-person-a", "mem-never-selected"], conflictingMotives:[], uncertainty:null },
+        provenance:{ provider:"fixture", modelId:"fixture-interior", usage:{ inputTokens:120, outputTokens:18, totalTokens:138 } },
+      };
+    },
+  };
+  let judgment;
+  for (const at of [AT, "2026-09-22T17:40:00.000Z"]) {
+    judgment = await runInteriorCognition({
+      threadId:"thr_person_a", at, concern:CONCERN, adapter:ADAPTER, sourceStores:stores, modelAdapter:adapter,
+    });
+  }
+  assert.equal(JSON.stringify(calls[0].responseSchema), JSON.stringify(calls[1].responseSchema),
+    "the response schema changed between calls, defeating prompt-cache reuse");
+  assert.equal(calls[0].cacheKey, calls[1].cacheKey, "one Thread's judgments were routed to different caches");
+  assert.equal(Object.keys(calls[1].input).at(-1), "at", "the moment of judgment preceded stable context");
+  assert.deepEqual(judgment.evidenceRefs, ["mem-person-a"], "an unselected citation was recorded as evidence");
+  assert.equal(judgment.metrics.ungroundedCitationsDropped, 1);
+});
+
 test("N6.3c visitor participation is the Thread's existing social-response cognition in actual current life", async () => {
   const threadId = "thr_person_a";
   const situation = {

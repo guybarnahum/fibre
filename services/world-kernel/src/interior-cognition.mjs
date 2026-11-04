@@ -224,7 +224,9 @@ function normalizeAdapter(adapter) {
   });
 }
 
-function responseSchema(adapter, refs) {
+// The schema is the first thing a provider caches, so it stays identical across
+// calls; which refs this Thread may cite is enforced after the call instead.
+function responseSchema(adapter) {
   return {
     type:"object",
     additionalProperties:false,
@@ -233,9 +235,9 @@ function responseSchema(adapter, refs) {
       result:structuredClone(adapter.resultSchema),
       evidenceRefs:{
         type:"array",
-        items:refs.length === 0 ? { type:"string" } : { type:"string", enum:refs },
+        items:{ type:"string" },
         minItems:0,
-        maxItems:Math.min(6, refs.length),
+        maxItems:6,
         uniqueItems:true,
       },
       conflictingMotives:{
@@ -295,9 +297,10 @@ export async function runInteriorCognition({
       name:thread.identity?.name ?? null,
       currentState,
     }),
-    at,
-    concern:normalizedConcern,
+    // Stable self and evidence first; the moment and its question last.
     developedSelfEvidence:selected.evidence,
+    concern:normalizedConcern,
+    at,
   });
   const contextDigest = `sha256:${sha256(canonicalJson({
     threadId,
@@ -321,7 +324,8 @@ export async function runInteriorCognition({
       clientRequestId:requestId,
       systemPrompt:`${BASE_PROMPT}\n\nDomain instruction:\n${normalizedAdapter.instruction}`,
       input,
-      responseSchema:responseSchema(normalizedAdapter, evidenceRefs),
+      responseSchema:responseSchema(normalizedAdapter),
+      cacheKey:`interior_${normalizedAdapter.id}:${threadId}`,
     });
   } catch (error) {
     if (error !== null && typeof error === "object") {
@@ -357,10 +361,11 @@ export async function runInteriorCognition({
   const output = invocation.output;
   assertPlainObject("Interior Cognition output", output);
 
+  // A citation outside the Thread-owned selection is not evidence; keep only
+  // the selected refs and count what was dropped.
   const selectedSet = new Set(evidenceRefs);
-  for (const ref of output.evidenceRefs ?? []) {
-    if (!selectedSet.has(ref)) throw new TypeError(`Interior Cognition output cites unselected evidence ${ref}`);
-  }
+  const citedRefs = output.evidenceRefs ?? [];
+  const groundedRefs = citedRefs.filter((ref) => selectedSet.has(ref));
 
   return Object.freeze({
     threadId,
@@ -369,7 +374,7 @@ export async function runInteriorCognition({
     adapterId:normalizedAdapter.id,
     implementationProfile:Object.freeze({ id:profile.id, version:profile.version }),
     result:structuredClone(output.result),
-    evidenceRefs:Object.freeze([...(output.evidenceRefs ?? [])]),
+    evidenceRefs:Object.freeze(groundedRefs),
     conflictingMotives:Object.freeze([...(output.conflictingMotives ?? [])]),
     uncertainty:output.uncertainty ?? null,
     provenance:Object.freeze({
@@ -385,6 +390,7 @@ export async function runInteriorCognition({
       latencyMs,
       selectedEvidenceItems:selected.evidence.length,
       selectedEvidenceBytes:selected.evidenceBytes,
+      ungroundedCitationsDropped:citedRefs.length - groundedRefs.length,
       usage:usage(invocation.provenance),
     }),
   });

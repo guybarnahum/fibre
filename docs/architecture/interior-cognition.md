@@ -672,6 +672,8 @@ plan.cognition.evidenceRefs
   = selected private evidence the cognition cited as materially shaping the result
 ```
 
+Cited refs are always a subset of the selected refs. That subset is enforced after the call, not by a per-call schema enum: the response schema stays identical across calls so the provider can reuse its prompt cache, and a citation outside the selection is dropped and counted (`metrics.ungroundedCitationsDropped`), never recorded as evidence. Model input is ordered stable-first (Thread, selected evidence, concern) with the moment `at` last, and each call names a per-Thread, per-adapter cache key; neither changes what the model sees.
+
 Autobiographical memory, semantic state and logical relationship evidence therefore do not become World-observation evidence merely because they influenced a private plan. The cognition witness binds the selected/cited refs to the source Thread version, implementation profile and private context digest. CurrentSituation continues to carry only the World/situated evidence supporting enactment.
 
 This separation is reusable across later domains: **what made the person want or judge something is not automatically the same authority as what makes the resulting World action admissible or true.**

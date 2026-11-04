@@ -125,11 +125,9 @@ async function formDecision({
   modelAdapter,
 }){
   const storyById=new Map(encounterStories.map((story)=>[story.encounterId,story]));
+  // Stable self first, this cluster's evidence and identity last, so one
+  // Thread's successive consolidations share a prompt prefix.
   const input={
-    consolidation:{
-      consolidationId:consolidation.consolidationId,
-      startedAt:consolidation.startedAt,
-    },
     thread:{
       threadId:thread.threadId,
       name:thread.identity?.name??null,
@@ -138,6 +136,8 @@ async function formDecision({
       stableTendencies:structuredClone(thread.genome?.textualTraits??{}),
       unresolvedIntentions:[...(thread.currentState?.unresolvedIntentions??[])],
     },
+    semanticStates:semanticContext(semanticStates),
+    priorMemories:boundedMemories(memories),
     experiencedSituation:structuredClone(situation),
     experiences:experiences.map((experience)=>({
       experienceId:experience.experienceId,
@@ -145,8 +145,10 @@ async function formDecision({
       experiencedAs:experience.experienceText??null,
       encounterStory:structuredClone(storyById.get(experience.encounterRef)?.story??null),
     })),
-    semanticStates:semanticContext(semanticStates),
-    priorMemories:boundedMemories(memories),
+    consolidation:{
+      consolidationId:consolidation.consolidationId,
+      startedAt:consolidation.startedAt,
+    },
   };
 
   const invocation=await modelAdapter.invoke({
@@ -204,6 +206,7 @@ Do not describe this consolidation process, record IDs, system state, or hidden 
       },
     },
     clientRequestId:decisionRequestId(input),
+    cacheKey:`experience-consolidation:${thread.threadId}`,
   });
   return normalizeDecision(invocation.output);
 }

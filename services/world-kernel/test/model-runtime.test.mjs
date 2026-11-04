@@ -61,13 +61,15 @@ test("explicit development model override changes only the selected model", () =
 
 test("deployment-selected OpenAI reasoning accepts generic cognition input and emits progress", async () => {
   let calls = 0;
+  let sent = null;
   const events = [];
   const adapter = createLocalReasoningAdapter({
     environment: { OPENAI_API_KEY: "test-key" },
     model: "gpt-test",
     observer: (event) => events.push(event),
-    fetchImpl: async () => {
+    fetchImpl: async (_url, init) => {
       calls += 1;
+      sent = JSON.parse(init.body);
       return response({
         id: "resp_test",
         status: "completed",
@@ -88,9 +90,12 @@ test("deployment-selected OpenAI reasoning accepts generic cognition input and e
       properties: { decision: { type: "string", enum: ["accept", "refuse"] } },
     },
     clientRequestId: "guardian-v4-dev:no-capsule",
+    cacheKey: "interior_social-initiation:thr_cache_owner",
   });
 
   assert.equal(calls, 1);
+  assert.match(sent.prompt_cache_key, /^fibre_[0-9a-f]{40}$/u, "the provider was not told which prompts share a prefix");
+  assert.equal(sent.prompt_cache_key.includes("thr_cache_owner"), false, "a Thread id leaked into the provider cache key");
   assert.deepEqual(result.output, { decision: "accept" });
   assert.equal(result.provenance.provider, "openai");
   assert.equal(result.provenance.usage.cachedInputTokens, 8, "prompt-cache reuse was not reported");

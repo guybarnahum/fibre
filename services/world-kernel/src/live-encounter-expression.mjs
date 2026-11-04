@@ -25,6 +25,7 @@ export async function streamExpressionIntoLiveEncounter({
   systemPrompt,
   input,
   clientRequestId,
+  cacheKey=null,
   signal=null,
 }={}){
   liveEncounterMethod(encounter,"pushSpeechDelta");
@@ -58,6 +59,7 @@ export async function streamExpressionIntoLiveEncounter({
       systemPrompt,
       input,
       clientRequestId,
+      ...(cacheKey===null?{}:{cacheKey}),
       signal:controller.signal,
     })){
       if(controller.signal.aborted)break;
