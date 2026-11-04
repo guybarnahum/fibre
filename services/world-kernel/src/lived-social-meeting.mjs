@@ -22,6 +22,7 @@ import { projectInteroception } from "./interoceptive-cognition.mjs";
 import { observablePerson } from "./world-observable-person.mjs";
 import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
 import { lifeRelationId } from "./situated-life-domain.mjs";
+import { selectDevelopedSelfEvidence } from "./interior-cognition.mjs";
 
 const MEMORY_LIMIT = 6;
 
@@ -510,11 +511,47 @@ export function createSocialMeetingService({
       });
     }
 
-    const participantContexts = [latestInitiator, latestCounterparty];
+    // Each participant speaks from its own developed self, oriented toward the
+    // person in front of it, and perceives that person only as it can.
+    const personAsPerceivedBy=(observer,other)=>{
+      const person=observablePerson({
+        ...observedThread(other),observerThreadId:observer.thread.threadId,at,
+        embodimentStore,situatedLifeStore,experienceStore,
+      });
+      const noticed=experienceStore.listNoticedSharedHistory?.(
+        observer.thread.threadId,other.thread.threadId,{before:at,limit:2},
+      )??[];
+      return Object.freeze({
+        threadId:other.thread.threadId,
+        name:person.name,
+        appearance:person.observableDescription,
+        noticedBefore:noticed.map(item=>({occurredAt:item.occurredAt,experiencedAs:item.experienceText})),
+      });
+    };
+    const speakerFacing=(self,other)=>Object.freeze({
+      ...self,
+      perspective:Object.freeze({
+        developedSelfEvidence:selectDevelopedSelfEvidence({
+          threadId:self.thread.threadId,at,focusPartyId:other.thread.threadId,
+          sourceStores:{
+            worldStore:worldReader,identityStore,semanticStateStore,
+            memoryStore,situatedLifeStore,experienceStore,
+          },
+        }),
+        placeName:self.situation.location?.kind==="place"
+          ?livedNowStore.getWorldPlace?.(self.thread.threadId,self.situation.location.placeRef,
+            {required:false})?.displayName??null:null,
+        counterparts:Object.freeze([personAsPerceivedBy(self,other)]),
+      }),
+    });
+    const participantContexts = [
+      speakerFacing(latestInitiator,latestCounterparty),
+      speakerFacing(latestCounterparty,latestInitiator),
+    ];
     const allContexts = [...participantContexts, ...witnesses];
     const liveResult=await runThreadLiveSocialEncounter({
-      initiator:continuation===null?latestInitiator:latestCounterparty,
-      counterparty:continuation===null?latestCounterparty:latestInitiator,
+      initiator:participantContexts[continuation===null?0:1],
+      counterparty:participantContexts[continuation===null?1:0],
       request,
       stance,
       modelAdapter,
@@ -573,6 +610,7 @@ export function createSocialMeetingService({
         thread:context.thread,
         situation:context.situation,
         encounterStory,
+        others:context.perspective.counterparts,
         semanticStates:context.semanticStates,
         memories:context.memories,
         modelAdapter,

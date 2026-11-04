@@ -5,6 +5,7 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 import { runInteriorCognition } from "./interior-cognition.mjs";
+import { remainingPlanForCognition } from "./lived-plan-cognition.mjs";
 
 const DECISIONS = Object.freeze(["enter", "stay_out"]);
 
@@ -49,7 +50,7 @@ export async function formCommonsEntryChoice({
       question:"Do I want Fibre Commons quietly present in the background right now?",
       externalContext:{
         currentSituation:structuredClone(situation),
-        remainingFlightPlan:structuredClone(plan),
+        remainingFlightPlan:remainingPlanForCognition(plan),
         commons:{
           name:"Fibre Commons",
           description:"A quiet ambient mediated common space that can stay open in the background while ordinary life continues; presence does not imply conversation.",

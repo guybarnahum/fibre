@@ -20,6 +20,7 @@ function contextMap(initiator,counterparty){
     assertPlainObject("live social context.thread",context.thread);
     assertId("live social context.thread.threadId",context.thread.threadId);
     assertPlainObject("live social context.situation",context.situation);
+    assertPlainObject("live social context.perspective",context.perspective);
     map.set(context.thread.threadId,context);
   }
   if(map.size!==2)throw new TypeError("live social encounter requires two distinct Threads");
@@ -133,16 +134,11 @@ export async function runThreadLiveSocialEncounter({
 
   async function handleOpportunity(participantId,opportunity){
     const context=contexts.get(participantId);
-    const counterparties=[...contexts.values()]
-      .filter((candidate)=>candidate.thread.threadId!==participantId)
-      .map((candidate)=>candidate.thread);
     try{
       const choice=await chooseLiveSocialContribution({
         thread:context.thread,
         situation:context.situation,
-        semanticStates:context.semanticStates,
-        memories:context.memories,
-        counterparties,
+        perspective:context.perspective,
         story,
         liveEncounter,
         opportunity,
@@ -166,9 +162,7 @@ export async function runThreadLiveSocialEncounter({
         await streamLiveSocialSpeech({
           thread:context.thread,
           situation:context.situation,
-          semanticStates:context.semanticStates,
-          memories:context.memories,
-          counterparties,
+          perspective:context.perspective,
           story,
           liveEncounter,
           opportunity,

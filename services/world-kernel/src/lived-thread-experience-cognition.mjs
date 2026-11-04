@@ -1,3 +1,4 @@
+import { promptRequest } from "./cognition-prompts.mjs";
 import {
   assertId,
   assertNonEmpty,
@@ -29,6 +30,7 @@ export async function formThreadEncounterExperience({
   thread,
   situation,
   encounterStory,
+  others = [],
   semanticStates = [],
   memories = [],
   modelAdapter,
@@ -59,16 +61,13 @@ export async function formThreadEncounterExperience({
     currentSituation:structuredClone(situation),
     encounterStory:{
       occurredAt:encounterStory.occurredAt,
+      others:structuredClone(others),
       story:structuredClone(encounterStory.story),
     },
   };
 
   const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are the immediate lived experience of one persistent Fibre Thread inside an Encounter Story they are actively participating in.
-Write a concise first-person account of what this particular Thread experienced in the moment: what they noticed, and the thought, feeling, association or bodily response it stirred.
-The objective Encounter Story is shared evidence; this response is personal and may differ from another participant's experience of the same event.
-This is not a journal entry and not durable memory.
-Do not add objective events, dialogue or actions absent from the Encounter Story. Do not claim lasting meaning, relationship change, memory retention or future behavior.`,
+    ...promptRequest("encounter.experience",{threadId:thread.threadId}),
     input,
     responseSchema:{
       type:"object",
@@ -79,7 +78,6 @@ Do not add objective events, dialogue or actions absent from the Encounter Story
       },
     },
     clientRequestId:requestId(input),
-    cacheKey:`encounter-experience:${thread.threadId}`,
   });
 
   assertPlainObject("Thread Experience output", invocation.output);

@@ -18,9 +18,7 @@ const LIVE_CONTRIBUTION_DECISIONS=Object.freeze(["speak","act","silent"]);
 function socialLiveInput({
   thread,
   situation,
-  semanticStates=[],
-  memories=[],
-  counterparties,
+  perspective,
   story,
   liveEncounter,
   opportunity,
@@ -28,8 +26,9 @@ function socialLiveInput({
   assertPlainObject("live social Thread",thread);
   assertId("live social Thread.threadId",thread.threadId);
   assertPlainObject("live social situation",situation);
-  if(!Array.isArray(counterparties)||counterparties.length<1){
-    throw new TypeError("live social encounter requires counterparties");
+  assertPlainObject("live social perspective",perspective);
+  if(!Array.isArray(perspective.counterparts)||perspective.counterparts.length<1){
+    throw new TypeError("live social perspective requires the people this Thread is with");
   }
   assertPlainObject("live social story",story);
   if(!Array.isArray(story.beats)||story.beats.length<1){
@@ -41,20 +40,26 @@ function socialLiveInput({
   }
   assertPlainObject("live social opportunity",opportunity);
 
+  // The Thread speaks from its own developed self and present, and perceives
+  // the other person only as it can: observable appearance, a name it actually
+  // knows, and what it noticed of them before.
   return Object.freeze({
     thread:{
       threadId:thread.threadId,
       name:thread.identity?.name??null,
-      selfDescription:thread.identity?.selfDescription??"",
       selfModel:thread.currentState?.selfModel??"",
     },
-    currentSituation:structuredClone(situation),
-    semanticStates:structuredClone(semanticStates),
-    autobiographicalMemories:structuredClone(memories),
-    counterparties:counterparties.map((counterparty)=>({
-      threadId:counterparty.threadId,
-      name:counterparty.identity?.name??null,
-    })),
+    developedSelfEvidence:(perspective.developedSelfEvidence??[])
+      .map(({kind,text})=>({kind,text})),
+    currentSituation:{
+      since:situation.establishedAt??null,
+      place:perspective.placeName??null,
+      activity:situation.activity??null,
+      outwardActivity:situation.outwardActivity??null,
+      purpose:situation.reason??null,
+      wakefulness:situation.wakefulness??null,
+    },
+    counterparties:structuredClone(perspective.counterparts),
     story:structuredClone(story),
     liveInteraction:{
       heardSoFar:liveEncounter.heardSoFar(thread.threadId),
@@ -67,9 +72,7 @@ function socialLiveInput({
 export async function chooseLiveSocialContribution({
   thread,
   situation,
-  semanticStates=[],
-  memories=[],
-  counterparties,
+  perspective,
   story,
   liveEncounter,
   opportunity,
@@ -78,9 +81,7 @@ export async function chooseLiveSocialContribution({
   const input=socialLiveInput({
     thread,
     situation,
-    semanticStates,
-    memories,
-    counterparties,
+    perspective,
     story,
     liveEncounter,
     opportunity,
@@ -120,9 +121,7 @@ export async function chooseLiveSocialContribution({
 export async function streamLiveSocialSpeech({
   thread,
   situation,
-  semanticStates=[],
-  memories=[],
-  counterparties,
+  perspective,
   story,
   liveEncounter,
   opportunity,
@@ -132,9 +131,7 @@ export async function streamLiveSocialSpeech({
   const input=socialLiveInput({
     thread,
     situation,
-    semanticStates,
-    memories,
-    counterparties,
+    perspective,
     story,
     liveEncounter,
     opportunity,

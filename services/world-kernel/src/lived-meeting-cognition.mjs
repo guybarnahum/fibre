@@ -6,6 +6,7 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 import { runInteriorCognition } from "./interior-cognition.mjs";
+import { remainingPlanForCognition } from "./lived-plan-cognition.mjs";
 import { spokenNameDisclosure } from "./spoken-name.mjs";
 import { spokenWords } from "./live-encounter-expression.mjs";
 
@@ -125,7 +126,7 @@ export async function formSocialEncounterRequest({
         recentPersonalExperiences:structuredClone(recentPersonalExperiences),
         priorSocialChoicesThisVisit:structuredClone(priorSocialChoicesThisVisit),
         ...(interoception===null?{}:{interoception:structuredClone(interoception)}),
-        remainingFlightPlan:plan === null ? null : structuredClone(plan),
+        remainingFlightPlan:remainingPlanForCognition(plan),
       },
     },
     adapter:continuationEligible?{
@@ -226,7 +227,7 @@ async function formSocialResponse({
       externalContext:{
         socialRequest:structuredClone(socialRequest),
         ...structuredClone(observedContext),
-        remainingFlightPlan:plan === null ? null : structuredClone(plan),
+        remainingFlightPlan:remainingPlanForCognition(plan),
       },
     },
     adapter:SOCIAL_RESPONSE_ADAPTER,

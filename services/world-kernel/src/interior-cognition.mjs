@@ -184,6 +184,13 @@ function selectEvidence(threadId, sourceStores, policy, at, focusPartyId=null) {
   });
 }
 
+// The same bounded, Thread-owned evidence Interior Cognition selects, for other
+// cognition in this Thread's present (such as speaking in a conversation),
+// optionally preferring memories and relations involving one person.
+export function selectDevelopedSelfEvidence({ threadId, sourceStores, at, focusPartyId = null }) {
+  return selectEvidence(threadId, sourceStores, INTERIOR_COGNITION_PROFILE, at, focusPartyId).evidence;
+}
+
 function normalizeConcern(concern) {
   assertPlainObject("Interior Cognition concern", concern);
   assertNonEmpty("Interior Cognition concern.kind", concern.kind);

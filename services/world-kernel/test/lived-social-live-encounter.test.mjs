@@ -4,7 +4,7 @@ import test from "node:test";
 import { createLiveEncounterRegistry } from "../src/live-encounter-registry.mjs";
 import { runThreadLiveSocialEncounter } from "../src/lived-social-live-encounter.mjs";
 
-function context(threadId,name){
+function context(threadId,name,other){
   return Object.freeze({
     thread:{
       threadId,
@@ -31,14 +31,24 @@ function context(threadId,name){
       activity:"Sitting together over coffee.",
       participantRefs:[],
     },
-    semanticStates:[],
-    memories:[],
+    perspective:{
+      developedSelfEvidence:[],
+      placeName:"the café",
+      counterparts:[{threadId:other.threadId,name:other.name,appearance:"a person across the table",noticedBefore:[]}],
+    },
   });
 }
 
+function pair(prefix){
+  const ids={mina:`${prefix}_mina`,noor:`${prefix}_noor`};
+  return [
+    context(ids.mina,"Mina",{threadId:ids.noor,name:"Noor"}),
+    context(ids.noor,"Noor",{threadId:ids.mina,name:"Mina"}),
+  ];
+}
+
 test("Thread-to-Thread Live Encounter allows one Thread to cut into another without a turn owner", async () => {
-  const mina=context("thr_live_mina","Mina");
-  const noor=context("thr_live_noor","Noor");
+  const [mina,noor]=pair("thr_live");
   const choices=new Map();
   let minaSpeechFinished;
   const minaSpoke=new Promise((resolve)=>{ minaSpeechFinished=resolve; });
@@ -142,8 +152,7 @@ test("Thread-to-Thread Live Encounter allows one Thread to cut into another with
 });
 
 test("Thread live encounter can contribute an outward action without forcing speech", async () => {
-  const mina=context("thr_action_mina","Mina");
-  const noor=context("thr_action_noor","Noor");
+  const [mina,noor]=pair("thr_action");
   const choices=new Map();
 
   const modelAdapter={
@@ -204,8 +213,7 @@ test("Thread live encounter can contribute an outward action without forcing spe
 });
 
 test("delayed private thought can originate speech during an active encounter", async () => {
-  const mina=context("thr_afterthought_mina","Mina");
-  const noor=context("thr_afterthought_noor","Noor");
+  const [mina,noor]=pair("thr_afterthought");
   const registry=createLiveEncounterRegistry();
   const minaOpportunities=[];
   let noorContributionCount=0;
@@ -314,8 +322,7 @@ test("delayed private thought can originate speech during an active encounter", 
 
 
 test("a reply begun mid-sentence answers that utterance once, in the speaker's own words",async()=>{
-  const mina=context("thr_live_once_mina","Mina");
-  const noor=context("thr_live_once_noor","Noor");
+  const [mina,noor]=pair("thr_live_once");
   const choices=new Map();
   const modelAdapter={
     provider:"fixture",modelId:"fixture-live-once",configuration:{transport:"fixture"},

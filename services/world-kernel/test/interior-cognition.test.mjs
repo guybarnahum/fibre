@@ -238,8 +238,10 @@ test("N6.3c visitor participation is the Thread's existing social-response cogni
           "visitor request must reuse social-response cognition");
         assert.equal(context.currentSituation.situationId, situation.situationId,
           "participation must see actual enacted life");
-        assert.equal(context.remainingFlightPlan.planId, plan.planId,
+        assert.deepEqual(context.remainingFlightPlan.stops, plan.stops,
           "participation may consider the remaining intention without treating it as reality");
+        assert.equal(Object.hasOwn(context.remainingFlightPlan, "cognition"), false,
+          "a stale planning-time body state reached a later decision");
         assert.deepEqual(context.socialRequest, {
           requesterKind:"person",
           text:"Could I talk with you for a minute?",

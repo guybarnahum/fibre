@@ -179,6 +179,17 @@ Introductions, speaker-claimed names, remembering introductions and
 recognizing faces across time are **deferred**, not silently guessed from
 a portrait. See [observer knowledge owner decision](../decisions/observer-grounded-person-knowledge.md).
 
+**The same rule holds inside a live conversation (November 4 source).**
+Each participant's live contribution and speech now receive that participant's
+own perspective, not World identity: its bounded developed-self evidence
+(identity, memories, states and relationships, as Interior Cognition selects
+them, preferring those involving the person in front of it), its current place
+by name, and the other person as it perceives them (observer-known name or
+`null`, observable appearance, and up to two of its own earlier noticed
+Experiences of them). The participant's Encounter Experience receives the same
+view of the others. This is **context-only**: it shapes what the Thread can
+draw on, and no acceptance criterion yet requires it to change a choice.
+
 **Outward activity is not private purpose (October 24 source).**
 A newly authored Flight Plan stop has both private `activity` (what the
 Thread intends) and short `outwardActivity` (what others might see).

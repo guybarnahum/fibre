@@ -433,6 +433,18 @@ async function resolveNewPlaces({
   }))};
 }
 
+// What later cognition sees of a Flight Plan: the Thread's intended stops and
+// their purposes. The plan's stored cognition provenance stays with the record;
+// a past body state beside the current one would only contradict it.
+export function remainingPlanForCognition(plan) {
+  if (plan === null || plan === undefined) return null;
+  return {
+    horizonStart:plan.horizonStart??null,
+    horizonEnd:plan.horizonEnd??null,
+    stops:structuredClone(plan.stops??[]),
+  };
+}
+
 export async function formPersonalLivedPlan({
   threadId,
   authoredAt,

@@ -221,6 +221,7 @@ function fixture({
   }
   const initiationNames = [];
   const observedAtInitiation=[];
+  const liveInputs=[];
   const stanceNames = [];
   const liveContributionNames = [];
   const liveExpressionNames = [];
@@ -385,6 +386,7 @@ function fixture({
         };
       }
       if (call.clientRequestId.startsWith("social-live-contribution_")) {
+        liveInputs.push(structuredClone(call.input));
         const name=call.input.thread.name;
         liveContributionNames.push(name);
         const count=(liveContributionCounts.get(name)??0)+1;
@@ -759,6 +761,7 @@ function fixture({
     socialInteractions,
     initiationNames,
     observedAtInitiation,
+    liveInputs,
     stanceNames,
     liveContributionNames,
     liveExpressionNames,
@@ -1519,4 +1522,22 @@ test("an arriving Thread considers its noticed witness before lower-ID bystander
     "the arrival decision targeted an unseen bystander");
   assert.equal(result.attempts[0].outcome,"not_initiated",
     "noticing a witness compelled conversation");
+});
+
+test("in conversation a Thread speaks from its own life toward the person in front of it, knowing only names it has learned",async()=>{
+  const stranger=fixture({withoutLifeRelations:true});
+  const known=fixture();
+  await stranger.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  await known.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  const noorFacing=(f)=>f.liveInputs.find(input=>input.thread.threadId===noor.threadId);
+  assert.ok(noorFacing(stranger)&&noorFacing(known),"Noor never had a chance to speak");
+  assert.equal(noorFacing(stranger).counterparties[0].name,null,
+    "live speech learned a stranger's name from World identity");
+  assert.equal(typeof noorFacing(stranger).counterparties[0].appearance,"string",
+    "live speech could not perceive the stranger at all");
+  assert.equal(noorFacing(known).counterparties[0].name,"Mina",
+    "live speech forgot the name of someone Noor knows");
+  assert.match(noorFacing(known).developedSelfEvidence.map(item=>item.text).join("\n"),
+    /Noor likes Mina/u,
+    "live speech lost Noor's own relationship with the person in front of her");
 });
