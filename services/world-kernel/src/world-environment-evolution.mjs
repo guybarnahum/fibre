@@ -65,7 +65,7 @@ export function createWorldEnvironmentEvolution({
       throw new TypeError(`World environmental evolution requires ${method}()`);
     }
   }
-  for(const method of ["listRecentCurrentSituations","getWorldPlace","getSituation"]){
+  for(const method of ["listRecentCurrentSituations","getWorldPlace","getSituation","threadLifeRests"]){
     if(typeof livedNowStore?.[method]!=="function"){
       throw new TypeError(`World environmental evolution requires ${method}()`);
     }
@@ -231,6 +231,8 @@ Do not author events to excite or engage any observer. Do not invent participant
             // World follow-up only once every decision is durable; retry must
             // resume partial attention without rerolling the occurrence.
             for(const presence of recorded.threadPresence){
+              // A life that began resting since the decision perceives nothing.
+              if(livedNowStore.threadLifeRests(presence.threadId))continue;
               const situation=livedNowStore.getSituation(presence.situationId,{required:false});
               const thread=worldReader.getThread(presence.threadId,{required:false});
               if(situation?.threadId!==presence.threadId||thread===null){

@@ -228,6 +228,7 @@ export class LivedExperienceStore {
               FROM json_each(w.witness_situations_json)
             ))
             AND (b.failed_attempts>0 OR b.due_at<=w.due_at)
+            AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=b.thread_id)
         )`:"";
     return this.#database.prepare(`
       SELECT w.due_at FROM world_arrival_perception_work w
@@ -249,6 +250,7 @@ export class LivedExperienceStore {
               FROM json_each(w.witness_situations_json)
             ))
             AND (b.failed_attempts>0 OR b.due_at<=w.due_at)
+            AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=b.thread_id)
         )`:"";
     // Only affected witnesses wait; an unrelated later event can go first.
     const row=this.#database.prepare(`
@@ -448,6 +450,7 @@ export class LivedExperienceStore {
         FROM world_observed_social_opportunities WHERE started_at IS NULL
       ) o
       WHERE (? IS NULL OR o.due_at>?)
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id IN (o.thread_id,o.counterparty_thread_id))
         ${debtFilter}
       ORDER BY o.due_at LIMIT 1
     `).get(...(hasDebt?[after,after,asOf,asOf]:[after,after]))?.due_at??null;
@@ -481,7 +484,8 @@ export class LivedExperienceStore {
         FROM world_observed_social_opportunities
         WHERE started_at IS NULL AND due_at<=?
       ) o
-      WHERE 1=1 ${debtFilter}
+      WHERE NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id IN (o.thread_id,o.counterparty_thread_id))
+        ${debtFilter}
       ORDER BY o.due_at,o.kind,o.situation_id LIMIT ?
     `).all(...(hasDebt?[at,at,at,limit]:[at,at,limit])).map(row=>Object.freeze({
       kind:row.kind,sourceEncounterRef:row.encounter_ref,
@@ -521,7 +525,8 @@ export class LivedExperienceStore {
           FROM world_observed_social_opportunities
           WHERE started_at IS NULL AND due_at<=?
         ) o
-        WHERE (? IS NULL OR (o.kind=? AND o.thread_id=?
+        WHERE NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id IN (o.thread_id,o.counterparty_thread_id))
+          AND (? IS NULL OR (o.kind=? AND o.thread_id=?
           AND COALESCE(o.opportunity_id,o.situation_id)=?
           AND (? IS NULL OR o.encounter_ref=?)))
         ORDER BY o.due_at,o.kind,o.situation_id LIMIT 1
@@ -680,12 +685,13 @@ export class LivedExperienceStore {
   nextEnvironmentalOpportunityAt(){
     return this.#database.prepare(`
       SELECT due_at FROM (
-        SELECT due_at FROM world_environment_opportunities WHERE completed_at IS NULL
+        SELECT thread_id,due_at FROM world_environment_opportunities WHERE completed_at IS NULL
         UNION ALL
-        SELECT due_at FROM world_environment_stay_opportunities WHERE completed_at IS NULL
+        SELECT thread_id,due_at FROM world_environment_stay_opportunities WHERE completed_at IS NULL
         UNION ALL
-        SELECT due_at FROM world_ambient_scene_frontier WHERE completed_at IS NULL
-      ) ORDER BY due_at LIMIT 1
+        SELECT thread_id,due_at FROM world_ambient_scene_frontier WHERE completed_at IS NULL
+      ) o WHERE NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=o.thread_id)
+      ORDER BY due_at LIMIT 1
     `).get()?.due_at??null;
   }
 
@@ -707,7 +713,8 @@ export class LivedExperienceStore {
         SELECT 'scene' AS kind,scene_ref,thread_id,situation_id,due_at,decision_json
         FROM world_ambient_scene_frontier
         WHERE completed_at IS NULL AND due_at<=?
-      ) ORDER BY due_at,situation_id LIMIT ?
+      ) o WHERE NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=o.thread_id)
+      ORDER BY due_at,situation_id LIMIT ?
     `).all(at,at,at,limit).map((row)=>Object.freeze({
       kind:row.kind,sceneRef:row.scene_ref,
       threadId:row.thread_id,situationId:row.situation_id,dueAt:row.due_at,
@@ -1719,7 +1726,7 @@ export class LivedExperienceStore {
       FROM thread_experience_pending_work w
       JOIN thread_experience_consolidation_queue q ON q.experience_id=w.reference
       JOIN thread_encounter_experiences e ON e.experience_id=w.reference
-      WHERE w.kind='unclaimed'
+      WHERE w.kind='unclaimed' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=q.thread_id)
       ORDER BY w.due_at,w.reference
       LIMIT ?
     `).all(limit).map((row)=>({
@@ -1826,7 +1833,7 @@ export class LivedExperienceStore {
       SELECT c.consolidation_id,c.thread_id,c.started_at,c.experience_refs_json
       FROM thread_experience_pending_work w
       JOIN thread_experience_consolidations c ON c.consolidation_id=w.reference
-      WHERE w.kind='consolidation'
+      WHERE w.kind='consolidation' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=c.thread_id)
       ORDER BY w.due_at,w.reference
       LIMIT ?
     `).all(limit).map((row)=>({
@@ -2054,8 +2061,13 @@ export class LivedExperienceStore {
 
   hasPendingExperienceConsolidation() {
     return this.#database.prepare(`
-      SELECT 1 AS pending FROM thread_experience_pending_work
-      WHERE kind IN ('unclaimed','consolidation') LIMIT 1
+      SELECT 1 AS pending FROM thread_experience_pending_work w
+      LEFT JOIN thread_experience_consolidation_queue q
+        ON w.kind='unclaimed' AND q.experience_id=w.reference
+      LEFT JOIN thread_experience_consolidations c
+        ON w.kind='consolidation' AND c.consolidation_id=w.reference
+      WHERE w.kind IN ('unclaimed','consolidation')
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id IN (q.thread_id,c.thread_id)) LIMIT 1
     `).get()!==undefined;
   }
 

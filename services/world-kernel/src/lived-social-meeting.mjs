@@ -265,7 +265,7 @@ export function createSocialMeetingService({
         ?venue===null?[]:livedNowStore.listCurrentVenueSituations({
           venueRef:venue,at,limit:8,excludeThreadId:initiator.thread.threadId,
         })
-        :livedNowStore.listCurrentSituations({at});
+        :livedNowStore.listCurrentSituations({at,livingOnly:true});
     const candidates = situations
       .filter((situation) => situation.threadId !== initiator.thread.threadId
         &&situation.wakefulness!=="asleep");

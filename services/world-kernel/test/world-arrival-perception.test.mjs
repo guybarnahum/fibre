@@ -47,6 +47,7 @@ function setup(){
     getSituationAt:(id,at)=>structuredClone(situations.find(s=>
       s.threadId===id&&s.establishedAt<=at)??null),
     getPreviousSituation:()=>null,
+    threadLifeRests:()=>false,
     getWorldPlace:()=>({physicalVenue:{
       ref:"venue_verified_cafe",displayName:"An attested café",
     }}),

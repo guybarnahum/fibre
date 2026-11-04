@@ -32,6 +32,8 @@ export function createWorldArrivalPerception({
             &&arrival?.establishedAt===obligation.dueAt
             &&place?.physicalVenue?.ref===obligation.venueRef;
           const witnesses=eligible?obligation.witnesses.flatMap(candidate=>{
+            // A resting life is not co-present anywhere.
+            if(livedNowStore.threadLifeRests(candidate.threadId))return [];
             // A scheduled witness is only a hint. Later enacted history may
             // show a departure at precisely the arrival time.
             const situation=livedNowStore.getSituationAt(
@@ -118,19 +120,23 @@ export function createWorldArrivalPerception({
                   // Existing personal experience, not co-presence itself,
                   // earns a distinct, one-shot voluntary social chance.
                   // A repeated attention replay cannot duplicate it.
-                  experienceStore.enqueueObservedSocialOpportunity({
-                    encounterRef:encounter.encounterId,
-                    threadId:situation.threadId,situationId:situation.situationId,
-                    counterpartyThreadId:arrival.threadId,
-                    venueRef:obligation.venueRef,dueAt:obligation.dueAt,
-                  });
+                  // A resting arriver cannot be addressed.
+                  if(!livedNowStore.threadLifeRests(arrival.threadId)){
+                    experienceStore.enqueueObservedSocialOpportunity({
+                      encounterRef:encounter.encounterId,
+                      threadId:situation.threadId,situationId:situation.situationId,
+                      counterpartyThreadId:arrival.threadId,
+                      venueRef:obligation.venueRef,dueAt:obligation.dueAt,
+                    });
+                  }
                 }
               }
               // The arriver may also notice the people already present.
               // The *same* objective encounter and existing attention model
               // permit a personal Experience without authoring any new event.
               const arrivingThread=worldReader.getThread(arrival.threadId,{required:false});
-              if(arrivingThread!==null&&arrivingThread.status!=="retired"){
+              if(arrivingThread!==null&&arrivingThread.status!=="retired"
+                &&!livedNowStore.threadLifeRests(arrival.threadId)){
                 const prior=experienceStore.getThreadEncounterAttention(
                   arrival.threadId,encounter.encounterId,
                 );

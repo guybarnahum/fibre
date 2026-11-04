@@ -8,6 +8,7 @@ import {DatabaseSync} from "node:sqlite";
 import {localWorldStateStorage} from "./support/world-state-storage-fixture.mjs";
 import {createLivedExperienceTables} from "../src/lived-experience-schema.mjs";
 import {createContactTables} from "../src/contact-schema.mjs";
+import { createThreadLifeRestTables } from "../src/thread-life-rest-schema.mjs";
 import {openLivedExperienceInspectionStore} from "../src/lived-experience-store.mjs";
 import {openContactInspectionStore} from "../src/contact-store.mjs";
 import {compactWorldPendingWork} from "../src/world-pending-work-migration.mjs";
@@ -34,6 +35,7 @@ test("pending experience and contact work survives compact installation in due o
     `);
     createLivedExperienceTables(db);
     createContactTables(db);
+    createThreadLifeRestTables(db);
     const create=db.prepare(`INSERT INTO thread_experience_consolidations(
       consolidation_id,thread_id,started_at,experience_refs_json,record_digest)
       VALUES (?,'thr_pending',?,'[]','sha256:fixture')`);

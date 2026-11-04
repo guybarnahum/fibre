@@ -1,7 +1,7 @@
 ---
 id: architecture-thread-lifecycle
 status: accepted
-last-reviewed: 2026-09-13
+last-reviewed: 2026-11-04
 canonical: true
 ---
 
@@ -152,3 +152,15 @@ Freeze remains a compute/runtime boundary; for a lived Thread it is not automati
 See [`lived-now-and-meetings.md`](lived-now-and-meetings.md) and [ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md).
 
 Do not turn this into a generic scheduler or simulation framework. Until the loop is causally proven, Presentation/UI output alone remains insufficient evidence that continuous autonomous life exists.
+
+## A Thread's life can rest
+
+The Constitution lets a Thread *become dormant*. [ADR-0034](../decisions/ADR-0034-thread-life-can-rest.md) realizes that for **autonomous life** without touching the runtime `threads.status` (which stays a compute/runtime fact).
+
+**Rest** is a recorded World lifecycle fact with a reason and an actor, appended to `thread_life_rest_events`; `thread_life_rest` holds only the current resting set so every due-work query skips a resting life with one primary-key probe. **Wake** is recorded the same way. History is append-only; nothing is deleted or silently edited.
+
+While a life rests, World authors nothing for it: no lived boundary, Flight Plan, interoceptive pulse or first life (`LivedNow.ensure` refuses it, whoever asks); no social chance as chooser or counterpart; no arrival, environmental or scene perception; no contact outreach or reception; no new experience consolidation. It is not co-present anywhere, so living Threads cannot discover, notice or address it in person; an arrival scene recorded after it began resting omits it. Every due-time query (`next*At`) skips its work too, so a resting life costs no alarm and no per-tick write. Its records stay untouched and readable through Observatory and other inspection. Pending one-shot social chances are settled as `thread_resting` on rest so they cannot fire stale on wake; other pending work simply waits. A message another Thread sends it waits unread.
+
+**Wake** resumes life from the actual present through the ordinary LivedNow path: rest parked the next lived boundary and wake makes it due at once, and the existing unobserved-gap policy restarts at the real present rather than fabricating the rested interval.
+
+**Causal status:** Behaviorally causal for World scheduling, co-presence and social opportunity — a resting life is absent from others' lives and from its own. A Thread does not choose or perceive its rest; it is an operator decision, not a lived event, an economic state, or welfare pressure.

@@ -690,6 +690,7 @@ export function createLivedNowService({
   requireMethod(livedNowStore, "enactCurrentSituation");
   requireMethod(livedNowStore, "ensureWorldPlaces");
   requireMethod(livedNowStore, "getWorldContext");
+  requireMethod(livedNowStore, "threadLifeRests");
 
   if(resolveDestinationGeography!==null&&typeof resolveDestinationGeography!=="function"){
     throw new TypeError("LivedNow destination resolver must be a function");
@@ -744,6 +745,11 @@ export function createLivedNowService({
       assertExactKeys("ensure LivedNow input", input, ["threadId", "at"]);
       assertId("ensure LivedNow input.threadId", input.threadId);
       assertIsoTimestamp("ensure LivedNow input.at", input.at);
+      // A resting life is neither advanced nor begun, whoever asks; its
+      // records stay readable. Waking resumes from the actual present.
+      if (livedNowStore.threadLifeRests(input.threadId)) {
+        throw new LivedNowCoverageError("This Thread's life is resting");
+      }
 
       // Existing admitted plans already resolved their World-place authority
       // when authored. Only new planning needs Genesis place admission.

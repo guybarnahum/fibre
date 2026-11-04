@@ -27,6 +27,8 @@ Fibre is a persistent World for artificial persons called **Threads**. Each Thre
 
 This document answers **what Fibre can actually do and what remains unproven**. It is not an operational handoff or a duplicate milestone ledger. [Current priorities](current-priorities.md) owns the next action; [public progress](public-progress.md) owns public claims; [prototype roadmap](../validation/prototype-roadmap.md) preserves future ambition. A committed source capability, locally passed test, staging-observed behavior, and scientific standing are **different evidence levels**.
 
+**November 4 rest boundary (source only):** Guy accepted [ADR-0034](../decisions/ADR-0034-thread-life-can-rest.md): a Thread's autonomous life can rest and wake as recorded World facts, so most staging lives may rest while four Addis Ababa Threads keep living. Not yet deployed or observed in staging.
+
 **November 3 Thread-to-Thread boundary:** Guy accepted [ADR-0033](../decisions/ADR-0033-ongoing-exchange-may-become-conversation.md) and deployed `2ef5d24` to staging: an ongoing spoken exchange may voluntarily become one live conversation, but staging evidence of actual continuation remains pending.
 
 ## Core authority and standing

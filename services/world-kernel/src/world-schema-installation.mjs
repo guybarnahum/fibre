@@ -109,6 +109,7 @@ export function installWorldSchemas(storage,{deploymentGitSha="local",schemaDige
       "thread_visual_publication_work","thaw_leases","runtime_sessions",
       "embodiment_current_heads","world_schema_installation",
       "live_world_contexts","live_world_source_places",
+      "thread_life_rest","thread_life_rest_events",
     ]){
       database.prepare(`SELECT 1 FROM "${name}" LIMIT 1`).get();
     }

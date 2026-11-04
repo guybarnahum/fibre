@@ -60,6 +60,8 @@ import { openLivedExperienceStore } from "#services/world-kernel/src/lived-exper
 import { openAutobiographicalMemoryStore } from "#services/world-kernel/src/autobiographical-memory-store.mjs";
 import { openSituatedLifeStore } from "#services/world-kernel/src/situated-life-store.mjs";
 import { openEmbodimentStore } from "#services/world-kernel/src/embodiment-store.mjs";
+import { openThreadLifeRestStore } from "#services/world-kernel/src/thread-life-rest-store.mjs";
+import { createThreadLifeRestWriteApi } from "#services/world-kernel/src/thread-life-rest-write-api.mjs";
 import { createThreadPresentationPublisher } from "../service-boundaries.mjs";
 
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
@@ -84,6 +86,7 @@ const PERSON_CONTACT_CAPABILITY_ROUTE = "/internal/contact/person-capability";
 const PERSON_CONTACT_REVOKE_ROUTE = "/internal/contact/person-capability/revoke";
 const PERSON_CONTACT_INBOX_ROUTE = "/internal/contact/inbox";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
+const THREAD_LIFE_ROUTES = new Set(["/internal/thread-life","/internal/thread-life/rest","/internal/thread-life/wake"]);
 
 function bindingFetch(binding) {
   return (input, init) => binding.fetch(input instanceof Request ? input : new Request(input, init));
@@ -105,6 +108,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.contactApi = null;
     this.threadJournalApi = null;
     this.worldVenueApi = null;
+    this.threadLifeApi = null;
     this.threadJournalBook = null;
     this.experienceConsolidationProcess = null;
     this.experienceConsolidationWakeScheduler = null;
@@ -833,6 +837,18 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     }
   }
 
+  threadLifeApiForRequest(){
+    if(this.threadLifeApi===null){
+      const runtime=this.runtimeForRequest();
+      this.threadLifeApi=createThreadLifeRestWriteApi({
+        restStore:openThreadLifeRestStore(runtime.worldStorage),
+        privateToken:this.env.FIBRE_PRIVATE_TOKEN,
+        onWake:()=>runtime.reconciliationRuntime.requestWake(),
+      });
+    }
+    return this.threadLifeApi;
+  }
+
   worldVenueApiForRequest(){
     if(this.worldVenueApi===null){
       this.worldVenueApi=createWorldVenueWriteApi({
@@ -865,6 +881,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       && url.pathname !== PERSON_CONTACT_CAPABILITY_ROUTE
       && url.pathname !== PERSON_CONTACT_REVOKE_ROUTE
       && url.pathname !== PERSON_CONTACT_INBOX_ROUTE
+      && !THREAD_LIFE_ROUTES.has(url.pathname)
       && !THREAD_JOURNAL_ROUTE.test(url.pathname)) {
       return super.fetch(request);
     }
@@ -879,6 +896,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         ? this.worldVenueApiForRequest().fetch(request)
         : url.pathname === LIVED_NOW_ROUTE
         ? this.livedNowApiForRequest().fetch(request)
+        : THREAD_LIFE_ROUTES.has(url.pathname)
+        ? this.threadLifeApiForRequest().fetch(request)
         : url.pathname === LIVED_ENCOUNTER_ROUTE
           ? this.encounterApiForRequest().fetch(request)
           : url.pathname === ENVIRONMENTAL_ENCOUNTER_ROUTE

@@ -25,15 +25,16 @@ export function openGenesisFirstLifeStore(storage){
   return Object.freeze({
     nextDueAt(){
       return database.prepare(`
-        SELECT due_at FROM genesis_first_life_work
-        WHERE due_at IS NOT NULL ORDER BY due_at LIMIT 1
+        SELECT w.due_at FROM genesis_first_life_work w
+        WHERE w.due_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=w.thread_id)
+        ORDER BY w.due_at LIMIT 1
       `).get()?.due_at??null;
     },
     due(at){
       return database.prepare(`
-        SELECT thread_id,attempts FROM genesis_first_life_work
-        WHERE due_at IS NOT NULL AND due_at<=?
-        ORDER BY due_at,thread_id LIMIT 1
+        SELECT w.thread_id,w.attempts FROM genesis_first_life_work w
+        WHERE w.due_at IS NOT NULL AND w.due_at<=? AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=w.thread_id)
+        ORDER BY w.due_at,w.thread_id LIMIT 1
       `).get(at)??null;
     },
     complete(threadId,establishedAt){

@@ -196,7 +196,7 @@ export class ContactStore {
       FROM thread_contact_pending_work w
       JOIN thread_experience_consolidations c
         ON c.consolidation_id=w.reference
-      WHERE w.kind='afterthought'
+      WHERE w.kind='afterthought' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=c.thread_id)
       ORDER BY w.due_at,w.reference
       LIMIT ?
     `).all(limit).map((row)=>Object.freeze({
@@ -214,7 +214,7 @@ export class ContactStore {
       SELECT a.contact_attempt_id,a.thread_id,a.consolidation_id,a.started_at
       FROM thread_contact_pending_work w
       JOIN thread_contact_attempts a ON a.contact_attempt_id=w.reference
-      WHERE w.kind='attempt'
+      WHERE w.kind='attempt' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=a.thread_id)
       ORDER BY w.due_at,w.reference
       LIMIT ?
     `).all(limit).map((row)=>Object.freeze({
@@ -371,9 +371,10 @@ export class ContactStore {
 
   nextContactReceptionAt(){
     return this.#database.prepare(`
-      SELECT due_at FROM thread_contact_receptions
-      WHERE completed_at IS NULL AND blocked_reason IS NULL
-      ORDER BY due_at,message_id LIMIT 1
+      SELECT r.due_at FROM thread_contact_receptions r
+      WHERE r.completed_at IS NULL AND r.blocked_reason IS NULL
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=r.recipient_thread_id)
+      ORDER BY r.due_at,r.message_id LIMIT 1
     `).get()?.due_at??null;
   }
 
@@ -387,6 +388,7 @@ export class ContactStore {
       FROM thread_contact_receptions r
       JOIN thread_contact_messages m ON m.message_id=r.message_id
       WHERE r.completed_at IS NULL AND r.blocked_reason IS NULL AND r.due_at<=?
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=r.recipient_thread_id)
       ORDER BY r.due_at,r.message_id LIMIT ?
     `).all(at,limit).map((row)=>Object.freeze({
       messageId:row.message_id,senderThreadId:row.sender_thread_id,
@@ -553,8 +555,9 @@ export class ContactStore {
 
   hasPendingAttempts(){
     return this.#database.prepare(`
-      SELECT 1 AS pending FROM thread_contact_pending_work
-      WHERE kind='attempt' LIMIT 1
+      SELECT 1 AS pending FROM thread_contact_pending_work w
+      JOIN thread_contact_attempts a ON a.contact_attempt_id=w.reference
+      WHERE w.kind='attempt' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=a.thread_id) LIMIT 1
     `).get()!==undefined;
   }
 }

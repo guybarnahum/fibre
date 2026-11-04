@@ -25,6 +25,7 @@ import { ensureEmbodimentIntegrity } from "./embodiment-integrity.mjs";
 import { createAutobiographicalMemoryTables } from "./autobiographical-memory-schema.mjs";
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 import { createContactTables } from "./contact-schema.mjs";
+import { createThreadLifeRestTables } from "./thread-life-rest-schema.mjs";
 import {worldStateInitialization,recoverInterruptedEventTable} from "./world-state-storage.mjs";
 import {THREAD_EVENT_COLUMNS,createThreadEventsTable,installThreadEventGuards} from "./thread-event-schema.mjs";
 
@@ -163,6 +164,7 @@ function createSchema(database) {
   createAutobiographicalMemoryTables(database);
   createLivedExperienceTables(database);
   createContactTables(database);
+  createThreadLifeRestTables(database);
 }
 
 function createAndRepairSchema(database) {

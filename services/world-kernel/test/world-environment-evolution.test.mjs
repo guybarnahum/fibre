@@ -79,6 +79,7 @@ function fixture(){
         .filter((item)=>item.establishedAt>=since&&item.establishedAt<=at)
         .slice(0,limit)),
       getWorldPlace:(_threadId,ref)=>({ref,displayName:ref}),
+      threadLifeRests:()=>false,
       getSituation:(situationId)=>structuredClone(
         current.find((item)=>item.situationId===situationId)??null,
       ),

@@ -32,6 +32,8 @@ import { createExperienceConsolidationWakeScheduler } from "#services/world-kern
 import { createLiveEncounterRegistry } from "#services/world-kernel/src/live-encounter-registry.mjs";
 import { openContactStore } from "#services/world-kernel/src/contact-store.mjs";
 import { createContactWriteApi } from "#services/world-kernel/src/contact-write-api.mjs";
+import { openThreadLifeRestStore } from "#services/world-kernel/src/thread-life-rest-store.mjs";
+import { createThreadLifeRestWriteApi } from "#services/world-kernel/src/thread-life-rest-write-api.mjs";
 import { createPublicVisitorEncounterService } from "#services/world-kernel/src/public-visitor-encounter.mjs";
 import { createPublicVisitorEncounterWriteApi } from "#services/world-kernel/src/public-visitor-encounter-write-api.mjs";
 import { createThreadContactProcess } from "#services/world-kernel/src/thread-contact-process.mjs";
@@ -106,22 +108,28 @@ const CONTACT_ROUTES=new Set([
   "/internal/contact/inbox",
 ]);
 
+const THREAD_LIFE_ROUTES=new Set([
+  "/internal/thread-life","/internal/thread-life/rest","/internal/thread-life/wake",
+]);
+
 const PUBLIC_VISITOR_ROUTES=new Set([
   "/internal/public-visitor-encounter",
   "/internal/public-visitor-encounter/interrupt",
 ]);
 
-function attachWorldWriteApis(server,{contactApi,visitorApi}){
+function attachWorldWriteApis(server,{contactApi,visitorApi,threadLifeApi}){
   const handlers=server.listeners("request");
   if(handlers.length!==1)throw new Error("World write APIs require one existing request handler");
   const [baseHandler]=handlers;
   const contactHandler=contactApi===null?null:createNodeServiceHandler({service:contactApi});
   const visitorHandler=visitorApi===null?null:createNodeServiceHandler({service:visitorApi});
+  const lifeHandler=threadLifeApi===null?null:createNodeServiceHandler({service:threadLifeApi});
   server.removeAllListeners("request");
   server.on("request",(request,response)=>{
     const path=new URL(request.url??"/","http://fibre.local").pathname;
     if(contactHandler!==null&&CONTACT_ROUTES.has(path))return contactHandler(request,response);
     if(visitorHandler!==null&&PUBLIC_VISITOR_ROUTES.has(path))return visitorHandler(request,response);
+    if(lifeHandler!==null&&THREAD_LIFE_ROUTES.has(path))return lifeHandler(request,response);
     return baseHandler(request,response);
   });
 }
@@ -581,8 +589,14 @@ export async function startWorldKernelFromEnvironment(
       return visitorService.fetch(request);
     },
   });
-  if(contactApi!==null||visitorApi!==null){
-    attachWorldWriteApis(server,{contactApi,visitorApi});
+  const threadLifeRestStore=openThreadLifeRestStore(worldStorage);
+  const threadLifeApi=privateToken===null?null:createThreadLifeRestWriteApi({
+    restStore:threadLifeRestStore,
+    privateToken,
+    onWake:()=>reconciliationRuntime.requestWake(),
+  });
+  if(contactApi!==null||visitorApi!==null||threadLifeApi!==null){
+    attachWorldWriteApis(server,{contactApi,visitorApi,threadLifeApi});
   }
   const operationalService = attachOperationalService(server, service, {
     repairEnabled: adminToken !== null,
@@ -623,6 +637,7 @@ export async function startWorldKernelFromEnvironment(
         identityStore.close();
         guardianCognitionStore.close();
         contactStore.close();
+        threadLifeRestStore.close();
         journalBook.close();
         livedExperienceStore.close();
         firstLifeStore.close();
@@ -706,6 +721,7 @@ export async function startWorldKernelFromEnvironment(
     identityStore.close();
     guardianCognitionStore.close();
     contactStore.close();
+    threadLifeRestStore.close();
     livedExperienceStore.close();
     firstLifeStore.close();
     livedNowStore.close();

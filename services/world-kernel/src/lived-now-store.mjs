@@ -823,6 +823,7 @@ export class LivedNowStore {
         LEFT JOIN lived_now_next_boundaries b ON b.thread_id=f.thread_id
         WHERE (b.thread_id IS NULL OR b.due_at IS NULL
           OR b.situation_id<>f.situation_id)
+          AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=f.thread_id)
           AND EXISTS (
             SELECT 1 FROM lived_now_plans p
             WHERE p.subject_thread_id=f.thread_id AND p.plan_kind='personal'
@@ -880,8 +881,9 @@ export class LivedNowStore {
 
   nextLivedBoundaryAt(){
     return this.#database.prepare(`
-      SELECT due_at FROM lived_now_next_boundaries
-      WHERE due_at IS NOT NULL ORDER BY due_at LIMIT 1
+      SELECT b.due_at FROM lived_now_next_boundaries b
+      WHERE b.due_at IS NOT NULL AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=b.thread_id)
+      ORDER BY b.due_at LIMIT 1
     `).get()?.due_at??null;
   }
 
@@ -895,6 +897,7 @@ export class LivedNowStore {
       FROM lived_now_next_boundaries b
       LEFT JOIN current_situation_frontier f ON f.thread_id=b.thread_id
       WHERE b.due_at IS NOT NULL AND b.due_at<=?
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=b.thread_id)
       -- The limit itself must respect departure-first ordering. Sorting the
       -- returned batch alone could strand a simultaneous departure outside it.
       ORDER BY b.due_at,
@@ -933,6 +936,14 @@ export class LivedNowStore {
     `).run(attempts,unavailable||attempts>=3?message:null,nextAt,
       threadId,situationId,dueAt);
     return {blocked:unavailable||attempts>=3,attempts,nextDueAt:nextAt};
+  }
+
+  // A resting life is not advanced, perceived, or offered to others.
+  threadLifeRests(threadId){
+    assertId("life rest Thread",threadId);
+    return this.#database.prepare(
+      "SELECT 1 FROM thread_life_rest WHERE thread_id=?",
+    ).get(threadId)!==undefined;
   }
 
   inspectLivedBoundary(threadId){
@@ -1028,7 +1039,7 @@ export class LivedNowStore {
         LEFT JOIN lived_now_next_boundaries b ON b.thread_id=f.thread_id
           AND b.situation_id=f.situation_id` : ""}
       WHERE f.established_at<=?
-        ${livingOnly ? "AND t.status<>'retired'" : ""}
+        ${livingOnly ? `AND t.status<>'retired' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=f.thread_id)` : ""}
       UNION ALL
       SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
         ${includeLifeContinuity ? `,json_extract(p.record_json,'$.horizonEnd') AS life_horizon_end,
@@ -1047,7 +1058,7 @@ export class LivedNowStore {
         LEFT JOIN lived_now_next_boundaries b ON b.thread_id=s.thread_id
           AND b.situation_id=s.situation_id` : ""}
       WHERE f.established_at>?
-        ${livingOnly ? "AND t.status<>'retired'" : ""}
+        ${livingOnly ? `AND t.status<>'retired' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=f.thread_id)` : ""}
       ORDER BY thread_id
     `).all(at,at,at);
     return rows.map(row=>{
@@ -1095,6 +1106,7 @@ export class LivedNowStore {
         AND json_extract(s.record_json,'$.location.placeRef')=v.context_place_ref
         AND COALESCE(json_extract(s.record_json,'$.wakefulness'),'unknown')<>'asleep'
         AND s.thread_id IN (SELECT thread_id FROM threads WHERE status<>'retired')
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=s.thread_id)
       ORDER BY v.thread_id LIMIT ?
     `).all(at,at,venueRef,excludeThreadId,excludeThreadId,limit);
     // Newly admitted public venues have a shared wpl_* ref and do not need
@@ -1108,7 +1120,7 @@ export class LivedNowStore {
       WHERE p.venue_ref=? AND f.established_at<=?
         AND (? IS NULL OR f.thread_id<>?)
         AND COALESCE(f.wakefulness,'unknown')<>'asleep'
-        AND t.status<>'retired'
+        AND t.status<>'retired' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=f.thread_id)
       UNION ALL
       SELECT s.situation_id,s.thread_id,s.established_at,s.record_json,s.record_digest
       FROM current_situation_frontier f
@@ -1124,7 +1136,7 @@ export class LivedNowStore {
         AND json_extract(s.record_json,'$.location.kind')='place'
         AND json_extract(s.record_json,'$.location.placeRef')=p.place_ref
         AND COALESCE(json_extract(s.record_json,'$.wakefulness'),'unknown')<>'asleep'
-        AND t.status<>'retired'
+        AND t.status<>'retired' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=f.thread_id)
       ORDER BY thread_id LIMIT ?
     `).all(
       venueRef,at,excludeThreadId,excludeThreadId,
@@ -1148,6 +1160,7 @@ export class LivedNowStore {
       FROM current_situation_frontier f
       JOIN threads t ON t.thread_id=f.thread_id
       WHERE f.established_at BETWEEN ? AND ? AND t.status<>'retired'
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=f.thread_id)
       UNION ALL
       -- For a delayed World event, that frontier may be in the future.
       -- Recover precisely the latest situation inside the original window.
@@ -1160,6 +1173,7 @@ export class LivedNowStore {
         ORDER BY prior.established_at DESC,prior.situation_id DESC LIMIT 1
       )
       WHERE f.established_at>? AND t.status<>'retired'
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=f.thread_id)
       ORDER BY established_at DESC,situation_id DESC LIMIT ?
     `).all(since,at,since,at,at,limit);
     return rows.map(situationFromRow);
