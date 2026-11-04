@@ -1,7 +1,6 @@
 import { spawn, execFile as execFileCallback } from "node:child_process";
-import { access, writeFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { resolve } from "node:path";
+import { access, mkdir, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
@@ -93,14 +92,31 @@ export function summarizeCosts(events) {
   const grouped = new Map();
   const encounters = [],reconciliationFailures=[];
   const modelCalls = new Map();
+  const lastPrefixByScope = new Map();
   for (const event of events) {
     if (event.event === MODEL_CALL) {
       const key = `${event.port}|${event.kind}`;
-      const row = modelCalls.get(key) ?? { port:event.port, kind:event.kind, calls:0, inputTokens:0, cachedInputTokens:0, outputTokens:0 };
+      const row = modelCalls.get(key) ?? {
+        port:event.port, kind:event.kind, calls:0, inputTokens:0, cachedInputTokens:0, outputTokens:0,
+        repeats:0, sharedPrefixChars:{ 2048:0, 4096:0, 8192:0, 16384:0 },
+      };
       row.calls += 1;
       row.inputTokens += Number(event.inputTokens ?? 0);
       row.cachedInputTokens += Number(event.cachedInputTokens ?? 0);
       row.outputTokens += Number(event.outputTokens ?? 0);
+      // A repeat is the same job on the same cache scope; count how far its
+      // prompt matched the previous one, which bounds any possible cache hit.
+      if (event.scope && Array.isArray(event.prefix)) {
+        const scopeKey = `${key}|${event.scope}`;
+        const previous = lastPrefixByScope.get(scopeKey);
+        if (previous) {
+          row.repeats += 1;
+          [2048, 4096, 8192, 16384].forEach((chars, index) => {
+            if (event.prefix[index] !== null && event.prefix[index] === previous[index]) row.sharedPrefixChars[chars] += 1;
+          });
+        }
+        lastPrefixByScope.set(scopeKey, event.prefix);
+      }
       modelCalls.set(key, row);
       continue;
     }
@@ -298,7 +314,8 @@ function render(summary) {
     lines.push("", "Model calls by port and cognitive job (tokens; cached share of input)");
     for (const row of summary.modelCalls) {
       const cached = row.inputTokens === 0 ? 0 : (100 * row.cachedInputTokens) / row.inputTokens;
-      lines.push(`${row.port.padEnd(10)} ${row.kind.padEnd(36)} calls=${String(row.calls).padStart(4)} input=${String(row.inputTokens).padStart(9)} per-call=${String(Math.round(row.inputTokens / row.calls)).padStart(6)} cached=${cached.toFixed(1).padStart(5)}% output=${String(row.outputTokens).padStart(7)}`);
+      const shared = Object.entries(row.sharedPrefixChars).map(([chars, count]) => `${Number(chars) / 1024}k:${count}`).join(" ");
+      lines.push(`${row.port.padEnd(10)} ${row.kind.padEnd(36)} calls=${String(row.calls).padStart(4)} input=${String(row.inputTokens).padStart(9)} per-call=${String(Math.round(row.inputTokens / row.calls)).padStart(6)} cached=${cached.toFixed(1).padStart(5)}% output=${String(row.outputTokens).padStart(7)} repeats=${String(row.repeats).padStart(3)} same-prefix ${shared}`);
     }
   }
   if (summary.reconciliationFailures?.length) {
@@ -340,7 +357,7 @@ async function main(argv) {
   }));
 
   const stamp = new Date().toISOString().replaceAll(":", "-");
-  const outputPath = resolve(tmpdir(), `fibre-infra-measurement-${stamp}.json`);
+  const outputPath = resolve(repoRoot, ".fibre", "infra-measure", `fibre-infra-measurement-${stamp}.json`);
   process.stdout.write(
     `Fibre infra measure · ${options.environment}\nbranch ${git.branch}\nhead   ${git.head}\nworking tree ${git.clean ? "clean" : "DIRTY (measurement continues)"}\n\n`,
   );
@@ -401,6 +418,7 @@ async function main(argv) {
     summary,
     failure:failure === null ? null : String(failure?.message ?? failure),
   });
+  await mkdir(dirname(outputPath), { recursive:true });
   await writeFile(outputPath, `${JSON.stringify(payload, null, 2)}\n`);
   process.stdout.write(render(summary));
   process.stdout.write(`\nEvidence: ${outputPath}\n`);

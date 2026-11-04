@@ -2,6 +2,7 @@ import { createBflFluxImageProvider } from "#integrations/ai/image/bfl.mjs";
 import { createOpenAIImageProvider } from "#integrations/ai/image/openai.mjs";
 import { createGoogleModelAdapter } from "#integrations/ai/reasoning/google.mjs";
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
+import { sha256 } from "#integrations/ai/persistence-common.mjs";
 
 function nonEmpty(name, value) {
   if (typeof value !== "string" || value.trim() === "") throw new TypeError(`${name} must be a non-empty string`);
@@ -167,6 +168,16 @@ export function lazyReasoningIntegration(value, options = {}) {
 
 // One compact log line per model call, so cost and prompt-cache reuse can be
 // read per cognitive job without persisting prompts or writing to the World.
+const PREFIX_CHARS = Object.freeze([2048, 4096, 8192, 16384]);
+const short = (text) => sha256(text).slice(0, 8);
+
+// Opaque fingerprints of the prompt's leading characters: equal fingerprints on
+// one cache scope mean the provider could reuse that prefix. No text is logged.
+function promptPrefix(request) {
+  const text = `${request?.systemPrompt ?? ""}\n${JSON.stringify(request?.responseSchema ?? null)}\n${JSON.stringify(request?.input ?? null)}`;
+  return PREFIX_CHARS.map((chars) => text.length < chars ? null : short(text.slice(0, chars)));
+}
+
 export function meteredReasoningIntegration(adapter, { port, log = console.log } = {}) {
   const kindOf = (request) => String(request?.clientRequestId ?? "unknown").replace(/_[0-9a-f]{16,}$/u, "");
   const report = (request, startedAt, provenance, outcome) => {
@@ -176,6 +187,8 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log }
       port,
       kind: kindOf(request),
       prompt: request?.promptRef ?? null,
+      scope: typeof request?.cacheKey === "string" ? short(request.cacheKey) : null,
+      prefix: promptPrefix(request),
       outcome,
       modelId: provenance?.modelId ?? adapter.modelId ?? null,
       elapsedMs: Date.now() - startedAt,
