@@ -306,7 +306,7 @@ export async function runInteriorCognition({
     evidence:selected.evidence,
   }))}`;
 
-  const requestId = `interior_${sha256(canonicalJson({
+  const requestId = `interior_${normalizedAdapter.id}_${sha256(canonicalJson({
     profile:{ id:profile.id, version:profile.version },
     threadId,
     at,

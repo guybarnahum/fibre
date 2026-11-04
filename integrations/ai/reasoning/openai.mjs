@@ -199,6 +199,7 @@ function providerString(value) {
 function usageFromBody(body) {
   return {
     inputTokens: Number(body?.usage?.input_tokens ?? 0),
+    cachedInputTokens: Number(body?.usage?.input_tokens_details?.cached_tokens ?? 0),
     outputTokens: Number(body?.usage?.output_tokens ?? 0),
     totalTokens: Number(body?.usage?.total_tokens ?? 0),
   };

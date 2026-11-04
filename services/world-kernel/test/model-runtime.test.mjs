@@ -73,7 +73,7 @@ test("deployment-selected OpenAI reasoning accepts generic cognition input and e
         status: "completed",
         model: "gpt-test",
         output_text: '{"decision":"accept"}',
-        usage: { input_tokens: 11, output_tokens: 3, total_tokens: 14 },
+        usage: { input_tokens: 11, input_tokens_details: { cached_tokens: 8 }, output_tokens: 3, total_tokens: 14 },
       }, { requestId: "openai-request-1" });
     },
   });
@@ -93,6 +93,7 @@ test("deployment-selected OpenAI reasoning accepts generic cognition input and e
   assert.equal(calls, 1);
   assert.deepEqual(result.output, { decision: "accept" });
   assert.equal(result.provenance.provider, "openai");
+  assert.equal(result.provenance.usage.cachedInputTokens, 8, "prompt-cache reuse was not reported");
   assert.deepEqual(events.map((event) => event.type), ["model_attempt", "model_response"]);
   assert.equal(events[0].attempt, 1);
   assert.equal(events[0].maximumAttempts, 3);

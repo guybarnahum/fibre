@@ -675,6 +675,7 @@ function fixture({
         return record;
       },
       listAcceptedHumanMeetings(){return [];},
+      listReciprocalConversations(){return [];},
       listSocialInteractions(threadId, { withThreadId = null, limit = 8, newestFirst = true } = {}) {
         let records = socialInteractions.filter((record) =>
           record.initiatorThreadId === threadId || record.recipientThreadId === threadId);

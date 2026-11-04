@@ -18,6 +18,7 @@ const SERVICES = Object.freeze([
 ]);
 const COST_EVENTS = new Set(["world-state-cost", "d1-cost"]);
 const LIVED_NOW_FAILURE = "lived-now-reconciliation-failed";
+const MODEL_CALL = "model-call";
 
 function parseArgs(argv) {
   const options = {
@@ -91,7 +92,18 @@ function operationName(event) {
 export function summarizeCosts(events) {
   const grouped = new Map();
   const encounters = [],reconciliationFailures=[];
+  const modelCalls = new Map();
   for (const event of events) {
+    if (event.event === MODEL_CALL) {
+      const key = `${event.port}|${event.kind}`;
+      const row = modelCalls.get(key) ?? { port:event.port, kind:event.kind, calls:0, inputTokens:0, cachedInputTokens:0, outputTokens:0 };
+      row.calls += 1;
+      row.inputTokens += Number(event.inputTokens ?? 0);
+      row.cachedInputTokens += Number(event.cachedInputTokens ?? 0);
+      row.outputTokens += Number(event.outputTokens ?? 0);
+      modelCalls.set(key, row);
+      continue;
+    }
     if (event.event === LIVED_NOW_FAILURE) {
       reconciliationFailures.push({
         phase:event.phase,source:event.source,threadId:event.threadId,
@@ -129,6 +141,7 @@ export function summarizeCosts(events) {
     encounterRowsRead:Object.freeze(encounters),
     encounterSlopeRowsReadPerTurn:slope,
     reconciliationFailures:Object.freeze(reconciliationFailures),
+    modelCalls:Object.freeze([...modelCalls.values()].sort((a, b) => b.inputTokens - a.inputTokens)),
   });
 }
 
@@ -145,7 +158,7 @@ function findCostEvents(value, sink) {
     return;
   }
   if (typeof value !== "object") return;
-  if (COST_EVENTS.has(value.event)) sink(value);
+  if (COST_EVENTS.has(value.event) || value.event === MODEL_CALL) sink(value);
   if (value.event === LIVED_NOW_FAILURE) sink({
     event:LIVED_NOW_FAILURE,
     threadId:value.threadId??null,
@@ -279,6 +292,13 @@ function render(summary) {
     lines.push(`Encounter DO rows read: ${summary.encounterRowsRead.join(" → ")}`);
     if (summary.encounterSlopeRowsReadPerTurn !== null) {
       lines.push(`Encounter slope: ${summary.encounterSlopeRowsReadPerTurn.toFixed(2)} rows/turn`);
+    }
+  }
+  if (summary.modelCalls?.length) {
+    lines.push("", "Model calls by port and cognitive job (tokens; cached share of input)");
+    for (const row of summary.modelCalls) {
+      const cached = row.inputTokens === 0 ? 0 : (100 * row.cachedInputTokens) / row.inputTokens;
+      lines.push(`${row.port.padEnd(10)} ${row.kind.padEnd(36)} calls=${String(row.calls).padStart(4)} input=${String(row.inputTokens).padStart(9)} per-call=${String(Math.round(row.inputTokens / row.calls)).padStart(6)} cached=${cached.toFixed(1).padStart(5)}% output=${String(row.outputTokens).padStart(7)}`);
     }
   }
   if (summary.reconciliationFailures?.length) {

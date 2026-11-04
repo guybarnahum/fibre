@@ -20,6 +20,7 @@ test("World-grounded lack of reciprocal contact changes inherited Body pressure 
   };
   let interactions=[];
   let humanMeetings=[];
+  let conversations=[];
   const experienceStore={
     listSocialInteractions(threadId,{limit}){
       assert.equal(threadId,last.threadId);
@@ -30,6 +31,11 @@ test("World-grounded lack of reciprocal contact changes inherited Body pressure 
       assert.equal(threadId,last.threadId);
       assert.ok(since<=until&&limit<=8,"Human contact history was not bounded");
       return humanMeetings;
+    },
+    listReciprocalConversations(threadId,{since,until,limit}){
+      assert.equal(threadId,last.threadId);
+      assert.ok(since<=until&&limit<=8,"conversation history was not bounded");
+      return conversations;
     },
   };
   const assess=(baseline)=> {
@@ -68,6 +74,16 @@ test("World-grounded lack of reciprocal contact changes inherited Body pressure 
     "real Human contact did not replenish social exposure");
   assert.ok(humanRelieved.evidenceRefs.includes("story_real_person_visit"),
     "Body lost the Human encounter's World provenance");
+  humanMeetings=[];
+  conversations=[{
+    encounterRef:"story_continued_conversation",
+    occurredAt:"2026-10-13T15:45:00Z",
+  }];
+  const conversed=assess(1.15);
+  assert.ok(conversed.pressure<relieved.pressure,
+    "a conversation the Thread took part in did not ease its need for contact");
+  assert.ok(conversed.evidenceRefs.includes("story_continued_conversation"),
+    "Body lost the conversation's World provenance");
   assert.equal(socialContactEvidenceForLivedHistory({
     threadId:last.threadId,currentSituation:situations[0],livedNowStore,experienceStore,
   }),null,"missing lived coverage was mistaken for deprivation");
@@ -98,6 +114,7 @@ test("inherited social need can change a later Thread-authored Flight Plan witho
   const experienceStore={
     listSocialInteractions(){return [];},
     listAcceptedHumanMeetings(){return [];},
+    listReciprocalConversations(){return [];},
   };
   const base={
     threadId,version:1,
@@ -185,6 +202,7 @@ test("social hunger and sustained sameness coexist in one inherited Body frame",
   const experienceStore={
     listSocialInteractions(){return [];},
     listAcceptedHumanMeetings(){return humanMeetings;},
+    listReciprocalConversations(){return [];},
   };
   const thread={
     threadId,genome:{runtimeBaselines:{

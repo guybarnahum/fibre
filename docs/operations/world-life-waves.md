@@ -190,9 +190,11 @@ as a decision by a Thread not to socialize.
   failures and available billed-cost evidence.
 
 `infra:measure` aggregates captured `world-state-cost` and `d1-cost`
-console events by the labeled baseline and wave phases. It is a
-**sampled infrastructure-cost view**, not a complete token ledger or
-provider invoice. Report gaps instead of imputing invented dollar costs.
+console events by the labeled baseline and wave phases, and `model-call`
+events by deployment port and cognitive job (input, cached and output
+tokens). It is a **sampled infrastructure-cost view**, not a complete token
+ledger or provider invoice; `npm run model:usage` reads the provider's own
+daily cost. Report gaps instead of imputing invented dollar costs.
 `world-social:candidates` itself incurs current-World read cost; capture
 population scanning separately, not as idle runtime.
 

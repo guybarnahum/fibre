@@ -158,6 +158,7 @@ export function socialContactEvidenceForLivedHistory({
   requireMethod(livedNowStore,"getPreviousSituation");
   requireMethod(experienceStore,"listSocialInteractions");
   requireMethod(experienceStore,"listAcceptedHumanMeetings");
+  requireMethod(experienceStore,"listReciprocalConversations");
   const end=Date.parse(asOf);
   if(!Number.isFinite(end)||end<Date.parse(currentSituation.establishedAt))
     throw new TypeError("regulation asOf precedes the enacted present");
@@ -178,12 +179,14 @@ export function socialContactEvidenceForLivedHistory({
   const recent=experienceStore.listSocialInteractions(threadId,{limit:8})
     .filter(item=>item.responseDecision==="accept")
     .map(item=>({ref:item.interactionId,occurredAt:item.occurredAt}));
-  const human=experienceStore.listAcceptedHumanMeetings(threadId,{
-    since:new Date(observedStart).toISOString(),
-    until:asOf,
-    limit:8,
-  }).map(item=>({ref:item.encounterRef,occurredAt:item.occurredAt}));
-  const contact=[...recent,...human].filter(item=>
+  const window={since:new Date(observedStart).toISOString(),until:asOf};
+  const human=experienceStore.listAcceptedHumanMeetings(threadId,{...window,limit:8})
+    .map(item=>({ref:item.encounterRef,occurredAt:item.occurredAt}));
+  // A conversation the Thread actually took part in is lived reciprocal contact,
+  // whether it began by invitation or by choosing to continue an exchange.
+  const conversed=experienceStore.listReciprocalConversations(threadId,{...window,limit:1})
+    .map(item=>({ref:item.encounterRef,occurredAt:item.occurredAt}));
+  const contact=[...recent,...human,...conversed].filter(item=>
     Date.parse(item.occurredAt)>=observedStart
     &&Date.parse(item.occurredAt)<=end)
     .sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt))[0]??null;

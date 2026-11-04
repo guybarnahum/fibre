@@ -2,7 +2,7 @@ import baseWorker, { FibreWorldDurableObject as BaseWorldDurableObject } from ".
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
-import { lazyReasoningIntegration,selectReasoningIntegration } from "../../integration-selection.mjs";
+import { lazyReasoningIntegration,meteredReasoningIntegration,selectReasoningIntegration } from "../../integration-selection.mjs";
 import { createLivedEncounterWriteApi } from "#services/world-kernel/src/lived-encounter-write-api.mjs";
 import { createEnvironmentalEncounterService } from "#services/world-kernel/src/lived-environmental-encounter.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
@@ -117,6 +117,13 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.liveEncounterRegistry = createLiveEncounterRegistry();
   }
 
+  // Every World model call is metered by deployment port and cognitive job.
+  reasoningFor(port,{lazy=false}={}) {
+    const value=resolveServiceDeployment(DEPLOYMENT,"world-kernel").integrations[port];
+    const select=lazy?lazyReasoningIntegration:selectReasoningIntegration;
+    return meteredReasoningIntegration(select(value,{environment:this.env}),{port});
+  }
+
   journalBookForRequest() {
     if (this.threadJournalBook === null) {
       const storage=this.runtimeForRequest().worldStorage;
@@ -157,10 +164,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         journalBook:this.journalBookForRequest(),
-        modelAdapter:selectReasoningIntegration(
-          deployment.integrations.encounter,
-          {environment:this.env},
-        ),
+        modelAdapter:this.reasoningFor("encounter"),
         onAfterthoughts:(event)=>this.liveEncounterRegistry.publishAfterthoughts(event),
       });
       runtime.reconciliationProcess.setExperienceConsolidationProcess(
@@ -189,10 +193,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
-        modelAdapter:selectReasoningIntegration(
-          deployment.integrations.livedNow,
-          {environment:this.env},
-        ),
+        modelAdapter:this.reasoningFor("livedNow"),
       });
       this.contactOutreachProcess=createThreadContactProcess({
         worldReader:runtime.worldStore,
@@ -202,10 +203,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         contactStore:openContactStore(runtime.worldStorage),
-        modelAdapter:selectReasoningIntegration(
-          deployment.integrations.encounter,
-          {environment:this.env},
-        ),
+        modelAdapter:this.reasoningFor("encounter"),
       });
       runtime.reconciliationProcess.setContactOutreachProcess(
         this.contactOutreachProcess,
@@ -230,9 +228,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         identityStore:openIdentityStore(runtime.worldStorage),
         semanticStateStore,memoryStore,
         situatedLifeStore:openSituatedLifeStore(runtime.worldStorage),
-        modelAdapter:selectReasoningIntegration(
-          deployment.integrations.livedNow,{environment:this.env},
-        ),
+        modelAdapter:this.reasoningFor("livedNow"),
       });
       this.contactReceptionProcess=createThreadContactPerception({
         contactStore:openContactStore(runtime.worldStorage),
@@ -241,9 +237,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         modelAdapter:{
           invoke:async(request)=>{
-            this.contactReceptionModelAdapter??=selectReasoningIntegration(
-              deployment.integrations.encounter,{environment:this.env},
-            );
+            this.contactReceptionModelAdapter??=this.reasoningFor("encounter");
             return this.contactReceptionModelAdapter.invoke(request);
           },
         },
@@ -264,7 +258,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore: openSemanticStateStore(runtime.worldStorage),
         experienceStore: openLivedExperienceStore(runtime.worldStorage),
         memoryStore: openAutobiographicalMemoryStore(runtime.worldStorage),
-        modelAdapter: selectReasoningIntegration(deployment.integrations.encounter, { environment: this.env }),
+        modelAdapter: this.reasoningFor("encounter"),
         activityRecorder: createCloudflareActivityRecorder({ env: this.env, service: "world-kernel" }),
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
         privateToken: this.env.FIBRE_PRIVATE_TOKEN,
@@ -283,9 +277,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         worldReader:runtime.worldStore,
         semanticStateStore:openSemanticStateStore(runtime.worldStorage),
         memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
-        modelAdapter:selectReasoningIntegration(
-          deployment.integrations.encounter,{environment:this.env},
-        ),
+        modelAdapter:this.reasoningFor("encounter"),
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       };
       this.worldEnvironmentEvolutionProcess=combineWorldEnvironmentProcesses(
@@ -321,9 +313,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         identityStore,semanticStateStore,memoryStore,situatedLifeStore,
         modelAdapter:{
           invoke:(request)=>{
-            livedNowModelAdapter??=selectReasoningIntegration(
-              deployment.integrations.livedNow,{environment:this.env},
-            );
+            livedNowModelAdapter??=this.reasoningFor("livedNow");
             return livedNowModelAdapter.invoke(request);
           },
         },
@@ -334,9 +324,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         worldReader:runtime.worldStore,livedNow,livedNowStore,
         identityStore,situatedLifeStore,semanticStateStore,memoryStore,experienceStore,
         embodimentStore:openEmbodimentStore(runtime.worldStorage),
-        modelAdapter:lazyReasoningIntegration(
-          deployment.integrations.encounter,{environment:this.env},
-        ),
+        modelAdapter:this.reasoningFor("encounter",{lazy:true}),
         boundedVenueDiscovery:true,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
@@ -371,7 +359,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
-        modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
+        modelAdapter:this.reasoningFor("livedNow"),
       });
       const encounterService = createEnvironmentalEncounterService({
         worldReader:runtime.worldStore,
@@ -382,7 +370,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore,
         embodimentStore:openEmbodimentStore(runtime.worldStorage),
-        modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
+        modelAdapter:this.reasoningFor("encounter"),
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
         onWorldFollowupQueued:({dueAt})=>{
           const delayMs=Math.max(0,Math.min(3_600_000,Date.parse(dueAt)-Date.now()));
@@ -418,7 +406,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
-        modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
+        modelAdapter:this.reasoningFor("livedNow"),
       });
       const meetingService = createSocialMeetingService({
         worldReader:runtime.worldStore,
@@ -429,7 +417,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         experienceStore,
-        modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
+        modelAdapter:this.reasoningFor("encounter"),
         liveEncounterRegistry:this.liveEncounterRegistry,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
@@ -461,7 +449,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
-        modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
+        modelAdapter:this.reasoningFor("livedNow"),
       });
       const commonsService = createLivedCommonsService({
         worldReader:runtime.worldStore,
@@ -471,7 +459,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
-        modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
+        modelAdapter:this.reasoningFor("encounter"),
       });
       this.livedCommonsApi = createLivedCommonsWriteApi({
         commonsService,
@@ -503,7 +491,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         situatedLifeStore,
         workStore,
         fibreCreditStore,
-        modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
+        modelAdapter:this.reasoningFor("livedNow"),
       });
       this.insideFibreWorkApi = createInsideFibreWorkWriteApi({
         workService,
@@ -540,7 +528,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
-        modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
+        modelAdapter:this.reasoningFor("livedNow"),
       });
       const availability = createInsideFibreAvailabilityService({
         livedNow,
@@ -556,7 +544,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         experienceStore,
         workStore,
         fibreCreditStore,
-        modelAdapter:selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env }),
+        modelAdapter:this.reasoningFor("encounter"),
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       });
       const publication = createLivedNowPublicationService({
@@ -587,7 +575,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       const memoryStore = openAutobiographicalMemoryStore(runtime.worldStorage);
       const situatedLifeStore = openSituatedLifeStore(runtime.worldStorage);
       const experienceStore = openLivedExperienceStore(runtime.worldStorage);
-      const modelAdapter = selectReasoningIntegration(deployment.integrations.encounter, { environment:this.env });
+      const modelAdapter = this.reasoningFor("encounter");
       // Observe the real hot-path cost without adding cognition or persisting a transcript.
       const measuredModelAdapter = {
         ...modelAdapter,
@@ -626,7 +614,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore,
         memoryStore,
         situatedLifeStore,
-        modelAdapter:selectReasoningIntegration(deployment.integrations.livedNow, { environment:this.env }),
+        modelAdapter:this.reasoningFor("livedNow"),
       });
       const encounterService = createPublicVisitorEncounterService({
         worldReader:runtime.worldStore,
@@ -696,7 +684,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore: openSemanticStateStore(runtime.worldStorage),
         memoryStore: openAutobiographicalMemoryStore(runtime.worldStorage),
         situatedLifeStore,
-        modelAdapter: selectReasoningIntegration(deployment.integrations.livedNow, { environment: this.env }),
+        modelAdapter: this.reasoningFor("livedNow"),
 
       });
       const presentation = createLivedNowPublicationService({
@@ -745,9 +733,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         situatedLifeStore,
         modelAdapter:{
           invoke:async(request)=>{
-            this.livedBoundaryModelAdapter??=selectReasoningIntegration(
-              deployment.integrations.livedNow,{environment:this.env},
-            );
+            this.livedBoundaryModelAdapter??=this.reasoningFor("livedNow");
             return this.livedBoundaryModelAdapter.invoke(request);
           },
         },

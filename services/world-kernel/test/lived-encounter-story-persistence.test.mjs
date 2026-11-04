@@ -180,6 +180,14 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
         "interrupted",
         "objective history lost audible interruption",
       );
+      const window={since:"2026-09-21T17:00:00.000Z",until:"2026-09-21T19:00:00.000Z"};
+      for(const threadId of ["thr_e0_mina","thr_e0_noor"]){
+        assert.deepEqual(
+          store.listReciprocalConversations(threadId,window).map(item=>item.encounterRef),
+          [continued.encounterId],
+          "only an exchange in which both spoke is a conversation this Thread took part in",
+        );
+      }
 
       store.recordThreadEncounterAttention({
         threadId:"thr_e0_mina",encounterRef:interrupted.encounterId,

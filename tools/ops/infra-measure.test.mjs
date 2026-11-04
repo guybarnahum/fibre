@@ -73,3 +73,14 @@ test("LivedNow failures are diagnosed without inflating Cloudflare read/write to
     "the reason for the failed wave vanished from measurement evidence");
   assert.equal(result.reconciliationFailures[0].diagnostics.stage,"lived_now.ensure");
 });
+
+test("model calls are measured per cognitive job without counting as database work",()=>{
+  const call=(kind,inputTokens,cachedInputTokens)=>({event:"model-call",port:"encounter",kind,inputTokens,cachedInputTokens,outputTokens:20});
+  const result=summarizeCosts([
+    call("social-live-expression",5000,4096),call("social-live-expression",5200,0),call("encounter-attention",2000,0),
+  ]);
+  assert.equal(result.operations.length,0,"a model call counted as a database request");
+  assert.deepEqual(result.modelCalls.map(({kind,calls,cachedInputTokens})=>({kind,calls,cachedInputTokens})),
+    [{kind:"social-live-expression",calls:2,cachedInputTokens:4096},{kind:"encounter-attention",calls:1,cachedInputTokens:0}],
+    "model cost was not attributable to its cognitive job");
+});

@@ -165,6 +165,53 @@ export function lazyReasoningIntegration(value, options = {}) {
   });
 }
 
+// One compact log line per model call, so cost and prompt-cache reuse can be
+// read per cognitive job without persisting prompts or writing to the World.
+export function meteredReasoningIntegration(adapter, { port, log = console.log } = {}) {
+  const kindOf = (request) => String(request?.clientRequestId ?? "unknown").replace(/_[0-9a-f]{16,}$/u, "");
+  const report = (request, startedAt, provenance, outcome) => {
+    const usage = provenance?.usage ?? null;
+    log(JSON.stringify({
+      event: "model-call",
+      port,
+      kind: kindOf(request),
+      outcome,
+      modelId: provenance?.modelId ?? adapter.modelId ?? null,
+      elapsedMs: Date.now() - startedAt,
+      inputTokens: usage?.inputTokens ?? null,
+      cachedInputTokens: usage?.cachedInputTokens ?? null,
+      outputTokens: usage?.outputTokens ?? null,
+    }));
+  };
+  return Object.freeze({
+    ...adapter,
+    async invoke(request) {
+      const startedAt = Date.now();
+      let result;
+      try {
+        result = await adapter.invoke(request);
+        return result;
+      } finally {
+        report(request, startedAt, result?.provenance, result === undefined ? "failed" : "completed");
+      }
+    },
+    ...(typeof adapter.streamExpression !== "function" ? {} : {
+      async *streamExpression(request) {
+        const startedAt = Date.now();
+        let provenance = null;
+        try {
+          for await (const event of adapter.streamExpression(request)) {
+            if (event?.type === "expression_complete") provenance = event.provenance;
+            yield event;
+          }
+        } finally {
+          report(request, startedAt, provenance, provenance === null ? "stopped" : "completed");
+        }
+      },
+    }),
+  });
+}
+
 export function selectReasoningIntegration(value, { environment = process.env, fetchImpl = globalThis.fetch, observer = null } = {}) {
   const chosen = selection("reasoning integration", value, "ai.reasoning");
   const modelId = configured("reasoning integration config.model", chosen.config?.model);

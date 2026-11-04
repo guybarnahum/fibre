@@ -1382,6 +1382,31 @@ export class LivedExperienceStore {
     `).get(before,observerId,otherId,otherId,observerId,observerId,otherId)!==undefined;
   }
 
+  // Conversations this Thread took part in: it spoke and someone spoke with it.
+  // A one-shot small act holds one speaker, so a greeting alone never qualifies.
+  listReciprocalConversations(threadId,{since,until,limit=8}={}){
+    assertId("Reciprocal conversation threadId",threadId);
+    assertIsoTimestamp("Reciprocal conversation since",since);
+    assertIsoTimestamp("Reciprocal conversation until",until);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>32){
+      throw new TypeError("Reciprocal conversation limit must be 1-32");
+    }
+    return this.#database.prepare(`
+      SELECT own.encounter_ref AS encounterRef,own.occurred_at AS occurredAt
+      FROM thread_encounter_story_timeline own
+      JOIN encounter_story_records e ON e.encounter_id=own.encounter_ref
+      WHERE own.thread_id=? AND own.occurred_at BETWEEN ? AND ?
+        AND EXISTS (SELECT 1 FROM json_each(e.story_json,'$.beats') beat
+          WHERE json_extract(beat.value,'$.kind')='utterance'
+            AND json_extract(beat.value,'$.actorThreadId')=?)
+        AND EXISTS (SELECT 1 FROM json_each(e.story_json,'$.beats') beat
+          WHERE json_extract(beat.value,'$.kind')='utterance'
+            AND json_extract(beat.value,'$.actorThreadId')<>?)
+      ORDER BY own.occurred_at DESC,own.encounter_ref DESC
+      LIMIT ?
+    `).all(threadId,since,until,threadId,threadId,limit);
+  }
+
   listAcceptedHumanMeetings(threadId,{since,until,limit=8}={}){
     assertId("Human meeting threadId",threadId);
     assertIsoTimestamp("Human meeting since",since);

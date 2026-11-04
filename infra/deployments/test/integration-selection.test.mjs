@@ -11,6 +11,7 @@ import {
   selectImageProviderProfile,
   selectImageProviderRoute,
   lazyReasoningIntegration,
+  meteredReasoningIntegration,
   selectReasoningIntegration,
 } from "../integration-selection.mjs";
 import { assertExpressionModelAdapter } from "../../../services/world-kernel/src/guardian-model-adapter.mjs";
@@ -124,3 +125,29 @@ test("reference-aware profile selection fails closed when deployment has no capa
   );
 });
 
+
+test("each World model call reports its cognitive job and prompt-cache reuse without changing cognition", async () => {
+  const lines = [];
+  const provenance = { modelId:"gpt-test", usage:{ inputTokens:5000, cachedInputTokens:4096, outputTokens:40 } };
+  const adapter = meteredReasoningIntegration({
+    provider:"openai", modelId:"gpt-test", configuration:{},
+    invoke:async () => ({ output:{ decision:"silent" }, provenance }),
+    async *streamExpression() {
+      yield { type:"expression_delta", text:"Hello." };
+      yield { type:"expression_complete", provenance };
+    },
+  }, { port:"encounter", log:(line) => lines.push(JSON.parse(line)) });
+  assertExpressionModelAdapter(adapter);
+
+  const hash = "a".repeat(64);
+  assert.deepEqual((await adapter.invoke({ clientRequestId:`interior_social-initiation_${hash.slice(0, 24)}` })).output,
+    { decision:"silent" }, "metering changed what the Thread decided");
+  const spoken = [];
+  for await (const event of adapter.streamExpression({ clientRequestId:`social-live-expression_${hash}` })) spoken.push(event.type);
+  assert.deepEqual(spoken, ["expression_delta", "expression_complete"], "metering changed what the Thread said");
+
+  assert.deepEqual(lines.map(({ kind, port, cachedInputTokens }) => ({ kind, port, cachedInputTokens })), [
+    { kind:"interior_social-initiation", port:"encounter", cachedInputTokens:4096 },
+    { kind:"social-live-expression", port:"encounter", cachedInputTokens:4096 },
+  ], "model cost was not attributable to its cognitive job");
+});

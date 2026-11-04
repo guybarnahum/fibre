@@ -74,7 +74,8 @@ friendship, increased sociability, trust, or a change in acquaintance.
 
 **Deferred:** multi-party conversation, conversational relationship growth
 without an accepted invitation, autonomous proof of identity/history-driven
-preference between brevity and continuation, and further Body consequences.
+preference between brevity and continuation, and Body consequences beyond the
+social-contact relief in the amendment below.
 The existing Story → Experience → Memory, social deliberation and
 relationship-authority paths remain open. There is no new permanent
 constraint, new table, poller, background model task, or compatibility layer.
@@ -84,3 +85,16 @@ small-act utterances versus two prior utterances followed by a single live
 conversation. The staging estimate of 45–50 weighted rows per remark and
 35–55 for a single live Story is **calibration only**, not a local result.
 Guy accepted this ADR on November 3, 2026, and deployed `2ef5d24` to staging; direct staging evidence of an actual voluntarily continued exchange remains pending.
+
+## Amendment — conversation as lived contact (accepted by Guy November 4, 2026)
+
+A Story in which this Thread itself spoke **and** another participant spoke is
+lived reciprocal contact for the Body's existing `social_contact` drive,
+whether the conversation began by accepted invitation or by this ADR's
+continuation. The Story reference becomes the drive's contact evidence. A
+one-shot small act holds a single speaker and still does not qualify
+(ADR-0027's deferral of greeting satisfaction stands); a Thread that stayed
+silent throughout does not qualify. The read is bounded to the drive's
+observed window and the newest qualifying Story. No acquaintance, regard or
+relationship fact follows from it. **Causal status:** a lived conversation now
+changes later Body pressure, and through it salience and Flight Planning.
