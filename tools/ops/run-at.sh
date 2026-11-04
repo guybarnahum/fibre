@@ -34,8 +34,7 @@ if [ -z "$RUN_AT_CHILD" ]; then
 fi
 target=${RUN_AT_TARGET:-$target}
 echo "$(date -u) waiting until $(utc $target) to run: $cmd" > "$log"
-wait_s=$(( target - $(date -u +%s) ))
-[ $wait_s -gt 0 ] && sleep $wait_s
+while [ "$(date -u +%s)" -lt "$target" ]; do sleep 30; done
 echo "$(date -u) running in $PWD" >> "$log"
 bash -c "$cmd" >> "$log" 2>&1
 code=$?
