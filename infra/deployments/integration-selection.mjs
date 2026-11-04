@@ -175,6 +175,7 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log }
       event: "model-call",
       port,
       kind: kindOf(request),
+      prompt: request?.promptRef ?? null,
       outcome,
       modelId: provenance?.modelId ?? adapter.modelId ?? null,
       elapsedMs: Date.now() - startedAt,
