@@ -170,6 +170,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         semanticStateStore:openSemanticStateStore(runtime.worldStorage),
         memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
+        situatedLifeStore:openSituatedLifeStore(runtime.worldStorage),
+        embodimentStore:openEmbodimentStore(runtime.worldStorage),
         journalBook:this.journalBookForRequest(),
         modelAdapter:this.reasoningFor("encounter"),
         onAfterthoughts:(event)=>this.liveEncounterRegistry.publishAfterthoughts(event),

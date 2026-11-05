@@ -100,9 +100,13 @@ function selectEvidence(threadId, sourceStores, policy, at, focusPartyId=null) {
     )??[],
   );
 
+  // This Thread's own regard for the person in focus comes before newer states.
+  const regardsFocus=(item)=>focusPartyId!==null
+    &&item.domain==="relationship_attitude"&&item.target?.targetId===focusPartyId;
   for (const item of [...(semanticStateStore.listCurrentState(threadId) ?? [])]
     .map((item) => owned(threadId, "semantic state", item.stateId, item))
-    .sort((left, right) => String(right.asOf ?? "").localeCompare(String(left.asOf ?? "")))
+    .sort((left, right) => Number(regardsFocus(right)) - Number(regardsFocus(left))
+      || String(right.asOf ?? "").localeCompare(String(left.asOf ?? "")))
     .slice(0, policy.maximumSemanticStates)) {
     const target = item.target?.displayName ? ` toward ${item.target.displayName}` : "";
     candidates.push(evidenceCandidate(

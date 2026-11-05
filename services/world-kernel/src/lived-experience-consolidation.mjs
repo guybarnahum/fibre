@@ -1,4 +1,7 @@
 import {EXPERIENCE_CONSOLIDATION_DELAY_MS} from "./lived-experience-consolidation-scheduler.mjs";
+import {promptRequest} from "./cognition-prompts.mjs";
+import {observablePerson} from "./world-observable-person.mjs";
+import {assertDescriptiveSemanticState} from "./semantic-state.mjs";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
@@ -20,6 +23,10 @@ const DEFAULT_BATCH_LIMIT=4;
 const DEFAULT_GROUP_LIMIT=8;
 const DEFAULT_GROUP_WINDOW_MS=EXPERIENCE_CONSOLIDATION_DELAY_MS;
 const MEMORY_LIMIT=6;
+// The ways one Thread may regard another (registered relationship_attitude
+// dimensions). The first-person description, not the aspect, carries meaning.
+const STANCE_ASPECTS=Object.freeze(["fondness","trust","respect","attachment","resentment","guardedness"]);
+const STANCE_LIMIT=2;
 
 function requireMethod(name,value,method){
   if(!value||typeof value!=="object"||typeof value[method]!=="function"){
@@ -50,6 +57,21 @@ function semanticContext(states){
   }));
 }
 
+function normalizeStances(stances){
+  if(!Array.isArray(stances)||stances.length>STANCE_LIMIT){
+    throw new TypeError(`experience consolidation stances must contain at most ${STANCE_LIMIT} items`);
+  }
+  return Object.freeze(stances.map((item,index)=>{
+    assertPlainObject(`experience consolidation stances[${index}]`,item);
+    assertNonEmpty(`experience consolidation stances[${index}].personRef`,item.personRef);
+    if(!STANCE_ASPECTS.includes(item.aspect)){
+      throw new TypeError("experience consolidation stance aspect is invalid");
+    }
+    assertNonEmpty(`experience consolidation stances[${index}].regard`,item.regard);
+    return Object.freeze({personRef:item.personRef,aspect:item.aspect,regard:item.regard.trim()});
+  }));
+}
+
 function normalizeDecision(output){
   assertPlainObject("experience consolidation decision",output);
   const journalEntry=output.journalEntry??null;
@@ -66,6 +88,8 @@ function normalizeDecision(output){
     return Object.freeze({kind:item.kind,text:item.text.trim()});
   });
 
+  const stances=normalizeStances(output.stances??[]);
+
   assertPlainObject("experience consolidation memory",output.memory);
   const memory=output.memory;
   if(!["not_remembered","retained"].includes(memory.outcome)){
@@ -76,6 +100,7 @@ function normalizeDecision(output){
     return Object.freeze({
       journalEntry,
       afterthoughts:Object.freeze(afterthoughts),
+      stances,
       memory:Object.freeze({
         outcome:"not_remembered",
         rememberedContent:null,
@@ -99,6 +124,7 @@ function normalizeDecision(output){
   return Object.freeze({
     journalEntry,
     afterthoughts:Object.freeze(afterthoughts),
+    stances,
     memory:Object.freeze({
       outcome:"retained",
       rememberedContent:memory.rememberedContent,
@@ -122,6 +148,7 @@ async function formDecision({
   encounterStories,
   semanticStates,
   memories,
+  people,
   modelAdapter,
 }){
   const storyById=new Map(encounterStories.map((story)=>[story.encounterId,story]));
@@ -145,6 +172,8 @@ async function formDecision({
       experiencedAs:experience.experienceText??null,
       encounterStory:structuredClone(storyById.get(experience.encounterRef)?.story??null),
     })),
+    people:people.map(person=>({personRef:person.personRef,name:person.name,
+      appearance:person.appearance})),
     consolidation:{
       consolidationId:consolidation.consolidationId,
       startedAt:consolidation.startedAt,
@@ -152,26 +181,12 @@ async function formDecision({
   };
 
   const invocation=await modelAdapter.invoke({
-    systemPrompt:`You are delayed consolidation for one persistent Fibre Thread after a bounded cluster of lived experiences.
-These experiences already happened and are durable evidence. They may include conversation, witnessed behavior, environmental occurrences, or several closely related moments from one continuing situation.
-Treat the cluster as one reflective opportunity rather than one mandatory interpretation per experience.
-
-Return three distinct private outcomes:
-1. journalEntry: a first-person private journal reflection, or null. It may integrate several experiences when they belong together. It is subjective reflection formed now, not objective history.
-2. memory: decide whether anything from this bounded cluster is retained autobiographically. not_remembered is normal. If retained, write a selective first-person recollection of what mattered rather than a transcript.
-3. afterthoughts: zero to three concise private residues that genuinely emerged only after considering the cluster. Each is an insight, question, or intention. Empty is normal. These are thoughts, not commitments, relationship authority, semantic-state authority, or automatic future actions.
-
-Do not invent events, dialogue, relationships, obligations, or lasting meaning absent from the supplied evidence.
-Do not force significance merely because multiple experiences were supplied.
-rememberedMeaning may be null even when rememberedContent is retained.
-Journal, memory and afterthoughts are separate outcomes: any may exist without the others.
-Do not manufacture an afterthought merely to make the experience consequential.
-Do not describe this consolidation process, record IDs, system state, or hidden policy.`,
+    ...promptRequest("experience.consolidation",{threadId:thread.threadId}),
     input,
     responseSchema:{
       type:"object",
       additionalProperties:false,
-      required:["journalEntry","memory","afterthoughts"],
+      required:["journalEntry","memory","afterthoughts","stances"],
       properties:{
         journalEntry:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
         afterthoughts:{
@@ -184,6 +199,20 @@ Do not describe this consolidation process, record IDs, system state, or hidden 
             properties:{
               kind:{type:"string",enum:["insight","question","intention"]},
               text:{type:"string",minLength:1,maxLength:500},
+            },
+          },
+        },
+        stances:{
+          type:"array",
+          maxItems:STANCE_LIMIT,
+          items:{
+            type:"object",
+            additionalProperties:false,
+            required:["personRef","aspect","regard"],
+            properties:{
+              personRef:{type:"string",minLength:1},
+              aspect:{type:"string",enum:[...STANCE_ASPECTS]},
+              regard:{type:"string",minLength:1,maxLength:400},
             },
           },
         },
@@ -206,9 +235,80 @@ Do not describe this consolidation process, record IDs, system state, or hidden 
       },
     },
     clientRequestId:decisionRequestId(input),
-    cacheKey:`experience-consolidation:${thread.threadId}`,
   });
   return normalizeDecision(invocation.output);
+}
+
+// The others who acted in these experiences, as this Thread knows them, each
+// with the experiences that are its evidence about them.
+function peopleIn({threadId,experiences,encounterStories,situation,at,
+  worldReader,situatedLifeStore,embodimentStore,experienceStore}){
+  const evidence=new Map();
+  experiences.forEach((experience,index)=>{
+    for(const beat of encounterStories[index]?.story?.beats??[]){
+      const other=beat.actorThreadId;
+      if(typeof other!=="string"||other===threadId)continue;
+      if(!evidence.has(other))evidence.set(other,new Set());
+      evidence.get(other).add(experience.experienceId);
+    }
+  });
+  return [...evidence].map(([personRef,refs])=>{
+    const identity=worldReader.getThread(personRef,{required:false})?.identity??{};
+    const person=observablePerson({
+      threadId:personRef,situation,observerThreadId:threadId,at,
+      name:identity.name??null,birthDate:identity.birthDate??null,sex:identity.sex??null,
+      embodimentStore,situatedLifeStore,experienceStore,
+    });
+    return Object.freeze({personRef,name:person.name,
+      appearance:person.observableDescription,evidenceRefs:Object.freeze([...refs])});
+  });
+}
+
+// A stance is the Thread's own regard for a person, admitted as a private
+// relationship_attitude that supersedes its earlier regard in that aspect.
+// One naming no one who acted here, or prescribing instead of describing, is
+// not admitted. Recording again after an interruption adds nothing.
+function describes(regard){
+  try{assertDescriptiveSemanticState("stance",regard);return true;}
+  catch{return false;}
+}
+
+function admitStances({semanticStateStore,threadId,stances,people,asOf}){
+  if(stances.length===0)return {admitted:[],dropped:0};
+  if(typeof semanticStateStore.recordState!=="function"){
+    throw new TypeError("semanticStateStore.recordState is required to admit stances");
+  }
+  const admitted=[];
+  let dropped=0;
+  for(const stance of stances){
+    const person=people.find(item=>item.personRef===stance.personRef);
+    if(person===undefined||!describes(stance.regard)){dropped+=1;continue;}
+    const current=semanticStateStore.listCurrentState(threadId).find(state=>
+      state.domain==="relationship_attitude"&&state.dimension===stance.aspect
+      &&state.target?.targetId===person.personRef);
+    if(current?.state===stance.regard
+      &&canonicalJson(current.evidenceReferences)===canonicalJson(person.evidenceRefs)){
+      admitted.push(current.stateId);
+      continue;
+    }
+    admitted.push(semanticStateStore.recordState({
+      threadId,domain:"relationship_attitude",dimension:stance.aspect,
+      target:{kind:"thread",targetId:person.personRef,
+        displayName:person.name??person.appearance},
+      state:stance.regard,
+      evidenceReferences:[...person.evidenceRefs],
+      asOf,
+      supersedes:current?.stateId??null,
+      provenance:{
+        author:threadId,authorType:"thread_cognition",
+        policyId:"relationship_stance_formation",policyVersion:"1",
+        validator:"semantic_state_validator",validatorVersion:"1",
+      },
+      visibility:"restricted",
+      staleness:"current",
+    }).state.stateId);
+  }
+  return {admitted,dropped};
 }
 
 function groupCandidates(candidates,{groupLimit,groupWindowMs}){
@@ -280,6 +380,8 @@ export function createExperienceConsolidationProcess({
   memoryStore,
   experienceStore,
   modelAdapter,
+  situatedLifeStore=null,
+  embodimentStore=null,
   journalBook=null,
   onAfterthoughts=null,
   now=()=>new Date().toISOString(),
@@ -357,6 +459,10 @@ export function createExperienceConsolidationProcess({
       newestFirst:true,
       limit:MEMORY_LIMIT,
     });
+    const people=peopleIn({
+      threadId:consolidation.threadId,experiences,encounterStories,situation,
+      at:consolidation.startedAt,worldReader,situatedLifeStore,embodimentStore,experienceStore,
+    });
 
     let decisionStage=experienceStore.getThreadExperienceConsolidationStage(
       consolidation.consolidationId,
@@ -371,6 +477,7 @@ export function createExperienceConsolidationProcess({
         encounterStories,
         semanticStates,
         memories,
+        people,
         modelAdapter,
       });
       decisionStage=experienceStore.recordThreadExperienceConsolidationStage({
@@ -428,6 +535,11 @@ export function createExperienceConsolidationProcess({
       }
     }
 
+    const stances=admitStances({
+      semanticStateStore,threadId:consolidation.threadId,
+      stances:decision.stances,people,asOf:consolidation.startedAt,
+    });
+
     const completion=experienceStore.recordThreadExperienceConsolidationStage({
       consolidationId:consolidation.consolidationId,
       stage:"complete",
@@ -437,6 +549,7 @@ export function createExperienceConsolidationProcess({
         memoryOutcome:decision.memory.outcome,
         memoryId:memory?.memoryId??null,
         afterthoughtCount:decision.afterthoughts.length,
+        stanceRefs:stances.admitted,
       },
     });
 
@@ -473,6 +586,8 @@ export function createExperienceConsolidationProcess({
       memoryId:completion.payload.memoryId,
       afterthoughts:decision.afterthoughts,
       afterthoughtDelivery,
+      stanceRefs:completion.payload.stanceRefs??[],
+      stancesDropped:stances.dropped,
     });
   }
 

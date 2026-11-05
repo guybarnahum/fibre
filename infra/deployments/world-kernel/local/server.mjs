@@ -343,6 +343,8 @@ export async function startWorldKernelFromEnvironment(
     semanticStateStore,
     memoryStore:autobiographicalMemoryStore,
     experienceStore:livedExperienceStore,
+    situatedLifeStore,
+    embodimentStore,
     journalBook,
     modelAdapter:{
       async invoke(request){
