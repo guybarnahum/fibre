@@ -47,6 +47,7 @@ integrations:
       topP: 1
       reasoningEffort: none
       deferredServiceTier: flex
+      cacheMode: explicit
     secrets:
       apiKey: OPENAI_API_KEY
   genesis-openai-creative:

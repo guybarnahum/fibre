@@ -196,6 +196,7 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log }
       kind: kindOf(request),
       prompt: request?.promptRef ?? null,
       scope: typeof request?.cacheKey === "string" ? short(request.cacheKey) : null,
+      cacheThrough: request?.cacheThrough ?? null,
       prefix: promptPrefix(request),
       parts: promptParts(request),
       outcome,
@@ -258,6 +259,7 @@ export function selectReasoningIntegration(value, { environment = process.env, f
       retryDelayMs: chosen.config?.retryDelayMs,
       deferredServiceTier: chosen.config?.deferredServiceTier ?? null,
       deferredTimeoutMs: chosen.config?.deferredTimeoutMs,
+      cacheMode: chosen.config?.cacheMode,
     });
   }
   if (chosen.provider === "google") {

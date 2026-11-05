@@ -202,6 +202,31 @@ function promptCacheField(cacheKey) {
   return { prompt_cache_key: `fibre_${sha256(cacheKey).slice(0, 40)}` };
 }
 
+// Roughly the provider's 1,024-token minimum for a cacheable prefix.
+const MIN_CACHEABLE_CHARS = 4096;
+
+// The model sees one JSON input either way. In explicit cache mode the text is
+// split, unchanged, after the field named by cacheThrough, and only that stable
+// prefix is marked for reuse. Without a mark nothing is written, so a prompt
+// that will not repeat never pays the cache-write premium.
+function inputContent(systemPrompt, input, { explicit, cacheThrough }) {
+  const text = JSON.stringify(input);
+  if (!explicit || cacheThrough === null || cacheThrough === undefined) return [{ type: "input_text", text }];
+  const keys = Object.keys(input);
+  const through = keys.indexOf(cacheThrough);
+  if (through < 0) throw new TypeError(`model cacheThrough names no input field: ${cacheThrough}`);
+  const stable = JSON.stringify(Object.fromEntries(keys.slice(0, through + 1).map((key) => [key, input[key]])));
+  const prefix = through === keys.length - 1 ? text : stable.slice(0, -1);
+  if (!text.startsWith(prefix) || systemPrompt.length + prefix.length < MIN_CACHEABLE_CHARS) {
+    return [{ type: "input_text", text }];
+  }
+  const rest = text.slice(prefix.length);
+  return [
+    { type: "input_text", text: prefix, prompt_cache_breakpoint: { mode: "explicit" } },
+    ...(rest === "" ? [] : [{ type: "input_text", text: rest }]),
+  ];
+}
+
 function providerString(value) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -287,6 +312,7 @@ export function createOpenAIModelAdapter({
   retryDelayMs = DEFAULTS.retryDelayMs,
   deferredServiceTier = null,
   deferredTimeoutMs = DEFAULTS.deferredTimeoutMs,
+  cacheMode = "implicit",
 } = {}) {
   const key = apiKey(environment);
   if (key === null) {
@@ -299,6 +325,9 @@ export function createOpenAIModelAdapter({
   assertId("OpenAI modelId", modelId);
   if (typeof fetchImpl !== "function") throw new TypeError("OpenAI model fetchImpl must be a function");
   if (deferredServiceTier !== null) assertId("OpenAI deferredServiceTier", deferredServiceTier);
+  if (!["implicit", "explicit"].includes(cacheMode)) throw new TypeError("OpenAI cacheMode must be implicit or explicit");
+  const explicit = cacheMode === "explicit";
+  const cacheOptions = explicit ? { prompt_cache_options: { mode: "explicit" } } : {};
 
   const endpoint = "https://api.openai.com/v1/responses";
   // Do not add the provider-schema projection to this object: the durable journal
@@ -329,7 +358,7 @@ export function createOpenAIModelAdapter({
     provider: "openai",
     modelId,
     configuration,
-    async *streamExpression({ systemPrompt, input, clientRequestId, cacheKey = null, signal = null }) {
+    async *streamExpression({ systemPrompt, input, clientRequestId, cacheKey = null, cacheThrough = null, signal = null }) {
       assertNonEmpty("expression systemPrompt", systemPrompt);
       assertPlainObject("expression input", input);
       assertId("expression clientRequestId", clientRequestId);
@@ -361,13 +390,14 @@ export function createOpenAIModelAdapter({
               store:false,
               stream:true,
               ...promptCacheField(cacheKey),
+              ...cacheOptions,
               ...(maxOutputTokens === null ? {} : { max_output_tokens:maxOutputTokens }),
               temperature,
               top_p:topP,
               reasoning:{ effort:reasoningEffort },
               input:[
                 { role:"developer", content:[{ type:"input_text", text:systemPrompt }] },
-                { role:"user", content:[{ type:"input_text", text:JSON.stringify(input) }] },
+                { role:"user", content:inputContent(systemPrompt, input, { explicit, cacheThrough }) },
               ],
             }),
             signal:controller.signal,
@@ -434,7 +464,7 @@ export function createOpenAIModelAdapter({
     // A request whose answer may take minutes is first offered at the deferred
     // service tier (for example flex). If that tier is busy or slow, the same
     // request is sent at once at the default tier, so the cognition still happens.
-    async invoke({ systemPrompt, input, responseSchema, clientRequestId, cacheKey = null, latency = "live" }) {
+    async invoke({ systemPrompt, input, responseSchema, clientRequestId, cacheKey = null, cacheThrough = null, latency = "live" }) {
       assertNonEmpty("model systemPrompt", systemPrompt);
       assertPlainObject("model input", input);
       assertPlainObject("model responseSchema", responseSchema);
@@ -467,6 +497,7 @@ export function createOpenAIModelAdapter({
                 model: modelId,
                 store: false,
                 ...promptCacheField(cacheKey),
+                ...cacheOptions,
                 ...(serviceTier === null ? {} : { service_tier: serviceTier }),
                 ...(maxOutputTokens === null ? {} : { max_output_tokens: maxOutputTokens }),
                 temperature,
@@ -474,7 +505,7 @@ export function createOpenAIModelAdapter({
                 reasoning: { effort: reasoningEffort },
                 input: [
                   { role: "developer", content: [{ type: "input_text", text: systemPrompt }] },
-                  { role: "user", content: [{ type: "input_text", text: JSON.stringify(input) }] },
+                  { role: "user", content: inputContent(systemPrompt, input, { explicit, cacheThrough }) },
                 ],
                 text: {
                   format: {

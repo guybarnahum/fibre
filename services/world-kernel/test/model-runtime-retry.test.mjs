@@ -275,3 +275,29 @@ test("cognition that may take minutes is offered at the cheaper tier first and s
   assert.deepEqual(tiers, [null, "flex", null], "live cognition was deferred, or deferred cognition never tried the cheaper tier");
   assert.equal(later.output.decision, "accept", "a busy cheaper tier lost the cognition");
 });
+
+test("explicit caching marks only a named stable prefix, and the model reads the same input either way", async () => {
+  const bodies = [];
+  const adapter = createOpenAIModelAdapter({
+    environment: { OPENAI_API_KEY: "test-key" },
+    modelId: "gpt-test",
+    cacheMode: "explicit",
+    fetchImpl: async (_url, init) => {
+      bodies.push(JSON.parse(init.body));
+      return response(200, openAICompleted());
+    },
+  });
+  const input = { thread: { self: "steady ".repeat(800) }, story: { heard: "one more line" } };
+  const ask = (cacheThrough) => adapter.invoke({ systemPrompt: "Decide.", input, responseSchema: SCHEMA,
+    clientRequestId: "explicit-cache", ...(cacheThrough ? { cacheThrough } : {}) });
+  await ask(null);
+  await ask("thread");
+  const [unmarked, marked] = bodies.map((body) => body.input[1].content);
+  const seen = (content) => content.map((part) => part.text).join("");
+  assert.equal(seen(marked), JSON.stringify(input), "splitting for the cache changed what the model reads");
+  assert.equal(seen(unmarked), JSON.stringify(input));
+  assert.ok(unmarked.every((part) => !part.prompt_cache_breakpoint), "an unmarked prompt would pay to be cached");
+  assert.deepEqual(marked.map((part) => Boolean(part.prompt_cache_breakpoint)), [true, false],
+    "only the stable prefix should be marked for reuse");
+  assert.equal(bodies[0].prompt_cache_options?.mode, "explicit");
+});

@@ -140,6 +140,9 @@ export async function takeLiveSocialTurn({
   });
   const events=modelAdapter.streamExpression({
     ...promptRequest("social.live-turn",{threadId:thread.threadId}),
+    // Within one conversation the Thread, its present and the person it faces
+    // stay the same; only what has been said grows.
+    cacheThrough:"counterparties",
     input,
     clientRequestId:requestId("social-live-turn",input),
     signal,
