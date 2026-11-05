@@ -225,6 +225,7 @@ export function createGoogleModelAdapter({
           if (chunk?.usageMetadata) {
             usage = {
               inputTokens:Number(chunk.usageMetadata.promptTokenCount ?? usage.inputTokens),
+              cachedInputTokens:Number(chunk.usageMetadata.cachedContentTokenCount ?? 0),
               outputTokens:Number(chunk.usageMetadata.candidatesTokenCount ?? usage.outputTokens),
               totalTokens:Number(chunk.usageMetadata.totalTokenCount ?? usage.totalTokens),
             };
@@ -272,6 +273,8 @@ export function createGoogleModelAdapter({
         signal?.removeEventListener?.("abort", onAbort);
       }
     },
+    // A request cacheKey is accepted and ignored: Gemini reuses an identical
+    // prompt prefix implicitly and reports it as cachedContentTokenCount.
     async invoke({ systemPrompt, input, responseSchema, clientRequestId }) {
       assertNonEmpty("model systemPrompt", systemPrompt);
       assertPlainObject("model input", input);
@@ -328,6 +331,7 @@ export function createGoogleModelAdapter({
             operationalRetries: structuredClone(operationalRetries),
             usage: {
               inputTokens: Number(body?.usageMetadata?.promptTokenCount ?? 0),
+              cachedInputTokens: Number(body?.usageMetadata?.cachedContentTokenCount ?? 0),
               outputTokens: Number(body?.usageMetadata?.candidatesTokenCount ?? 0),
               totalTokens: Number(body?.usageMetadata?.totalTokenCount ?? 0),
             },

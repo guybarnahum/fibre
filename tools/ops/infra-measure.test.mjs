@@ -75,9 +75,10 @@ test("LivedNow failures are diagnosed without inflating Cloudflare read/write to
 });
 
 test("model calls are measured per cognitive job without counting as database work",()=>{
-  const call=(kind,inputTokens,cachedInputTokens,prefix)=>({event:"model-call",port:"encounter",kind,inputTokens,cachedInputTokens,outputTokens:20,scope:"thr_a",prefix});
+  const call=(kind,inputTokens,cachedInputTokens,prefix,story="s1")=>({event:"model-call",port:"encounter",kind,inputTokens,cachedInputTokens,outputTokens:20,scope:"thr_a",prefix,
+    parts:{system:"p",schema:"q","input.thread":"t","input.story":story}});
   const result=summarizeCosts([
-    call("social-live-expression",5000,4096,["a","b","c",null]),call("social-live-expression",5200,0,["a","b","d",null]),
+    call("social-live-expression",5000,4096,["a","b","c",null]),call("social-live-expression",5200,0,["a","b","d",null],"s2"),
     call("encounter-attention",2000,0,["e",null,null,null]),
   ]);
   assert.equal(result.operations.length,0,"a model call counted as a database request");
@@ -86,4 +87,6 @@ test("model calls are measured per cognitive job without counting as database wo
     "model cost was not attributable to its cognitive job");
   assert.deepEqual(result.modelCalls[0].sharedPrefixChars,{2048:1,4096:1,8192:0,16384:0},
     "a repeated call could not show how much of its prompt the provider could reuse");
+  assert.deepEqual(result.modelCalls[0].firstChangedPart,{"input.story":1},
+    "a repeated call could not show which part of its prompt stopped reuse");
 });

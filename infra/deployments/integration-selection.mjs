@@ -171,8 +171,16 @@ export function lazyReasoningIntegration(value, options = {}) {
 const PREFIX_CHARS = Object.freeze([2048, 4096, 8192, 16384]);
 const short = (text) => sha256(text).slice(0, 8);
 
-// Opaque fingerprints of the prompt's leading characters: equal fingerprints on
-// one cache scope mean the provider could reuse that prefix. No text is logged.
+// Opaque fingerprints of the prompt's parts in the order they are sent: the
+// instructions, the output schema, then each top-level input field. On one
+// cache scope, the first part whose fingerprint differs from the previous call
+// is where any provider's prefix reuse must stop. No text is logged.
+function promptParts(request) {
+  const parts = { system: short(String(request?.systemPrompt ?? "")), schema: short(JSON.stringify(request?.responseSchema ?? null)) };
+  for (const [field, value] of Object.entries(request?.input ?? {})) parts[`input.${field}`] = short(JSON.stringify(value) ?? "null");
+  return parts;
+}
+
 function promptPrefix(request) {
   const text = `${request?.systemPrompt ?? ""}\n${JSON.stringify(request?.responseSchema ?? null)}\n${JSON.stringify(request?.input ?? null)}`;
   return PREFIX_CHARS.map((chars) => text.length < chars ? null : short(text.slice(0, chars)));
@@ -189,11 +197,13 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log }
       prompt: request?.promptRef ?? null,
       scope: typeof request?.cacheKey === "string" ? short(request.cacheKey) : null,
       prefix: promptPrefix(request),
+      parts: promptParts(request),
       outcome,
       modelId: provenance?.modelId ?? adapter.modelId ?? null,
       elapsedMs: Date.now() - startedAt,
       inputTokens: usage?.inputTokens ?? null,
       cachedInputTokens: usage?.cachedInputTokens ?? null,
+      cacheWriteTokens: usage?.cacheWriteTokens ?? null,
       outputTokens: usage?.outputTokens ?? null,
     }));
   };

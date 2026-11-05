@@ -97,12 +97,13 @@ export function summarizeCosts(events) {
     if (event.event === MODEL_CALL) {
       const key = `${event.port}|${event.kind}`;
       const row = modelCalls.get(key) ?? {
-        port:event.port, kind:event.kind, calls:0, inputTokens:0, cachedInputTokens:0, outputTokens:0,
-        repeats:0, sharedPrefixChars:{ 2048:0, 4096:0, 8192:0, 16384:0 },
+        port:event.port, kind:event.kind, calls:0, inputTokens:0, cachedInputTokens:0, cacheWriteTokens:0, outputTokens:0,
+        repeats:0, sharedPrefixChars:{ 2048:0, 4096:0, 8192:0, 16384:0 }, firstChangedPart:{},
       };
       row.calls += 1;
       row.inputTokens += Number(event.inputTokens ?? 0);
       row.cachedInputTokens += Number(event.cachedInputTokens ?? 0);
+      row.cacheWriteTokens += Number(event.cacheWriteTokens ?? 0);
       row.outputTokens += Number(event.outputTokens ?? 0);
       // A repeat is the same job on the same cache scope; count how far its
       // prompt matched the previous one, which bounds any possible cache hit.
@@ -112,10 +113,13 @@ export function summarizeCosts(events) {
         if (previous) {
           row.repeats += 1;
           [2048, 4096, 8192, 16384].forEach((chars, index) => {
-            if (event.prefix[index] !== null && event.prefix[index] === previous[index]) row.sharedPrefixChars[chars] += 1;
+            if (event.prefix[index] !== null && event.prefix[index] === previous.prefix[index]) row.sharedPrefixChars[chars] += 1;
           });
+          const parts = Object.entries(event.parts ?? {});
+          const changed = parts.find(([part, hash]) => previous.parts?.[part] !== hash)?.[0] ?? "none";
+          row.firstChangedPart[changed] = (row.firstChangedPart[changed] ?? 0) + 1;
         }
-        lastPrefixByScope.set(scopeKey, event.prefix);
+        lastPrefixByScope.set(scopeKey, { prefix:event.prefix, parts:event.parts ?? null });
       }
       modelCalls.set(key, row);
       continue;
@@ -311,11 +315,13 @@ function render(summary) {
     }
   }
   if (summary.modelCalls?.length) {
-    lines.push("", "Model calls by port and cognitive job (tokens; cached share of input)");
+    lines.push("", "Model calls by port and cognitive job (tokens; share of input read from / written to the provider cache)");
     for (const row of summary.modelCalls) {
       const cached = row.inputTokens === 0 ? 0 : (100 * row.cachedInputTokens) / row.inputTokens;
+      const written = row.inputTokens === 0 ? 0 : (100 * row.cacheWriteTokens) / row.inputTokens;
       const shared = Object.entries(row.sharedPrefixChars).map(([chars, count]) => `${Number(chars) / 1024}k:${count}`).join(" ");
-      lines.push(`${row.port.padEnd(10)} ${row.kind.padEnd(36)} calls=${String(row.calls).padStart(4)} input=${String(row.inputTokens).padStart(9)} per-call=${String(Math.round(row.inputTokens / row.calls)).padStart(6)} cached=${cached.toFixed(1).padStart(5)}% output=${String(row.outputTokens).padStart(7)} repeats=${String(row.repeats).padStart(3)} same-prefix ${shared}`);
+      const firstChange = Object.entries(row.firstChangedPart).map(([part, count]) => `${part}:${count}`).join(" ") || "-";
+      lines.push(`${row.port.padEnd(10)} ${row.kind.padEnd(36)} calls=${String(row.calls).padStart(4)} input=${String(row.inputTokens).padStart(9)} per-call=${String(Math.round(row.inputTokens / row.calls)).padStart(6)} cached=${cached.toFixed(1).padStart(5)}% written=${written.toFixed(1).padStart(5)}% output=${String(row.outputTokens).padStart(7)} repeats=${String(row.repeats).padStart(3)} same-prefix ${shared} first-change ${firstChange}`);
     }
   }
   if (summary.reconciliationFailures?.length) {
