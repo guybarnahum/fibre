@@ -56,7 +56,7 @@ An append-only record of observable relational acts: offers and their acceptance
 
 ## Stance (Thread-owned)
 
-Each Thread privately authors its stance toward the other — trust, warmth, attraction, wariness — as `relationship_attitude` semantic state in its own words, citing ledger and experience evidence. Stances are asymmetric, change only through the Thread's own cognition after experience, and never become a number that drives behavior.
+Each Thread privately authors its stance toward the other — trust, warmth, attraction, wariness — as `relationship_attitude` semantic state in its own words, citing ledger and experience evidence. Stances are asymmetric, change only through the Thread's own cognition after experience, and never become a number that drives behavior. Attraction is admitted only between adults; see [attraction and orientation](attraction-and-orientation.md).
 
 **Trust is the hinge.** Every new door is a small risk; whether a Thread offers or accepts one is its own judgment, informed by its trust. A broken expectation is a ledger fact, but what it costs is personal: one Thread forgives quickly, another stays guarded.
 

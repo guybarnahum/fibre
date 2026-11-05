@@ -49,6 +49,8 @@ canonical: true
 
 **Relationship stance** — A Thread's private, self-authored attitude toward a specific person (trust, warmth, attraction, wariness), held as semantic state with evidence. Asymmetric and never a behavior-driving number.
 
+**Orientation** — Who a Thread is drawn to. It forms from an inherited felt pull (Body) and the Thread's own lived self-understanding (identity), held separately and possibly in conflict; never derived from sex. See [attraction and orientation](concepts/attraction-and-orientation.md).
+
 **Social mileage** — An operator measure of a pair's shared life: spoken turns, messages and time together, weighted toward recent activity. Inspection only, never a Thread input.
 
 **Meeting** — A voluntary social encounter that enters one or more already-existing lived presents. A meeting adds a Thread-owned participation stance such as accept, decline or defer before the social encounter occurs. Meeting is a special case of encounter, not the general primitive.

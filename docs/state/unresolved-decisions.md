@@ -1,7 +1,7 @@
 ---
 id: fibre-unresolved-decisions
 status: open-question
-last-reviewed: 2026-08-02
+last-reviewed: 2026-11-05
 canonical: true
 ---
 
@@ -11,7 +11,7 @@ canonical: true
 - Relational-plus-event-store versus graph-first persistence?
 - Exact Thread archive format and portability guarantees?
 - What developmental threshold constitutes identity majority?
-- How are attraction and reproductive compatibility modeled without becoming deterministic?
+- How is reproductive compatibility modeled without becoming deterministic? (Attraction is answered by [attraction and orientation](../concepts/attraction-and-orientation.md).)
 - How is FC supply created, governed, taxed, or retired?
 - What rights and appeals exist for dormant or involuntarily retired Threads?
 - How should sponsor consent and likeness revocation work after an Echo becomes independent?

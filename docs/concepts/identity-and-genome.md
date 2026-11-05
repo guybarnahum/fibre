@@ -171,7 +171,7 @@ appearance or social stereotype
 
 Sex may affect lived experience because bodies and worlds can respond differently to it. Those enacted experiences may later become history, memory, meaning and character evidence. That causal route is legitimate and very different from directly mapping sex to a disposition, intelligence, value, profession or behavioral conclusion.
 
-Gender identity, pronouns and sexual orientation are distinct concepts. They are not aliases for biological sex, and Fibre must not derive them automatically from sex. Later self-authored identity may use its own appropriate authority and provenance.
+Gender identity, pronouns and sexual orientation are distinct concepts. They are not aliases for biological sex, and Fibre must not derive them automatically from sex. Later self-authored identity may use its own appropriate authority and provenance. Orientation forms from an inherited felt pull and lived self-understanding held separately; see [attraction and orientation](attraction-and-orientation.md).
 
 ## Needs and mechanical-condition sensitivity
 
