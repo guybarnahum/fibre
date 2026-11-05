@@ -143,11 +143,11 @@ test("each World model call reports its cognitive job and prompt-cache reuse wit
   assert.deepEqual((await adapter.invoke({ clientRequestId:`interior_social-initiation_${hash.slice(0, 24)}` })).output,
     { decision:"silent" }, "metering changed what the Thread decided");
   const spoken = [];
-  for await (const event of adapter.streamExpression({ clientRequestId:`social-live-expression_${hash}` })) spoken.push(event.type);
+  for await (const event of adapter.streamExpression({ clientRequestId:`social-live-turn_${hash}` })) spoken.push(event.type);
   assert.deepEqual(spoken, ["expression_delta", "expression_complete"], "metering changed what the Thread said");
 
   assert.deepEqual(lines.map(({ kind, port, cachedInputTokens }) => ({ kind, port, cachedInputTokens })), [
     { kind:"interior_social-initiation", port:"encounter", cachedInputTokens:4096 },
-    { kind:"social-live-expression", port:"encounter", cachedInputTokens:4096 },
+    { kind:"social-live-turn", port:"encounter", cachedInputTokens:4096 },
   ], "model cost was not attributable to its cognitive job");
 });

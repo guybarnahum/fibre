@@ -461,6 +461,8 @@ silent
   -> no beat
 ```
 
+Each opportunity costs **one** streamed model call (`social.live-turn`), not a structured choice followed by a separate speech call. The output opens with `SAY:`, `ACT:` or `SILENT`; the runtime classifies as soon as the opening is unambiguous. `SAY:` words stream live into the encounter from the first word, `ACT:` is collected and admitted as one participant action, and `SILENT` adds nothing. Output with no recognizable opening is silence for that opportunity only: it is logged (`live-social-turn-unclear`, without words) and the conversation continues. Another participant starting to speak interrupts only speech already in progress; a turn still forming is not aborted, and if it opens as speech it cuts in, as a person who has already decided to speak would. Speech ends audibly when it is cut, not when the model next yields.
+
 There is no active-speaker ownership transfer. A temporary bounded compute-burst guard limits the number of opportunity appraisals in one synchronous autonomous World invocation; it is not a target for conversation length or number of replies, and `endedBy:"bounded"` must remain distinguishable from natural quiescence.
 
 Acceptance also does not reserve the scene. Immediately before the live encounter begins, World re-reads both participants' authoritative CurrentSituation witnesses. If either changed or co-presence ceased, the prior request/acceptance history remains real but no stale-scene conversation is fabricated.

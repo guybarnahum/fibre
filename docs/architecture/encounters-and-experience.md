@@ -306,6 +306,21 @@ without collapsing any of them into a permanent relationship label.
 
 Automatic incidental-witness discovery uses the same model: World derives candidate witnesses from compatible authoritative LivedNow presence, then each Thread independently notices or does not notice the occurrence.
 
+### Doors and ledger
+
+Relationships are modelled as **doors**, a **ledger** and **stances** ([relationships concept](../concepts/relationships-doors-and-trust.md), accepted November 5, 2026). A door is a kind of access two Threads have opened to each other; it opens only when both consent — one offers, the other accepts — and either may close it alone. The ledger records observable relational acts (`offered`, `accepted`, `declined`, `opened`, `closed`, `kept`, `broken`, `repaired`) as facts, never judgments; World never derives trust or attitude from it.
+
+World records acts inside the same transaction that admits the fact they come from, so nothing else has to remember to call it:
+
+- **attention** — a Thread's spoken words in a two-person Story offer it; the other's speech back accepts and opens it. Gestures and repeated unanswered remarks add nothing.
+- **name** — a spoken self-introduction (`disclosedName`) offers it; the other's introduction opens it. An accepted, spoken invitation also opens it, since ADR-0029 acquaintance already grants both names.
+- **conversation** — an invitation is an explicit offer; the invitee's stance accepts or declines it (a deferral declines this offer). The spoken conversation that follows an acceptance opens the door. A conversation entered by continuing an ongoing exchange (ADR-0033) records the first speaker's offer and the other's acceptance when both speak.
+- **contact** — a message to another Thread offers it; a message back opens it.
+
+`relationship_ledger` is append-only (update and delete are refused by trigger); a trigger maintains `relationship_doors`, one compact row per open door, never written directly. Installation replays existing invitations, spoken Stories and Thread messages once through the same rules. `GET /internal/relationships` (private token) returns bounded current doors, recent ledger acts, the spoken shape of recent Stories (turns and questions per speaker, interruptions — never the words) and Thread-to-Thread messages; `npm run world-social:quality -- --env staging [--days N]` prints the operator **Social Life Scorecard** and saves its evidence under `.fibre/world-social/<env>/`. The scorecard's stage (stranger, acknowledged, acquainted, conversed, in touch…) is the furthest contiguous open door: closing a door lowers it while the ledger remembers. Stage, mileage and shares are operator-only derivations, never model-visible and never authoritative.
+
+**Causal status: Notarial.** Doors and ledger record what already happened; no Thread decision, prompt or model call reads them yet, and no new model call is made. A Thread's private, asymmetric **stance** toward another (E4) and the **time** and **place** doors (E5/E6) are deferred; `endedBy` of a live conversation is not persisted. The full door vocabulary is already admitted by the schema, so these extend it without migration.
+
 ## Current autonomy status
 
 The **encounter semantics and aftermath are general**. Fibre can persist environmental occurrences, social dialogue, n-ary stories, silent-witness attention, subjective journal entries and selective memory through one authority stack.

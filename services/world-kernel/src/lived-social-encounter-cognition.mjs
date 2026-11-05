@@ -1,9 +1,7 @@
-import { streamExpressionIntoLiveEncounter } from "./live-encounter-expression.mjs";
+import { relayExpressionIntoLiveEncounter } from "./live-encounter-expression.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
 import {
-  assertExactKeys,
   assertId,
-  assertNonEmpty,
   assertPlainObject,
   canonicalJson,
   sha256,
@@ -12,8 +10,6 @@ import {
 function requestId(kind, input) {
   return `${kind}_${sha256(canonicalJson(input))}`;
 }
-
-const LIVE_CONTRIBUTION_DECISIONS=Object.freeze(["speak","act","silent"]);
 
 function socialLiveInput({
   thread,
@@ -69,56 +65,57 @@ function socialLiveInput({
   });
 }
 
-export async function chooseLiveSocialContribution({
-  thread,
-  situation,
-  perspective,
-  story,
-  liveEncounter,
-  opportunity,
-  modelAdapter,
-}={}){
-  const input=socialLiveInput({
-    thread,
-    situation,
-    perspective,
-    story,
-    liveEncounter,
-    opportunity,
-  });
-  const invocation=await modelAdapter.invoke({
-    ...promptRequest("social.live-contribution",{threadId:thread.threadId}),
-    input,
-    responseSchema:{
-      type:"object",
-      additionalProperties:false,
-      required:["decision","actionText"],
-      properties:{
-        decision:{type:"string",enum:LIVE_CONTRIBUTION_DECISIONS},
-        actionText:{anyOf:[{type:"string",minLength:1,maxLength:500},{type:"null"}]},
-      },
-    },
-    clientRequestId:requestId("social-live-contribution",input),
-  });
+// One streamed call per speaking opportunity. Its text opens with a turn
+// marker; speech streams live as soon as "SAY:" and the first words arrive.
+const TURN_MARKERS=Object.freeze([
+  ["SAY:","speak"],
+  ["ACT:","act"],
+  ["SILENT","silent"],
+]);
+const SILENCE=Object.freeze({decision:"silent"});
 
-  assertPlainObject("live social contribution",invocation.output);
-  assertExactKeys("live social contribution",invocation.output,["decision","actionText"]);
-  if(!LIVE_CONTRIBUTION_DECISIONS.includes(invocation.output.decision)){
-    throw new TypeError("live social contribution decision is invalid");
+// Models sometimes dress the marker as markdown ("**SAY:** ..."); that styling
+// is not part of the turn.
+const MARKER_STYLE=/^[\s*_`#>]+/u;
+
+// undefined while the opening could still become a marker; null when it cannot.
+function turnMarker(text){
+  const opening=text.replace(MARKER_STYLE,"");
+  const head=opening.slice(0,6).toUpperCase();
+  for(const [marker,decision] of TURN_MARKERS){
+    if(head.startsWith(marker)){
+      return {decision,rest:opening.slice(marker.length).replace(/^[*_`]+/u,"")};
+    }
   }
-  if(invocation.output.decision==="act"){
-    assertNonEmpty("live social actionText",invocation.output.actionText);
-  }else if(invocation.output.actionText!==null){
-    throw new TypeError("only live social act may carry actionText");
-  }
-  return Object.freeze({
-    decision:invocation.output.decision,
-    actionText:invocation.output.actionText,
-    provenance:Object.freeze(structuredClone(invocation.provenance??{})),
-  });
+  return TURN_MARKERS.some(([marker])=>marker.startsWith(head))?undefined:null;
 }
 
-export async function streamLiveSocialSpeech({
+function iterable(events){
+  return {[Symbol.asyncIterator]:()=>events};
+}
+
+async function remainder(events){
+  let text="";
+  let provenance=null;
+  for await(const event of iterable(events)){
+    if(event?.type==="expression_delta")text+=event.text;
+    if(event?.type==="expression_complete")provenance=event.provenance??null;
+  }
+  return {text,provenance};
+}
+
+// A turn that does not open recognizably is silence for this opportunity only:
+// the conversation continues, and no words are logged.
+function unclearTurn(text){
+  console.warn(JSON.stringify({
+    event:"live-social-turn-unclear",outcome:"silent",chars:text.length,
+  }));
+  return SILENCE;
+}
+
+// Aborting signal ends the turn: before it opens it is silence; once speaking,
+// only the audible prefix survives. The caller decides when to abort.
+export async function takeLiveSocialTurn({
   thread,
   situation,
   perspective,
@@ -136,14 +133,51 @@ export async function streamLiveSocialSpeech({
     liveEncounter,
     opportunity,
   });
-  return streamExpressionIntoLiveEncounter({
+  const events=modelAdapter.streamExpression({
+    ...promptRequest("social.live-turn",{threadId:thread.threadId}),
+    input,
+    clientRequestId:requestId("social-live-turn",input),
+    signal,
+  })[Symbol.asyncIterator]();
+
+  let text="";
+  let turn;
+  for(;;){
+    const {value,done}=await events.next();
+    if(done||signal?.aborted)break;
+    if(value?.type!=="expression_delta")continue;
+    text+=value.text;
+    turn=turnMarker(text);
+    if(turn===undefined)continue;
+    if(turn===null||turn.decision!=="speak"||turn.rest.trim()!=="")break;
+  }
+  if(signal?.aborted){
+    await events.return?.();
+    return SILENCE;
+  }
+  if(!turn||turn.decision==="speak"&&turn.rest.trim()===""){
+    await remainder(events);
+    return unclearTurn(text);
+  }
+  if(turn.decision==="silent"){
+    await remainder(events);
+    return SILENCE;
+  }
+  if(turn.decision==="act"){
+    const rest=await remainder(events);
+    const actionText=(turn.rest+rest.text).trim();
+    if(actionText==="")return unclearTurn(text);
+    return Object.freeze({decision:"act",actionText,provenance:rest.provenance});
+  }
+
+  const expression=await relayExpressionIntoLiveEncounter({
     encounter:liveEncounter,
     actorId:thread.threadId,
-    modelAdapter,
-    ...promptRequest("social.live-expression",{threadId:thread.threadId}),
-    input,
-    clientRequestId:requestId("social-live-expression",input),
     signal,
+    open:async function*(){
+      yield {type:"expression_delta",text:turn.rest.trimStart()};
+      yield* iterable(events);
+    },
   });
+  return expression.text===""?SILENCE:Object.freeze({decision:"speak",expression});
 }
-

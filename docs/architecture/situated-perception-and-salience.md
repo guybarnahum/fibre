@@ -180,7 +180,8 @@ recognizing faces across time are **deferred**, not silently guessed from
 a portrait. See [observer knowledge owner decision](../decisions/observer-grounded-person-knowledge.md).
 
 **The same rule holds inside a live conversation (November 4 source).**
-Each participant's live contribution and speech now receive that participant's
+Each participant's live turn (one streamed call that chooses speech, action or
+silence and carries any words) now receives that participant's
 own perspective, not World identity: its bounded developed-self evidence
 (identity, memories, states and relationships, as Interior Cognition selects
 them, preferring those involving the person in front of it), its current place

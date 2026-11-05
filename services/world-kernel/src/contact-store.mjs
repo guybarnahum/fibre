@@ -11,6 +11,7 @@ import {
 } from "./persistence-sqlite.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import { createContactTables } from "./contact-schema.mjs";
+import { recordMessageRelationalActs } from "./relationship-doors.mjs";
 
 function digest(value){
   return `sha256:${sha256(canonicalJson(value))}`;
@@ -364,6 +365,7 @@ export class ContactStore {
           ) VALUES (?,?,?)
         `).run(messageId,recipientPartyId,sentAt);
       }
+      recordMessageRelationalActs(this.#database,record);
       return Object.freeze(record);
       });
     }catch(error){ throw translateStorageError(error); }

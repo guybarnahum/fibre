@@ -268,8 +268,9 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     "World write measurement omitted lived and experience storage");
     reportTestEvidence("FIBRE-WORLD-WRITE-BUDGET",report);
     // Storage-only upper bound for the seven-Thread day; semantic heads add
-    // writes only when a new semantic record is admitted.
-    const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??290/7);
+    // writes only when a new semantic record is admitted. The day's one spoken
+    // social act also appends one relational-ledger offer.
+    const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??291/7);
     assert.ok(report.rowsPerThreadDay<=budget,
       "World write budget exceeded "+report.total+"/7: "+JSON.stringify(report.byStore));
     // New alarm activities are measured after the original day budget, so
@@ -703,7 +704,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
           outcome:"noticed",experienceText:"I noticed the other reader's question.",
         });
       });
-      const counts={invocations:0,streams:0,decisions:0,live:0,attention:0,experiences:0};
+      const counts={invocations:0,streams:0,decisions:0,attention:0,experiences:0};
       const adapter={
         provider:"fixture",modelId:"exchange-cost",
         configuration:{transport:"fixture"},
@@ -733,19 +734,14 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
             return {output:{experienceText:"I followed the exchange as it unfolded."},
               provenance:{provider:"fixture",modelId:"exchange-experience"}};
           }
-          if(call.clientRequestId?.startsWith("social-live-contribution_")){
-            counts.live++;
-            return {output:{
-              decision:counts.live===1?"speak":"silent",actionText:null,
-            },provenance:{provider:"fixture",modelId:"exchange-live-choice"}};
-          }
           throw Error("unrecognized exchange cognition");
         },
         async *streamExpression(){
           counts.streams++;
-          yield {type:"expression_delta",text:"One more piece of evidence matters"};
+          yield {type:"expression_delta",
+            text:counts.streams===1?"SAY: One more piece of evidence matters":"SILENT"};
           yield {type:"expression_complete",
-            provenance:{provider:"fixture",modelId:"exchange-speech"}};
+            provenance:{provider:"fixture",modelId:"exchange-live-turn"}};
         },
       };
       const meeting=createSocialMeetingService({
@@ -785,8 +781,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
             &&story.story.beats.length>2);
         assert.equal(conversation?.story.beats.length,3,
           "continued conversation did not record a voluntary later turn");
-        assert.equal(counts.streams,1,
-          "continued exchange cost omitted streamed speech");
+        assert.equal(counts.streams,2,
+          "a speaking and a silent opportunity should cost one streamed call each");
         assert.ok(!situated.listCurrentLifeRelations(pair[0]).some(relation=>
           relation.relationKind==="social_contact"
           &&relation.relatedParty.partyId===pair[1]),
@@ -811,18 +807,20 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     // Derived from the validated pre-change operation counts and the now
     // single-B-tree pending queues / retired indexes. Guy validates after-map.
     const activityCeilings={
-      plan:21,"lived-boundary":126,"social-act":14,
+      plan:21,"lived-boundary":126,"social-act":15,
       "noticed-experience":10,"consolidation-queue":8,
       "social-opportunity":30,"ambient-scene":9,consolidation:72,
       "contact-source":28,"contact-afterthought":17,
-      "contact-outreach":21,"contact-reception":3,"contact-noticing":21,
+      "contact-outreach":22,"contact-reception":3,"contact-noticing":21,
       "social-observed-setup":5,"social-observed":10,
       "environment-source":12,"environment-noticed":24,
       "idle-reconciliation":0,"social-mid-stop-presence":0,
       "contact-reception-mid-stop":0,
-      "social-four-remarks":178,"social-continued-conversation":126,
+      "social-four-remarks":181,"social-continued-conversation":133,
       // Matched per-activity write ceilings from the November 3 local map.
       // The continued path must also prove audible post-seeding speech.
+      // November 5: + one relational-ledger row per act and one row per door
+      // opened (social act and outreach +1, remarks +3, continuation +7).
     };
     const activities=Object.fromEntries(Object.entries(mapReport.activities)
       .concat(Object.keys(activityCeilings).filter(name=>!(name in mapReport.activities))

@@ -62,6 +62,7 @@ import { openSituatedLifeStore } from "#services/world-kernel/src/situated-life-
 import { openEmbodimentStore } from "#services/world-kernel/src/embodiment-store.mjs";
 import { openThreadLifeRestStore } from "#services/world-kernel/src/thread-life-rest-store.mjs";
 import { createThreadLifeRestWriteApi } from "#services/world-kernel/src/thread-life-rest-write-api.mjs";
+import { createRelationshipInspectionApi,openRelationshipInspectionStore } from "#services/world-kernel/src/relationship-inspection.mjs";
 import { createThreadPresentationPublisher } from "../service-boundaries.mjs";
 
 const DEPLOYMENT = parseDeploymentManifest(cloudflareDeploymentYaml);
@@ -87,6 +88,7 @@ const PERSON_CONTACT_REVOKE_ROUTE = "/internal/contact/person-capability/revoke"
 const PERSON_CONTACT_INBOX_ROUTE = "/internal/contact/inbox";
 const THREAD_JOURNAL_ROUTE = /^\/internal\/threads\/[^/]+\/journal$/u;
 const THREAD_LIFE_ROUTES = new Set(["/internal/thread-life","/internal/thread-life/rest","/internal/thread-life/wake"]);
+const RELATIONSHIPS_ROUTE = "/internal/relationships";
 
 function bindingFetch(binding) {
   return (input, init) => binding.fetch(input instanceof Request ? input : new Request(input, init));
@@ -109,6 +111,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.threadJournalApi = null;
     this.worldVenueApi = null;
     this.threadLifeApi = null;
+    this.relationshipsApi = null;
     this.threadJournalBook = null;
     this.experienceConsolidationProcess = null;
     this.experienceConsolidationWakeScheduler = null;
@@ -849,6 +852,16 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.threadLifeApi;
   }
 
+  relationshipsApiForRequest(){
+    if(this.relationshipsApi===null){
+      this.relationshipsApi=createRelationshipInspectionApi({
+        inspectionStore:openRelationshipInspectionStore(this.runtimeForRequest().worldStorage),
+        privateToken:this.env.FIBRE_PRIVATE_TOKEN,
+      });
+    }
+    return this.relationshipsApi;
+  }
+
   worldVenueApiForRequest(){
     if(this.worldVenueApi===null){
       this.worldVenueApi=createWorldVenueWriteApi({
@@ -882,6 +895,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       && url.pathname !== PERSON_CONTACT_REVOKE_ROUTE
       && url.pathname !== PERSON_CONTACT_INBOX_ROUTE
       && !THREAD_LIFE_ROUTES.has(url.pathname)
+      && url.pathname !== RELATIONSHIPS_ROUTE
       && !THREAD_JOURNAL_ROUTE.test(url.pathname)) {
       return super.fetch(request);
     }
@@ -898,6 +912,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         ? this.livedNowApiForRequest().fetch(request)
         : THREAD_LIFE_ROUTES.has(url.pathname)
         ? this.threadLifeApiForRequest().fetch(request)
+        : url.pathname === RELATIONSHIPS_ROUTE
+        ? this.relationshipsApiForRequest().fetch(request)
         : url.pathname === LIVED_ENCOUNTER_ROUTE
           ? this.encounterApiForRequest().fetch(request)
           : url.pathname === ENVIRONMENTAL_ENCOUNTER_ROUTE

@@ -843,7 +843,7 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
     {mode:"remark",laterTurns:0},
   ];
   for(const {mode,laterTurns} of modes){
-    let offered=false,decisions=0,liveCalls=0,streamCalls=0,experienceCalls=0;
+    let offered=false,decisions=0,liveCalls=0,experienceCalls=0;
     const f=groundedReconsiderationFixture({onInvoke:call=>{
       if(call.input?.concern?.kind==="social_initiation"){
         decisions++;
@@ -855,12 +855,6 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
         },evidenceRefs:[],conflictingMotives:[],uncertainty:null},
         provenance:{provider:"fixture",modelId:"ongoing-choice"}};
       }
-      if(call.clientRequestId?.startsWith("social-live-contribution_")){
-        liveCalls++;
-        return {output:{
-          decision:liveCalls<=laterTurns?"speak":"silent",actionText:null,
-        },provenance:{provider:"fixture",modelId:"voluntary-live-choice"}};
-      }
       if(call.clientRequestId?.startsWith("encounter-experience_")){
         experienceCalls++;
         return {output:{experienceText:"I experienced this exchange."},
@@ -870,10 +864,10 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
         passedReason:"I stayed with my own thoughts."},
         provenance:{provider:"fixture",modelId:"independent-attention"}};
     },onStream:async function*(){
-      streamCalls++;
-      yield {type:"expression_delta",text:"One further thought"};
+      const speak=++liveCalls<=laterTurns;
+      yield {type:"expression_delta",text:speak?"SAY: One further thought":"SILENT"};
       yield {type:"expression_complete",
-        provenance:{provider:"fixture",modelId:"voluntary-live-speech"}};
+        provenance:{provider:"fixture",modelId:"voluntary-live-turn"}};
     }});
     try{
       const [actor,other]=f.people;
@@ -953,8 +947,6 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
             .includes(source.encounterId),
         "the conversation lost the previous outward exchange");
         assert.equal(liveCalls,laterTurns+1,"live turns did not stop at silence");
-        assert.equal(streamCalls,laterTurns,
-          "chosen live speech did not become audible turns");
         assert.equal(experienceCalls,2,"conversation did not form two experiences");
         assert.equal(f.experience.listDueSocialOpportunities({
           at:"2026-10-23T10:00:11.000Z",limit:8,
@@ -967,7 +959,6 @@ test("only a witnessed ongoing exchange can become a voluntary conversation",asy
         assert.equal(result.results[0]?.outcome,"acted",
           "a chosen brief remark was forced into conversation");
         assert.equal(liveCalls,0,"a remark opened the live loop");
-        assert.equal(streamCalls,0,"a brief remark triggered live speech");
         const remarks=f.experience.listEncounterStories(actor);
         assert.ok(remarks.some(item=>item.story.beats.length===1
           &&item.story.beats[0].actorThreadId===actor

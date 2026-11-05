@@ -47,73 +47,63 @@ function pair(prefix){
   ];
 }
 
+// Each speaking opportunity is one streamed model call. turn() yields the
+// text pieces the fixture model streams for that opportunity.
+function liveModel(turn){
+  const counts=new Map();
+  const calls=[];
+  return {
+    calls,
+    provider:"fixture",
+    modelId:"fixture-live-turn",
+    configuration:{transport:"fixture"},
+    async invoke(){
+      throw new Error("a speaking opportunity spent a separate structured decision");
+    },
+    async *streamExpression(call){
+      calls.push(call);
+      const name=call.input.thread.name;
+      const count=(counts.get(name)??0)+1;
+      counts.set(name,count);
+      for await(const text of turn({name,count,call})){
+        if(call.signal?.aborted)return;
+        yield {type:"expression_delta",text};
+      }
+      if(call.signal?.aborted)return;
+      yield {type:"expression_complete",provenance:{provider:"fixture",modelId:"fixture-live-turn"}};
+    },
+  };
+}
+
+function encounter(mina,noor,modelAdapter,{text="Can I ask what you meant by that?",expression=null,...rest}={}){
+  return runThreadLiveSocialEncounter({
+    initiator:mina,
+    counterparty:noor,
+    request:{initiatorThreadId:mina.thread.threadId,text},
+    stance:{decision:"accept",expression,suggestedAt:null,reason:"I am willing."},
+    modelAdapter,
+    ...rest,
+  });
+}
+
 test("Thread-to-Thread Live Encounter allows one Thread to cut into another without a turn owner", async () => {
   const [mina,noor]=pair("thr_live");
-  const choices=new Map();
   let minaSpeechFinished;
   const minaSpoke=new Promise((resolve)=>{ minaSpeechFinished=resolve; });
 
-  const modelAdapter={
-    provider:"fixture",
-    modelId:"fixture-live-social",
-    configuration:{transport:"fixture"},
-    async invoke(call){
-      assert.equal(
-        call.clientRequestId.startsWith("social-live-contribution_"),
-        true,
-        "live social runner used the obsolete fixed-story cognition path",
-      );
-      const name=call.input.thread.name;
-      const count=(choices.get(name)??0)+1;
-      choices.set(name,count);
-      return {
-        output:{
-          decision:count===1?"speak":"silent",
-          actionText:null,
-        },
-        provenance:{provider:"fixture",modelId:"fixture-live-social-choice"},
-      };
-    },
-    async *streamExpression(call){
-      const name=call.input.thread.name;
-      if(name==="Noor"){
-        yield {type:"expression_delta",text:"I think that could work."};
-        await minaSpoke;
-        if(call.signal?.aborted)return;
-        yield {type:"expression_delta",text:" But I wanted to finish explaining it."};
-      }else{
-        yield {type:"expression_delta",text:"Wait—"};
-        // This resumes only after Live Encounter has exposed Mina's first delta.
-        await Promise.resolve();
-        minaSpeechFinished();
-      }
-      if(call.signal?.aborted)return;
-      yield {
-        type:"expression_complete",
-        provenance:{
-          provider:"fixture",
-          modelId:"fixture-live-social-expression",
-          providerRequestId:`fixture_${name.toLowerCase()}`,
-        },
-      };
-    },
-  };
-
-  const result=await runThreadLiveSocialEncounter({
-    initiator:mina,
-    counterparty:noor,
-    request:{
-      initiatorThreadId:mina.thread.threadId,
-      text:"Can I ask what you meant by that?",
-    },
-    stance:{
-      decision:"accept",
-      expression:null,
-      suggestedAt:null,
-      reason:"I am willing to answer.",
-    },
-    modelAdapter,
-  });
+  const result=await encounter(mina,noor,liveModel(async function*({name,count}){
+    if(count>1){ yield "SILENT"; return; }
+    if(name==="Noor"){
+      yield "SAY: I think that could work.";
+      await minaSpoke;
+      yield " But I wanted to finish explaining it.";
+    }else{
+      yield "SAY: Wait—";
+      // This resumes only after Live Encounter has exposed Mina's first words.
+      await Promise.resolve();
+      minaSpeechFinished();
+    }
+  }));
 
   assert.deepEqual(
     result.story.beats.map((beat)=>({
@@ -122,21 +112,9 @@ test("Thread-to-Thread Live Encounter allows one Thread to cut into another with
       completion:beat.completion??"complete",
     })),
     [
-      {
-        actorThreadId:mina.thread.threadId,
-        text:"Can I ask what you meant by that?",
-        completion:"complete",
-      },
-      {
-        actorThreadId:noor.thread.threadId,
-        text:"I think that could work.",
-        completion:"interrupted",
-      },
-      {
-        actorThreadId:mina.thread.threadId,
-        text:"Wait—",
-        completion:"complete",
-      },
+      {actorThreadId:mina.thread.threadId,text:"Can I ask what you meant by that?",completion:"complete"},
+      {actorThreadId:noor.thread.threadId,text:"I think that could work.",completion:"interrupted"},
+      {actorThreadId:mina.thread.threadId,text:"Wait—",completion:"complete"},
     ],
     "live social encounter did not preserve audible interruption truth",
   );
@@ -153,63 +131,25 @@ test("Thread-to-Thread Live Encounter allows one Thread to cut into another with
 
 test("Thread live encounter can contribute an outward action without forcing speech", async () => {
   const [mina,noor]=pair("thr_action");
-  const choices=new Map();
 
-  const modelAdapter={
-    provider:"fixture",
-    modelId:"fixture-live-action",
-    configuration:{transport:"fixture"},
-    async invoke(call){
-      const name=call.input.thread.name;
-      const count=(choices.get(name)??0)+1;
-      choices.set(name,count);
-      if(name==="Noor"&&count===1){
-        return {
-          output:{decision:"act",actionText:"Noor slides the sketchbook slightly toward Mina."},
-          provenance:{provider:"fixture",modelId:"fixture-live-action-choice"},
-        };
-      }
-      return {
-        output:{decision:"silent",actionText:null},
-        provenance:{provider:"fixture",modelId:"fixture-live-action-choice"},
-      };
-    },
-    async *streamExpression(){
-      throw new Error("action-only proof should not stream speech");
-    },
-  };
-
-  const result=await runThreadLiveSocialEncounter({
-    initiator:mina,
-    counterparty:noor,
-    request:{
-      initiatorThreadId:mina.thread.threadId,
-      text:"Can I see what you're working on?",
-    },
-    stance:{
-      decision:"accept",
-      expression:null,
-      suggestedAt:null,
-      reason:"I am comfortable showing it.",
-    },
-    modelAdapter,
-  });
+  const result=await encounter(mina,noor,liveModel(async function*({name,count}){
+    if(name==="Noor"&&count===1){
+      yield "ACT: Noor slides the sketchbook ";
+      yield "slightly toward Mina.";
+      return;
+    }
+    yield "SILENT";
+  }),{text:"Can I see what you're working on?"});
 
   assert.deepEqual(
     result.story.beats.map((beat)=>beat.kind),
     ["utterance","action"],
     "outward action did not become live encounter history",
   );
-  assert.equal(
-    result.story.beats[1].actorThreadId,
-    noor.thread.threadId,
-    "live action lost its actor",
-  );
-  assert.equal(
-    result.story.beats[1].text,
-    "Noor slides the sketchbook slightly toward Mina.",
-    "live action lost its observable content",
-  );
+  assert.equal(result.story.beats[1].actorThreadId,noor.thread.threadId,
+    "live action lost its actor");
+  assert.equal(result.story.beats[1].text,"Noor slides the sketchbook slightly toward Mina.",
+    "live action lost its observable content");
 });
 
 test("delayed private thought can originate speech during an active encounter", async () => {
@@ -221,71 +161,31 @@ test("delayed private thought can originate speech during an active encounter", 
   const minaSpeech=new Promise((resolve)=>{minaSpoke=resolve;});
   let published=false;
 
-  const modelAdapter={
-    provider:"fixture",
-    modelId:"fixture-live-afterthought",
-    configuration:{transport:"fixture"},
-    async invoke(call){
-      const name=call.input.thread.name;
-      const opportunity=call.input.liveInteraction.opportunity;
-      if(name==="Mina")minaOpportunities.push(structuredClone(opportunity));
-      const speak=name==="Noor"
-        ? opportunity.reason==="end"&&++noorContributionCount===1
-        : opportunity.reason==="afterthought";
-      return {
-        output:{decision:speak?"speak":"silent",actionText:null},
-        provenance:{provider:"fixture",modelId:"fixture-live-afterthought-choice"},
-      };
-    },
-    async *streamExpression(call){
-      if(call.input.thread.name==="Noor"){
-        yield {type:"expression_delta",text:"I thought the sketch needed more contrast."};
-        published=true;
-        const delivery=registry.publishAfterthoughts({
-          threadId:mina.thread.threadId,
-          consolidationId:"con_afterthought_live",
-          afterthoughts:[{
-            kind:"question",
-            text:"Did I assume Noor wanted critique when she wanted company?",
-          }],
-        });
-        assert.equal(delivery.activeEncounters,1,
-          "delayed thought did not find Mina's active encounter");
-        await minaSpeech;
-        if(call.signal?.aborted)return;
-        yield {type:"expression_delta",text:" I was going to keep explaining."};
-      }else{
-        yield {type:"expression_delta",text:"Actually—did you want critique, or just company?"};
-        minaSpoke();
-      }
-      if(call.signal?.aborted)return;
-      yield {
-        type:"expression_complete",
-        provenance:{
-          provider:"fixture",
-          modelId:"fixture-live-afterthought-expression",
-          providerRequestId:"fixture-live-afterthought",
-        },
-      };
-    },
-  };
-
-  const result=await runThreadLiveSocialEncounter({
-    initiator:mina,
-    counterparty:noor,
-    request:{
-      initiatorThreadId:mina.thread.threadId,
-      text:"What were you changing in the sketch?",
-    },
-    stance:{
-      decision:"accept",
-      expression:null,
-      suggestedAt:null,
-      reason:"I am happy to answer.",
-    },
-    modelAdapter,
-    liveEncounterRegistry:registry,
-  });
+  const result=await encounter(mina,noor,liveModel(async function*({name,call}){
+    const opportunity=call.input.liveInteraction.opportunity;
+    if(name==="Mina"){
+      minaOpportunities.push(structuredClone(opportunity));
+      if(opportunity.reason!=="afterthought"){ yield "SILENT"; return; }
+      yield "SAY: Actually—did you want critique, or just company?";
+      minaSpoke();
+      return;
+    }
+    if(opportunity.reason!=="end"||++noorContributionCount>1){ yield "SILENT"; return; }
+    yield "SAY: I thought the sketch needed more contrast.";
+    published=true;
+    const delivery=registry.publishAfterthoughts({
+      threadId:mina.thread.threadId,
+      consolidationId:"con_afterthought_live",
+      afterthoughts:[{
+        kind:"question",
+        text:"Did I assume Noor wanted critique when she wanted company?",
+      }],
+    });
+    assert.equal(delivery.activeEncounters,1,
+      "delayed thought did not find Mina's active encounter");
+    await minaSpeech;
+    yield " I was going to keep explaining.";
+  }),{text:"What were you changing in the sketch?",liveEncounterRegistry:registry});
 
   assert.equal(published,true,"delayed thought was never published");
   assert.equal(
@@ -320,45 +220,107 @@ test("delayed private thought can originate speech during an active encounter", 
     "finished encounter remained registered as live");
 });
 
-
 test("a reply begun mid-sentence answers that utterance once, in the speaker's own words",async()=>{
   const [mina,noor]=pair("thr_live_once");
-  const choices=new Map();
-  const modelAdapter={
-    provider:"fixture",modelId:"fixture-live-once",configuration:{transport:"fixture"},
-    async invoke(call){
-      const name=call.input.thread.name;
-      const count=(choices.get(name)??0)+1;
-      choices.set(name,count);
+  const result=await encounter(mina,noor,liveModel(async function*({name,count}){
+    if(name==="Mina"){
       // Mina starts deciding after Noor's first sentence; Noor finishes meanwhile.
-      if(name==="Mina")await new Promise((resolve)=>setTimeout(resolve,20));
+      await new Promise((resolve)=>setTimeout(resolve,20));
       // Like a real model, Mina would answer the same heard line again if asked.
-      const willing=name==="Mina"?count<=2:count===1;
-      return {output:{decision:willing?"speak":"silent",actionText:null},
-        provenance:{provider:"fixture",modelId:"fixture-live-once-choice"}};
-    },
-    async *streamExpression(call){
-      const name=call.input.thread.name;
-      if(name==="Noor"){
-        yield {type:"expression_delta",text:"Usually I walk."};
-        await new Promise((resolve)=>setTimeout(resolve,1));
-        yield {type:"expression_delta",text:" What do you prefer?"};
-      }else{
-        yield {type:"expression_delta",text:"\u201cMuch the same, actually.\u201d"};
-      }
-      yield {type:"expression_complete",
-        provenance:{provider:"fixture",modelId:"fixture-live-once-speech"}};
-    },
-  };
-  const result=await runThreadLiveSocialEncounter({
-    initiator:mina,counterparty:noor,
-    request:{initiatorThreadId:mina.thread.threadId,text:"Do you walk here often?"},
-    stance:{decision:"accept",expression:null,suggestedAt:null,reason:"I am willing."},
-    modelAdapter,
-  });
+      yield count<=2?"SAY: “Much the same, actually.”":"SILENT";
+      return;
+    }
+    if(count>1){ yield "SILENT"; return; }
+    yield "SAY: Usually I walk.";
+    await new Promise((resolve)=>setTimeout(resolve,1));
+    yield " What do you prefer?";
+  }),{text:"Do you walk here often?"});
   const minaLines=result.story.beats.filter((beat)=>
     beat.actorThreadId===mina.thread.threadId&&beat.kind==="utterance")
     .map((beat)=>beat.text);
   assert.deepEqual(minaLines,["Do you walk here often?","Much the same, actually."],
     "one heard utterance produced a repeated reply or quoted speech");
+});
+
+test("each speaking opportunity costs exactly one model call, whether it becomes speech, action or silence",async()=>{
+  const [mina,noor]=pair("thr_live_cost");
+  const model=liveModel(async function*({name,count}){
+    if(name==="Noor"&&count===1){
+      // Arrives token by token, as a provider streams it.
+      for(const piece of ["S","AY",": ","Sure",", let's talk."])yield piece;
+      return;
+    }
+    if(name==="Mina"&&count===1){ yield "ACT: Mina pulls out a chair."; return; }
+    yield "SILENT";
+  });
+  const result=await encounter(mina,noor,model);
+  assert.deepEqual(result.story.beats.map((beat)=>beat.kind).sort(),["action","utterance","utterance"],
+    "the conversation lost a chosen contribution");
+  assert.equal(result.story.beats.find((beat)=>beat.actorThreadId===noor.thread.threadId)?.text,
+    "Sure, let's talk.","the turn marker leaked into spoken words");
+  assert.equal(model.calls.length,result.live.opportunityAppraisals,
+    "a speaking opportunity did not cost exactly one model call");
+  assert.equal(new Set(model.calls.map((call)=>call.promptRef)).size,1,
+    "speaking opportunities used more than one cognitive job");
+  assert.equal(result.live.endedBy,"quiescent","the conversation did not settle");
+});
+
+test("a Thread that decides to speak while the other starts again cuts in rather than losing its turn",async()=>{
+  const [mina,noor]=pair("thr_live_forming");
+  const registry=createLiveEncounterRegistry();
+  let noorRestarted,minaSpoke;
+  const restarted=new Promise((resolve)=>{noorRestarted=resolve;});
+  const spoke=new Promise((resolve)=>{minaSpoke=resolve;});
+  const result=await encounter(mina,noor,liveModel(async function*({name,count,call}){
+    const reason=call.input.liveInteraction.opportunity.reason;
+    if(name==="Mina"){
+      if(count>1){ yield "SILENT"; return; }
+      await restarted;
+      yield "SAY: Before you go on—";
+      minaSpoke();
+      return;
+    }
+    if(reason==="afterthought"){
+      yield "SAY: Actually, I remember something.";
+      noorRestarted();
+      await Promise.race([spoke,new Promise((resolve)=>setTimeout(resolve,50))]);
+      yield " It was about the river.";
+      return;
+    }
+    if(count>1){ yield "SILENT"; return; }
+    yield "SAY: Yes, let's.";
+    registry.publishAfterthoughts({
+      threadId:noor.thread.threadId,
+      consolidationId:"con_forming_turn",
+      afterthoughts:[{kind:"insight",text:"I meant to mention the river."}],
+    });
+  }),{text:"Shall we sit?",liveEncounterRegistry:registry});
+  assert.ok(result.story.beats.some((beat)=>
+    beat.actorThreadId===mina.thread.threadId&&beat.text==="Before you go on—"),
+  "a turn already forming was lost when the other person started speaking");
+  assert.equal(result.story.beats.find((beat)=>beat.completion==="interrupted")?.text,
+    "Actually, I remember something.","the decided speech did not cut in");
+});
+
+test("an unclear turn is silence for that opportunity and the conversation continues",async()=>{
+  const [mina,noor]=pair("thr_live_unclear");
+  const warn=console.warn;
+  console.warn=()=>{};
+  try{
+    const result=await encounter(mina,noor,liveModel(async function*({name,count}){
+      if(name==="Noor"){
+        yield count===1?"SAY: I walk here most days. Usually alone.":"SILENT";
+        return;
+      }
+      if(count===1){ yield "Hmm, well, I suppose I would say something."; return; }
+      yield count===2?"SAY: Alone sounds peaceful.":"SILENT";
+    }),{text:"Do you walk here often?"});
+    assert.equal(result.live.endedBy,"quiescent","an unclear turn ended the conversation");
+    assert.equal(result.story.beats.some((beat)=>beat.text.includes("suppose")),false,
+      "unclear cognition output became audible history");
+    assert.equal(result.story.beats.at(-1).text,"Alone sounds peaceful.",
+      "the Thread lost its later chance to speak after an unclear turn");
+  }finally{
+    console.warn=warn;
+  }
 });

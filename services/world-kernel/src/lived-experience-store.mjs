@@ -9,6 +9,7 @@ import { migrateDatabase, translateStorageError } from "./persistence-sqlite.mjs
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 import { openWorldStateDatabase,worldTableExists } from "./world-state-storage.mjs";
 import { spokenNameDisclosure } from "./spoken-name.mjs";
+import { recordInvitationRelationalActs,recordStoryRelationalActs } from "./relationship-doors.mjs";
 
 function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
@@ -1128,6 +1129,7 @@ export class LivedExperienceStore {
         for (const participant of threadPresence) {
           insertPresence.run(encounterId,participant.threadId,participant.situationId);
         }
+        recordStoryRelationalActs(this.#database,record);
         if(followupAfterMs!==null){
           const dueAt=new Date(Date.parse(normalized.occurredAt)+followupAfterMs).toISOString();
           this.#database.prepare(`
@@ -1326,6 +1328,7 @@ export class LivedExperienceStore {
           record.initiatorSituationId,record.recipientSituationId,record.requestText,record.responseDecision,
           record.responseExpression,record.suggestedAt,recordDigest,
         );
+        recordInvitationRelationalActs(this.#database,record);
         return record;
       });
     } catch (error) { throw translateStorageError(error); }

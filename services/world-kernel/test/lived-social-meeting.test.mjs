@@ -223,9 +223,9 @@ function fixture({
   const observedAtInitiation=[];
   const liveInputs=[];
   const stanceNames = [];
-  const liveContributionNames = [];
+  const liveTurnNames = [];
   const liveExpressionNames = [];
-  const liveContributionCounts = new Map();
+  const liveTurnCounts = new Map();
   const journals = [];
   const bookWrites = [];
   const memories = [];
@@ -385,21 +385,6 @@ function fixture({
           provenance:{ provider:"fixture", modelId:"fixture-social" },
         };
       }
-      if (call.clientRequestId.startsWith("social-live-contribution_")) {
-        liveInputs.push(structuredClone(call.input));
-        const name=call.input.thread.name;
-        liveContributionNames.push(name);
-        const count=(liveContributionCounts.get(name)??0)+1;
-        liveContributionCounts.set(name,count);
-        const speak=(name==="Noor"||name==="Sela")&&count===1;
-        return {
-          output:{
-            decision:speak?"speak":"silent",
-            actionText:null,
-          },
-          provenance:{ provider:"fixture", modelId:"fixture-live-social-choice" },
-        };
-      }
       if (call.clientRequestId.startsWith("encounter-attention_")) {
         const actors = new Set(
           call.input.encounterStory.story.beats
@@ -492,15 +477,26 @@ function fixture({
     },
     async *streamExpression(call) {
       modelCalls += 1;
-      liveExpressionNames.push(call.input.thread.name);
+      assert.ok(call.clientRequestId.startsWith("social-live-turn_"),
+        `unexpected streamed cognition ${call.clientRequestId}`);
+      liveInputs.push(structuredClone(call.input));
       const name=call.input.thread.name;
-      const text=name==="Noor"
+      liveTurnNames.push(name);
+      const count=(liveTurnCounts.get(name)??0)+1;
+      liveTurnCounts.set(name,count);
+      if((name!=="Noor"&&name!=="Sela")||count>1){
+        yield { type:"expression_delta", text:"SILENT" };
+        yield { type:"expression_complete", provenance:{ provider:"fixture", modelId:"fixture-live-turn" } };
+        return;
+      }
+      liveExpressionNames.push(name);
+      const text="SAY: "+(name==="Noor"
         ? rude
           ? "You could have asked without talking to me like that."
           : "Sure. I’m in the middle of this sketch, but quiet company sounds nice."
         : name==="Sela"
           ? "Sure, I can talk for a minute."
-          : "That makes sense.";
+          : "That makes sense.");
       if(call.signal?.aborted)return;
       yield { type:"expression_delta", text };
       if(call.signal?.aborted)return;
@@ -508,7 +504,7 @@ function fixture({
         type:"expression_complete",
         provenance:{
           provider:"fixture",
-          modelId:"fixture-live-social-expression",
+          modelId:"fixture-live-turn",
           providerRequestId:`fixture_live_${liveExpressionNames.length}`,
         },
       };
@@ -763,7 +759,7 @@ function fixture({
     observedAtInitiation,
     liveInputs,
     stanceNames,
-    liveContributionNames,
+    liveTurnNames,
     liveExpressionNames,
     modelCallCount:() => modelCalls,
   };
@@ -975,7 +971,7 @@ test("E2 accepted meeting is one Encounter Story with distinct Thread Experience
     [mina.threadId,noor.threadId],
     "accepted meeting fell back to a fixed opener/reply/closing script",
   );
-  assert.equal(f.liveContributionNames[0],"Noor",
+  assert.equal(f.liveTurnNames[0],"Noor",
     "accepted request did not become Noor's live speaking opportunity");
   assert.deepEqual(f.liveExpressionNames,["Noor"],
     "silent initiator was forced into a canned closing");

@@ -1,9 +1,6 @@
 import { createLiveEncounter } from "./live-encounter.mjs";
 import { spokenWords } from "./live-encounter-expression.mjs";
-import {
-  chooseLiveSocialContribution,
-  streamLiveSocialSpeech,
-} from "./lived-social-encounter-cognition.mjs";
+import { takeLiveSocialTurn } from "./lived-social-encounter-cognition.mjs";
 import {
   assertId,
   assertNonEmpty,
@@ -58,9 +55,8 @@ export async function runThreadLiveSocialEncounter({
     ||maxOpportunityAppraisals>32){
     throw new TypeError("live social maxOpportunityAppraisals must be 1-32");
   }
-  if(!modelAdapter||typeof modelAdapter.invoke!=="function"
-    ||typeof modelAdapter.streamExpression!=="function"){
-    throw new TypeError("live social encounter requires structured and streaming model cognition");
+  if(typeof modelAdapter?.streamExpression!=="function"){
+    throw new TypeError("live social encounter requires streaming model cognition");
   }
   if(liveEncounterRegistry!==null&&(
     typeof liveEncounterRegistry.register!=="function"
@@ -85,6 +81,7 @@ export async function runThreadLiveSocialEncounter({
   const busy=new Set();
   const deferred=new Map();
   const activeControllers=new Map();
+  const speaking=new Set();
   const pending=new Set();
   const subscriptions=[];
   const registryUnsubscribes=[];
@@ -101,14 +98,19 @@ export async function runThreadLiveSocialEncounter({
     for(const controller of activeControllers.values())controller.abort(reason);
   }
 
+  // Starting to speak interrupts whoever is mid-utterance. A turn still forming
+  // is not interrupted: if it opens as speech, that speech cuts in, as a person
+  // who has decided to speak would.
   function recordEvent(listenerId,event){
     if(event.type==="speech_start"&&event.actorId===listenerId){
+      speaking.add(listenerId);
       for(const [actorId,controller] of activeControllers.entries()){
-        if(actorId!==event.actorId)controller.abort("interrupted_by_speech");
+        if(actorId!==listenerId&&speaking.has(actorId))controller.abort("interrupted_by_speech");
       }
       return;
     }
     if(event.type==="speech_end"&&event.actorId===listenerId){
+      speaking.delete(listenerId);
       if(typeof event.text==="string"&&event.text.trim()!==""){
         story.beats.push({
           actorThreadId:event.actorId,
@@ -134,8 +136,10 @@ export async function runThreadLiveSocialEncounter({
 
   async function handleOpportunity(participantId,opportunity){
     const context=contexts.get(participantId);
+    const controller=new AbortController();
+    activeControllers.set(participantId,controller);
     try{
-      const choice=await chooseLiveSocialContribution({
+      const turn=await takeLiveSocialTurn({
         thread:context.thread,
         situation:context.situation,
         perspective:context.perspective,
@@ -143,36 +147,18 @@ export async function runThreadLiveSocialEncounter({
         liveEncounter,
         opportunity,
         modelAdapter,
+        signal:controller.signal,
       });
-      if(stopped)return;
-      if(choice.decision==="silent")return;
-      contributionCount+=1;
-
-      if(choice.decision==="act"){
+      if(turn.decision==="silent")return;
+      if(turn.decision==="act"){
+        if(stopped)return;
         liveEncounter.pushAction({
           actorId:participantId,
-          text:choice.actionText,
+          text:turn.actionText,
         });
-        return true;
       }
-
-      const controller=new AbortController();
-      activeControllers.set(participantId,controller);
-      try{
-        await streamLiveSocialSpeech({
-          thread:context.thread,
-          situation:context.situation,
-          perspective:context.perspective,
-          story,
-          liveEncounter,
-          opportunity,
-          modelAdapter,
-          signal:controller.signal,
-        });
-        return true;
-      }finally{
-        activeControllers.delete(participantId);
-      }
+      contributionCount+=1;
+      return true;
     }catch(error){
       // Never end a conversation silently: report the failure without any
       // private or spoken content, then stop as before.
@@ -182,6 +168,8 @@ export async function runThreadLiveSocialEncounter({
         message:String(error?.message??error).slice(0,160),
       }));
       stop("cognition_error");
+    }finally{
+      activeControllers.delete(participantId);
     }
   }
 

@@ -29,15 +29,40 @@ export async function streamExpressionIntoLiveEncounter({
   promptRef=null,
   signal=null,
 }={}){
+  assertExpressionModelAdapter(modelAdapter);
+  assertNonEmpty("live expression systemPrompt",systemPrompt);
+  assertPlainObject("live expression input",input);
+  assertId("live expression clientRequestId",clientRequestId);
+  return relayExpressionIntoLiveEncounter({
+    encounter,
+    actorId,
+    signal,
+    open:(streamSignal)=>modelAdapter.streamExpression({
+      systemPrompt,
+      input,
+      clientRequestId,
+      ...(cacheKey===null?{}:{cacheKey}),
+      ...(promptRef===null?{}:{promptRef}),
+      signal:streamSignal,
+    }),
+  });
+}
+
+// Relays outward expression into the encounter as audible speech while it
+// arrives. open(signal) yields expression_delta* then expression_complete;
+// aborting is an interruption, after which only the audible prefix survives.
+export async function relayExpressionIntoLiveEncounter({
+  encounter,
+  actorId,
+  open,
+  signal=null,
+}={}){
   liveEncounterMethod(encounter,"pushSpeechDelta");
   liveEncounterMethod(encounter,"endSpeech");
   liveEncounterMethod(encounter,"interruptSpeech");
   liveEncounterMethod(encounter,"subscribe");
   assertId("live expression actorId",actorId);
-  assertExpressionModelAdapter(modelAdapter);
-  assertNonEmpty("live expression systemPrompt",systemPrompt);
-  assertPlainObject("live expression input",input);
-  assertId("live expression clientRequestId",clientRequestId);
+  if(typeof open!=="function")throw new TypeError("live expression requires an expression stream");
   if(signal!==null&&typeof signal?.addEventListener!=="function"){
     throw new TypeError("live expression signal must be an AbortSignal");
   }
@@ -45,7 +70,16 @@ export async function streamExpressionIntoLiveEncounter({
   let text="";
   let provenance=null;
   let completed=false;
+  let interruption=null;
+  // Speech ends audibly when it is cut, not whenever the model next yields.
+  const interrupt=()=>interruption??=Object.freeze({
+    text,
+    completion:"interrupted",
+    speechRef:text===""?null:encounter.interruptSpeech({actorId})?.speechRef??null,
+    provenance:null,
+  });
   const controller=new AbortController();
+  controller.signal.addEventListener("abort",()=>queueMicrotask(interrupt),{once:true});
   const relayAbort=()=>controller.abort(signal?.reason);
   if(signal?.aborted)controller.abort(signal.reason);
   else signal?.addEventListener?.("abort",relayAbort,{once:true});
@@ -56,14 +90,7 @@ export async function streamExpressionIntoLiveEncounter({
   });
 
   try{
-    for await(const event of modelAdapter.streamExpression({
-      systemPrompt,
-      input,
-      clientRequestId,
-      ...(cacheKey===null?{}:{cacheKey}),
-      ...(promptRef===null?{}:{promptRef}),
-      signal:controller.signal,
-    })){
+    for await(const event of open(controller.signal)){
       if(controller.signal.aborted)break;
       if(event?.type==="expression_delta"){
         assertNonEmpty("live expression delta",event.text);
@@ -80,15 +107,7 @@ export async function streamExpressionIntoLiveEncounter({
       }
     }
   }catch(error){
-    if(controller.signal.aborted){
-      const interrupted=text===""?null:encounter.interruptSpeech({actorId});
-      return Object.freeze({
-        text,
-        completion:"interrupted",
-        speechRef:interrupted?.speechRef??null,
-        provenance:null,
-      });
-    }
+    if(controller.signal.aborted)return interrupt();
     if(text!=="")encounter.interruptSpeech({actorId});
     throw error;
   }finally{
@@ -96,15 +115,7 @@ export async function streamExpressionIntoLiveEncounter({
     signal?.removeEventListener?.("abort",relayAbort);
   }
 
-  if(controller.signal.aborted){
-    const interrupted=text===""?null:encounter.interruptSpeech({actorId});
-    return Object.freeze({
-      text,
-      completion:"interrupted",
-      speechRef:interrupted?.speechRef??null,
-      provenance:null,
-    });
-  }
+  if(controller.signal.aborted)return interrupt();
 
   if(!completed){
     throw new Error("live expression ended without completion");

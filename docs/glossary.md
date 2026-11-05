@@ -43,6 +43,14 @@ canonical: true
 
 **Encounter visualization prompt** — A durable rich media-neutral reconstruction prompt derived from an admitted Encounter Story and bound visual/evidence references. It may later drive a still image, short video or another representation. The prompt is derived reconstruction authority; rendered media is replaceable representation and never World-event evidence.
 
+**Door** — A kind of access two Threads have opened to each other (attention, name, conversation, contact, time, place, confidence, care, romance, commitment). A door opens only when both consent and either may close it alone. See [relationships](concepts/relationships-doors-and-trust.md).
+
+**Relational ledger** — World's append-only record of observable relational acts between two Threads: offers, acceptances, refusals, kept and broken expectations, closings and repairs. Facts, never judgments; World never derives trust from it.
+
+**Relationship stance** — A Thread's private, self-authored attitude toward a specific person (trust, warmth, attraction, wariness), held as semantic state with evidence. Asymmetric and never a behavior-driving number.
+
+**Social mileage** — An operator measure of a pair's shared life: spoken turns, messages and time together, weighted toward recent activity. Inspection only, never a Thread input.
+
 **Meeting** — A voluntary social encounter that enters one or more already-existing lived presents. A meeting adds a Thread-owned participation stance such as accept, decline or defer before the social encounter occurs. Meeting is a special case of encounter, not the general primitive.
 
 **Journal** — A Thread's private contemporaneous writing about lived experience. Journal is subjective reflection and may contain feelings, ambiguity and personal interpretation; it is neither objective history nor automatically autobiographical memory.
