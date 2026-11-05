@@ -6,7 +6,8 @@ import { fileURLToPath } from "node:url";
 // Each cognitive job's system prompt is one Markdown file with a small front
 // matter. Prompts are fixed text (everything that varies belongs in the model
 // input), so they compile into one committed module that runs unchanged in Node
-// and in Workers, where files cannot be read at runtime.
+// and in Workers, where files cannot be read at runtime. A prompt that
+// `extends` another is that prompt's text, a blank line, then its own.
 const ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const SETS = Object.freeze([
   { source:"services/world-kernel/prompts", output:"services/world-kernel/src/generated/prompts.mjs" },
@@ -18,6 +19,7 @@ const FIELDS = Object.freeze({
   cache:/^(?:thread|shared)$/u,
   latency:/^(?:live|minutes)$/u,
 });
+const OPTIONAL=Object.freeze({ extends:FIELDS.id });
 
 function parsePrompt(path) {
   const raw = readFileSync(path, "utf8");
@@ -27,23 +29,35 @@ function parsePrompt(path) {
   const meta = {};
   for (const line of raw.slice(4, end).split("\n")) {
     const match = /^([a-z]+):\s*(.+)$/u.exec(line);
-    if (!match || !Object.hasOwn(FIELDS, match[1])) throw new TypeError(`${path}: unexpected front matter line "${line}"`);
+    if (!match || !(Object.hasOwn(FIELDS, match[1]) || Object.hasOwn(OPTIONAL, match[1]))) throw new TypeError(`${path}: unexpected front matter line "${line}"`);
     meta[match[1]] = match[2].trim();
   }
   for (const [field, pattern] of Object.entries(FIELDS)) {
     if (!pattern.test(meta[field] ?? "")) throw new TypeError(`${path}: front matter ${field} is missing or invalid`);
   }
+  if (meta.extends !== undefined && !OPTIONAL.extends.test(meta.extends)) throw new TypeError(`${path}: front matter extends is invalid`);
   const text = raw.slice(end + 5).replace(/\n$/u, "");
   if (text.trim() === "") throw new TypeError(`${path}: prompt text is empty`);
   if (`${meta.id}.md` !== path.split("/").at(-1)) throw new TypeError(`${path}: file name must be ${meta.id}.md`);
-  return Object.freeze({
-    id:meta.id,
-    version:Number(meta.version),
-    depth:meta.depth,
-    cache:meta.cache,
-    latency:meta.latency,
-    text,
-    digest:`sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`,
+  return { id:meta.id, version:Number(meta.version), depth:meta.depth, cache:meta.cache,
+    latency:meta.latency, extends:meta.extends ?? null, text, path };
+}
+
+function compose(parsed) {
+  const byId = new Map(parsed.map((prompt) => [prompt.id, prompt]));
+  const textOf = (prompt, seen = new Set()) => {
+    if (prompt.extends === null) return prompt.text;
+    const parent = byId.get(prompt.extends);
+    if (parent === undefined) throw new TypeError(`${prompt.path}: extends unknown prompt ${prompt.extends}`);
+    if (seen.has(prompt.id)) throw new TypeError(`${prompt.path}: extends itself`);
+    return `${textOf(parent, new Set([...seen, prompt.id]))}\n\n${prompt.text}`;
+  };
+  return parsed.map((prompt) => {
+    const text = textOf(prompt);
+    return Object.freeze({
+      id:prompt.id, version:prompt.version, depth:prompt.depth, cache:prompt.cache, latency:prompt.latency,
+      text, digest:`sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`,
+    });
   });
 }
 
@@ -68,7 +82,8 @@ for (const set of SETS) {
     .sort()
     .map((name) => parsePrompt(join(directory, name)))
     .filter(Boolean);
-  const expected = render({ source:set.source, prompts });
+  const composed = compose(prompts);
+  const expected = render({ source:set.source, prompts:composed });
   const output = join(ROOT, set.output);
   let actual = null;
   try { actual = readFileSync(output, "utf8"); } catch {}

@@ -1,3 +1,4 @@
+import { promptRequest } from "./cognition-prompts.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import {
   assertId,
@@ -63,11 +64,7 @@ export async function formThreadJournalProfile({ thread, modelAdapter }) {
     },
   };
   const invocation = await modelAdapter.invoke({
-    systemPrompt:`You are one persistent Fibre Thread choosing the private form of your own journal.
-Choose a title and a durable aesthetic that feel personally natural to this Thread rather than generic.
-aestheticNote is free-form first-person taste: describe the feel of the pages, density, rhythm, ornament, restraint, or other qualities you want.
-presentationStyle is only a rendering hint; the natural-language aestheticNote is the authoritative taste.
-Do not describe the Thread from outside and do not imitate a demographic stereotype.`,
+    ...promptRequest("journal.form",{threadId:thread.threadId}),
     input,
     responseSchema:{
       type:"object",

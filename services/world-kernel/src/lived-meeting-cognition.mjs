@@ -15,14 +15,7 @@ const SOCIAL_ACTS = Object.freeze(["none","acknowledge","greet","remark","invite
 
 const SOCIAL_RESPONSE_ADAPTER = Object.freeze({
   id:"social-response",
-  instruction:`Decide how this Thread genuinely wants to respond to the concrete social request it just received.
-The request is an actual outward social act and therefore warrants appraisal, but it creates no obligation to engage.
-Choose accept, decline, or defer from this Thread's point of view after reconciling the observable situation, current life, developed self, relevant history and any genuine social or cultural pressure.
-Ordinary civility, hospitality, reciprocity or relationship expectations may matter when grounded in this Thread's life, but they are pressures rather than consent rules.
-decline means not now without proposing a concrete later time. defer means not now but with a plausible later time supported by the supplied Flight Plan.
-expression is the outward reply, if any, and need not reveal private reasons.
-reason is a concise private operator-facing explanation of the material considerations.
-Do not change location, rewrite the Flight Plan, invent a relationship, expose private records, infer another person's private state, or accept merely to make an encounter happen.`,
+  prompt:"interior.social-response",
   resultSchema:{
     type:"object",
     additionalProperties:false,
@@ -38,28 +31,7 @@ Do not change location, rewrite the Flight Plan, invent a relationship, expose p
 
 const SOCIAL_INITIATION_ADAPTER = Object.freeze({
   id:"social-initiation",
-  instruction:`How, if at all, does this person engage the other person right now?
-The range of ordinary choices includes no outward act, a brief non-verbal acknowledgment,
-a greeting, a remark about the shared situation, or an invitation to converse.
-Neither manufacture nor suppress interest; this person's own life, state, history and the setting decide.
-For none, there is no expression or immediate personal Experience.
-For acknowledge, expression is what an observer sees you do right now: a short present-tense verb phrase without a subject, such as “nods briefly.” or “smiles and raises a hand.”. Not an intention or a condition.
-For greet and remark, supply the short words actually said.
-For invite_conversation, use a short spoken invitation clear enough to accept or decline.
-For greet, remark and invite_conversation, introducesSelf may be true only if
-the actual words say the speaker's own full name or a part of it (for example,
-just a first name). Only the name part actually spoken may become known.
-Never disclose a name from another person's identity record or merely imply
-an introduction. Speech with no spoken name remains an ordinary social act.
-For an outward act, experienceText is this person's concise first-person immediate experience
-of choosing and doing it, not a permanent Memory or knowledge of another's feelings.
-Place affordances are grounded possibilities, not rules or obligations.
-Body interoception may shape interest but does not assert loneliness, consent, or a duty to engage.
-RecentPersonalExperiences are this person's own admitted interpretations; they may influence
-but do not command this choice. PriorSocialChoicesThisVisit records this person's own
-earlier voluntary acts or silence toward the same person in this shared visit.
-They are lived history, not an obligation to repeat or reverse any choice.
-Do not invent private motives, relationships or company.`,
+  prompt:"interior.social-initiation",
   resultSchema:{
     type:"object",additionalProperties:false,
     required:["act","expression","experienceText","reason","introducesSelf"],
@@ -131,8 +103,7 @@ export async function formSocialEncounterRequest({
     },
     adapter:continuationEligible?{
       ...SOCIAL_INITIATION_ADAPTER,
-      instruction:SOCIAL_INITIATION_ADAPTER.instruction+
-        "\nThis is an ongoing exchange of voluntary spoken small acts. You may continue it as a live conversation, make one more brief remark, or say nothing. None is preferable. If you choose continue_conversation, expression is what you say aloud now, not a request for the other person to consent. An introduction requires your own name actually spoken in those words.",
+      prompt:"interior.social-initiation.ongoing-exchange",
       resultSchema:{
         ...SOCIAL_INITIATION_ADAPTER.resultSchema,
         properties:{...SOCIAL_INITIATION_ADAPTER.resultSchema.properties,

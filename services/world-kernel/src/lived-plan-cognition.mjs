@@ -62,25 +62,7 @@ const PERSONAL_PLAN_SCHEMA = Object.freeze({
 
 const FLIGHT_PLAN_ADAPTER = Object.freeze({
   id:"lived-planning",
-  instruction:`Form a modest personal Flight Plan for roughly the next half-day/day.
-The concern's externalContext is primarily World-provided planning reality: the lived horizon, local civil time when known, the physical places currently available, and optionally the physical place where the Thread must begin. It may also include a bounded dailyRhythm projection from the Thread's inherited organismic baselines. Treat World facts as constraint/opportunity and dailyRhythm as a soft physiological tendency, never personality or destiny.
-When localHorizon is supplied, plan ordinary life for that local civil time rather than treating UTC clock time as the Thread's local day.
-When dailyRhythm is supplied, let sleep/wake timing usually reflect it while allowing developed habits, current life and real commitments to override it. Do not default every Thread to the same conventional bedtime, wake time or morning routine.
-For each stop, state wakefulness separately from the natural-language activity: asleep only when the stop is actual sleep, awake for ordinary waking life, unknown only when the state cannot be established. This is a World-enacted feasibility fact, not the Thread\'s willingness to converse.
-When interoception is supplied, it is bounded subsemantic organismic state grounded in recent lived evidence. Interpret what it means for this Thread alongside developed self/history and current commitments. Exploration pressure is not a command or proof of boredom. Social-contact pressure is not a diagnosis of loneliness or a demand to seek company. Interpret both through this person's life; meaningful contact, novelty, learning, play, solitude, staying put, or changing places may all be legitimate responses. Never invent a person, a shared venue, a meeting, or consent to satisfy a drive.
-A Flight Plan is an ordered private intention about where/how this Thread wants or needs to be present, what she expects to do there, and why. It is intention, not World truth.
-Each private activity describes only this Thread's own intention, never prescriptions or disclaimers about what other people will do (for example, do not add "without expecting conversation"). Supply outwardActivity separately: a short (up to 60 characters) plain phrase of observable behaviour such as "reading", "walking through the garden" or "eating lunch". Do not put purposes, feelings, expectations or social plans in outwardActivity.
-Public City Guide suggestions, when offered, are editorial *possibilities* in the Thread's grounded locality. A listing does not mean anyone is there or has invited the Thread, and makes no promise of satisfaction. This Thread may consider one, rely on familiar remembered places, or ignore the guide. Never treat a listing as a visit or a promise of contact.
-Use offered physical-place refs for known destinations. Never invent a World reference such as wpl_ or per:. For a NEW forward-looking destination absent from the list, physicalPlaceRef may instead name it naturally, such as "Porto, Portugal" for a city or "A neighborhood café, Porto, Portugal" for a specific place. World will replace that temporary name with its place reference before admission. Retrospective horizons must use ONLY offered physical-place refs: discovering a new place now does not establish that it existed in the Thread's historical knowledge. Unknown geography is allowed in forward planning; do not invent exact addresses, shared venues or people present. Propose at most two new places per forward plan. Stops must be ordered, non-overlapping, and inside the supplied horizon. Gaps are allowed.
-A change of activity within one physical location (such as studying at the dining table instead of resting elsewhere at home) is not a journey. Keep the same physicalPlaceRef for activities within that location; a distinct World place ref is a distinct destination unless World has established otherwise.
-If unobservedSince is supplied, World lost observation of this life after that instant and is resuming now. Treat intervening time as unknown, not as lived experiences or evidence of choices. Decide what matters next without manufacturing memories or visits.
-If lastRecoveryFailure is supplied, a prior attempt to continue this life failed for that reason. It is operational feedback, not a lived experience or a mandate. Avoid repeating an impossible physical transition; you may stay at your current place and pursue different activities there, or plan an actual journey with enough time.
-If planningRejection is supplied, World rejected a previous proposed Flight Plan as physically infeasible. Reconsider the timing and journeys yourself using that reason; the rejected proposal never became lived history. Do not conceal movement by renaming places.
-When startingPlaceRef is supplied, the first stop must remain at that physical place. When physicalPlaceRef changes, leave a positive time gap between the end of the previous stop and the start of the next, even for local places. That gap is the actual journey, not an instantaneous scene change. Allow longer travel for distant cities; World will reject impossible arrival times. Do not fabricate travel when staying in the same place.
-The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
-For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
-requiredWorkCommitments, when present, are commitments this Thread already voluntarily accepted. Each must appear as one mediated stop with exactly the committed start/end and mediatedContext. Do not revisit whether the Thread should honor an accepted commitment; arrange the rest of the life around it naturally.
-Return 1 to 8 stops. Prefer a few specific ordinary presences that follow naturally from the developed person and current possibilities; combine nearby activities rather than fragmenting the day into tiny steps. Do not optimize for drama or a future visitor.`,
+  prompt:"interior.flight-plan",
   resultSchema:PERSONAL_PLAN_SCHEMA,
 });
 
@@ -92,8 +74,7 @@ function flightPlanAdapter({materializedAt,places}){
   const knownRefs=places.map(place=>place.ref);
   return {
     ...FLIGHT_PLAN_ADAPTER,
-    instruction:FLIGHT_PLAN_ADAPTER.instruction
-      +" For this retrospective horizon, choose physicalPlaceRef only from externalContext.availablePlaces. Do not propose new destinations: today\'s newly discovered places cannot be inserted into this historical life.",
+    prompt:"interior.flight-plan.retrospective",
     resultSchema:{
       ...PERSONAL_PLAN_SCHEMA,
       properties:{
