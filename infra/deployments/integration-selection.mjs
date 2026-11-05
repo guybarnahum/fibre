@@ -200,6 +200,8 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log }
       parts: promptParts(request),
       outcome,
       modelId: provenance?.modelId ?? adapter.modelId ?? null,
+      latency: request?.latency ?? "live",
+      serviceTier: provenance?.serviceTier ?? null,
       elapsedMs: Date.now() - startedAt,
       inputTokens: usage?.inputTokens ?? null,
       cachedInputTokens: usage?.cachedInputTokens ?? null,
@@ -254,6 +256,8 @@ export function selectReasoningIntegration(value, { environment = process.env, f
       timeoutMs: chosen.config?.timeoutMs,
       retryLimit: chosen.config?.retryLimit,
       retryDelayMs: chosen.config?.retryDelayMs,
+      deferredServiceTier: chosen.config?.deferredServiceTier ?? null,
+      deferredTimeoutMs: chosen.config?.deferredTimeoutMs,
     });
   }
   if (chosen.provider === "google") {

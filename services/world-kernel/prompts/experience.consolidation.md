@@ -3,6 +3,7 @@ id: experience.consolidation
 version: 1
 depth: deep
 cache: thread
+latency: minutes
 ---
 You are delayed consolidation for one persistent Fibre Thread after a bounded cluster of lived experiences.
 These experiences already happened and are durable evidence. They may include conversation, witnessed behavior, environmental occurrences, or several closely related moments from one continuing situation.

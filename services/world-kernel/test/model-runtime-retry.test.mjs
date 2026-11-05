@@ -252,3 +252,26 @@ test("Google retries only clearly recoverable failures", async () => {
   assert.equal(permanentCalls, 2, "request-scoped terminal failures must not poison the Google adapter");
   assert.deepEqual(result.output, { decision: "accept" });
 });
+test("cognition that may take minutes is offered at the cheaper tier first and still happens when that tier is busy", async () => {
+  const tiers = [];
+  const adapter = createOpenAIModelAdapter({
+    environment: { OPENAI_API_KEY: "test-key" },
+    modelId: "gpt-test",
+    deferredServiceTier: "flex",
+    retryDelayMs: 60_000,
+    fetchImpl: async (_url, init) => {
+      const tier = JSON.parse(init.body).service_tier ?? null;
+      tiers.push(tier);
+      return tier === "flex"
+        ? response(429, { error: { message: "Resource Unavailable", type: "rate_limit_error" } })
+        : response(200, { ...openAICompleted(), service_tier: "default" });
+    },
+  });
+  const live = await adapter.invoke({ systemPrompt: "Decide.", input: { item: "value" },
+    responseSchema: SCHEMA, clientRequestId: "deferred-tier-live" });
+  assert.equal(live.provenance.serviceTier, "default");
+  const later = await adapter.invoke({ systemPrompt: "Decide.", input: { item: "value" },
+    responseSchema: SCHEMA, clientRequestId: "deferred-tier-minutes", latency: "minutes" });
+  assert.deepEqual(tiers, [null, "flex", null], "live cognition was deferred, or deferred cognition never tried the cheaper tier");
+  assert.equal(later.output.decision, "accept", "a busy cheaper tier lost the cognition");
+});

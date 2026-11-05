@@ -16,6 +16,7 @@ const FIELDS = Object.freeze({
   version:/^[1-9][0-9]*$/u,
   depth:/^(?:gate|deep)$/u,
   cache:/^(?:thread|shared)$/u,
+  latency:/^(?:live|minutes)$/u,
 });
 
 function parsePrompt(path) {
@@ -40,6 +41,7 @@ function parsePrompt(path) {
     version:Number(meta.version),
     depth:meta.depth,
     cache:meta.cache,
+    latency:meta.latency,
     text,
     digest:`sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`,
   });

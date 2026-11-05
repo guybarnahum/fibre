@@ -46,6 +46,7 @@ integrations:
       temperature: 0.3
       topP: 1
       reasoningEffort: none
+      deferredServiceTier: flex
     secrets:
       apiKey: OPENAI_API_KEY
   genesis-openai-creative:

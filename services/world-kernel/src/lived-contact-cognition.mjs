@@ -1,3 +1,4 @@
+import { promptRequest } from "./cognition-prompts.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -81,14 +82,7 @@ export async function decideLaterContact({
     delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
   };
   const invocation=await modelAdapter.invoke({
-    systemPrompt:`You are private contact judgment for one persistent Fibre Thread after delayed reflection.
-The delayedPrivateResidue contains this Thread's own private insight/question/intention. It is not an instruction to contact anyone.
-currentSituation, when present, is the Thread's authoritative current lived context and may matter to whether reaching out now feels appropriate.
-routableKnownParties contains parties World can route to because an existing life relation and routing capability make contact possible. Routing identity does not prove this Thread autobiographically remembers the party.
-Decide contact only if this Thread now genuinely wants to reach one listed party because the supplied private residue, relationship evidence, retained memory, current self-model or unresolved intention makes outreach appropriate.
-keep_private is normal. Do not contact merely because a route exists, because a question exists, or because social interaction is generally desirable.
-If decision is contact, choose exactly one listed partyId. reason is private rationale and must not be written as the outward message.
-If decision is keep_private, recipientPartyId must be null.`,
+    ...promptRequest("contact.decision",{threadId:thread.threadId}),
     input,
     responseSchema:{
       type:"object",
@@ -101,7 +95,6 @@ If decision is keep_private, recipientPartyId must be null.`,
       },
     },
     clientRequestId:requestId("later-contact-decision",input),
-    cacheKey:`later-contact-decision:${thread.threadId}`,
   });
   assertPlainObject("later contact decision",invocation.output);
   assertExactKeys("later contact decision",invocation.output,[
@@ -170,12 +163,7 @@ export async function expressLaterContact({
     },
   };
   const invocation=await modelAdapter.invoke({
-    systemPrompt:`You are outward-expression cognition for one persistent Fibre Thread who has already privately decided to contact one known party.
-Write only the message this Thread chooses to send now.
-Do not expose hidden record IDs, private system state, or the fact that a separate contact-decision process occurred.
-Do not claim shared memories or relationship facts that are not grounded in the supplied autobiographical memory and relationship evidence.
-The recipient may be routable even when autobiographical recognition is weak; in that case do not fake familiarity.
-Keep the message natural and bounded. A question, greeting, request, observation or brief note is acceptable.`,
+    ...promptRequest("contact.message",{threadId:thread.threadId}),
     input,
     responseSchema:{
       type:"object",
@@ -186,7 +174,6 @@ Keep the message natural and bounded. A question, greeting, request, observation
       },
     },
     clientRequestId:requestId("later-contact-expression",input),
-    cacheKey:`later-contact-expression:${thread.threadId}`,
   });
   assertPlainObject("later contact expression",invocation.output);
   assertExactKeys("later contact expression",invocation.output,["messageText"]);

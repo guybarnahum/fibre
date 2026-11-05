@@ -25,6 +25,7 @@ const DEFAULTS = Object.freeze({
   reasoningEffort: "none",
   retryLimit: 2,
   retryDelayMs: 2_000,
+  deferredTimeoutMs: 120_000,
 });
 
 const OPENAI_PROJECTED_SCHEMA_KEYWORDS = Object.freeze(new Set([
@@ -284,6 +285,8 @@ export function createOpenAIModelAdapter({
   reasoningEffort = DEFAULTS.reasoningEffort,
   retryLimit = DEFAULTS.retryLimit,
   retryDelayMs = DEFAULTS.retryDelayMs,
+  deferredServiceTier = null,
+  deferredTimeoutMs = DEFAULTS.deferredTimeoutMs,
 } = {}) {
   const key = apiKey(environment);
   if (key === null) {
@@ -295,6 +298,7 @@ export function createOpenAIModelAdapter({
   }
   assertId("OpenAI modelId", modelId);
   if (typeof fetchImpl !== "function") throw new TypeError("OpenAI model fetchImpl must be a function");
+  if (deferredServiceTier !== null) assertId("OpenAI deferredServiceTier", deferredServiceTier);
 
   const endpoint = "https://api.openai.com/v1/responses";
   // Do not add the provider-schema projection to this object: the durable journal
@@ -427,7 +431,10 @@ export function createOpenAIModelAdapter({
         signal?.removeEventListener?.("abort", onAbort);
       }
     },
-    async invoke({ systemPrompt, input, responseSchema, clientRequestId, cacheKey = null }) {
+    // A request whose answer may take minutes is first offered at the deferred
+    // service tier (for example flex). If that tier is busy or slow, the same
+    // request is sent at once at the default tier, so the cognition still happens.
+    async invoke({ systemPrompt, input, responseSchema, clientRequestId, cacheKey = null, latency = "live" }) {
       assertNonEmpty("model systemPrompt", systemPrompt);
       assertPlainObject("model input", input);
       assertPlainObject("model responseSchema", responseSchema);
@@ -436,14 +443,15 @@ export function createOpenAIModelAdapter({
 
       const providerResponseSchema = projectOpenAIStructuredOutputSchema(responseSchema);
       assertOpenAIStrictResponseSchema(providerResponseSchema);
-      const maximumAttempts = retryLimit + 1;
+      let serviceTier = latency === "minutes" ? deferredServiceTier : null;
+      const maximumAttempts = retryLimit + 1 + (serviceTier === null ? 0 : 1);
       const operationalRetries = [];
       for (let attempt = 1; attempt <= maximumAttempts; attempt += 1) {
         notify(observer, {
           type: "model_attempt", provider: "openai", modelId, clientRequestId, attempt, maximumAttempts,
         });
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        const timer = setTimeout(() => controller.abort(), serviceTier === null ? timeoutMs : deferredTimeoutMs);
         try {
           let response;
           let body;
@@ -459,6 +467,7 @@ export function createOpenAIModelAdapter({
                 model: modelId,
                 store: false,
                 ...promptCacheField(cacheKey),
+                ...(serviceTier === null ? {} : { service_tier: serviceTier }),
                 ...(maxOutputTokens === null ? {} : { max_output_tokens: maxOutputTokens }),
                 temperature,
                 top_p: topP,
@@ -527,6 +536,7 @@ export function createOpenAIModelAdapter({
             transport: "responses",
             modelId: body?.model ?? modelId,
             providerRequestId,
+            serviceTier: providerString(body?.service_tier) || null,
             configuration: { ...configuration },
             invocationAttempts: attempt,
             operationalRetries: structuredClone(operationalRetries),
@@ -563,6 +573,19 @@ export function createOpenAIModelAdapter({
             actionHint: normalized.actionHint,
             usage: normalized.providerUsage ?? null,
           };
+          // A busy or slow deferred tier is not a failure of the request.
+          if (serviceTier !== null && (normalized.code === "MODEL_TIMEOUT"
+            || (normalized.httpStatus === 429 && normalized.code !== "MODEL_BILLING_QUOTA_EXHAUSTED"))) {
+            notify(observer, {
+              type: "operational_failure", provider: "openai", modelId, clientRequestId, attempt, maximumAttempts,
+              retrying: true, retryDelayMs: 0, inputDigest: digest(input), promptHash: digest(systemPrompt),
+              promptCanonicalJsonHash: canonicalDigest(systemPrompt), responseSchemaHash: digest(responseSchema),
+              failure: { ...failure, serviceTier },
+            });
+            operationalRetries.push({ attempt, ...failure, serviceTier });
+            serviceTier = null;
+            continue;
+          }
           const retrying = normalized.retryable === true && attempt < maximumAttempts;
           notify(observer, {
             type: "operational_failure",
