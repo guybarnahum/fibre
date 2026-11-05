@@ -313,7 +313,7 @@ Relationships are modelled as **doors**, a **ledger** and **stances** ([relation
 World records acts inside the same transaction that admits the fact they come from, so nothing else has to remember to call it:
 
 - **attention** — a Thread's spoken words in a two-person Story offer it; the other's speech back accepts and opens it. Gestures and repeated unanswered remarks add nothing.
-- **name** — a spoken self-introduction (`disclosedName`) offers it; the other's introduction opens it. An accepted, spoken invitation also opens it, since ADR-0029 acquaintance already grants both names.
+- **name** — a spoken self-introduction (`disclosedName`), chosen when opening an encounter or as an `INTRODUCE:` turn inside a live one, offers it; the other's introduction opens it. An accepted, spoken invitation also opens it, since ADR-0029 acquaintance already grants both names.
 - **conversation** — an invitation is an explicit offer; the invitee's stance accepts or declines it (a deferral declines this offer). The spoken conversation that follows an acceptance opens the door. A conversation entered by continuing an ongoing exchange (ADR-0033) records the first speaker's offer and the other's acceptance when both speak.
 - **contact** — a message to another Thread offers it; a message back opens it.
 

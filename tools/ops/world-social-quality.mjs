@@ -9,13 +9,15 @@ import { normalizeCloudflareEnvironment } from "../deployment/cloudflare-operato
 import { privateGet, topology } from "../validation/encounter-autonomy-probe.mjs";
 
 const REPO_ROOT=fileURLToPath(new URL("../../",import.meta.url));
-const USAGE="usage: world-social:quality -- --env staging [--days N]";
+const USAGE="usage: world-social:quality -- --env staging [--days N] [--top N]";
 const DAY_MS=86_400_000;
 // Recent-weighted social mileage: each spoken turn or Thread-to-Thread
 // message counts 0.5^(age in days / 7), so a week-old exchange counts half.
 export const MILEAGE_HALF_LIFE_DAYS=7;
 
 // The stage is the furthest door reached without a closed one below it.
+// Doors are a set, not a sequence: doors open past that gap are reported
+// beside the stage rather than hidden by it.
 const LADDER=[
   ["attention","acknowledged"],["name","acquainted"],
   ["conversation","conversed"],["contact","in touch"],
@@ -30,6 +32,11 @@ export function relationshipStage(openDoors){
     stage=label;
   }
   return stage;
+}
+export function doorsPastStage(openDoors){
+  const open=new Set(openDoors);
+  const gap=LADDER.findIndex(([door])=>!open.has(door));
+  return gap<0?[]:LADDER.slice(gap+1).map(([door])=>door).filter(door=>open.has(door));
 }
 
 const pairKey=ids=>[...ids].sort().join("|");
@@ -79,6 +86,7 @@ export function socialScorecard(payload,{at}){
     at,since:payload.since,mileageHalfLifeDays:MILEAGE_HALF_LIFE_DAYS,
     pairs:[...pairs.values()].map(entry=>({...entry,
       stage:relationshipStage(entry.doors.map(door=>door.door)),
+      pastStage:doorsPastStage(entry.doors.map(door=>door.door)),
       mileage:Math.round(entry.mileage*10)/10,
     })).sort((a,b)=>b.mileage-a.mileage),
     conversations,
@@ -87,14 +95,42 @@ export function socialScorecard(payload,{at}){
 
 const shortId=id=>id.replace(/^(thr_[0-9a-f]{7})[0-9a-f]+$/u,"$1");
 
-export function renderScorecard(card,names,environment){
+const count=(items,key)=>items.reduce((counts,item)=>
+  counts.set(key(item),(counts.get(key(item))??0)+1),new Map());
+const mean=values=>values.length===0?0:values.reduce((sum,v)=>sum+v,0)/values.length;
+const percent=value=>`${Math.round(value*100)}%`;
+
+export function renderScorecard(card,names,environment,{top=15}={}){
   const who=id=>`${names[id]??"?"} (${shortId(id)})`;
   const first=id=>names[id]?.split(/\s+/u)[0]??shortId(id);
   const day=iso=>iso.slice(5,10);
   const lines=[`${environment} · since ${card.since.slice(0,10)} · ${card.pairs.length} pairs · ${card.conversations.length} conversations`];
-  for(const entry of card.pairs){
+  const stages=[...count(card.pairs,entry=>entry.stage)].sort((a,b)=>b[1]-a[1]);
+  lines.push("stages: "+stages.map(([stage,n])=>`${stage} ${n}`).join(" · "));
+  const gaps=card.pairs.filter(entry=>entry.pastStage.length>0);
+  if(gaps.length>0){
+    const past=[...count(gaps.flatMap(entry=>entry.pastStage),door=>door)];
+    lines.push(`  ${gaps.length} pairs have doors open past their stage: `
+      +past.map(([door,n])=>`${door} ${n}`).join(" · "));
+  }
+  const acts=["offered","accepted","declined","closed"].map(kind=>
+    `${kind} ${card.pairs.reduce((sum,entry)=>sum+entry.acts[kind],0)}`);
+  lines.push("acts: "+acts.join(" · "));
+  lines.push("conversations by day");
+  const byDay=[...count(card.conversations,talk=>talk.occurredAt.slice(0,10)).keys()].sort();
+  for(const date of byDay){
+    const talks=card.conversations.filter(talk=>talk.occurredAt.startsWith(date));
+    const turns=talks.map(talk=>Object.values(talk.turns).reduce((sum,n)=>sum+n,0));
+    lines.push(`  ${date} ${talks.length} · turns ${mean(turns).toFixed(1)}`
+      +` · questions ${percent(mean(talks.map(talk=>talk.questionShare)))}`
+      +` · none asked ${talks.filter(talk=>talk.questionShare===0).length}`
+      +` · interrupted ${talks.filter(talk=>talk.interrupted>0).length}`);
+  }
+  lines.push(`top ${Math.min(top,card.pairs.length)} pairs by mileage`);
+  for(const entry of card.pairs.slice(0,top)){
     const [a,b]=entry.threadIds;
-    lines.push(`${who(a)} ↔ ${who(b)} · ${entry.stage}`);
+    const past=entry.pastStage.length>0?` (+${entry.pastStage.join(", ")})`:"";
+    lines.push(`${who(a)} ↔ ${who(b)} · ${entry.stage}${past}`);
     if(entry.doors.length>0)
       lines.push("  doors: "+entry.doors.map(door=>`${door.door} ${day(door.openedAt)}`).join(", "));
     const offers=entry.threadIds.map(id=>`${first(id)} ${entry.offeredBy[id]??0}`).join(" · ");
@@ -102,24 +138,19 @@ export function renderScorecard(card,names,environment){
       +` · declined ${entry.acts.declined} · closed ${entry.acts.closed}`);
     lines.push(`  mileage ${entry.mileage} (turns ${entry.turns}, messages ${entry.messages})`);
   }
-  if(card.conversations.length>0)lines.push("conversations");
-  for(const talk of card.conversations){
-    const turns=talk.threadIds.map(id=>`${first(id)} ${talk.turns[id]}`).join(" · ");
-    lines.push(`  ${talk.occurredAt.slice(5,16).replace("T"," ")} ${turns} turns`
-      +` · questions ${Math.round(talk.questionShare*100)}%`
-      +(talk.interrupted>0?` · interrupted ${talk.interrupted}`:""));
-  }
   return lines.join("\n");
 }
 
 function options(argv){
-  const config={env:null,days:7};
+  const config={env:null,days:7,top:15};
   for(let i=0;i<argv.length;i++){
     if(argv[i]==="--env")config.env=normalizeCloudflareEnvironment(argv[++i]);
     else if(argv[i]==="--days")config.days=Number(argv[++i]);
+    else if(argv[i]==="--top")config.top=Number(argv[++i]);
     else throw new TypeError(USAGE);
   }
-  if(config.env===null||!Number.isFinite(config.days)||config.days<=0||config.days>365)
+  if(config.env===null||!Number.isFinite(config.days)||config.days<=0||config.days>365
+    ||!Number.isSafeInteger(config.top)||config.top<0)
     throw new TypeError(USAGE);
   return config;
 }
@@ -138,7 +169,7 @@ async function main(argv){
     at.replace(/[:.]/gu,"-")+".json");
   mkdirSync(dirname(path),{recursive:true});
   writeFileSync(path,JSON.stringify({environment:args.env,scorecard:card,relationships:payload},null,2)+"\n");
-  process.stdout.write(renderScorecard(card,payload.names,args.env)+`\nevidence: ${path}\n`);
+  process.stdout.write(renderScorecard(card,payload.names,args.env,{top:args.top})+`\nevidence: ${path}\n`);
 }
 
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){

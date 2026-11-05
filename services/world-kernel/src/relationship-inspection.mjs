@@ -15,8 +15,12 @@ function constantTimeEqual(left,right){
   return difference===0;
 }
 
+// Question marks across the scripts Threads speak in (Latin, CJK, Arabic).
+const QUESTION=/[?？؟]/u;
+
 // Operator-only, bounded reads of World relationship facts and of the spoken
 // shape of recent Stories. Never model-visible; spoken words do not leave.
+
 export function openRelationshipInspectionStore(storage){
   const database=openWorldStateDatabase(storage,{readOnly:true,storeName:"RelationshipInspection"});
   return Object.freeze({
@@ -58,7 +62,7 @@ export function openRelationshipInspectionStore(storage){
         const per=(test=()=>true)=>Object.fromEntries(pair.map(id=>[id,
           turns.filter(beat=>beat.actorThreadId===id&&test(beat)).length]));
         return [{encounterId:row.encounter_id,occurredAt:row.occurred_at,threadIds:pair,
-          turns:per(),questions:per(beat=>(beat.spokenText??beat.text).includes("?")),
+          turns:per(),questions:per(beat=>QUESTION.test(beat.spokenText??beat.text)),
           interrupted:turns.filter(beat=>beat.completion==="interrupted").length,
           lastSpeaker:turns.at(-1)?.actorThreadId??null}];
       });

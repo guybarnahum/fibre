@@ -67,12 +67,17 @@ function socialLiveInput({
 
 // One streamed call per speaking opportunity. Its text opens with a turn
 // marker; speech streams live as soon as "SAY:" and the first words arrive.
+// "INTRODUCE:" is speech in which the Thread chooses to tell its own name;
+// World still admits only the part of the name actually spoken.
 const TURN_MARKERS=Object.freeze([
   ["SAY:","speak"],
+  ["INTRODUCE:","introduce"],
   ["ACT:","act"],
   ["SILENT","silent"],
 ]);
 const SILENCE=Object.freeze({decision:"silent"});
+const SPEECH=new Set(["speak","introduce"]);
+const MARKER_LENGTH=Math.max(...TURN_MARKERS.map(([marker])=>marker.length));
 
 // Models sometimes dress the marker as markdown ("**SAY:** ..."); that styling
 // is not part of the turn.
@@ -81,7 +86,7 @@ const MARKER_STYLE=/^[\s*_`#>]+/u;
 // undefined while the opening could still become a marker; null when it cannot.
 function turnMarker(text){
   const opening=text.replace(MARKER_STYLE,"");
-  const head=opening.slice(0,6).toUpperCase();
+  const head=opening.slice(0,MARKER_LENGTH).toUpperCase();
   for(const [marker,decision] of TURN_MARKERS){
     if(head.startsWith(marker)){
       return {decision,rest:opening.slice(marker.length).replace(/^[*_`]+/u,"")};
@@ -149,13 +154,13 @@ export async function takeLiveSocialTurn({
     text+=value.text;
     turn=turnMarker(text);
     if(turn===undefined)continue;
-    if(turn===null||turn.decision!=="speak"||turn.rest.trim()!=="")break;
+    if(turn===null||!SPEECH.has(turn.decision)||turn.rest.trim()!=="")break;
   }
   if(signal?.aborted){
     await events.return?.();
     return SILENCE;
   }
-  if(!turn||turn.decision==="speak"&&turn.rest.trim()===""){
+  if(!turn||SPEECH.has(turn.decision)&&turn.rest.trim()===""){
     await remainder(events);
     return unclearTurn(text);
   }
@@ -179,5 +184,6 @@ export async function takeLiveSocialTurn({
       yield* iterable(events);
     },
   });
-  return expression.text===""?SILENCE:Object.freeze({decision:"speak",expression});
+  if(expression.text==="")return SILENCE;
+  return Object.freeze({decision:"speak",expression,introducesSelf:turn.decision==="introduce"});
 }

@@ -10,6 +10,7 @@ import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { openRelationshipInspectionStore } from "../src/relationship-inspection.mjs";
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
+import { runThreadLiveSocialEncounter } from "../src/lived-social-live-encounter.mjs";
 import { socialScorecard } from "../../../tools/ops/world-social-quality.mjs";
 
 const seed=JSON.parse(readFileSync(
@@ -34,9 +35,11 @@ function world(){
     threads.seedThread(thread);
   }
   function story(when,beats){
-    const recorded={storyVersion:"encounter-story-v0.1",beats:beats.map(([actor,words,more={}])=>({
+    return record(when,{storyVersion:"encounter-story-v0.1",beats:beats.map(([actor,words,more={}])=>({
       actorThreadId:actor,kind:"utterance",text:`A person says: "${words}"`,spokenText:words,...more,
-    }))};
+    }))});
+  }
+  function record(when,recorded){
     return experience.recordEncounterStory({
       occurredAt:when,story:recorded,
       threadPresence:[A,B].map(threadId=>({threadId,situationId:"sit_"+threadId})),
@@ -54,7 +57,7 @@ function world(){
   }
   const view=()=>inspection.inspect({since:"2026-01-01T00:00:00.000Z"});
   const doors=()=>view().doors.map(door=>door.door).sort();
-  return {path,story,invite,view,doors,close(){
+  return {path,story,record,invite,view,doors,close(){
     inspection.close();experience.close();threads.close();
     rmSync(directory,{recursive:true,force:true});
   }};
@@ -151,5 +154,49 @@ test("installation backfill reopens the doors that recorded history already open
     assert.deepEqual(w.view().doors,live,"backfill derived different doors than live recording");
     assert.ok(w.view().ledger.some(act=>act.kind==="declined"&&act.actorThreadId===A),
       "backfill lost a declined invitation");
+  }finally{w.close();}
+});
+
+// A live conversation between the two, where each turn's model output is
+// scripted per speaker: the first entry on their first turn, and so on.
+function conversation(lines){
+  const said=new Map();
+  const context=(threadId,name,other)=>({
+    thread:{threadId,version:1,identity:{name},currentState:{unresolvedIntentions:[]}},
+    situation:{situationId:"sit_"+threadId,threadId,establishedAt:T0,
+      location:{kind:"place",placeRef:"wpl_cafe"},mediatedContext:null,
+      activity:"Sharing a table.",participantRefs:[]},
+    perspective:{developedSelfEvidence:[],placeName:"the café",counterparts:[{threadId:other,appearance:"a person across the table",noticedBefore:[]}]},
+  });
+  return runThreadLiveSocialEncounter({
+    initiator:context(A,"Abeba Tesfaye",B),counterparty:context(B,"Bekele Alemu",A),
+    request:{initiatorThreadId:A,text:"Is this seat free?"},
+    stance:{decision:"accept",expression:"Yes, please.",suggestedAt:null,reason:"I am willing."},
+    modelAdapter:{provider:"fixture",modelId:"fixture",configuration:{},
+      async invoke(){throw new Error("unexpected structured call");},
+      async *streamExpression(call){
+        const id=call.input.thread.threadId,turn=said.get(id)??0;
+        said.set(id,turn+1);
+        yield {type:"expression_delta",text:lines[id]?.[turn]??"SILENT"};
+        yield {type:"expression_complete",provenance:null};
+      }},
+  });
+}
+
+test("a name told in conversation offers the name door; a name merely said does not",async()=>{
+  const w=world();
+  try{
+    const first=await conversation({
+      [B]:["INTRODUCE: I'm Bekele, by the way."],
+      [A]:["SAY: Abeba, my grandmother, loved this café."],
+    });
+    w.record(at(0),first.story);
+    const names=w.view().ledger.filter(act=>act.door==="name");
+    assert.deepEqual(names.map(act=>[act.kind,act.actorThreadId]),[["offered",B]],
+      "only Bekele's chosen introduction should offer his name");
+
+    const second=await conversation({[A]:["INTRODUCE: I'm Abeba."]});
+    w.record(at(60),second.story);
+    assert.ok(w.doors().includes("name"),"answering an introduction did not open the name door");
   }finally{w.close();}
 });
