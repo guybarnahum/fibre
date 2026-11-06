@@ -71,6 +71,7 @@ export const AUTOBIOGRAPHICAL_MEMORY_V2_POLICY = Object.freeze({
   maxRememberedMeaningBytes: 2048,
   maxMeaningParts: 6,
   maxMeaningPartBytes: 1024,
+  maxGistBytes: 1200,
 });
 export const MEMORY_MEANING_OUTCOMES = Object.freeze(["durable_meaning", "no_durable_meaning"]);
 export const MEMORY_ACCESSIBILITIES = Object.freeze(["accessible", "difficult", "inaccessible"]);
@@ -225,8 +226,15 @@ function normalizeMeaningPart(candidate, index, memoryId, { enforceContentPolicy
   return structuredClone(candidate);
 }
 
+// A memory may carry its gist: the Thread's own short version, written when
+// the memory formed, that background cognition holds it by. The full
+// recollection stays authoritative; memories formed before gists have none.
 function normalizeGenesisMemory(candidate, { enforceContentPolicy = true } = {}) {
-  assertExactKeys("autobiographical memory", candidate, GENESIS_MEMORY_KEYS);
+  assertExactKeys("autobiographical memory", candidate,
+    candidate.gist === undefined ? GENESIS_MEMORY_KEYS : [...GENESIS_MEMORY_KEYS, "gist"]);
+  if (candidate.gist !== undefined) {
+    assertMaterialText("gist", candidate.gist, AUTOBIOGRAPHICAL_MEMORY_V2_POLICY.maxGistBytes, { enforceContentPolicy });
+  }
   if (candidate.recordFormat !== AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2) {
     throw new TypeError(`unsupported autobiographical memory recordFormat ${candidate.recordFormat}`);
   }

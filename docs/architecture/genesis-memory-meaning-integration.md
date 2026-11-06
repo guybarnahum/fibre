@@ -42,7 +42,10 @@ rememberedContent   Pass-B recollection; required for a remembered outcome
 rememberedMeaning   Pass-C durable interpretation; nullable
 meaningParts        independently citable Pass-C semantic parts; possibly empty
 meaningOutcome      durable_meaning | no_durable_meaning
+gist                optional; the Thread's own one- or two-sentence essence, written when the memory formed
 ```
+
+The gist is how a memory is held in mind when a job is not about it (`memory-in-mind.mjs`: noticing, experiencing, contact, visitor replies). It never replaces the recollection, which stays authoritative for reflection, recall and inspection. Memories formed before gists have none and are held in full; none is written for them afterwards.
 
 Historical #38 records remain readable under their admitted record shape. New Genesis-capable records use an explicit format/version witness rather than silently reinterpreting old JSON under a new meaning.
 

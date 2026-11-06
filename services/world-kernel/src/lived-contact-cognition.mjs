@@ -1,3 +1,4 @@
+import { memoryInMind } from "./memory-in-mind.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
 import {
   assertExactKeys,
@@ -15,8 +16,7 @@ function requestId(prefix,input){
 function boundedMemories(memories){
   return (Array.isArray(memories)?memories:[]).slice(0,8).map((memory)=>({
     memoryId:memory.memoryId,
-    rememberedContent:memory.rememberedContent,
-    rememberedMeaning:memory.rememberedMeaning??null,
+    ...memoryInMind(memory),
   }));
 }
 

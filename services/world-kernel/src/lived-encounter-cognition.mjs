@@ -1,3 +1,4 @@
+import { memoryInMind } from "./memory-in-mind.mjs";
 import { promptFor } from "./cognition-prompts.mjs";
 import { streamExpressionIntoLiveEncounter } from "./live-encounter-expression.mjs";
 import {
@@ -42,8 +43,7 @@ function memoryContext(memories) {
     .slice(0, MAX_ENCOUNTER_MEMORIES)
     .map((memory) => ({
       memoryId: memory.memoryId,
-      rememberedContent: memory.rememberedContent ?? null,
-      rememberedMeaning: memory.rememberedMeaning ?? null,
+      ...memoryInMind(memory),
       salience: memory.salience,
       accessibility: memory.accessibility,
       asOf: memory.asOf,

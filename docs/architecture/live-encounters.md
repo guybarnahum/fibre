@@ -309,6 +309,8 @@ insight | question | intention
 
 These are private cognitive residue only. They are not automatic speech, commitments, semantic state, relationship authority, or World action. Later slices may let Interior Cognition act on them through the ordinary owning authorities.
 
+A retained memory also carries a **gist** in the Thread's own words: the short form by which background cognition holds it, while the full recollection remains the memory (see [memory meaning](genesis-memory-meaning-integration.md)).
+
 Consolidation may also form up to two **stances**: how this Thread now regards a person who acted in the cluster, admitted through the semantic-state authority as the Thread's own `relationship_attitude` (see [Stance](encounters-and-experience.md#stance)). No other semantic-state, relationship, door or life-relation mutation is part of this consolidation writer.
 
 ## Observatory causal projection

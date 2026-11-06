@@ -1,3 +1,4 @@
+import { memoryInMind } from "./memory-in-mind.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import {
@@ -21,8 +22,7 @@ function boundedMemories(memories) {
     .slice(0, MAX_MEMORIES)
     .map((memory) => ({
       memoryId:memory.memoryId,
-      rememberedContent:memory.rememberedContent ?? null,
-      rememberedMeaning:memory.rememberedMeaning ?? null,
+      ...memoryInMind(memory),
       salience:memory.salience,
       asOf:memory.asOf,
     }));

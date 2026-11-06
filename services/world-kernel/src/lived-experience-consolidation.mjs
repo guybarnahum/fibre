@@ -105,12 +105,16 @@ function normalizeDecision(output){
         outcome:"not_remembered",
         rememberedContent:null,
         rememberedMeaning:null,
+        gist:null,
         confidence:null,
         salience:null,
         uncertainty:Object.freeze([...memory.uncertainty]),
       }),
     });
   }
+  // A gist is optional (decisions recorded before gists have none); one too
+  // slight to carry the memory is not kept, and the memory is held in full.
+  const gist=typeof memory.gist==="string"&&memory.gist.trim().length>=12?memory.gist.trim():null;
   assertNonEmpty("experience consolidation rememberedContent",memory.rememberedContent);
   if(memory.rememberedMeaning!==null)assertNonEmpty(
     "experience consolidation rememberedMeaning",
@@ -129,6 +133,7 @@ function normalizeDecision(output){
       outcome:"retained",
       rememberedContent:memory.rememberedContent,
       rememberedMeaning:memory.rememberedMeaning,
+      gist,
       confidence:memory.confidence,
       salience:memory.salience,
       uncertainty:Object.freeze([...memory.uncertainty]),
@@ -220,13 +225,14 @@ async function formDecision({
           type:"object",
           additionalProperties:false,
           required:[
-            "outcome","rememberedContent","rememberedMeaning",
+            "outcome","rememberedContent","rememberedMeaning","gist",
             "confidence","salience","uncertainty",
           ],
           properties:{
             outcome:{type:"string",enum:["not_remembered","retained"]},
             rememberedContent:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
             rememberedMeaning:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
+            gist:{anyOf:[{type:"string",minLength:12,maxLength:280},{type:"null"}]},
             confidence:{anyOf:[{type:"number",minimum:0,maximum:1},{type:"null"}]},
             salience:{anyOf:[{type:"number",minimum:0,maximum:1},{type:"null"}]},
             uncertainty:{type:"array",items:{type:"string",minLength:1}},
@@ -349,6 +355,7 @@ function consolidationMemoryRecord({
     eventRefs:experiences.map((experience)=>experience.experienceId),
     rememberedContent:decision.rememberedContent,
     rememberedMeaning:decision.rememberedMeaning,
+    ...(decision.gist===null?{}:{gist:decision.gist}),
     meaningOutcome:durableMeaning?"durable_meaning":"no_durable_meaning",
     meaningParts:durableMeaning?[{
       meaningPartId:autobiographicalMeaningPartId({memoryId,ordinal:1}),
