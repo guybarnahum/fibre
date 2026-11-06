@@ -191,6 +191,25 @@ function promptSizes(request) {
   return Object.fromEntries(Object.entries(promptPartTexts(request)).map(([part, text]) => [part, text.length]));
 }
 
+// Inside a large input part, which fields are large: any object of at least
+// 2,000 characters is opened, up to three levels down.
+const OPEN_CHARS = 2000;
+function promptInnerSizes(request) {
+  const inner = {};
+  const open = (path, value, depth) => {
+    for (const [field, child] of Object.entries(value)) {
+      const text = JSON.stringify(child) ?? "null";
+      const at = `${path}.${field}`;
+      if (depth > 0) inner[at] = text.length;
+      if (depth < 3 && text.length >= OPEN_CHARS && child !== null && typeof child === "object" && !Array.isArray(child)) {
+        open(at, child, depth + 1);
+      }
+    }
+  };
+  open("input", request?.input ?? {}, 0);
+  return inner;
+}
+
 function promptPrefix(request) {
   const text = `${request?.systemPrompt ?? ""}\n${JSON.stringify(request?.responseSchema ?? null)}\n${JSON.stringify(request?.input ?? null)}`;
   return PREFIX_CHARS.map((chars) => text.length < chars ? null : short(text.slice(0, chars)));
@@ -210,6 +229,7 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log }
       prefix: promptPrefix(request),
       parts: promptParts(request),
       sizes: promptSizes(request),
+      innerSizes: promptInnerSizes(request),
       outcome,
       modelId: provenance?.modelId ?? adapter.modelId ?? null,
       latency: request?.latency ?? "live",

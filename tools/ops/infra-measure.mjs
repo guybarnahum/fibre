@@ -98,7 +98,7 @@ export function summarizeCosts(events) {
       const key = `${event.port}|${event.kind}`;
       const row = modelCalls.get(key) ?? {
         port:event.port, kind:event.kind, calls:0, inputTokens:0, cachedInputTokens:0, cacheWriteTokens:0, outputTokens:0,
-        repeats:0, sharedPrefixChars:{ 2048:0, 4096:0, 8192:0, 16384:0 }, firstChangedPart:{}, partChars:{},
+        repeats:0, sharedPrefixChars:{ 2048:0, 4096:0, 8192:0, 16384:0 }, firstChangedPart:{}, partChars:{}, innerChars:{},
       };
       row.calls += 1;
       row.inputTokens += Number(event.inputTokens ?? 0);
@@ -106,6 +106,7 @@ export function summarizeCosts(events) {
       row.cacheWriteTokens += Number(event.cacheWriteTokens ?? 0);
       row.outputTokens += Number(event.outputTokens ?? 0);
       for (const [part, chars] of Object.entries(event.sizes ?? {})) row.partChars[part] = (row.partChars[part] ?? 0) + Number(chars);
+      for (const [part, chars] of Object.entries(event.innerSizes ?? {})) row.innerChars[part] = (row.innerChars[part] ?? 0) + Number(chars);
       // A repeat is the same job on the same cache scope; count how far its
       // prompt matched the previous one, which bounds any possible cache hit.
       if (event.scope && Array.isArray(event.prefix)) {
@@ -329,6 +330,9 @@ function render(summary) {
           .map(([part, chars]) => `${part} ${Math.round(chars / row.calls)} (${Math.round((100 * chars) / total)}%)`).join(" · ");
         lines.push(`${"".padEnd(10)} ${"".padEnd(36)} chars/call by part: ${largest}`);
       }
+      const inner = Object.entries(row.innerChars ?? {}).sort((a, b) => b[1] - a[1]).slice(0, 6)
+        .map(([part, chars]) => `${part} ${Math.round(chars / row.calls)}`).join(" · ");
+      if (inner !== "") lines.push(`${"".padEnd(10)} ${"".padEnd(36)} inside: ${inner}`);
     }
   }
   if (summary.reconciliationFailures?.length) {

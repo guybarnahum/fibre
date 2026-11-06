@@ -77,7 +77,8 @@ test("LivedNow failures are diagnosed without inflating Cloudflare read/write to
 test("model calls are measured per cognitive job without counting as database work",()=>{
   const call=(kind,inputTokens,cachedInputTokens,prefix,story="s1")=>({event:"model-call",port:"encounter",kind,inputTokens,cachedInputTokens,outputTokens:20,scope:"thr_a",prefix,
     parts:{system:"p",schema:"q","input.thread":"t","input.story":story},
-    sizes:{system:900,schema:300,"input.thread":2000,"input.story":story==="s1"?400:600}});
+    sizes:{system:900,schema:300,"input.thread":2000,"input.story":story==="s1"?400:600},
+    innerSizes:{"input.thread.memories":1500}});
   const result=summarizeCosts([
     call("social-live-turn",5000,4096,["a","b","c",null]),call("social-live-turn",5200,0,["a","b","d",null],"s2"),
     call("encounter-attention",2000,0,["e",null,null,null]),
@@ -92,4 +93,6 @@ test("model calls are measured per cognitive job without counting as database wo
     "a repeated call could not show which part of its prompt stopped reuse");
   assert.equal(result.modelCalls[0].partChars["input.thread"],4000,
     "the parts that dominate a job's input could not be found");
+  assert.equal(result.modelCalls[0].innerChars["input.thread.memories"],3000,
+    "what fills a large part could not be found");
 });
