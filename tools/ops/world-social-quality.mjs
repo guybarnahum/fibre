@@ -76,10 +76,13 @@ export function socialScorecard(payload,{at}){
     .filter(story=>Object.values(story.turns).every(n=>n>0))
     .map(story=>{
       const turns=Object.values(story.turns).reduce((sum,n)=>sum+n,0);
-      const questions=Object.values(story.questions).reduce((sum,n)=>sum+n,0);
+      const total=counts=>Object.values(counts??{}).reduce((sum,n)=>sum+n,0);
+      const share=counts=>turns===0?0:total(counts)/turns;
       return {encounterId:story.encounterId,occurredAt:story.occurredAt,
         threadIds:story.threadIds,turns:story.turns,
-        questionShare:turns===0?0:questions/turns,
+        questionShare:share(story.questions),
+        assentShare:share(story.assent),pushbackTurns:total(story.pushback),
+        topicOverlap:story.topicOverlap??null,
         interrupted:story.interrupted,lastSpeaker:story.lastSpeaker};
     });
   return {
@@ -121,9 +124,13 @@ export function renderScorecard(card,names,environment,{top=15}={}){
   for(const date of byDay){
     const talks=card.conversations.filter(talk=>talk.occurredAt.startsWith(date));
     const turns=talks.map(talk=>Object.values(talk.turns).reduce((sum,n)=>sum+n,0));
+    const overlaps=talks.map(talk=>talk.topicOverlap).filter(value=>value!==null);
     lines.push(`  ${date} ${talks.length} · turns ${mean(turns).toFixed(1)}`
       +` · questions ${percent(mean(talks.map(talk=>talk.questionShare)))}`
       +` · none asked ${talks.filter(talk=>talk.questionShare===0).length}`
+      +` · opens agreeing ${percent(mean(talks.map(talk=>talk.assentShare??0)))}`
+      +` · pushback in ${talks.filter(talk=>talk.pushbackTurns>0).length}`
+      +(overlaps.length>0?` · topic overlap ${mean(overlaps).toFixed(2)}`:"")
       +` · interrupted ${talks.filter(talk=>talk.interrupted>0).length}`);
   }
   lines.push(`top ${Math.min(top,card.pairs.length)} pairs by mileage`);

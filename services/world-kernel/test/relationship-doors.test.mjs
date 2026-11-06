@@ -200,3 +200,15 @@ test("a name told in conversation offers the name door; a name merely said does 
     assert.ok(w.doors().includes("name"),"answering an introduction did not open the name door");
   }finally{w.close();}
 });
+
+test("how a conversation went is measured where its words are, and no words leave",()=>{
+  const w=world();
+  try{
+    w.story(at(0),[[A,"Yes, exactly, the light is lovely today."],[B,"Actually, I think it was brighter yesterday."],
+      [A,"Was it?"]]);
+    const [talk]=w.view().stories;
+    assert.deepEqual([talk.assent[A],talk.pushback[B],talk.questions[A]],[1,1,1],
+      "agreement, pushback and questions were not measured per speaker");
+    assert.ok(!JSON.stringify(w.view()).includes("brighter"),"spoken words left the World");
+  }finally{w.close();}
+});

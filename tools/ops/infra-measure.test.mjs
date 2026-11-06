@@ -82,8 +82,10 @@ test("model calls are measured per cognitive job without counting as database wo
   const result=summarizeCosts([
     call("social-live-turn",5000,4096,["a","b","c",null]),call("social-live-turn",5200,0,["a","b","d",null],"s2"),
     call("encounter-attention",2000,0,["e",null,null,null]),
+    {event:"live-social-encounter-ended",endedBy:"bounded"},{event:"live-social-encounter-ended",endedBy:"quiescent"},
   ]);
   assert.equal(result.operations.length,0,"a model call counted as a database request");
+  assert.deepEqual(result.conversationEndings,{bounded:1,quiescent:1},"how conversations ended was not counted");
   assert.deepEqual(result.modelCalls.map(({kind,calls,cachedInputTokens})=>({kind,calls,cachedInputTokens})),
     [{kind:"social-live-turn",calls:2,cachedInputTokens:4096},{kind:"encounter-attention",calls:1,cachedInputTokens:0}],
     "model cost was not attributable to its cognitive job");

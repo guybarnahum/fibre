@@ -557,6 +557,11 @@ export function createSocialMeetingService({
       modelAdapter,
       liveEncounterRegistry,
     });
+    // How the conversation ended (by quiet, a turn limit, a changed scene),
+    // for operators; no words.
+    console.log(JSON.stringify({event:"live-social-encounter-ended",
+      endedBy:liveResult.live.endedBy,opportunities:liveResult.live.opportunityAppraisals,
+      contributions:liveResult.live.contributionCount}));
     const story=initiation.disclosedName?{
       ...liveResult.story,
       beats:liveResult.story.beats.map(beat=>

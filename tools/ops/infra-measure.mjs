@@ -18,6 +18,7 @@ const SERVICES = Object.freeze([
 const COST_EVENTS = new Set(["world-state-cost", "d1-cost"]);
 const LIVED_NOW_FAILURE = "lived-now-reconciliation-failed";
 const MODEL_CALL = "model-call";
+const CONVERSATION_ENDED = "live-social-encounter-ended";
 
 function parseArgs(argv) {
   const options = {
@@ -93,6 +94,7 @@ export function summarizeCosts(events) {
   const encounters = [],reconciliationFailures=[];
   const modelCalls = new Map();
   const lastPrefixByScope = new Map();
+  const conversationEndings = {};
   for (const event of events) {
     if (event.event === MODEL_CALL) {
       const key = `${event.port}|${event.kind}`;
@@ -124,6 +126,10 @@ export function summarizeCosts(events) {
         lastPrefixByScope.set(scopeKey, { prefix:event.prefix, parts:event.parts ?? null });
       }
       modelCalls.set(key, row);
+      continue;
+    }
+    if (event.event === CONVERSATION_ENDED) {
+      conversationEndings[event.endedBy] = (conversationEndings[event.endedBy] ?? 0) + 1;
       continue;
     }
     if (event.event === LIVED_NOW_FAILURE) {
@@ -164,6 +170,7 @@ export function summarizeCosts(events) {
     encounterSlopeRowsReadPerTurn:slope,
     reconciliationFailures:Object.freeze(reconciliationFailures),
     modelCalls:Object.freeze([...modelCalls.values()].sort((a, b) => b.inputTokens - a.inputTokens)),
+    conversationEndings:Object.freeze(conversationEndings),
   });
 }
 
@@ -180,7 +187,7 @@ function findCostEvents(value, sink) {
     return;
   }
   if (typeof value !== "object") return;
-  if (COST_EVENTS.has(value.event) || value.event === MODEL_CALL) sink(value);
+  if (COST_EVENTS.has(value.event) || value.event === MODEL_CALL || value.event === CONVERSATION_ENDED) sink(value);
   if (value.event === LIVED_NOW_FAILURE) sink({
     event:LIVED_NOW_FAILURE,
     threadId:value.threadId??null,
@@ -334,6 +341,10 @@ function render(summary) {
         .map(([part, chars]) => `${part} ${Math.round(chars / row.calls)}`).join(" · ");
       if (inner !== "") lines.push(`${"".padEnd(10)} ${"".padEnd(36)} inside: ${inner}`);
     }
+  }
+  const endings = Object.entries(summary.conversationEndings ?? {});
+  if (endings.length > 0) {
+    lines.push("", "Live conversations ended by: " + endings.map(([how, count]) => `${how} ${count}`).join(" · "));
   }
   if (summary.reconciliationFailures?.length) {
     lines.push("", "LivedNow reconciliation failures:");

@@ -1,6 +1,7 @@
 import { assertIsoTimestamp } from "./persistence-common.mjs";
 import { openWorldStateDatabase } from "./world-state-storage.mjs";
 import { storyRelationalPair } from "./relationship-doors.mjs";
+import { contentWords,topicOverlap,utteranceShape } from "./conversation-shape.mjs";
 
 const ROUTE="/internal/relationships";
 const TOKEN_ENCODER=new TextEncoder();
@@ -14,9 +15,6 @@ function constantTimeEqual(left,right){
   }
   return difference===0;
 }
-
-// Question marks across the scripts Threads speak in (Latin, CJK, Arabic).
-const QUESTION=/[?？؟]/u;
 
 // Operator-only, bounded reads of World relationship facts and of the spoken
 // shape of recent Stories. Never model-visible; spoken words do not leave.
@@ -59,12 +57,22 @@ export function openRelationshipInspectionStore(storage){
           .map(item=>({threadId:item.thread_id}))});
         if(pair===null)return [];
         const turns=story.beats.filter(beat=>beat.kind==="utterance"&&pair.includes(beat.actorThreadId));
+        const words=turns.map(beat=>beat.spokenText??beat.text);
+        const shapes=words.map(utteranceShape);
         const per=(test=()=>true)=>Object.fromEntries(pair.map(id=>[id,
-          turns.filter(beat=>beat.actorThreadId===id&&test(beat)).length]));
+          turns.filter((beat,index)=>beat.actorThreadId===id&&test(shapes[index])).length]));
         return [{encounterId:row.encounter_id,occurredAt:row.occurred_at,threadIds:pair,
-          turns:per(),questions:per(beat=>QUESTION.test(beat.spokenText??beat.text)),
+          turns:per(),questions:per(shape=>shape.question),
+          assent:per(shape=>shape.assent),pushback:per(shape=>shape.pushback),
           interrupted:turns.filter(beat=>beat.completion==="interrupted").length,
-          lastSpeaker:turns.at(-1)?.actorThreadId??null}];
+          lastSpeaker:turns.at(-1)?.actorThreadId??null,
+          day:row.occurred_at.slice(0,10),pairKey:[...pair].sort().join("|"),words:contentWords(words)}];
+      });
+      // Words stay here: only how much a conversation shares with others leaves.
+      const overlaps=topicOverlap(stories);
+      stories.forEach((story,index)=>{
+        story.topicOverlap=overlaps[index];
+        delete story.day;delete story.pairKey;delete story.words;
       });
       const messages=database.prepare(`
         SELECT sender_thread_id,recipient_party_id,sent_at FROM thread_contact_messages
