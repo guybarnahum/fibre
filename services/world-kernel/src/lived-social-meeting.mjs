@@ -176,6 +176,7 @@ export function createSocialMeetingService({
   modelAdapter,
   liveEncounterRegistry = null,
   onExperienceQueued = null,
+  onConversationEnded = null,
   boundedVenueDiscovery = false,
 }) {
   requireMethod("worldReader", worldReader, "getThread");
@@ -211,6 +212,9 @@ export function createSocialMeetingService({
     || typeof liveEncounterRegistry.publishAfterthoughts !== "function"
   )) {
     throw new TypeError("social meeting liveEncounterRegistry must be null or expose register() and publishAfterthoughts()");
+  }
+  if (onConversationEnded !== null && typeof onConversationEnded !== "function") {
+    throw new TypeError("social meeting onConversationEnded must be a function or null");
   }
   if (onExperienceQueued !== null && typeof onExperienceQueued !== "function") {
     throw new TypeError("social meeting onExperienceQueued must be a function or null");
@@ -559,8 +563,8 @@ export function createSocialMeetingService({
     });
     // How the conversation ended (by quiet, a turn limit, a changed scene),
     // for operators; no words.
-    console.log(JSON.stringify({event:"live-social-encounter-ended",
-      endedBy:liveResult.live.endedBy,opportunities:liveResult.live.opportunityAppraisals,
+    onConversationEnded?.(Object.freeze({endedBy:liveResult.live.endedBy,
+      opportunities:liveResult.live.opportunityAppraisals,
       contributions:liveResult.live.contributionCount}));
     const story=initiation.disclosedName?{
       ...liveResult.story,

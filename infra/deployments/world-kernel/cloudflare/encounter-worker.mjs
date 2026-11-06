@@ -94,6 +94,9 @@ function bindingFetch(binding) {
   return (input, init) => binding.fetch(input instanceof Request ? input : new Request(input, init));
 }
 
+// Operator telemetry: how each live conversation ended; no words.
+const logConversationEnded=(ending)=>console.log(JSON.stringify({event:"live-social-encounter-ended",...ending}));
+
 export class FibreWorldDurableObject extends BaseWorldDurableObject {
   constructor(ctx, env) {
     super(ctx, env);
@@ -336,6 +339,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         modelAdapter:this.reasoningFor("encounter",{lazy:true}),
         boundedVenueDiscovery:true,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
+        onConversationEnded:logConversationEnded,
       });
       this.worldSocialOpportunityProcess=createWorldSocialOpportunity({
         experienceStore,livedNowStore,meetingService,
@@ -429,6 +433,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         modelAdapter:this.reasoningFor("encounter"),
         liveEncounterRegistry:this.liveEncounterRegistry,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
+        onConversationEnded:logConversationEnded,
       });
       this.socialMeetingApi = createSocialMeetingWriteApi({
         meetingService,
