@@ -175,10 +175,20 @@ const short = (text) => sha256(text).slice(0, 8);
 // instructions, the output schema, then each top-level input field. On one
 // cache scope, the first part whose fingerprint differs from the previous call
 // is where any provider's prefix reuse must stop. No text is logged.
+function promptPartTexts(request) {
+  const texts = { system: String(request?.systemPrompt ?? ""), schema: JSON.stringify(request?.responseSchema ?? null) };
+  for (const [field, value] of Object.entries(request?.input ?? {})) texts[`input.${field}`] = JSON.stringify(value) ?? "null";
+  return texts;
+}
+
 function promptParts(request) {
-  const parts = { system: short(String(request?.systemPrompt ?? "")), schema: short(JSON.stringify(request?.responseSchema ?? null)) };
-  for (const [field, value] of Object.entries(request?.input ?? {})) parts[`input.${field}`] = short(JSON.stringify(value) ?? "null");
-  return parts;
+  return Object.fromEntries(Object.entries(promptPartTexts(request)).map(([part, text]) => [part, short(text)]));
+}
+
+// How many characters each part contributes, so the parts that dominate input
+// can be found. Sizes only; no text is logged.
+function promptSizes(request) {
+  return Object.fromEntries(Object.entries(promptPartTexts(request)).map(([part, text]) => [part, text.length]));
 }
 
 function promptPrefix(request) {
@@ -199,6 +209,7 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log }
       cacheThrough: request?.cacheThrough ?? null,
       prefix: promptPrefix(request),
       parts: promptParts(request),
+      sizes: promptSizes(request),
       outcome,
       modelId: provenance?.modelId ?? adapter.modelId ?? null,
       latency: request?.latency ?? "live",

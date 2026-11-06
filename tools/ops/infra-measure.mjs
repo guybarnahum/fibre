@@ -98,13 +98,14 @@ export function summarizeCosts(events) {
       const key = `${event.port}|${event.kind}`;
       const row = modelCalls.get(key) ?? {
         port:event.port, kind:event.kind, calls:0, inputTokens:0, cachedInputTokens:0, cacheWriteTokens:0, outputTokens:0,
-        repeats:0, sharedPrefixChars:{ 2048:0, 4096:0, 8192:0, 16384:0 }, firstChangedPart:{},
+        repeats:0, sharedPrefixChars:{ 2048:0, 4096:0, 8192:0, 16384:0 }, firstChangedPart:{}, partChars:{},
       };
       row.calls += 1;
       row.inputTokens += Number(event.inputTokens ?? 0);
       row.cachedInputTokens += Number(event.cachedInputTokens ?? 0);
       row.cacheWriteTokens += Number(event.cacheWriteTokens ?? 0);
       row.outputTokens += Number(event.outputTokens ?? 0);
+      for (const [part, chars] of Object.entries(event.sizes ?? {})) row.partChars[part] = (row.partChars[part] ?? 0) + Number(chars);
       // A repeat is the same job on the same cache scope; count how far its
       // prompt matched the previous one, which bounds any possible cache hit.
       if (event.scope && Array.isArray(event.prefix)) {
@@ -322,6 +323,12 @@ function render(summary) {
       const shared = Object.entries(row.sharedPrefixChars).map(([chars, count]) => `${Number(chars) / 1024}k:${count}`).join(" ");
       const firstChange = Object.entries(row.firstChangedPart).map(([part, count]) => `${part}:${count}`).join(" ") || "-";
       lines.push(`${row.port.padEnd(10)} ${row.kind.padEnd(36)} calls=${String(row.calls).padStart(4)} input=${String(row.inputTokens).padStart(9)} per-call=${String(Math.round(row.inputTokens / row.calls)).padStart(6)} cached=${cached.toFixed(1).padStart(5)}% written=${written.toFixed(1).padStart(5)}% output=${String(row.outputTokens).padStart(7)} repeats=${String(row.repeats).padStart(3)} same-prefix ${shared} first-change ${firstChange}`);
+      const total = Object.values(row.partChars ?? {}).reduce((sum, chars) => sum + chars, 0);
+      if (total > 0) {
+        const largest = Object.entries(row.partChars).sort((a, b) => b[1] - a[1]).slice(0, 5)
+          .map(([part, chars]) => `${part} ${Math.round(chars / row.calls)} (${Math.round((100 * chars) / total)}%)`).join(" · ");
+        lines.push(`${"".padEnd(10)} ${"".padEnd(36)} chars/call by part: ${largest}`);
+      }
     }
   }
   if (summary.reconciliationFailures?.length) {
