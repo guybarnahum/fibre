@@ -117,7 +117,7 @@ test("only voluntary acceptance creates durable Inside Fibre visitor work", asyn
         }
         const remembered = call.input.developedSelfEvidence.find((item) => item.kind === "memory");
         assert.ok(remembered, "work cognition should receive Thread-owned lived evidence");
-        const accepts = remembered.ref.includes("thr_inside_accept");
+        const accepts = call.input.thread.threadId === "thr_inside_accept";
         return {
           output:{
             result:{

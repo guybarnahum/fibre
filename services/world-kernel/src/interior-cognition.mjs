@@ -348,7 +348,9 @@ export async function runInteriorCognition({
       currentState,
     }),
     // Stable self and evidence first; the moment and its question last.
-    developedSelfEvidence:selected.evidence,
+    // Cited by short handles: record IDs are long and carry no meaning for
+    // the Thread; each handle maps back to exactly one selected record.
+    developedSelfEvidence:selected.evidence.map((item,index)=>({...item,ref:`e${index+1}`})),
     concern:normalizedConcern,
     at,
   });
@@ -413,7 +415,8 @@ export async function runInteriorCognition({
   // A citation outside the Thread-owned selection is not evidence; keep only
   // the selected refs and count what was dropped.
   const selectedSet = new Set(evidenceRefs);
-  const citedRefs = output.evidenceRefs ?? [];
+  const byHandle = new Map(evidenceRefs.map((ref,index)=>[`e${index+1}`,ref]));
+  const citedRefs = (output.evidenceRefs ?? []).map((ref)=>byHandle.get(ref) ?? ref);
   const groundedRefs = citedRefs.filter((ref) => selectedSet.has(ref));
   // Memories this judgment actually drew on come back to mind.
   const recalled=new Set(selected.evidence.filter(item=>item.kind==="memory").map(item=>item.ref));

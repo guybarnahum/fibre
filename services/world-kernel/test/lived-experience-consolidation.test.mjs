@@ -684,8 +684,6 @@ test("retained lived Memory, not archived history, changes a later voluntary soc
               assert.equal(references.length,retain?1:0,
                 "later judgment did not respect selective autobiographical retention");
               if(retain){
-                assert.equal(references[0].ref,admitted[0].memoryId,
-                  "social cognition received only an opaque or unrelated Memory");
                 assert.equal(references[0].text,memoryMeaning,
                   "the retained personal meaning did not reach private judgment");
               }

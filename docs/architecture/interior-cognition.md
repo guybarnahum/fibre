@@ -172,7 +172,7 @@ Interior Cognition owns:
 - Thread/Fibre-owned attention and retrieval of relevant identity, memory, relationship, semantic-state and commitment evidence;
 - reconciliation of organismic pressure, current feeling/need, developed character and external considerations;
 - one bounded private cognition invocation when semantic deliberation is actually warranted;
-- provenance, selected evidence refs, model/token usage and latency needed to inspect and optimize the episode.
+- provenance, selected evidence refs, model/token usage and latency needed to inspect and optimize the episode. The model sees each selected item under a short handle (`e1`, `e2`, …, in selection order) and cites those; the judgment records the authoritative record IDs they map to, and a citation outside the selection is dropped.
 
 Interior Cognition does **not** own:
 
