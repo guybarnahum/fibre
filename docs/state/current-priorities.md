@@ -30,7 +30,7 @@ self-introduction teaches the speaker's name; a real consented
 conversation can establish and later revise reciprocal factual
 `social_contact` life relations. Interior Cognition prioritizes
 the encountered party's own relation and Memories linked by actual
-Experience/Story evidence. This is proposed in ADR-0029 and requires
+Experience/Story evidence. This is accepted in ADR-0029 and requires
 Guy's local validation and later staging observation. **Do not deploy
 this slice before reviewing staging evidence for Slices 2–3.**
 No claim is made of friendship, more meetings, automatic outreach or
@@ -384,7 +384,7 @@ The three tracks are different: [attribution](../architecture/world-cost-account
 
 | Established scope | Reliable home |
 |---|---|
-| M1, #33–#40, public cloud birth G/H, FID | [Current state](current-state.md), [historical outcomes](../history/README.md) and [cloud proof](../architecture/cloud-e2e-closure-plan.md) |
+| M1, #33–#40, public cloud birth G/H, FID | [Current state](current-state.md), historical outcomes (docs/history/README.md, in Git at `eba5b49`) and [cloud proof](../architecture/cloud-e2e-closure-plan.md) |
 | N1 World-owned present, N2 bounded dormancy, N3 Genesis→continuing life, N4 deployed Meet | [M2 overview](../validation/m2-pr-plan.md), [LivedNow](../architecture/lived-now-and-meetings.md) |
 | N5 E0–E5 general encounter, distinct attention/Experience/Journal/Memory and exactly-once paid visitor-work consequence | [N5 accepted results](../validation/n5-encounter-slices.md) |
 | R1–R4, genetic/physical identity and appearance Tranche A | [Intrinsic regulation](../architecture/intrinsic-regulation.md), [Human Appearance](../architecture/human-appearance.md), [calibration proof](../validation/physical-appearance-calibration-plan.md) |

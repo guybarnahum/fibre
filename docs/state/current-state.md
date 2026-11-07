@@ -43,7 +43,7 @@ The accepted [Constitution](../foundations/constitution.md), [Principles](../fou
 - Inherited constraints shape a beginning, not a fixed moral, cultural or psychological destiny. The same belief reached through different lived paths can still express different individual histories.
 - Public availability, request safety, and human interest do not mechanically compel a Thread's participation, disclosure, speech or future contact.
 
-The mature Whole-Person / causal-individuality claim remains subject to [standing gates and evidence](../validation/m2-standing-gate-rubric-and-evidence-map.md), not aggregate tests or generated narrative quality. Preserve negative results and distinguish `Named-only`, `Stored-only`, `Context-only` and behaviorally/future-state causal evidence.
+The mature Whole-Person / causal-individuality claim remains subject to standing gates and evidence (docs/validation/m2-standing-gate-rubric-and-evidence-map.md, in Git at `eba5b49`), not aggregate tests or generated narrative quality. Preserve negative results and distinguish `Named-only`, `Stored-only`, `Context-only` and behaviorally/future-state causal evidence.
 
 ## Capability status at this checkpoint
 

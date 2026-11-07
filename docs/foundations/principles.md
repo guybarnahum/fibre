@@ -1,11 +1,13 @@
 ---
 id: fibre-principles
-status: proposed
-last-reviewed: 2026-08-04
+status: accepted
+last-reviewed: 2026-11-06
 canonical: true
 ---
 
 # The Thirteen Principles of Fibre
+
+**Accepted by Guy November 6, 2026, as written.**
 
 These thirteen principles are the compact expression of Fibre's constitutional commitments. Their number is an intentional structural echo of Maimonides' Thirteen Principles: a memorable framework for foundational belief. Fibre's principles are secular, revisable project doctrine, not religious claims or a comparison of authority.
 

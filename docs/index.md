@@ -17,7 +17,6 @@ Fibre should be judged not only by task throughput but by whether distinct Threa
 - [`decisions/`](decisions/) — durable choices among valid alternatives and why they were made.
 - [`validation/`](validation/) — how Fibre tests, challenges, and plans to prove its claims.
 - [`state/`](state/) — what is true about Fibre now.
-- [`history/`](history/) — what was true before and why it changed.
 - [`research/`](research/) — what Fibre does not yet know.
 - [`use-cases/`](use-cases/) — illustrative examples of Fibre in use; not normative.
 - [`glossary.md`](glossary.md) — shared terminology across all layers.
@@ -59,7 +58,7 @@ A genuine conflict between canonical documents is a documentation defect to reso
 - ADRs record durable choices among valid alternatives.
 - State records current project truth.
 - Validation records how claims are challenged and tested.
-- History may preserve superseded material and provenance without becoming current authority.
+- Git history, not the tree, preserves superseded material and provenance (ADR-0016).
 - The glossary fixes shared vocabulary but does not override foundations or invariants; disagreement indicates a documentation defect.
 
 The documentation is modular so humans and LLM workers can load only the context needed for a task. [`ai-context-manifest.json`](ai-context-manifest.json) is the machine-readable source for bounded context profiles.

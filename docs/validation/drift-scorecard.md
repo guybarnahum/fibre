@@ -73,7 +73,7 @@ The important shape is not the total alone. M1's strongest evidence is concentra
 
 **Rubric v2: 14 / 26.** Historical M1 remains frozen at 11/26; this is the pre-PR-#34 checkpoint after PR #33 earned its semantic standing claim through sealed `semantic_guardian_v4_standing_gate_v4`.
 
-The passing standing cycle used frozen `semantic_guardian_v4_candidate_4` and reported **18/18 cases passed** with zero provider, protocol-validation, cognition, behavioral, or differential failures. See [`semantic-guardian-v4-standing-gate-v4.md`](semantic-guardian-v4-standing-gate-v4.md).
+The passing standing cycle used frozen `semantic_guardian_v4_candidate_4` and reported **18/18 cases passed** with zero provider, protocol-validation, cognition, behavioral, or differential failures. See `semantic-guardian-v4-standing-gate-v4.md` (docs/validation/semantic-guardian-v4-standing-gate-v4.md, in Git at `eba5b49`).
 
 | Dimension | Score | Basis |
 |---|---:|---|
@@ -119,7 +119,7 @@ Behavioral failures:           0
 Differential failures:         0
 ```
 
-The committed machine-readable authority is `artifacts/validation/history_bends_judgment_standing_gate_v4.evidence.json`; it includes the exact model rationales, factor evidence refs, provider request/digest data, retrying timeout record, normalizations, persisted memory, restart witness, and counterfactual witnesses. See [`history-bends-judgment-standing-gate-v4.md`](history-bends-judgment-standing-gate-v4.md).
+The committed machine-readable authority is `artifacts/validation/history_bends_judgment_standing_gate_v4.evidence.json`; it includes the exact model rationales, factor evidence refs, provider request/digest data, retrying timeout record, normalizations, persisted memory, restart witness, and counterfactual witnesses. See `history-bends-judgment-standing-gate-v4.md` (docs/validation/history-bends-judgment-standing-gate-v4.md, in Git at `eba5b49`).
 
 | Dimension | Score | Basis |
 |---|---:|---|

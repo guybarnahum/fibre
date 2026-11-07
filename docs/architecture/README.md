@@ -52,4 +52,4 @@ Forward documents do not claim deferred mechanisms are implemented or authoritat
 
 The current architecture document for a concept should have a semantic name such as `intrinsic-regulation.md`, `birth-center-runtime.md` or `identity-embodiment-contract.md`. Milestone labels and implementation-version suffixes do not belong in permanent filenames merely because that is when a design was introduced.
 
-Superseded architecture normally remains available through Git history. Preserve selected earlier formulations under `docs/history/` only when they retain explanatory value.
+Superseded architecture remains available through Git history; the tree describes current Fibre only (ADR-0016).

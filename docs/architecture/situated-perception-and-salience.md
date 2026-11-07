@@ -440,7 +440,7 @@ nor retrieving their Memory proves friendship or changed behavior.
 will not deploy until natural staging evidence for earlier social
 slices has been reviewed. The limitations above are computational
 bounds, not permanent personhood restrictions. Owner decision is
-[proposed ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md).
+[accepted ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md).
 
 ## Reconsideration after an enacted change (October 23 source)
 

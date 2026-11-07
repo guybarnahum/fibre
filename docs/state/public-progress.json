@@ -107,8 +107,8 @@
         "limitation": "The result is a substrate for lived development, not a claim that every stored field is causal."
       },
       "evidence": [
-        "docs/history/milestones/pr40.md",
-        "docs/state/current-state.md"
+        "docs/state/current-state.md",
+        "docs/architecture/genesis-compiler-contract.md"
       ]
     },
     {

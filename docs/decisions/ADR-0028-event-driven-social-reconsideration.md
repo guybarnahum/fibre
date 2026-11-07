@@ -1,13 +1,13 @@
 ---
 id: adr-0028-event-driven-social-reconsideration
-status: proposed
-last-reviewed: 2026-10-23
-canonical: false
+status: accepted
+last-reviewed: 2026-11-06
+canonical: true
 ---
 
 # ADR-0028 — Reconsideration within a shared visit
 
-**Proposed owner decision:** A person may freely reconsider another person
+**Accepted by Guy November 6, 2026, as built and live in staging since late October 2026.** A person may freely reconsider another person
 sharing their lived space, after *their own* life changes materially.
 An earlier refusal, silence or acknowledgment remains history, not a
 permanent prohibition or an obligation to reciprocate. World should

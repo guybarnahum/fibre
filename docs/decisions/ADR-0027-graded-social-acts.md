@@ -1,13 +1,13 @@
 ---
 id: adr-0027-graded-social-acts
-status: proposed
-last-reviewed: 2026-10-23
-canonical: false
+status: accepted
+last-reviewed: 2026-11-06
+canonical: true
 ---
 
 # ADR-0027 — A natural repertoire of small social acts
 
-**Owner decision for review:** A salient encounter with a co-present person
+**Accepted by Guy November 6, 2026, as built and live in staging since late October 2026.** A salient encounter with a co-present person
 offers a choice among `none | acknowledge | greet | remark |
 invite_conversation`. Cognition decides whether to act, what is expressed
 and its private immediate Experience. Salience and World presence are

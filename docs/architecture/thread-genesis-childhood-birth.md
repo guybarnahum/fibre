@@ -21,7 +21,7 @@ The inherited substrate is [`Symbolic Thread Genome`](symbolic-thread-genome.md)
 
 Richness follows [`rich-life.md`](../foundations/rich-life.md): experiential fertility for later individuality, not biography length, drama or a quota of formative experiences.
 
-Current admission/publication detail lives in [`genesis-compiler-contract.md`](genesis-compiler-contract.md). Completed Genesis scientific-hardening and #39 birth outcomes remain in [Genesis hardening](../history/genesis-selectivity-scientific-hardening.md) and [#39](../history/milestones/pr39.md), respectively.
+Current admission/publication detail lives in [`genesis-compiler-contract.md`](genesis-compiler-contract.md). Completed Genesis scientific-hardening and #39 birth outcomes remain in Genesis hardening (docs/history/genesis-selectivity-scientific-hardening.md, in Git at `eba5b49`) and #39 (docs/history/milestones/pr39.md, in Git at `eba5b49`), respectively.
 
 ## Authority boundary
 
@@ -458,11 +458,11 @@ Milestone #39 exercised this architecture with one fixed five-Thread held-out co
 
 The result also exposed real debt: scheduled memory decisions saturated, reinterpretation heavily favored revision, D2 was underpowered with a post-hoc positive-reframing signal, D3 genome attribution was inconclusive, D5 was citation-confounded, and the generator showed repeated affordances/common voice.
 
-Those findings were retained rather than regenerated away. The concise outcome is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+Those findings were retained rather than regenerated away. The concise outcome is docs/history/milestones/pr39.md (in Git at `eba5b49`).
 
 ## Completed scientific hardening before causal consumption
 
-The accepted unnumbered bridge, now recorded in [its completed outcome](../history/genesis-selectivity-scientific-hardening.md), hardened:
+The accepted unnumbered bridge, now recorded in its completed outcome (docs/history/genesis-selectivity-scientific-hardening.md, in Git at `eba5b49`), hardened:
 
 - actual remember/decline selectivity without quotas;
 - negative, ambiguous, mundane and unchanged meaning fidelity;
@@ -471,7 +471,7 @@ The accepted unnumbered bridge, now recorded in [its completed outcome](../histo
 - diagnostics with meaningful positive/negative/counterfactual controls;
 - prospective sealed-history evaluation with compiler-enforced transitive provenance isolation.
 
-That bridge did not implement ordinary-cognition identity/history projection or earn Whole-Person standing. The subsequent [#40 outcome](../history/milestones/pr40.md) records a separate bounded causal-consumption result.
+That bridge did not implement ordinary-cognition identity/history projection or earn Whole-Person standing. The subsequent #40 outcome (docs/history/milestones/pr40.md, in Git at `eba5b49`) records a separate bounded causal-consumption result.
 
 ## Vision test
 

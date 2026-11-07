@@ -1,13 +1,13 @@
 ---
 id: adr-0029-recognition-and-acquaintance
-status: proposed
-last-reviewed: 2026-10-23
-canonical: false
+status: accepted
+last-reviewed: 2026-11-06
+canonical: true
 ---
 
 # ADR-0029 — Recognition and acquaintance through lived encounters
 
-**Proposed owner decision:** A Thread can recognize someone from its own
+**Accepted by Guy November 6, 2026, as built and live in staging since late October 2026.** A Thread can recognize someone from its own
 noticed encounters, learn a name through an audible self-introduction,
 and acquire a factual acquaintance after an actual consented conversation.
 None of these facts creates friendship, affection, trust, or a duty to speak.

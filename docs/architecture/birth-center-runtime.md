@@ -181,7 +181,7 @@ The Birth Center runtime must not open or mutate the live World database merely 
 
 The publication boundary is fetch-shaped and provider-neutral. Local composition can inject it directly; Cloudflare composition backs the same boundary with a private service binding to World. Authority ownership does not change: Birth Center may retry publication, while World alone admits the authoritative Thread.
 
-Milestone #39 exercised this boundary end to end with a fixed five-Thread cohort: each admitted Thread published atomically with its FIN/civil registration, and independent hydration reconstructed the admitted life from canonical authorities. The retained result is [`../history/milestones/pr39.md`](../history/milestones/pr39.md).
+Milestone #39 exercised this boundary end to end with a fixed five-Thread cohort: each admitted Thread published atomically with its FIN/civil registration, and independent hydration reconstructed the admitted life from canonical authorities. The retained result is docs/history/milestones/pr39.md (in Git at `eba5b49`).
 
 ## Durability
 
@@ -280,7 +280,7 @@ historical records are never rewritten. World alone admits the live birth.
 
 ## Current development boundary
 
-The completed Genesis memory/meaning selectivity and scientific-diagnostic bridge is recorded in [its outcome](../history/genesis-selectivity-scientific-hardening.md). That work did not move authoritative birth state into the Birth Center or earn a Whole-Person standing increase.
+The completed Genesis memory/meaning selectivity and scientific-diagnostic bridge is recorded in its outcome (docs/history/genesis-selectivity-scientific-hardening.md, in Git at `eba5b49`). That work did not move authoritative birth state into the Birth Center or earn a Whole-Person standing increase.
 
 Production persistence remains governed separately by [`production-persistence.md`](production-persistence.md): semantic stores own Fibre meaning, while provider-neutral `InfraDriver` capabilities own production persistence guarantees. Authoritative World relational state and Birth Center provisional/provider-call durability now cross `InfraDriver.state`; local `.fibre` development artifacts are fixtures/validation artifacts rather than production persistence precedent.
 

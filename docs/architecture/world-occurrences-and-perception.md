@@ -246,7 +246,7 @@ afterthought and a separate Thread-owned outreach decision. The added
 World reads are bounded participant-owned Story/attention and Experience
 joins; no extra cognitive invocation or general venue scan.
 **Source-only**, not staging-observed autonomous relationships. See
-[proposed ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md).
+[accepted ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md).
 
 ## Actor-arrival bystander attention — October 19 source cut
 

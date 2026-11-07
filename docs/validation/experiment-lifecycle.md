@@ -136,7 +136,7 @@ Progress reporting is experiment/CLI infrastructure. It must not change Thread c
 
 ## History bends judgment archive
 
-The accepted current record is [`history-bends-judgment-standing-gate-v4.md`](history-bends-judgment-standing-gate-v4.md). It records Candidate 4 as PASSED / SEALED: a Fibre-owned durable episode record survived restart and causally moved the same later request from `refuse/low` to `accept/high` under exact one-memory withholding.
+The accepted current record is `history-bends-judgment-standing-gate-v4.md` (docs/validation/history-bends-judgment-standing-gate-v4.md, in Git at `eba5b49`). It records Candidate 4 as PASSED / SEALED: a Fibre-owned durable episode record survived restart and causally moved the same later request from `refuse/low` to `accept/high` under exact one-memory withholding.
 
 Candidates/gates 1–3 remain preserved in Git history as failed sealed cycles and methodological lessons; their superseded per-cycle documents and machine bundles are not current-tree authorities.
 
@@ -150,7 +150,7 @@ The v4 Development credit is deliberately limited: Episode A's setup appraisal w
 
 ## Semantic Guardian / dignity reasoning archive
 
-The accepted current record is [`semantic-guardian-v4-standing-gate-v4.md`](semantic-guardian-v4-standing-gate-v4.md). Candidate 4 PASSED / SEALED with fresh held-out semantic identity/state differentials and earned the accepted standing credit.
+The accepted current record is `semantic-guardian-v4-standing-gate-v4.md` (docs/validation/semantic-guardian-v4-standing-gate-v4.md, in Git at `eba5b49`). Candidate 4 PASSED / SEALED with fresh held-out semantic identity/state differentials and earned the accepted standing credit.
 
 Candidates/gates 1–3 remain preserved in Git history as failed sealed cycles and methodological lessons; their superseded per-cycle documents and machine bundles are not current-tree authorities.
 

@@ -30,9 +30,9 @@ The hostile review also sharpened an independent Fibre argument: even if some fu
 
 The durable record is:
 
-- `docs/validation/whole-person-benchmark.md`
-- `docs/validation/whole-person-prefreeze-characterization.md`
-- `docs/history/milestones/pr39.md`
+- docs/validation/whole-person-benchmark.md (in Git at `eba5b49`)
+- docs/validation/whole-person-prefreeze-characterization.md (in Git at `eba5b49`)
+- docs/history/milestones/pr39.md (in Git at `eba5b49`)
 
 ## Decision
 

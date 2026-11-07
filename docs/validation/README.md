@@ -12,7 +12,7 @@ How Fibre tests, challenges, and proves its claims.
 - [Meet runtime and cost audit](meet-encounter-run-path-audit.md) — bounded staging measurements and open post-fix cost evidence.
 - [Prototype roadmap](prototype-roadmap.md) — broad capability sequence, not the live execution ledger; use [current priorities](../state/current-priorities.md) for the latter.
 
-Scientific standing requires its named [rubric or sealed evidence](m2-standing-gate-rubric-and-evidence-map.md); implementation test results alone do not confer Whole-Person standing.
+Scientific standing requires its named rubric or sealed evidence (docs/validation/m2-standing-gate-rubric-and-evidence-map.md, in Git at `eba5b49`); implementation test results alone do not confer Whole-Person standing.
 
 ## Keep here
 
@@ -26,6 +26,6 @@ Scientific standing requires its named [rubric or sealed evidence](m2-standing-g
 
 Intermediate candidates, superseded gate attempts, review scratch, burned development runs, and obsolete plans do not belong indefinitely in the checked-out validation tree. Git history is the default archive for those records.
 
-If understanding a superseded validation transition still matters to current design, preserve a concise selected account under `docs/history/validation/`. If exact machine-readable bytes still have continuing scientific, replay, interoperability, or audit value, retain them under `artifacts/validation/`.
+If understanding a superseded validation transition still matters to current design, fold its lasting conclusion into the current architecture or decision it shaped. If exact machine-readable bytes still have continuing scientific, replay, interoperability, or audit value, retain them under `artifacts/validation/`.
 
 Reusable synthetic inputs belong under `fixtures/`; disposable local runs and diagnostics belong under `.fibre/`.

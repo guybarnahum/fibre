@@ -96,7 +96,6 @@ The old #41 standing-gate program remains useful historical evaluation science, 
 - `experiments/` — falsifiable research work.
 - `artifacts/validation/` — retained evidence with a continuing audit/scientific purpose.
 - `tools/` — development, deployment, inspection and replay tooling.
-- `docs/history/` — selected explanatory history; Git history is the default archive for superseded implementation detail.
 
 ## Evidence and AI context
 
