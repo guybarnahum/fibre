@@ -131,7 +131,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
   reasoningFor(port,{lazy=false}={}) {
     const value=resolveServiceDeployment(DEPLOYMENT,"world-kernel").integrations[port];
     const select=lazy?lazyReasoningIntegration:selectReasoningIntegration;
-    return meteredReasoningIntegration(select(value,{environment:this.env}),{port});
+    return meteredReasoningIntegration(select(value,{environment:this.env}),{
+      port,captureDepths:value?.config?.captureDepths??[],
+    });
   }
 
   journalBookForRequest() {

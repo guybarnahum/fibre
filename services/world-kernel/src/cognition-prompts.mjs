@@ -20,5 +20,6 @@ export function promptRequest(id, { threadId = null } = {}) {
     promptRef:`${prompt.id}@${prompt.version}`,
     cacheKey:prompt.cache === "thread" ? `${prompt.id}:${threadId}` : prompt.id,
     latency:prompt.latency,
+    depth:prompt.depth,
   });
 }

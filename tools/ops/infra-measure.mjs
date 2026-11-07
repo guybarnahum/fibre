@@ -132,6 +132,8 @@ export function summarizeCosts(events) {
       conversationEndings[event.endedBy] = (conversationEndings[event.endedBy] ?? 0) + 1;
       continue;
     }
+    // Replay captures are kept in the evidence file, not summarised here.
+    if (event.event === "model-capture") continue;
     if (event.event === LIVED_NOW_FAILURE) {
       reconciliationFailures.push({
         phase:event.phase,source:event.source,threadId:event.threadId,
@@ -187,7 +189,8 @@ function findCostEvents(value, sink) {
     return;
   }
   if (typeof value !== "object") return;
-  if (COST_EVENTS.has(value.event) || value.event === MODEL_CALL || value.event === CONVERSATION_ENDED) sink(value);
+  if (COST_EVENTS.has(value.event) || value.event === MODEL_CALL || value.event === CONVERSATION_ENDED
+    || value.event === "model-capture") sink(value);
   if (value.event === LIVED_NOW_FAILURE) sink({
     event:LIVED_NOW_FAILURE,
     threadId:value.threadId??null,

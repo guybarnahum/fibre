@@ -215,7 +215,28 @@ function promptPrefix(request) {
   return PREFIX_CHARS.map((chars) => text.length < chars ? null : short(text.slice(0, chars)));
 }
 
-export function meteredReasoningIntegration(adapter, { port, log = console.log } = {}) {
+// Replay capture: for jobs of the named depths (staging, opt-in, temporary),
+// one extra line carries the full input, schema and answer so a candidate
+// model can later be judged on exactly the same requests. Thread-private
+// content: operator evidence only, never committed.
+const CAPTURE_MAX_CHARS = 60000;
+function captureLine(request, provenance, output) {
+  const line = JSON.stringify({
+    event: "model-capture",
+    kind: String(request?.clientRequestId ?? "unknown").replace(/_[0-9a-f]{16,}$/u, ""),
+    prompt: request?.promptRef ?? null,
+    depth: request?.depth ?? null,
+    scope: typeof request?.cacheKey === "string" ? short(request.cacheKey) : null,
+    modelId: provenance?.modelId ?? null,
+    input: request?.input ?? null,
+    responseSchema: request?.responseSchema ?? null,
+    output: output ?? null,
+  });
+  return line.length > CAPTURE_MAX_CHARS ? null : line;
+}
+
+export function meteredReasoningIntegration(adapter, { port, log = console.log, captureDepths = [] } = {}) {
+  const capturing = new Set(captureDepths);
   const kindOf = (request) => String(request?.clientRequestId ?? "unknown").replace(/_[0-9a-f]{16,}$/u, "");
   const report = (request, startedAt, provenance, outcome) => {
     const usage = provenance?.usage ?? null;
@@ -251,6 +272,10 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log }
         return result;
       } finally {
         report(request, startedAt, result?.provenance, result === undefined ? "failed" : "completed");
+        if (result !== undefined && capturing.has(request?.depth)) {
+          const line = captureLine(request, result.provenance, result.output);
+          if (line !== null) log(line);
+        }
       }
     },
     ...(typeof adapter.streamExpression !== "function" ? {} : {

@@ -151,3 +151,21 @@ test("each World model call reports its cognitive job and prompt-cache reuse wit
     { kind:"social-live-turn", port:"encounter", cachedInputTokens:4096 },
   ], "model cost was not attributable to its cognitive job");
 });
+
+test("Thread-private requests are captured for replay only for the depths explicitly named", async () => {
+  const lines = [];
+  const inner = { provider:"openai", modelId:"gpt-test", configuration:{},
+    invoke:async () => ({ output:{ outcome:"noticed" }, provenance:{ modelId:"gpt-test" } }) };
+  const request = (depth) => ({ clientRequestId:`encounter-attention_${"a".repeat(24)}`, depth,
+    promptRef:"encounter.attention@1", input:{ memory:"a private recollection" }, responseSchema:{} });
+  const quiet = meteredReasoningIntegration(inner, { port:"encounter", log:(line) => lines.push(JSON.parse(line)) });
+  await quiet.invoke(request("gate"));
+  assert.equal(lines.some((line) => line.event === "model-capture"), false, "a request was captured without being asked");
+  const capturing = meteredReasoningIntegration(inner, { port:"encounter", captureDepths:["gate"],
+    log:(line) => lines.push(JSON.parse(line)) });
+  await capturing.invoke(request("deep"));
+  await capturing.invoke(request("gate"));
+  const captured = lines.filter((line) => line.event === "model-capture");
+  assert.deepEqual(captured.map((line) => [line.depth, line.input.memory, line.output.outcome]),
+    [["gate", "a private recollection", "noticed"]], "capture did not keep exactly the named depth");
+});
