@@ -96,7 +96,7 @@ function contextState({ livedContext, thread, livedNowStore, semanticStateStore,
     semanticStates: semanticStateStore.listCurrentState(thread.threadId),
     memories: memoryStore === null ? [] : (() => {
       validateStore("memoryStore", memoryStore, "listCurrentMemories");
-      return memoryStore.listCurrentMemories(thread.threadId);
+      return memoryStore.listCurrentMemories(thread.threadId,{inMind:"background"});
     })(),
   };
 }

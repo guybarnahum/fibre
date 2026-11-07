@@ -409,6 +409,7 @@ function threadObservatory(runtime, threadId) {
         placeEpisodes:structuredClone(placeEpisodes),
       }),
       memories:structuredClone(memory.listCurrentMemories(threadId, { newestFirst:true, limit:24 })),
+      memoryAvailability:Object.fromEntries(memory.memoryAvailability(threadId)),
       socialInteractions:structuredClone(experience.listSocialInteractions(threadId, {
         newestFirst:true,
         limit:24,

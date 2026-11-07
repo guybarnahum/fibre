@@ -183,7 +183,7 @@ export function createThreadContactProcess({
         at:contactAt,
       });
       const semanticStates=semanticStateStore.listCurrentState(attempt.threadId);
-      const memories=memoryStore.listCurrentMemories(attempt.threadId,{
+      const memories=memoryStore.listCurrentMemories(attempt.threadId,{inMind:"background",
         limit:8,
         newestFirst:true,
       });
@@ -259,7 +259,7 @@ export function createThreadContactProcess({
         at:contactAt,
       });
       const semanticStates=semanticStateStore.listCurrentState(attempt.threadId);
-      const memories=memoryStore.listCurrentMemories(attempt.threadId,{
+      const memories=memoryStore.listCurrentMemories(attempt.threadId,{inMind:"background",
         limit:8,
         newestFirst:true,
       });

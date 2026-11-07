@@ -283,7 +283,7 @@ export function createWorldEnvironmentOpportunity({
                 semanticStates:already===null
                   ?semanticStateStore.listCurrentState(presence.threadId):[],
                 memories:already===null
-                  ?memoryStore.listCurrentMemories(presence.threadId,{
+                  ?memoryStore.listCurrentMemories(presence.threadId,{inMind:"background",
                     limit:6,newestFirst:true,
                   }):[],
                 experienceStore,modelAdapter,onExperienceQueued,

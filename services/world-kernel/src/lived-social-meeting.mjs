@@ -69,7 +69,7 @@ function contextFor({ threadId, worldReader, livedNowStore, semanticStateStore, 
     thread:structuredClone(thread),
     situation:structuredClone(situation),
     semanticStates:Object.freeze(semanticStateStore.listCurrentState(threadId).map((state) => structuredClone(state))),
-    memories:Object.freeze(memoryStore.listCurrentMemories(threadId, {
+    memories:Object.freeze(memoryStore.listCurrentMemories(threadId,{inMind:"background",
       limit:MEMORY_LIMIT,
       newestFirst:true,
     }).map((memory) => structuredClone(memory))),

@@ -184,7 +184,17 @@ export class AutobiographicalMemoryStore {
     return history;
   }
 
-  listCurrentMemories(threadId, { limit = null, newestFirst = false } = {}) {
+  // inMind: "background" holds only memories that come readily to mind;
+  // "deliberate" also those that are hard to recall. Omitted: every memory.
+  listCurrentMemories(threadId, { limit = null, newestFirst = false, inMind = null } = {}) {
+    if(inMind!==null){
+      if(!["background","deliberate"].includes(inMind))throw new TypeError("inMind is invalid");
+      const held=new Set(inMind==="background"?["accessible"]:["accessible","difficult"]);
+      const levels=this.memoryAvailability(threadId);
+      const all=this.listCurrentMemories(threadId,{newestFirst});
+      const kept=all.filter(memory=>held.has(levels.get(memory.memoryId)?.level??"accessible"));
+      return limit===null?kept:kept.slice(0,limit);
+    }
     this.#requireThread(threadId);
     if (limit !== null && (!Number.isSafeInteger(limit) || limit < 1 || limit > 1000)) {
       throw new TypeError("current memory limit must be between 1 and 1000");
@@ -277,6 +287,30 @@ export class AutobiographicalMemoryStore {
       memories: this.listCurrentMemories(threadId),
       standingCredit: { acceptedCausalAssertions: 0, endogenousEvidenceAssertions: 0 },
     };
+  }
+
+  memoryAvailability(threadId){
+    this.#requireThread(threadId);
+    return new Map(this.#database.prepare(`
+      SELECT memory_id,level,touched_at,reason,cue_ref,changed_at
+      FROM thread_memory_availability WHERE thread_id=?
+    `).all(threadId).map(row=>[row.memory_id,Object.freeze({level:row.level,
+      touchedAt:row.touched_at,reason:row.reason,cueRef:row.cue_ref??null,
+      changedAt:row.changed_at})]));
+  }
+
+  // Availability changes only by use (recalled), time unused (faded) or a cue.
+  setMemoryAvailability({threadId,memoryId,level,touchedAt,reason,cueRef=null,changedAt}){
+    if(this.#readOnly)throw new AutobiographicalMemoryConflictError("read-only memory store cannot write");
+    if(!["accessible","difficult","inaccessible"].includes(level))throw new TypeError("availability level is invalid");
+    if(!["recalled","faded","cue"].includes(reason))throw new TypeError("availability reason is invalid");
+    this.#database.prepare(`
+      INSERT INTO thread_memory_availability(thread_id,memory_id,level,touched_at,reason,cue_ref,changed_at)
+      VALUES (?,?,?,?,?,?,?)
+      ON CONFLICT(thread_id,memory_id) DO UPDATE SET level=excluded.level,
+        touched_at=excluded.touched_at,reason=excluded.reason,cue_ref=excluded.cue_ref,
+        changed_at=excluded.changed_at
+    `).run(threadId,memoryId,level,touchedAt,reason,cueRef,changedAt);
   }
 
   recordMemory(candidate) {

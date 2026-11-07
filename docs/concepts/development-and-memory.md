@@ -1,7 +1,7 @@
 ---
 id: concept-development-memory
 status: accepted
-last-reviewed: 2026-09-20
+last-reviewed: 2026-11-07
 canonical: true
 ---
 
@@ -98,7 +98,19 @@ record consultation
     participant's account and produces evidence for present cognition
 ```
 
-The exact recent-availability policy is deferred. Fibre does not canonize a fixed wall-clock horizon such as 72 hours, and dropping material from ordinary recent availability does not erase history.
+Dropping material from ordinary recent availability does not erase history, and Fibre does not canonize a fixed wall-clock horizon such as 72 hours for it.
+
+### How readily a memory comes to mind (accepted by Guy, November 7, 2026)
+
+Every retained memory also has an **availability** — how readily it comes to mind — kept as World policy beside the memory, never as part of it. The recollection, its meaning, its evidence and World history are untouched, and nothing is deleted.
+
+- **Anchored memories do not fade:** those a current interest, stance or identity statement rests on; formative Genesis memories that carry durable meaning; and those the Thread itself marked very important (salience 0.8 or more). Letting an interest or stance go frees its memories to fade.
+- **Use refreshes.** A memory the Thread's own cognition cites in a judgment comes back to mind.
+- **Unused memories fade in steps:** `accessible → difficult → inaccessible`, one step per interval without use, the interval set by the salience the Thread gave the memory: `3 days × 2^(5 × salience)` (about 6 days at 0.2, 17 at 0.5, 34 at 0.7).
+- **Hard to recall** (`difficult`) memories stay available to deliberate judgment but not to background jobs (noticing, experiencing, contact, reflection's recent memories). **Out of reach** (`inaccessible`) memories reach neither, but remain in World history and the Observatory.
+- **Resurfacing:** meeting the same person again raises a faded memory of them one step. Place and subject cues, and a Thread deliberately holding on to a memory, are deferred; so is an inherited tendency setting each Thread's pace.
+
+The review runs before a Thread's delayed reflection, is deterministic and makes no model call.
 
 Record consultation is **not recollection**. If a Thread consults Fibre records, correspondence, another participant's account, or other admissible evidence about the Thread's own past, the result may support a current Thread-authored belief about what happened. That belief must preserve provenance and uncertainty and must not be silently represented as autobiographical memory.
 

@@ -91,7 +91,7 @@ export function createThreadContactPerception({
             semanticStates:existing===null
               ?semanticStateStore.listCurrentState(message.recipientThreadId):[],
             memories:existing===null
-              ?memoryStore.listCurrentMemories(message.recipientThreadId,{
+              ?memoryStore.listCurrentMemories(message.recipientThreadId,{inMind:"background",
                 limit:6,newestFirst:true,
               }):[],
             experienceStore,modelAdapter,onExperienceQueued,

@@ -3,6 +3,7 @@ import {promptRequest} from "./cognition-prompts.mjs";
 import {observablePerson} from "./world-observable-person.mjs";
 import {assertDescriptiveSemanticState} from "./semantic-state.mjs";
 import {writeMissingGists} from "./memory-gists.mjs";
+import {reviewMemoryAvailability} from "./memory-availability.mjs";
 import {
   INTEREST_CHANGE_LIMIT,INTEREST_CHANGE_SCHEMA,admitInterestChanges,
   formFormativeInterests,interestsInReflection,
@@ -408,6 +409,7 @@ export function createExperienceConsolidationProcess({
   modelAdapter,
   situatedLifeStore=null,
   embodimentStore=null,
+  identityStore=null,
   journalBook=null,
   onAfterthoughts=null,
   now=()=>new Date().toISOString(),
@@ -481,13 +483,14 @@ export function createExperienceConsolidationProcess({
     if(thread===null)throw new TypeError(`Thread ${consolidation.threadId} was not found`);
     const encounterStories=experiences.map((experience)=>experienceStore.getEncounterStory(experience.encounterRef));
     const semanticStates=semanticStateStore.listCurrentState(consolidation.threadId);
-    const memories=memoryStore.listCurrentMemories(consolidation.threadId,{
-      newestFirst:true,
-      limit:MEMORY_LIMIT,
-    });
     const people=peopleIn({
       threadId:consolidation.threadId,experiences,encounterStories,situation,
       at:consolidation.startedAt,worldReader,situatedLifeStore,embodimentStore,experienceStore,
+    });
+    const memoriesInMind=()=>memoryStore.listCurrentMemories(consolidation.threadId,{
+      newestFirst:true,
+      limit:MEMORY_LIMIT,
+      inMind:"background",
     });
 
     let decisionStage=experienceStore.getThreadExperienceConsolidationStage(
@@ -499,6 +502,13 @@ export function createExperienceConsolidationProcess({
       // Memories formed before gists existed gain the Thread's own gist, a
       // few per reflection, until every memory can be held by one.
       await writeMissingGists({thread,memoryStore,modelAdapter,now});
+      // Unused memories fade and anchored ones stay; the people met here may
+      // bring a faded memory of them back. No model call.
+      reviewMemoryAvailability({
+        threadId:consolidation.threadId,memoryStore,experienceStore,semanticStateStore,
+        identityStore,cuePersonIds:people.map(person=>person.personRef),
+        cueRef:experiences[0].experienceId,at:consolidation.startedAt,
+      });
       // A Thread that has never held an interest first finds its own, once,
       // in its formative past; this reflection then sees them.
       if(interestsHeld){
@@ -514,7 +524,7 @@ export function createExperienceConsolidationProcess({
         experiences,
         encounterStories,
         semanticStates,
-        memories,
+        memories:memoriesInMind(),
         people,
         interests:interestsHeld?experienceStore.listCurrentInterests(consolidation.threadId):[],
         modelAdapter,

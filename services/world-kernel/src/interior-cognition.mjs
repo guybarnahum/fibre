@@ -1,5 +1,6 @@
 import { promptFor, promptRequest } from "./cognition-prompts.mjs";
 import { interestText } from "./thread-interests.mjs";
+import { recallMemories } from "./memory-availability.mjs";
 import {
   assertId,
   assertIsoTimestamp,
@@ -133,7 +134,7 @@ function selectEvidence(threadId, sourceStores, policy, at, focus=null) {
     candidates.push(evidenceCandidate(item.assertionId, "identity", item.meaning));
   }
 
-  const memories = [...(memoryStore.listCurrentMemories(threadId) ?? [])]
+  const memories = [...(memoryStore.listCurrentMemories(threadId,{inMind:"deliberate"}) ?? [])]
     .map((item) => owned(threadId, "autobiographical memory", item.memoryId, item))
     .filter((item) =>
       USABLE_MEMORY_STATUS.has(item.status)
@@ -414,6 +415,10 @@ export async function runInteriorCognition({
   const selectedSet = new Set(evidenceRefs);
   const citedRefs = output.evidenceRefs ?? [];
   const groundedRefs = citedRefs.filter((ref) => selectedSet.has(ref));
+  // Memories this judgment actually drew on come back to mind.
+  const recalled=new Set(selected.evidence.filter(item=>item.kind==="memory").map(item=>item.ref));
+  recallMemories({memoryStore:sourceStores.memoryStore,threadId,at,
+    memoryIds:groundedRefs.filter(ref=>recalled.has(ref))});
 
   return Object.freeze({
     threadId,

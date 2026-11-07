@@ -110,9 +110,9 @@ export function createWorldArrivalPerception({
                   semanticStates:prior===null
                     ?semanticStateStore.listCurrentState(situation.threadId):[],
                   memories:prior===null
-                    ?memoryStore.listCurrentMemories(situation.threadId,{
+                    ?memoryStore.listCurrentMemories(situation.threadId,{inMind:"background",
                       limit:6,newestFirst:true,
-                    }).filter(m=>Date.parse(m.recordedAt)<=Date.parse(obligation.dueAt)):[],
+                    }).filter(m=>Date.parse(m.asOf)<=Date.parse(obligation.dueAt)):[],
                   experienceStore,modelAdapter,onExperienceQueued,
                 });
                 if(attention.outcome==="noticed"){
@@ -145,9 +145,9 @@ export function createWorldArrivalPerception({
                   selfRole:"arriver",venueName,semanticStates:prior===null
                     ?semanticStateStore.listCurrentState(arrival.threadId):[],
                   memories:prior===null
-                    ?memoryStore.listCurrentMemories(arrival.threadId,{
+                    ?memoryStore.listCurrentMemories(arrival.threadId,{inMind:"background",
                       limit:6,newestFirst:true,
-                    }).filter(m=>Date.parse(m.recordedAt)<=Date.parse(obligation.dueAt)):[],
+                    }).filter(m=>Date.parse(m.asOf)<=Date.parse(obligation.dueAt)):[],
                   experienceStore,modelAdapter,onExperienceQueued,
                 });
                 if(attention.outcome==="noticed")noticed++;

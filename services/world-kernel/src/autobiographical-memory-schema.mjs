@@ -39,6 +39,20 @@ export function createAutobiographicalMemoryTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    -- How readily a memory comes to mind: availability policy, not memory.
+    -- Absent means accessible. The memory record itself is never changed by it.
+    CREATE TABLE IF NOT EXISTS thread_memory_availability (
+      thread_id TEXT NOT NULL,
+      memory_id TEXT NOT NULL,
+      level TEXT NOT NULL CHECK (level IN ('accessible','difficult','inaccessible')),
+      touched_at TEXT NOT NULL,
+      reason TEXT NOT NULL CHECK (reason IN ('recalled','faded','cue')),
+      cue_ref TEXT,
+      changed_at TEXT NOT NULL,
+      PRIMARY KEY (thread_id,memory_id),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS autobiographical_memory_current_heads (
       memory_id TEXT PRIMARY KEY,
       revision INTEGER NOT NULL CHECK (revision >= 1),

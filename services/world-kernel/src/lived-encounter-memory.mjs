@@ -115,7 +115,7 @@ function livedState({ livedContext, thread, semanticStateStore, memoryStore }) {
   return {
     thread:activeThread,
     semanticStates:semanticStateStore.listCurrentState(activeThread.threadId),
-    memories:memoryStore.listCurrentMemories(activeThread.threadId),
+    memories:memoryStore.listCurrentMemories(activeThread.threadId,{inMind:"background"}),
   };
 }
 

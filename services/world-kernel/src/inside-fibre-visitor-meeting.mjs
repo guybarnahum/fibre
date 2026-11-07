@@ -30,7 +30,7 @@ function livedContext({ threadId, worldReader, livedNowStore, semanticStateStore
       semanticStateStore.listCurrentState(threadId).map((state) => structuredClone(state)),
     ),
     memories:Object.freeze(
-      memoryStore.listCurrentMemories(threadId, {
+      memoryStore.listCurrentMemories(threadId,{inMind:"background",
         limit:MEMORY_LIMIT,
         newestFirst:true,
       }).map((memory) => structuredClone(memory)),
