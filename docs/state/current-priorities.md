@@ -30,7 +30,7 @@ Architecture: [social life](../architecture/social-life.md). Concepts: [relation
 
 Target: **≤ $0.45 per living Thread per day**, confirmed before waking more Threads.
 
-**Done (staging):** per-call measurement (tokens, cache, prompt-part sizes); one call per conversation turn; every World prompt in its own file (`services/world-kernel/prompts/`, named by domain); explicit prompt caching that writes only a reused prefix; a cheaper deferred provider tier for cognition that can wait minutes, with immediate fallback; memory gists for background cognition. Measured: about $0.35–0.40 per living Thread per day (November 6).
+**Done (staging):** per-call measurement (tokens, cache, prompt-part sizes); one call per conversation turn; every World prompt in its own file (`services/world-kernel/prompts/`, named by domain); explicit prompt caching that writes only a reused prefix; a cheaper deferred provider tier for cognition that can wait minutes, with immediate fallback; memory gists for background cognition. Measured at corrected list prices (GPT-5.6 Sol $5 input, $0.50 cached, $30 output per million; flex half): about $0.45–0.50 per living Thread per day on November 6, about $0.59–0.68 projected for November 7 before that day's changes.
 
 **Next, in order:**
 

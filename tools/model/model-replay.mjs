@@ -1,10 +1,10 @@
 // Replay recorded requests of one cognitive job against the current model
-// (twice) and a candidate model (once), and judge the candidate by the
-// standard in model-replay-judge.mjs. Requests come from `model-capture`
-// events saved by `infra:measure` while capture is on for that job's depth.
+// (twice) and one or more candidate models (once each), and judge each
+// candidate by the standard in model-replay-judge.mjs, with what each would
+// cost per call at list prices. Requests come from `model-capture` events
+// saved by `infra:measure` while capture is on for that job's depth.
 //
-//   npm run model:replay -- --prompt encounter.attention --candidate-model gpt-5.6-luna
-//   npm run model:replay -- --prompt contact.decision --candidate-provider google --candidate-model gemini-3.6-flash
+//   npm run model:replay -- --prompt encounter.attention --candidates openai:gpt-5.6-luna,google:gemini-3.6-flash
 //
 // Evidence (Thread-private; never committed) goes to .fibre/model-replay/.
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
@@ -17,22 +17,34 @@ import { decisionOf, judgeReplay, sharedEventKey } from "./model-replay-judge.mj
 
 const BLIND_READ_PAIRS = 20;
 
+// List prices per million tokens (input, cached input, output), standard tier,
+// checked November 7, 2026 (OpenAI announcement of July 30, 2026; Google list
+// price). OpenAI flex is half. Verify before budgeting.
+const PRICES = Object.freeze({
+  "gpt-5.6-sol": { input: 5, cached: 0.5, output: 30, flex: 0.5 },
+  "gpt-5.6-terra": { input: 2, cached: 0.2, output: 12, flex: 0.5 },
+  "gpt-5.6-luna": { input: 0.2, cached: 0.02, output: 1.2, flex: 0.5 },
+  "gemini-3.6-flash": { input: 0.75, cached: 0.075, output: 3.75, flex: 1 },
+});
+
 function args(argv) {
-  const options = { prompt: null, candidateProvider: "openai", candidateModel: null, limit: 200,
-    concurrency: 4, evidence: ".fibre/infra-measure", env: "cloudflare" };
+  const options = { prompt: null, candidates: [], limit: 200, concurrency: 4, evidence: ".fibre/infra-measure" };
   for (let index = 0; index < argv.length; index += 1) {
     const [name, inline] = argv[index].split("=", 2);
     const value = inline ?? argv[++index];
     if (name === "--prompt") options.prompt = value;
-    else if (name === "--candidate-provider") options.candidateProvider = value;
-    else if (name === "--candidate-model") options.candidateModel = value;
-    else if (name === "--limit") options.limit = Number(value);
+    else if (name === "--candidates") {
+      options.candidates = value.split(",").map((item) => {
+        const [provider, model] = item.includes(":") ? item.split(":", 2) : ["openai", item];
+        return { provider, model };
+      });
+    } else if (name === "--limit") options.limit = Number(value);
     else if (name === "--concurrency") options.concurrency = Number(value);
     else if (name === "--evidence") options.evidence = value;
     else throw new Error(`unknown option ${name}`);
   }
-  if (!options.prompt || !options.candidateModel) {
-    throw new Error("usage: model:replay -- --prompt <id> --candidate-model <model> [--candidate-provider openai|google] [--limit 200]");
+  if (!options.prompt || options.candidates.length === 0) {
+    throw new Error("usage: model:replay -- --prompt <id> --candidates openai:<model>[,google:<model>] [--limit 200]");
   }
   return options;
 }
@@ -69,8 +81,19 @@ async function pool(items, size, work) {
   return results;
 }
 
-function textOf(output) {
-  return JSON.stringify(output, null, 2);
+// Dollars for one answer at the tier it was served.
+function costOf(model, usage, serviceTier) {
+  const price = PRICES[model];
+  if (!price || !usage) return null;
+  const tier = serviceTier === "flex" ? price.flex : 1;
+  const cached = Number(usage.cachedInputTokens ?? 0);
+  const fresh = Math.max(0, Number(usage.inputTokens ?? 0) - cached);
+  return tier * (fresh * price.input + cached * price.cached + Number(usage.outputTokens ?? 0) * price.output) / 1e6;
+}
+
+function mean(values) {
+  const known = values.filter((value) => Number.isFinite(value));
+  return known.length === 0 ? null : known.reduce((sum, value) => sum + value, 0) / known.length;
 }
 
 async function main() {
@@ -78,64 +101,84 @@ async function main() {
   const repoRoot = resolve(new URL("../..", import.meta.url).pathname);
   const manifest = await loadDeploymentManifest(join(repoRoot, "infra/deployments/environments/cloudflare.yaml"));
   const baselineValue = resolveServiceDeployment(manifest, "world-kernel").integrations.encounter;
-  const baseline = selectReasoningIntegration(baselineValue, { environment: process.env });
-  const candidate = selectReasoningIntegration({
-    kind: "ai.reasoning", provider: options.candidateProvider,
-    config: { ...baselineValue.config, model: options.candidateModel },
-    secrets: { apiKey: options.candidateProvider === "google" ? "GEMINI_API_KEY" : "OPENAI_API_KEY" },
-  }, { environment: process.env });
+  const baselineModel = baselineValue.config.model;
+  const adapters = new Map([[baselineModel, selectReasoningIntegration(baselineValue, { environment: process.env })]]);
+  for (const { provider, model } of options.candidates) {
+    adapters.set(model, selectReasoningIntegration({
+      kind: "ai.reasoning", provider, config: { ...baselineValue.config, model },
+      secrets: { apiKey: provider === "google" ? "GEMINI_API_KEY" : "OPENAI_API_KEY" },
+    }, { environment: process.env }));
+  }
 
   const { found, stale } = await captures(resolve(repoRoot, options.evidence), options.prompt);
   const chosen = found.slice(-options.limit);
   console.log(`${options.prompt}: ${chosen.length} recorded requests (${stale} under an older prompt version skipped)`);
   if (chosen.length === 0) return;
   const prompt = promptFor(options.prompt);
-  const ask = (adapter, event, run) => adapter.invoke({
+  const ask = (model, event, run) => adapters.get(model).invoke({
     systemPrompt: prompt.text, input: event.input, responseSchema: event.responseSchema,
     clientRequestId: `replay_${run}_${createHash("sha256").update(JSON.stringify(event.input)).digest("hex").slice(0, 24)}`,
     latency: "minutes",
-  }).then((result) => result.output, (error) => ({ replayError: String(error?.message ?? error).slice(0, 200) }));
+  }).then(
+    (result) => ({ output: result.output, cost: costOf(model, result.provenance?.usage, result.provenance?.serviceTier) }),
+    (error) => ({ error: String(error?.message ?? error).slice(0, 200) }),
+  );
 
-  const answered = await pool(chosen, options.concurrency, async (event) => ({
-    prompt: event.prompt, scope: event.scope, eventKey: sharedEventKey(event.prompt, event.input),
-    baseline: [await ask(baseline, event, "a"), await ask(baseline, event, "b")],
-    candidate: await ask(candidate, event, "c"),
-  }));
-  const failed = answered.filter((item) => [...item.baseline, item.candidate].some((output) => output?.replayError));
-  if (failed.length > 0) console.log(`${failed.length} requests failed to replay, e.g. ${JSON.stringify([...failed[0].baseline, failed[0].candidate].find((output) => output?.replayError))}`);
-  const cases = answered.filter((item) => !failed.includes(item));
+  const answered = await pool(chosen, options.concurrency, async (event) => {
+    const answers = { baseline: [await ask(baselineModel, event, "a"), await ask(baselineModel, event, "b")] };
+    for (const { model } of options.candidates) answers[model] = await ask(model, event, model);
+    return { prompt: event.prompt, scope: event.scope, eventKey: sharedEventKey(event.prompt, event.input), answers };
+  });
 
-  const verdict = judgeReplay(cases);
   const stamp = new Date().toISOString().replaceAll(":", "-");
   const out = join(repoRoot, ".fibre/model-replay");
   await mkdir(out, { recursive: true });
-  await writeFile(join(out, `replay-${options.prompt}-${stamp}.json`), JSON.stringify({
-    prompt: options.prompt, baselineModel: baselineValue.config.model,
-    candidate: { provider: options.candidateProvider, model: options.candidateModel }, verdict, cases,
-  }, null, 2));
-
-  // A blind read: the same request answered by the current model and the
-  // candidate, in random order; the key is kept in a separate file.
-  const sample = cases.slice(0, BLIND_READ_PAIRS);
-  const key = [];
-  const read = sample.map((item, index) => {
-    const candidateFirst = Math.random() < 0.5;
-    key.push({ pair: index + 1, candidate: candidateFirst ? "A" : "B" });
-    const [a, b] = candidateFirst ? [item.candidate, item.baseline[0]] : [item.baseline[0], item.candidate];
-    return `## Pair ${index + 1}\n\n### A\n\n\`\`\`json\n${textOf(a)}\n\`\`\`\n\n### B\n\n\`\`\`json\n${textOf(b)}\n\`\`\`\n`;
-  });
-  await writeFile(join(out, `blind-read-${options.prompt}-${stamp}.md`),
-    `# Blind read — ${options.prompt}\n\nFor each pair, which answer reads more like this person? Note A, B or same.\n\n${read.join("\n")}`);
-  await writeFile(join(out, `blind-read-key-${options.prompt}-${stamp}.json`), JSON.stringify(key, null, 2));
-
   const percent = (value) => value === null || value === undefined ? "—" : `${(value * 100).toFixed(0)}%`;
-  console.log(`cases ${verdict.cases ?? 0} · decisions ${decisionOf(options.prompt, cases[0]?.baseline[0]) === null ? "text only" : "compared"}`);
-  if (verdict.selfAgreement !== undefined) {
-    console.log(`current model agrees with itself ${percent(verdict.selfAgreement)} · candidate agrees with it ${percent(verdict.candidateAgreement)}`);
-    console.log(`largest outcome-rate gap ${percent(verdict.rateGap)} · shared events ${verdict.sharedEvents} · Threads decide differently: current ${percent(verdict.baselineDifference)}, candidate ${percent(verdict.candidateDifference)}`);
+  const dollars = (value) => value === null ? "cost unknown" : `$${(value * 1000).toFixed(2)} per 1,000 calls`;
+  const baselineCost = mean(answered.flatMap((item) => item.answers.baseline.map((answer) => answer.cost)));
+  console.log(`current ${baselineModel}: ${dollars(baselineCost)}`);
+  const report = { prompt: options.prompt, baselineModel, baselineCostPerCall: baselineCost, candidates: [] };
+
+  for (const { provider, model } of options.candidates) {
+    const usable = answered.filter((item) => ![...item.answers.baseline, item.answers[model]].some((answer) => answer.error));
+    const failures = answered.length - usable.length;
+    const cases = usable.map((item) => ({ prompt: item.prompt, scope: item.scope, eventKey: item.eventKey,
+      baseline: item.answers.baseline.map((answer) => answer.output), candidate: item.answers[model].output }));
+    const verdict = judgeReplay(cases);
+    const cost = mean(answered.map((item) => item.answers[model].cost));
+    report.candidates.push({ provider, model, failures, costPerCall: cost, verdict });
+
+    console.log(`\n${provider}:${model} — ${dollars(cost)}${baselineCost && cost ? ` (${(cost / baselineCost * 100).toFixed(0)}% of current)` : ""}`);
+    if (failures > 0) {
+      const example = answered.flatMap((item) => [...item.answers.baseline, item.answers[model]]).find((answer) => answer.error);
+      console.log(`  ${failures} of ${answered.length} requests could not be compared, e.g. ${example?.error}`);
+    }
+    if (verdict.selfAgreement !== undefined) {
+      console.log(`  current agrees with itself ${percent(verdict.selfAgreement)} · candidate agrees with it ${percent(verdict.candidateAgreement)}`);
+      console.log(`  largest outcome-rate gap ${percent(verdict.rateGap)} · shared events ${verdict.sharedEvents} · Threads decide differently: current ${percent(verdict.baselineDifference)}, candidate ${percent(verdict.candidateDifference)}`);
+    }
+    console.log(`  verdict: ${verdict.verdict}${verdict.failures?.length ? " — " + verdict.failures.join("; ") : ""}`);
+
+    // A blind read: the same request answered by the current model and the
+    // candidate, in random order; the key is kept in a separate file.
+    const sample = cases.slice(0, BLIND_READ_PAIRS);
+    const key = [];
+    const read = sample.map((item, index) => {
+      const candidateFirst = Math.random() < 0.5;
+      key.push({ pair: index + 1, candidate: candidateFirst ? "A" : "B" });
+      const [a, b] = candidateFirst ? [item.candidate, item.baseline[0]] : [item.baseline[0], item.candidate];
+      return `## Pair ${index + 1}\n\n### A\n\n\`\`\`json\n${JSON.stringify(a, null, 2)}\n\`\`\`\n\n### B\n\n\`\`\`json\n${JSON.stringify(b, null, 2)}\n\`\`\`\n`;
+    });
+    await writeFile(join(out, `blind-read-${options.prompt}-${model}-${stamp}.md`),
+      `# Blind read — ${options.prompt}\n\nFor each pair, which answer reads more like this person? Note A, B or same.\n\n${read.join("\n")}`);
+    await writeFile(join(out, `blind-read-key-${options.prompt}-${model}-${stamp}.json`), JSON.stringify(key, null, 2));
   }
-  console.log(`verdict: ${verdict.verdict}${verdict.failures?.length ? " — " + verdict.failures.join("; ") : ""}`);
-  console.log(`evidence: .fibre/model-replay/ (blind read of ${sample.length} pairs; key kept separately)`);
+  await writeFile(join(out, `replay-${options.prompt}-${stamp}.json`), JSON.stringify({ ...report, answered }, null, 2));
+  console.log(`\nevidence: .fibre/model-replay/ (verdicts, answers, blind reads; keys kept separately)`);
+  const answeredOnce = answered.find((item) => item.answers.baseline[0].output !== undefined);
+  if (answeredOnce && decisionOf(options.prompt, answeredOnce.answers.baseline[0].output) === null) {
+    console.log("this job answers only in text: the blind read decides it");
+  }
 }
 
 main().catch((error) => {

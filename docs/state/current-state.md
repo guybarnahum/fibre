@@ -72,7 +72,7 @@ The accepted [Constitution](../foundations/constitution.md), [Thirteen Principle
 | Capability | Level | Notes |
 |---|---|---|
 | Fibre Credits ledger and paid Inside Fibre visitor work | Observed (bounded) | A Thread accepted a paid availability shift, met a visitor and was paid exactly once. A broad economy is not built. |
-| Model cost control: rest, one call per conversation turn, explicit prompt caching (write only a reused prefix), a cheaper deferred tier for cognition that can wait minutes with immediate fallback, memory gists | Observed | About $109 a day with 88 living Threads (November 4) → about $1.4 a day with four (November 6), roughly $0.35–0.40 per living Thread per day. |
+| Model cost control: rest, one call per conversation turn, explicit prompt caching (write only a reused prefix), a cheaper deferred tier for cognition that can wait minutes with immediate fallback, memory gists | Observed | About $109 a day with 88 living Threads (November 4, billed) → about $2.1 a day with four to eight (November 6, at list prices), roughly $0.45–0.50 per living Thread per day. |
 | World write budget per day (Cloudflare Durable Objects) | Observed | About 2–5k rows a day with 4–8 living Threads, against a 100k free-tier allowance ([write diet](../operations/world-write-diet.md)). |
 
 ## Accepted, not yet built
