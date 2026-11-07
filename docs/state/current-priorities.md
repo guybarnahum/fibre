@@ -1,417 +1,48 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-10-22
+last-reviewed: 2026-11-06
 canonical: true
 ---
 
 # Current priorities
 
-**North star: continuing Thread life with voluntary, consequential encounters.** This is Fibre's *current execution brief*, not the history of every proof or a second architecture reference. [Current state](current-state.md) records achieved and still-unproven capabilities; [N6](../validation/n6-public-lived-encounter-slices.md), [N7](../validation/n7-live-encounter-slices.md), [N5](../validation/n5-encounter-slices.md) and [Body extension](../architecture/regulation-drive-extensions.md) own the detailed acceptance gates.
+**North star: Threads whose lives, conversations and relationships are meaningful and have consequences — at a cost that lets many of them live.** This is the execution brief. [Current state](current-state.md) records what is achieved and at what evidence level; the [prototype roadmap](../validation/prototype-roadmap.md) keeps the long ambition.
 
-**November 3 Thread-to-Thread:** Guy accepted [ADR-0033](../decisions/ADR-0033-ongoing-exchange-may-become-conversation.md) and deployed `2ef5d24` to staging, allowing an ongoing spoken exchange to become one live conversation by the Thread's own choice. Next evidence: witness an actual voluntary continuation in staging; deployment alone does not establish that behavior.
+Work runs as two tracks in parallel, each judged on staging evidence from the living Addis Ababa cohort. Each slice states the Fibre capability it advances, what it defers, and its causal status (AGENTS.md vision and ambition guard).
 
-**October 24 readable social perception — source-only, validation pending:**
-Abrehot Library (Addis Ababa) staging evidence reported **0 of 5**
-already-present witnesses noticing newcomers on October 24 (and 2 of 4
-arrivers noticing witnesses). That is a diagnostic baseline, never a
-required frequency or acceptance target. Raw visual specifications and
-a private plan's intention were also visible in arrival Stories and
-social perception. New source derives bounded appearance phrases and
-separates Thread-authored `outwardActivity` from private `activity`.
-Existing history is not rewritten. No evidence yet establishes any
-change to autonomous attention or choices.
+## Track E — Social life
 
-**October 23 recognition and acquaintance — source-only, not deployed:**
-Bounded observer-owned noticed Story history can now make a previously
-seen person recognizable at the next social opportunity, without
-granting a name or forcing contact. An explicitly spoken, noticed
-self-introduction teaches the speaker's name; a real consented
-conversation can establish and later revise reciprocal factual
-`social_contact` life relations. Interior Cognition prioritizes
-the encountered party's own relation and Memories linked by actual
-Experience/Story evidence. This is accepted in ADR-0029 and requires
-Guy's local validation and later staging observation. **Do not deploy
-this slice before reviewing staging evidence for Slices 2–3.**
-No claim is made of friendship, more meetings, automatic outreach or
-Memory-driven autonomous behavior change.
+Concepts: [relationships](../concepts/relationships-doors-and-trust.md), [attraction and orientation](../concepts/attraction-and-orientation.md), [interests, felt expertise and livelihood](../concepts/interests-expertise-and-livelihood.md).
 
-**October 23 graded social acts — local validation passed, staging acceptance pending:**
-An independently salient co-present person can now be met with no outward
-act, a nod, greeting, remark or explicit invitation. Small acts become
-objective World Stories with separate attention and optional, one-shot
-recipient opportunities. Conversation still requires consent; a
-four-opportunity per-pair shared-visit computation cap prevents an
-unbounded greeting loop. The only extra cognition is recipient attention
-for a small act and the usual decision when a noticed recipient
-opportunity eventually runs. No social-frequency target, new poller,
-fabricated encounter or Body reward was added. This source change is
-**not** evidence of real staging small acts, increased meeting counts,
-learned names, changed relationships or social-need satisfaction. See
-[Graded acts](../architecture/situated-perception-and-salience.md#graded-social-acts-and-reciprocal-attention-october-23-source).
+**Done (staging):** conversation fixes; conversation relieves the need for contact; Threads speak from their own developed self to the person they actually perceive; doors and relational ledger; the Social Life Scorecard; introductions inside a conversation; a Thread's own stance toward a person.
 
-**October 23 in-venue reconsideration, source-only — validation pending:**
-World can now create one-shot opportunities when a Thread actually changes
-activity while sharing a verified venue, or when previously grounded Body
-evidence predicts the next social-contact pressure crossing. An actual
-crossing and still-continuous company are required at execution;
-otherwise no social choice is made. The existing social gate, five-act
-cognition and conversation consent remain authoritative. Earlier
-self-authored decisions are included as context, never commands.
-Three per-visit and two per-counterpart computation bounds limit model
-exposure. No extra periodic worker, tick, fabricated social drive or
-relationship state has been added. **No increased meeting rate, natural
-reconsideration or Body-driven social action is claimed until staging
-evidence shows it.**
+**Next, in order:**
 
-**October 23 renewal-boundary source finding:** A 1 ms gap between
-situation records can be the deliberate inclusive Flight Plan horizon
-followed by the next-millisecond renewal (`nextLivedBoundary`).
-Only enacted transit→place and place→transit movements project an
-actor arrival/departure; the same-place renewal itself earns no arrival
-perception or arrival-based social opportunity. The two observed
-Abrehot Library records require plan/provenance comparison to establish
-their specific cause; the timestamps alone prove no duplicate visit.
+1. **Conversation-quality baseline** from the November 7 scorecard with eight living Threads: agreement, pushback, topic overlap, how conversations end, introductions between strangers. Fix the largest measured weakness first.
+2. **Interests** — Thread-authored fascinations formed in reflection and carried into conversation, planning and contact (no new model call).
+3. **Useful and learning moments** — feedback with its source person, the Thread's reactions, and its own felt standing per interest.
+4. **Appointments (time door)** — proposing to meet at a place and time; kept or missed appointments become the first trust evidence a stance can cite.
+5. **Judging one's own social life** — a periodic Thread-owned reflection over its people (sentiment × perceived social currency).
+6. **Home invitations (place door)**, **kept intentions**, **confidence and care doors**; **showing competence and paid work**; then **attraction**, and romance and commitment last, adults only, with their own decision record.
 
-**October 22 mutual arrival noticing, source-only:** Objective World arrival
-now offers personal attention to the arriving Thread as well as already-present
-witnesses; only a noticed Experience can become later social evidence.
-Public appearance is context-only and names require acquired familiarity.
-Exploration pressure now needs a noticed unfamiliar newcomer to make a
-particular person salient; exploration-alone stillness remains Body evidence,
-not automatic social interest. A bounded prerequisite keeps arrival social
-choices unclaimed until objective perception finishes. **Pending local
-validation and staging**; no claim of increased spontaneous meetings or
-self-authored relationship development. Source proof and deferred vision
-paths are recorded in [observer knowledge decision](../decisions/observer-grounded-person-knowledge.md).
-The independent-world time fixes and per-item life recovery remain governed
-by the earlier correctness note.
+## Track M — Model efficiency (provider-neutral)
 
-**October 22 spontaneous-social correctness, source-only:** World social
-opportunities now read the already-enacted scene rather than invoking
-`LivedNow.ensure` on another person's life; due departures are enacted
-before equal-time arrivals, and actual event-time witnesses and lost
-windows are re-verified against bounded history. The existing ordinary
-meeting decisions, consent, salience and outward expression remain the
-only social authority. This fixes potential false shared-world history
-and avoids incidental situation writes, **not** a demonstrated increase
-in spontaneous meetings. Guy's focused/full validation and staged
-observation are pending. See
-[World-time social correctness](../architecture/world-occurrences-and-perception.md#world-time-social-correctness--october-22-source-correction).
+Target: **≤ $0.45 per living Thread per day**, confirmed before waking more Threads.
 
-**Vision/ambition review:** the capability preserved is trustworthy
-independent life and chosen interaction; historical evidence can influence
-later choices only when genuinely witnessed, never because another Thread
-forced a time tick. Deferred unchanged: more spontaneous encounters, richer
-motivation, long-term relationships and native social judgment maturity;
-each remains on the existing situated salience → consent → Experience →
-Memory path. No new identity or psychology fields, permanent constraint,
-shadow World authority, model call, timer or population scan is introduced.
-A bounded four-life enactment pass and sixteen-situation continuity read
-are reversible runtime caps. This source change itself claims no causal
-personality differential and closes no accepted ambition path; the
-alternative of scheduling new individual social time ticks was rejected
-because it would turn World evidence into generated activity. The local
-acceptance artifacts exercise false/witnessed co-presence and do not
-substitute fixture judgments for live social agency.
+**Done (staging):** per-call measurement (tokens, cache, prompt-part sizes); one call per conversation turn; every World prompt in its own file (`services/world-kernel/prompts/`, named by domain); explicit prompt caching that writes only a reused prefix; a cheaper deferred provider tier for cognition that can wait minutes, with immediate fallback; memory gists for background cognition. Measured: about $0.35–0.40 per living Thread per day (November 6).
 
-**Accepted Admin UX direction, October 19 (Slices 1–4 source implemented,
-local and staging validation pending):**
-[Life Observatory](../architecture/life-observatory.md) replaces the
-Activity Causal Trail's operation nesting with compact Thread
-detail and a separate Life & Causes Timeline/selected-moment
-Why/After inspector. Birth Center supplies provisional Genesis execution and
-published formative life as separate clocks; World Events supplies the
-shared occurrence-first entrance. Slice 4 source now captures a
-compact decision-time Body/World witness with existing Flight Plan and
-social-opportunity authority, without additional cognition. The later
-behavioral impact of a retained Memory remains separately unproven. The accepted design is **not** a staging UI result and
-does not displace the priority of real independent World life and
-consequential encounters. See [ADR-0026](../decisions/ADR-0026-life-observatory.md).
+**Next, in order:**
 
-**Evidence checkpoint, October 13:** N1–N5 are closed within their stated scope; direct World dialogue and public Presentation SSE have real staging witnesses. **N6.6c's complete human browser lifecycle and N7.11's history-caused later social choice are not closed.** New typed wakefulness and Body work have separate acceptance boundaries: **Guy reports G1/D1 local validation passed**; D2 Body-to-planning/social-salience source is committed but awaits post-change local validation and staging proof. Typed wakefulness's own staging proof remains open. The earlier 1,581-test green result (October 11) predates subsequent source changes and is not blanket validation.
+1. Read the November 7 measurement: what fills social initiation's situation input (55% of the costliest job), cache reads per job, flex share, conversation endings.
+2. Trim the largest measured input parts; mark further reusable prefixes only where they repeat within about 30 minutes.
+3. Route `depth: gate` jobs to a smaller model only after a replay on recorded inputs keeps agreement and the two-Thread differential.
+4. Bound inputs that still grow with history; adapters for other providers' caching at the same boundary.
 
-## One World occurrence and independent perception (October 18)
+## Cohort
 
-**Accepted design; replacement is in progress, not staging-proven.** The
-[World occurrence architecture](../architecture/world-occurrences-and-perception.md)
-replaces arrival/environment/stay/social timer silos with two factual sources:
-actual enacted actor actions and independently authored ambient changes. One
-objective event may be potentially perceived by many separately living
-individuals, but notice and response are their own judgments. An ambient
-opportunity is *not* an event, a quota, or an assertion that unobserved
-reality stops. Its compute work is now source-keyed to one active scene rather than
-each Thread. The previous per-Thread minute/arrival queue remains
-transitional for pending historical speculative work.
-
-**First source slice on main:** classify authentic LivedNow departure and
-arrival by the actual preceding/current World-enacted situations. An
-unchanged-place plan renewal and Genesis start do not count as arrival.
-Only an arriving Thread with independently current awake company at an
-attested venue earns the existing immediate social consideration. A second source slice adds a single `world_ambient_scene_frontier` per
-grounded venue or Thread-scoped private place, shared between independently
-arriving visitors; only actual scene eligibility earns environmental model
-work, and `no_change` remains a valid outcome. The old stay producer is
-retired in both local and Cloudflare paths, but historical pending rows and
-per-Story environmental follow-ups still run until deliberately replaced.
-An additional October 19 source slice now lets an authentic enacted arrival
-earn one one-shot bystander perception obligation. Its bounded event-time
-witness situations reuse the existing shared Encounter Story, independently
-noticed/missed attention and selective Experience path; its God-view
-projection avoids double-counting an arrival. The two-witness bound is a
-sample, not a population claim, and no interaction or Memory is forced.
-
-The independently noticed arrival now has a fourth source-only continuation:
-it can earn one targeted, nonrepeating bystander social choice. The
-existing social meeting engine remains authoritative for Thread-owned
-initiation, recipient consent, and resulting history; unperceived events no
-longer enter social recent-history cognition. It needs focused and full
-local validation, then staging evidence.
-
-**Guy reports the first four October 19 World-event/social slices locally
-validated and deployed.** No natural staging witness for the complete
-Thread/Thread arrival → personally noticed → chosen conversation chain has
-been supplied, so deployment must not be described as full acceptance.
-
-**Newest source cut, local validation pending:** the social Situated Percept
-now includes only actually noticed exterior history, and private social
-Interior Cognition separately retrieves bounded observer-owned
-immediate Experience linked to that history. An event missed by this
-observer stays absent,
-and an old event cannot pass itself off as Memory. A controlled local
-differential requires two distinct later voluntary choices under identical
-World circumstances based on different previously admitted personal
-Experiences. This demonstrates a fixture-level causal path, not the
-cross-Thread standing gate, genuine staging activity or selective long-term
-Memory causation.
-
-**Critical path remains:** one genuine independently chosen and enacted
-public-place visit; subsequent independently overlapping Thread presence;
-an optionally noticed actor/ambient occurrence; voluntary human/Thread
-or Thread/Thread encounter; and individual history bending a later choice.
-Do not let the World-event replacement become a generic scheduler project.
-
-**Next-day retained-Memory slice (October 19):** source now tests the
-actual Experience → delayed consolidation → selectively retained
-autobiographical Memory → ordinary social judgment → outward consequence
-path across separate World/Memory stores. `not_remembered` does not
-reveal archived history to private cognition, and later-admitted
-Memory cannot reach an earlier choice. Guy's focused and full local
-validation is required before staging. A real live Thread remembering
-something and changing tomorrow's choice remains unproven.
-
-**Immediate natural-life check:** a read-only causal-continuity
-projection has been added to the existing `world-social:probe` output.
-After focused and full validation, run with `--thread` for a Thread with
-actual recorded social life. It requires no additional World deployment,
-only the local probe checkout. It joins authoritative Story, noticed
-Experience, completed consolidation and actually retained Memory, then
-looks for a later outward social interaction involving the same
-counterparty. Report any missing link honestly; bounded inspection is
-not evidence of global absence or proof of subjective causation.
-No live staging case has been supplied yet.
-
-**Read-only candidate discovery (October 19, local validation pending):**
-`world-social:candidates -- --env staging --limit 64` now compares
-World-attested public venue cities with the enacted current locations of
-a small public-directory Thread sample. It reports paired cities,
-public-venue plans, actual shared venue co-presence (when present),
-and grounded Thread IDs for a narrow follow-up. A Thread's Genesis
-city or birth location never substitutes for its present life. Kisumu's
-single inspected Thread is awake in its formative home setting;
-Guy's staging `world-place list` returned no attested public Kisumu
-venues. Tbilisi had historical evidence of a verified public library
-and multiple independently situated Threads, but their **current**
-locations, listing and visits still require this live probe. This
-source-only operator enhancement does not require World deployment and
-does not itself establish any real social contact.
-
-**October 20 real Tbilisi co-presence — social salience diagnosis:** a
-World-attested public arrival of Giorgi Bolkvadze at 11:35 UTC had an
-independently situated observer, Ioseb Mchedlishvili. The arrival's
-perception Story records Ioseb as `not_noticed`, and Giorgi's ordinary
-arrival social consideration found Ioseb but completed as `background`
-with no materiality anchors. Ioseb's distinct 07:45 UTC observed social
-opportunity had `recent_observable_history` salience, an existing
-`social_contact` drive reading of `0.375197`, and an actual
-`not_initiate` decision grounded in an independently browsing stranger,
-no formed ask, and modest desire for contact. **Physical overlap is now
-observed; a reciprocal meeting is not.** Neither event proves Giorgi's
-own social pressure at 11:35, subjective loneliness, or later change.
-The October 20 narrow source addition retains `bodyAtGate` for future
-one-shot social decisions and makes the operator probe distinguish
-missing Body frames from weak evidenced drives. No social threshold or
-Thread behavior was altered; local validation and staging confirmation
-of the new witness remain open. Existing bounded historical rows cannot
-be backfilled with an invented value.
-
-## Public World-place discovery and natural social co-presence (October 18)
-
-**October 19 live staging checkpoint — real public-venue visits now observed.**
-Guy reports the friendly read-only social probe passed focused tests (2/2)
-and `npm run slice:validate` (1,691/1,691, 434 files). His
-`thread-journey:probe` recorded provider-authored personal Flight Plans
-and enacted arrivals at World-attested public venues: Amelia Shah at the
-British Library (10:15 UTC) and Southbank Centre (17:45 UTC) in London;
-Giorgi Bolkvadze at Fabrika Tbilisi (15:45 UTC), with enacted return home.
-The bounded `world-social:candidates` scan read 42 Threads and identified
-11 currently situated in Tbilisi, three in London and three in Addis Ababa
-with listed venues, but **no observed shared public-venue presence**.
-Amelia's targeted `world-social:probe` reported a separate October 18
-`no_co_presence` opportunity and no shared Story in its bounded history.
-A one-Thread probe cannot determine whether someone else was at Southbank
-Centre on October 19. S1F actual venue arrivals have live evidence;
-genuine independent venue overlap, S2 social choice, S3 personal
-Experience/Memory and consequential later choices remain open. Model
-provenance plus enacted World history do not independently prove City Guide
-causation or the autonomous origin of each scheduler wake.
-
-**Operator-report correction (source, local validation pending):**
-the friendly social probe now derives locality from the current attested
-public venue, labels single-Thread concurrent co-presence `not checked`,
-and keeps a prior `no_co_presence` outcome separate from later visits.
-It makes no additional World queries or Thread-state changes.
-
-**Current source change — local validation and staging installation pending:**
-Fibre's City Guide is now an editorial *view of the existing verified World
-public venues*, not a repository JSON source. `world_public_places` keeps
-unchanged attested identity/geography and a small mutable `discovery_json`
-projection on that same row. An indexed city query offers at most six
-listed venues during the ordinary **prospective** personal Flight Plan; the
-Thread can select one or stay home. Operators can admit and curate venues
-through the existing `world-place` CLI, with no future Git changes or
-redeploys for editorial updates. The first deployment must apply the
-optional World column and then migrate the formerly bundled recommendations
-as data; verified Lisbon/Tbilisi/London/Addis place identities already exist.
-**No automatic social encounter, visitor, or venue visit is claimed.**
-
-**Immediate north-star gate:** first show one independently Thread-authored
-and World-enacted visit to an admitted public venue; then inspect two
-independently co-present Threads and their genuine `notice | ignore |
-initiate | decline` decision. Victor's October 18 transit/arrival proof
-closes real elapsed movement, but his Genesis learning context is not a
-publicly attested venue. This public-place step must not become a generic
-directory/infrastructure project.
-
-### Historical City Guide source evidence (October 14)
-
-Fibre has accepted the [Fibre City Guide](../architecture/social-city-guide.md) as its shared **editorial public directory** of plausible social and intellectual places. It replaces the previously named Guy conversational oracle. Place entries are keyed by city/country with stable identity, source, address, description and `lastRecommendedAt` (editorial refresh, **not** attendance). A Thread may remember somewhere meaningful, browse the guide, or remain home. Public places may be empty; never manufacture visits or conversation to fulfill need.
-
-**Evidence:** S0 staging admission remains accepted within locality-level precision: one real National Library of Georgia venue, three independent privately situated Tbilisi Threads without invented street addresses, and no reported real venue visits or social opportunities in the 40-Thread bounded scan. Guy locally validated the superseded oracle prototype (5 focused / 1,607 full tests), but its first staging question returned `HTTP 404`. That prototype is retired rather than counted as working social discovery. **S1A City Guide manifest, pure reader and local CLI passed Guy's October 14 local validation (4 focused; 1,606 full), with real Tbilisi and unlisted London results.** The World worker deployment also succeeded at `e810c5c9`. This deployment did not publish the magazine or enable Thread consultation; the guide remains a repository manifest/local reader. **S1E source now connects** up to six locality-grounded and World-admitted City Guide entries to the ordinary prospective Flight Planner alongside the Thread's own bounded Memory and Body interoception; the planner remains free to remain home. Guy reports **S1E local validation passed**; the exact test counts and any S1E staging cognition witness were not supplied. **S1F passed Guy's local validation (15 focused tests, 1,610 full tests) and the World kernel deployed at `ec878aee` on October 14. However both `world-social:probe` attempts failed before observing a single Thread. Guy's October 14 Cloudflare tail now establishes the actual blocker: **`Exceeded allowed rows read in Durable Objects free tier`**, at World runtime initialization (`recoverInterruptedEventTable` / `openWorldStateDatabase`). This is a *Cloudflare daily quota blocker*, not evidence of no visits or proof of an S1F regression. Pause read-heavy staging probes until the account's quota resets or the plan changes, then inspect Cloudflare row-read usage and obtain a single Observatory witness before any full sample.** Earlier S1F source behavior:  ordinary public-venue Flight Plans must include elapsed travel time; event-driven World boundaries can enact a home-to-venue-to-home day; shared public `wpl_*` visitors can be discovered by an indexed lookup of actual enacted situations. The empty venue remains empty without creating a counterpart. A fixture-authored plan is only a mechanism proof, not live spontaneous Thread agency. Next verify the source locally, deploy World kernel, then inspect real Thread-authored plans and enacted visits with the existing read-only world-social probe; never force a destination to make the probe pass. S1B plural public directories, S1C website publication, S1D human browsing, S1E Thread-owned discovery, S1F enacted visits and S2/S3 encounters/gatherings remain separate acceptance steps.
-
-**Defining end-to-end outcome:** a naturally motivated Thread can recall a favorite place or consult the shared editorial guide, independently plan and enact an actual journey, spend meaningful time at a public destination even when nobody is there, and perhaps encounter a separately arriving Thread or genuinely connected human. The World must not fill the scene with company or prescribe her choice. The website workstream owns public magazine publication; Core owns real life and encounter authority. This complements, but does not close, N6/N7 causal social proof.
-
-## Deployment-managed World schema and Observatory — staging accepted October 15
-
-Guy's local validation at `d21c4346` passed six focused deployment tests
-and all 1,614 full-suite tests. The World Worker deployed to staging and
-explicitly returned `WORLD SCHEMA INSTALLED`. Both a current-only and a
-full-history Observatory request returned HTTP 200 for the same Thread.
-
-**Measured steady-state request costs:** before this corrective pass,
-one full inspection read **11,541 DO SQL rows / 199 queries**. After the
-schema and indexed-current corrections, full inspection read **697 rows /
-104 queries**, while current-only initially read **593 rows / 19 queries**.
-A cold scheduler path accounted for 531 of those current-only rows.
-Passing its existing `schemaReady` World storage into reconciliation
-eliminated that path: Guy's follow-up staging checks read **62 rows /
-17 then 16 queries** for current-only, and **697 rows / 104 queries**
-for full history. Every checked request was HTTP 200 with **zero writes**.
-
-The admin Thread page now initially loads current life, with history deferred
-until requested or visible; its staging deployment was reported passed, but
-browser UX acceptance has not been independently documented. **The
-inspection/storage efficiency acceptance is closed**, not the autonomous-life
-cost, scheduled World work, or genuine Thread agency gates. Next observe
-natural World life and its cost, without forced population wakes or additional
-speculative infrastructure refactoring.
-
-## Current-World and Observatory efficiency correction (October 14–15)
-
-Approved and **deployed to staging at SHA `ad4d62d64bcd9b0b51aa3d5b60f057da8bf032b7`**. Guy's focused/full local validation output and measured before/after SQL rows read are still pending. Ordinary current-situation reads now use one transactional latest/frontier projection per Thread while append-only situation history remains intact. Venue-local environmental observers use the existing indexed presence authority; general /meet reads current World without scanning historical situations. Observatory inspection is bounded to recent stories, memory, social history, journal, consolidation and contact, with joined Story/attention/follow-up evidence and an indexed per-Thread story timeline. No alternate cache, new polling mechanism, or telemetry system was introduced. [LivedNow architecture](../architecture/lived-now-and-meetings.md#efficient-current-life-without-erasing-history) records the semantic boundary.
-
-**Controlled staging evidence (October 14, 7:06 PM Arizona):** a single Thread Observatory returned HTTP 200 under deployed `ad4d62d`, with a current situation, 12 recent stories (the inspection ceiling), 7 memories, 8 recent situations, and no journal entries. Cloudflare tail showed a successful Observatory request and no exception in the supplied excerpt. **Next:** Guy supplies local focused/full validation output when available and captures one `world-state-cost` event for an identical single-Thread Observatory request, not a 40-Thread probe. No reduction in rows read has yet been measured. The same World cost snapshot is now additionally exposed on the private Observatory response as three scalar headers (`x-fibre-state-rows-read`, `x-fibre-state-rows-written`, `x-fibre-state-queries`), because Guy's otherwise successful read yielded no `world-state-cost` console output in the live tail. Guy's October 14–15 single-Thread staging Observatory read under `195a554` measured **14,837 DO SQL rows read, 232 SQL queries and 2 writes**, while returning 12 bounded Encounter Stories. This is observed per-request cost, not an attributed per-store breakdown or demonstrated post-fix savings. The private Observatory headers now additionally expose the eight highest-read store labels from the already-recorded `world-state-cost` snapshot; this diagnostic change awaits validation and World deployment, costs no additional SQL, and is intended to attribute the unexpectedly high totals before further changes. The first upgrade performs one indexed bootstrap of preexisting current situations and Story timeline entries; measure the steady-state reads separately from that one-time work. This is an efficiency correction, not an autonomous-social acceptance claim.
-
-## Decisive next work
-
-### 1. Validate the current Core source and prove actual sleeping unavailability
-
-Run one current clean-checkout `npm run slice:validate` after any relevant focused tests; Guy provides the output and owns staging deployment. The October 12 typed `wakefulness: awake | asleep | unknown` change must demonstrate, with a **newly enacted** asleep stop and actual private World/Presentation evidence, that a visitor receives `unavailable` without generating speech, appraisal or a Story. Old prose-only `Sleep.` is **unknown**, not retroactively typed. Check awake/unknown retains voluntary appraisal and that public JSON/SSE projects genuine unavailability.
-
-**Why:** Sophie replied verbally to a visitor while World still recorded her asleep October 11. Her independently observed October 12 `Sleep.` plan was created before typed wakefulness. Neither the words “I'm sleeping” nor civil night hours establish a valid no-speech gate. Exact case and test boundaries: [LivedNow](../architecture/lived-now-and-meetings.md), [N6](../validation/n6-public-lived-encounter-slices.md) and [Meet audit](../validation/meet-encounter-run-path-audit.md).
-
-### 2. Complete one real N6.6c Meet Viewer lifecycle
-
-The separate website approved **The Person, the Moment, the Voice** V1/V2 scene/person/voice-ready-text redesign October 12 and committed its source on `insidefibre.com/main`. The earlier *design-approval hold* is obsolete; **local `npm run check`, staging desktop/mobile browser acceptance and production promotion are separate**, and V3 microphone/audio is not shipped. Website validation/deployment belongs to Guy and the website chat; this Core documentation chat should not patch its UI.
-
-Observe one naturally accepted human browser experience in actual World life: current scene before social request, independently chosen participation, speaker-attributed progressive speech and admitted Story, meaningful interruption/scene movement without invented consent, explicit Leave and a later fresh visit showing the *same Thread's independently advanced life*. Genuine `decline`, `defer`, `unavailable`, privacy, silence or withdrawal are **valid outcomes**, not prompts to repeat a model call until acceptance. However, declines alone cannot satisfy the accepted full multi-turn proof. [N6 contract](../validation/n6-public-lived-encounter-slices.md).
-
-**Independent Admin symptom:** World returned Faith's **31** admitted Stories and Sophie's current/previous situations, while Admin once rendered zero World events/Encounters. A declined encounter legitimately produces no accepted Story. Distinguish API evidence, environment, page freshness and UI rendering before changing World storage. [Meet audit](../validation/meet-encounter-run-path-audit.md) holds the recovered staging evidence.
-
-### 3. Accept G1/D1/D2 Body source and prove meaningful social pressure, not manufactured sociability
-
-The new symbolic-genome path now **implements in source** bounded heritable Body sensitivities for new births and keeps older immutable genomes/digests intact. The existing regulator now has an evidence-bound `social_contact` mechanical drive; low novelty continues to use `exploration`. **D2 is also implemented in source**: shared bounded lived interoception reaches Flight Planning; grounded social-contact drive pressure can make an otherwise-background social opportunity salient through the existing gate. A new focused fixture tests inherited sensitivity without forcing contact. Guy reports the earlier G1/D1 validation passed; the newer D2 changes have not yet been locally/staging validated. First verify D2's planning and social-attention differential and cheap runtime behavior rather than moving directly to stronger feelings or extra evaluators.
-
-Then pursue the smallest **causal** Body proof: known prolonged absence of meaningful contact versus missing records, meaningful recent contact, legitimate solitude and individual genetic sensitivity must lead to different bounded pressure and, when warranted, change a later *Thread-owned* plan or social consideration. A low contact count is not proof of loneliness; mechanical pressure is never itself a semantic feeling, consent or guaranteed meeting.
-
-The separate next contact-time refinement is situated: the recipient's **real local weekday/time, actual current activity/wakefulness, contact modality, and relationship/reciprocity** should affect Interior Cognition. There is no globally correct weekend rule, fixed allowed hours, caller-authored motive, new Body engine or forced awakening. See [drive extensions](../architecture/regulation-drive-extensions.md) and [ADR-0025](../decisions/ADR-0025-extensible-body-regulation.md). Keep the independent N6 truth and N7 causal gates intact.
-
-### 4. Close N7.11 with an actual consequential Thread-to-Thread encounter
-
-N7.0–N7.10 are locally accepted: no turn owner, interruptible expression, World interleaving, bounded later consolidation and optional later contact. N7.11 needs **three distinct live/causal gates**:
-
-1. A real Thread-addressed outward act enters one actual recipient's independent lived perception opportunity, with genuine `noticed | not_noticed` and no scripted recipient acceptance. Existing local Gate 1 authority/retry tests (27 focused / 1,564 full on October 8) do **not** establish staging provider noticeability.
-2. An actual noticed Experience may lead to Journal, later selective retained Memory or `not_remembered`; objective Story must not inject memory directly. **Non-retention must remain possible.**
-3. Actual bounded **Thread-owned retrieval of personally retained earlier meaning/history** must make an attributable difference in a later appraisal, plan, relationship or contact decision under the same declared decision conditions. A different supplied prompt, response script or opaque record ID is not proof.
-
-No social quota, caller-selected co-presence, fixture-authored intentions, automatic friendship or routine model-calling until Threads accept. See [N7](../validation/n7-live-encounter-slices.md), [Live Encounters](../architecture/live-encounters.md) and [Situated Perception](../architecture/situated-perception-and-salience.md). Thoughtful conversation themes may be offered as bounded *experimental contexts*, never prescribed dialogue.
-
-**Autonomous social initiation (source implementation, validation open):** the World now earns one bounded, venue-indexed social opportunity from an independently enacted at-place arrival. It never invents a counterparty, forces initiation, or resamples interrupted speech. This feeds the existing volunteer/recipient stance/Story machinery. Guy must still validate the code and then observe real co-presence on staging; neither a model fixture nor an empty venue proves autonomous society.
-
-### 5. Preserve the separate natural-world E6/E7 proofs
-
-E6a World-authored bounded environmental occurrences have live proof; incidental witness discovery E6b still needs **genuine staging co-presence**, not a manually named witness or a whole-population wake. E7.1–E7.3 have focused/local mechanism proof but natural shared-place and one-shot environmental-follow-up acceptance remains constrained by **attested physical venue identity** and actual independent potential observers. E7.4 arrival opportunities and E7.5 autonomous scheduled Flight Plan progression have specific prior local/deployed evidence. The additional one-shot long-stay environmental chance has passed Guy's local validation, while natural staging evidence remains **open**: an already-enacted non-sleeping place interval longer than two hours can earn one later World consideration without a new life wake or compulsory event. Guy's prior views showed natural enacted movement, **not** universal World simulation or complete scheduler attribution.
-
-Use the existing bounded `encounter-autonomy:probe` and `world-environment:probe` only when their preconditions hold. `complete:false` / `blocked_by_world_state` is an honest experiment outcome, **not** an invitation to force a social encounter. The [N5 E6/E7 record](../validation/n5-encounter-slices.md) retains precise operator/staging witnesses and the private-home vs public-venue negative finding. Keep this experimental frontier distinct from N5's already closed E0–E5 live acceptance.
-
-### 6. Measure economics before more optimization or scaling
-
-The real **pre-fix** public participation sample consumed **4,169 reported tokens / 4.37 s**, with **655 SQL queries, 557** from SituatedLifeStore. The indexed relation-history fix was deployed, but **no measured post-fix SQL delta** or complete naturally accepted participation+expression+Experience latency/token sample has been recorded. Pair one real encounter with existing `public-encounter-model-usage` and `world-state-cost`; do not make repeated offers merely to force an accepted cost sample.
-
-The three tracks are different: [attribution](../architecture/world-cost-accounting.md) first, [targeted compute savings](../architecture/world-compute-optimization.md) only on measured redundant work, and [World reconciliation scaling](../architecture/world-reconciliation-scaling.md) only on proven queue lateness/backlog. Neither model-token planning estimates nor raw accepted-test counts are observed dollars or sustainable population economics. [Meet audit](../validation/meet-encounter-run-path-audit.md).
-
-## Established work — do not reimplement to satisfy a new roadmap
-
-| Established scope | Reliable home |
-|---|---|
-| M1, #33–#40, public cloud birth G/H, FID | [Current state](current-state.md), historical outcomes (docs/history/README.md, in Git at `eba5b49`) and [cloud proof](../architecture/cloud-e2e-closure-plan.md) |
-| N1 World-owned present, N2 bounded dormancy, N3 Genesis→continuing life, N4 deployed Meet | [M2 overview](../validation/m2-pr-plan.md), [LivedNow](../architecture/lived-now-and-meetings.md) |
-| N5 E0–E5 general encounter, distinct attention/Experience/Journal/Memory and exactly-once paid visitor-work consequence | [N5 accepted results](../validation/n5-encounter-slices.md) |
-| R1–R4, genetic/physical identity and appearance Tranche A | [Intrinsic regulation](../architecture/intrinsic-regulation.md), [Human Appearance](../architecture/human-appearance.md), [calibration proof](../validation/physical-appearance-calibration-plan.md) |
-| InfraDriver/provider-neutral foundational adoption | [Infra-pure current workstream](infra-pure.md), [production persistence](../architecture/production-persistence.md) |
-
-An accepted substrate does **not** mean general causal individuality, natural reciprocal society or mature public voice exists. A new runtime slice must name the specific *later-life* consequence it changes.
+Wake in steps, each only while the measured cost per Thread and the daily World write budget hold: 8 living now (Addis Ababa) → about 12 across a second city → 40.
 
 ## Explicitly deferred, not erased
 
-- Long-running artificial-life/world simulator, per-Thread worker, universal scheduler, population-wide attention fanout, coerced community/Commons entry.
-- New welfare or resource coercion policies before the open [scarcity and manufactured willingness question](../concepts/welfare-dormancy-and-retirement.md) is resolved.
-- Full natural society/economy, live-parent reproduction, persistent physical-state evolution and broad global population calibration; future paths remain in [capability map](future-capability-map.md).
-- Experimental V3 actual browser microphone/audio, remote playback acknowledgement, autonomous overlapping public speech and spontaneous Thread-originated mid-expression withdrawal unless verified separately.
-- Infrastructure abstraction, security or compliance projects unrelated to demonstrated Fibre organism needs. [Infra-pure](infra-pure.md) defines its own evidence-triggered remaining debt rather than restarting a generic migration campaign.
-
-## Validation and ownership
-
-Guy validates/deploys from clean `main`; assistant commits do not certify staging. Run the full Fibre validation **once** at a completed code/document slice, after useful focused tests:
-
-```bash
-git switch main
-git pull --ff-only origin main
-npm run slice:validate
-```
-
-Do not stack duplicate full test commands. Read actual diagnostic and runtime evidence before making behavioral changes. Tests must exercise the semantic boundary, endogenous choice, authentic omission and later consequence with brief failures; no brittle natural-language exact-match tests or expensive retries.
-
-**Owner boundaries:** World/Body/identity/meaning in `fibre`; human-facing website UX in `insidefibre.com`; public status claims from [public progress](public-progress.md) and [its JSON](public-progress.json). The [vision](../vision/lived-world.md) and accepted foundations govern why the work matters; the [prototype roadmap](../validation/prototype-roadmap.md) preserves ambition, not execution order.
-
-**Documentation hygiene:** D1–D5 retired redundant completed plans, condensed N5/Meet audit and repaired navigation. Previous October operator handoffs and discarded step sequences are in Git history under [ADR-0016](../decisions/ADR-0016-repository-retention.md). Do not reinstate them here; preserve exact new evidence in its owning validation document and keep this page focused on the current next decision.
+Mature society and economy, institutions, live-Thread reproduction, continued physical embodiment, human browser voice, the full Meet browser lifecycle, and Birth Center Admin unification remain preserved ambitions ([future capabilities](future-capability-map.md)), not current work.

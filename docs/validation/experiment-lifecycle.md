@@ -134,31 +134,11 @@ Use `tools/provider-progress.mjs` rather than implementing a new heartbeat per e
 
 Progress reporting is experiment/CLI infrastructure. It must not change Thread cognition, provider inputs, evaluator semantics, persistence, retrieval, or causal interventions.
 
-## History bends judgment archive
+## Sealed standing results
 
-The accepted current record is `history-bends-judgment-standing-gate-v4.md` (docs/validation/history-bends-judgment-standing-gate-v4.md, in Git at `eba5b49`). It records Candidate 4 as PASSED / SEALED: a Fibre-owned durable episode record survived restart and causally moved the same later request from `refuse/low` to `accept/high` under exact one-memory withholding.
+Two standing gates passed and were sealed before November 2026: **History bends judgment** (Candidate 4: a Fibre-owned durable episode record survived restart and moved the same later request from `refuse/low` to `accept/high` under exact one-memory withholding) and the **Semantic Guardian v4** dignity reasoning gate (Candidate 4: 18/18 held-out semantic identity/state differentials). Their records, exact evidence bundles, inspectors and development runners, and the failed Candidates 1–3, are in Git history (at `eba5b49`), not in the tree.
 
-Candidates/gates 1–3 remain preserved in Git history as failed sealed cycles and methodological lessons; their superseded per-cycle documents and machine bundles are not current-tree authorities.
-
-The retained exact machine evidence is:
-
-- `artifacts/validation/history_bends_judgment_standing_gate_v4.evidence.json`
-
-The provider-capable History standing proof/runner/template stack is no longer active after sealing. `npm run history:gate` imports only the read-only sealed-evidence inspector and cannot reach model/provider execution. `npm run history:dev` is the repeatable provider-backed Development-cycle command and uses the shared provider heartbeat.
-
-The v4 Development credit is deliberately limited: Episode A's setup appraisal was scripted; deterministic Actor v1 stored requester/objective/criteria-derived descriptive memory rather than Thread-authored reflection; the later standing comparison invoked Guardian v4 directly in the harness; and the default live runtime has not generalized this into rich experience-driven self-development.
-
-## Semantic Guardian / dignity reasoning archive
-
-The accepted current record is `semantic-guardian-v4-standing-gate-v4.md` (docs/validation/semantic-guardian-v4-standing-gate-v4.md, in Git at `eba5b49`). Candidate 4 PASSED / SEALED with fresh held-out semantic identity/state differentials and earned the accepted standing credit.
-
-Candidates/gates 1–3 remain preserved in Git history as failed sealed cycles and methodological lessons; their superseded per-cycle documents and machine bundles are not current-tree authorities.
-
-The retained exact machine evidence is:
-
-- `artifacts/validation/semantic_guardian_v4_standing_gate_v4.evidence.json`
-
-Retired Candidate 1-3 standing executables are not active product/test APIs and may be recovered from reachable repository history when forensic reproduction is needed.
+The History credit is deliberately limited: Episode A's setup appraisal was scripted; deterministic Actor v1 stored requester/objective/criteria-derived descriptive memory rather than Thread-authored reflection; the standing comparison invoked Guardian v4 directly in the harness; and the default live runtime has not generalized this into rich experience-driven self-development.
 
 ## Current episodic-memory limitation
 

@@ -210,4 +210,3 @@ See:
 - [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md)
 - [The Lived World of Fibre](../vision/lived-world.md)
 - [Current priorities](current-priorities.md)
-- [M2 continuation plan](../validation/m2-pr-plan.md)

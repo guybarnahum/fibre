@@ -7,7 +7,7 @@ canonical: true
 
 # Prototype roadmap — from persistent Thread to lived society
 
-This is Fibre's **broad capability sequence**, not a parallel active sprint plan. Current execution and evidence live in [current priorities](../state/current-priorities.md), the [M2 continuation overview](m2-pr-plan.md), and the canonical [N6](n6-public-lived-encounter-slices.md) / [N7](n7-live-encounter-slices.md) contracts. Numbered PR labels below refer to historical milestones, not a requirement for branches or PRs.
+This is Fibre's **broad capability sequence**, not a parallel active sprint plan. Current execution lives in [current priorities](../state/current-priorities.md) and evidence in [current state](../state/current-state.md). Numbered PR labels below refer to historical milestones, not a requirement for branches or PRs.
 
 ## Established foundations
 

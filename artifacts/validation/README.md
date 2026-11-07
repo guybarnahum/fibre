@@ -16,9 +16,6 @@ fixtures/
 docs/validation/
   current proof methods and concise accepted standing outcomes
 
-docs/history/
-  selected historical explanation when why the design changed still matters
-
 artifacts/validation/
   exceptional retained exact-byte evidence
 

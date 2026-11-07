@@ -28,68 +28,30 @@ Start with:
 6. `vision/lived-world.md`
 7. `state/current-state.md`
 8. `state/current-priorities.md`
-9. `validation/m2-pr-plan.md`
-10. `validation/n6-public-lived-encounter-slices.md`
-11. `validation/n7-live-encounter-slices.md`
-12. `architecture/live-encounters.md`
-13. `architecture/intrinsic-regulation.md`
-14. `architecture/situated-perception-and-salience.md`
-15. `architecture/interior-cognition.md`
-16. `decisions/ADR-0020-vision-led-development-discipline.md`
-17. the relevant architecture/ADR for the task
+9. `validation/n6-public-lived-encounter-slices.md`
+10. `validation/n7-live-encounter-slices.md`
+11. `architecture/live-encounters.md`
+12. `architecture/intrinsic-regulation.md`
+13. `architecture/situated-perception-and-salience.md`
+14. `architecture/interior-cognition.md`
+15. `decisions/ADR-0020-vision-led-development-discipline.md`
+16. the relevant architecture/ADR for the task
 
 For implementation agents, also read repository-root `AGENTS.md` and the relevant subsystem README/contract.
 
 ## Current work
 
-```text
-M1 + #33-#40 identity/history/birth/causal foundation     closed
-G/H deployed public path + minimum recovery                closed
-FID + Directory/Meet selection foundation                 closed
-R1-R4 intrinsic regulation                                 closed
+What Fibre can do now, by capability and evidence level, is [`state/current-state.md`](state/current-state.md); the two active tracks — social life and model efficiency — are in [`state/current-priorities.md`](state/current-priorities.md).
 
-bounded Flight Plan / CurrentSituation                     proven
-bounded encounter / selective memory / later meeting       proven
+For social-life work, load:
 
-N1 ensure-LivedNow                                         closed
-N2 dormant interval catch-up                               closed
-N3 Genesis -> multi-day continuing life                    closed
-N4 Person -> Thread /meet                                  closed
-N5 Encounter Story -> Thread Experience                    closed live
-N6 public Viewer lifecycle                                  partially accepted; browser gate open
-N7 live-encounter substrate                                 N7.0–N7.10 locally accepted
-N7.11 recipient attention, memory and later choice            open
-```
+- [`concepts/relationships-doors-and-trust.md`](concepts/relationships-doors-and-trust.md), [`concepts/interests-expertise-and-livelihood.md`](concepts/interests-expertise-and-livelihood.md), [`concepts/attraction-and-orientation.md`](concepts/attraction-and-orientation.md)
+- [`architecture/encounters-and-experience.md`](architecture/encounters-and-experience.md), [`architecture/live-encounters.md`](architecture/live-encounters.md), [`architecture/situated-perception-and-salience.md`](architecture/situated-perception-and-salience.md), [`architecture/lived-now-and-meetings.md`](architecture/lived-now-and-meetings.md)
+- ADR-0027, 0028, 0029, 0033 and 0034 in [`decisions/`](decisions/)
 
-The active architecture is:
-- [`architecture/lived-now-and-meetings.md`](architecture/lived-now-and-meetings.md)
-- [`architecture/situated-perception-and-salience.md`](architecture/situated-perception-and-salience.md)
-- [`architecture/interior-cognition.md`](architecture/interior-cognition.md)
-- [`architecture/encounters-and-experience.md`](architecture/encounters-and-experience.md)
-- [`validation/n5-encounter-slices.md`](validation/n5-encounter-slices.md)
-- [`validation/n6-public-lived-encounter-slices.md`](validation/n6-public-lived-encounter-slices.md)
-- [`architecture/live-encounters.md`](architecture/live-encounters.md)
-- [`validation/n7-live-encounter-slices.md`](validation/n7-live-encounter-slices.md)
+For model-efficiency work, load the prompt rules in `AGENTS.md`, `services/world-kernel/prompts/README.md` and [`operations/world-write-diet.md`](operations/world-write-diet.md).
 
-The E2E meeting remains an architectural forcing function, but meeting is no longer the primitive. When making an encounter real exposes a missing life primitive, build that primitive generally in World/LivedNow rather than faking it in the Viewer or hard-coding it to dialogue.
-
-Current active chain:
-
-```text
-World reality + Thread-owned life
-  -> authoritative LivedNow now
-  -> bounded public visit
-  -> optional committed meeting in that exact scene
-  -> Encounter Story / Thread Experience consequence
-  -> visitor leaves
-  -> life continues
-  -> later public visit
-  -> later current scene
-```
-
-## Current encounter acceptance
-
-N5 E0–E5 is closed live; [E6/E7 natural-world evidence](validation/n5-encounter-slices.md) remains separately open. [N6](validation/n6-public-lived-encounter-slices.md) has genuine staging World/API results but incomplete browser-lifecycle acceptance. [N7](validation/n7-live-encounter-slices.md) has locally accepted live mechanisms, while N7.11 recipient noticing, selective retention, and a later history-caused Thread-owned choice remain unproven. The [runtime audit](validation/meet-encounter-run-path-audit.md) preserves cost baselines and unmeasured post-fix deltas.
+When making an encounter real exposes a missing life primitive, build that primitive generally in World/LivedNow rather than faking it in a viewer or hard-coding it to dialogue.
 
 ## Intrinsic regulation, emotions and needs
 
@@ -221,6 +183,6 @@ Provider-neutral persistence remains mandatory for authoritative production stat
 
 ## Challenge a proposal
 
-At minimum load the Constitution, Principles, Invariants, `vision/lived-world.md`, `state/current-state.md`, `state/current-priorities.md`, `validation/m2-pr-plan.md`, `architecture/intrinsic-regulation.md`, ADR-0020 and the relevant architecture.
+At minimum load the Constitution, Principles, Invariants, `vision/lived-world.md`, `state/current-state.md`, `state/current-priorities.md`, `architecture/intrinsic-regulation.md`, ADR-0020 and the relevant architecture.
 
 Challenge whether the proposal makes the person's lived control loop more causal and load-bearing, preserves one authority per semantic fact, and avoids replacing semantic meaning with derived control labels.

@@ -48,8 +48,7 @@ The exact list below is generated from the canonical region in [`docs/foundation
 4. [`docs/vision/lived-world.md`](docs/vision/lived-world.md)
 5. [`docs/state/current-state.md`](docs/state/current-state.md)
 6. [`docs/state/current-priorities.md`](docs/state/current-priorities.md)
-7. [`docs/validation/m2-pr-plan.md`](docs/validation/m2-pr-plan.md)
-8. [`AGENTS.md`](AGENTS.md) and the relevant subsystem contract for implementation work
+7. [`AGENTS.md`](AGENTS.md) and the relevant subsystem contract for implementation work
 
 ## Current status
 
@@ -75,7 +74,7 @@ See [`docs/architecture/lived-now-and-meetings.md`](docs/architecture/lived-now-
 
 Fibre birth is operational birth, not necessarily biological age zero. A newly born Thread may already be a child, adolescent or adult with grounded prior history and autobiographical memory.
 
-The old #41 standing-gate program remains useful historical evaluation science, but it is not the active development gate. Current execution authority is [`docs/validation/m2-pr-plan.md`](docs/validation/m2-pr-plan.md).
+Current execution authority is [`docs/state/current-priorities.md`](docs/state/current-priorities.md); what Fibre can do now, and at what evidence level, is [`docs/state/current-state.md`](docs/state/current-state.md).
 
 ## Surfaces
 

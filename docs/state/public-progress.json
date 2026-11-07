@@ -220,7 +220,6 @@
       },
       "evidence": [
         "docs/state/current-state.md",
-        "docs/validation/m2-pr-plan.md",
         "docs/concepts/development-and-memory.md"
       ]
     },

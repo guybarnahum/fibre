@@ -14,11 +14,6 @@ tools/
 ├── model/            model/provider smoke tooling
 ├── shared/           helpers used by more than one tool family
 ├── genesis/          current Genesis development, publication and recovery tooling
-├── gates/
-│   ├── guardian/     current Guardian development/read-only gate tooling
-│   ├── history/      current history-causality development/read-only gate tooling
-│   ├── causal/       current causal proof utilities
-│   └── experiments/  retained frozen gate/benchmark instruments whose chronology is intentional
 ├── replays/
 │   └── m1/           retained historical proof/demo instruments
 └── test-infra/       active/replay/all suite discovery and reporting
@@ -71,7 +66,7 @@ The path itself is not scientific authority. Protocol documents, frozen artifact
 
 ## What belongs where
 
-`repository/` owns repository mechanics and structural invariants. `inspect/` is read-only operator inspection. `editor/` owns Thread Editor serving and regressions. `model/` owns provider/model smoke checks. `shared/` holds cross-cutting tool helpers, including the `#repo-root` resolver. `genesis/` contains current non-authoritative Genesis development and operator tooling. `gates/` contains current gate tooling and explicitly retained frozen gate instruments. `replays/` is reserved for the small set of historical instruments we intentionally keep executable. `test-infra/` owns test discovery, lifecycle and reporting mechanics.
+`repository/` owns repository mechanics and structural invariants. `inspect/` is read-only operator inspection. `editor/` owns Thread Editor serving and regressions. `model/` owns provider/model smoke checks. `shared/` holds cross-cutting tool helpers, including the `#repo-root` resolver. `genesis/` contains current non-authoritative Genesis development and operator tooling. `replays/` is reserved for the small set of historical instruments we intentionally keep executable. `test-infra/` owns test discovery, lifecycle and reporting mechanics.
 
 `repository/` and `replays/` were previously named `repo/` and `repro/`. They act on different things — `repository/` checks that the repository is well-formed, `replays/` re-runs a closed milestone against the runtime — and the one-letter difference hid that.
 

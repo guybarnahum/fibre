@@ -202,7 +202,7 @@ The contract fails if the easiest explanation is:
 
 Older M2 documents used a 26-scenario standing rubric and deferred all self-authored development to a later numbered milestone. That material remains useful historical evaluation science, but it is no longer the active M2 execution architecture.
 
-Current continuation authority is [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md): M2 now requires a bounded self-authored present-life and continuation loop. Broader autonomous development, reciprocal society and economic consequence remain later generalizations.
+Current work is in [`../state/current-priorities.md`](../state/current-priorities.md); M2 required a bounded self-authored present-life and continuation loop. Broader autonomous development, reciprocal society and economic consequence remain later generalizations.
 
 ## Vision sentence
 

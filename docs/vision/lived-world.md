@@ -275,4 +275,4 @@ prior lived anchor
   -> continued life
 ```
 
-Current continuation authority is [`../architecture/lived-now-and-meetings.md`](../architecture/lived-now-and-meetings.md) together with [`../validation/m2-pr-plan.md`](../validation/m2-pr-plan.md). Broader economy and society should generalize this proven lived seam rather than bypass it.
+Current continuation authority is [`../architecture/lived-now-and-meetings.md`](../architecture/lived-now-and-meetings.md); current work is in [`../state/current-priorities.md`](../state/current-priorities.md). Broader economy and society should generalize this proven lived seam rather than bypass it.
