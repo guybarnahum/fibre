@@ -495,6 +495,7 @@ async function formPlan({
       sourceStores:{
         worldStore,identityStore,semanticStateStore,memoryStore,
         situatedLifeStore,livedNowStore,
+        ...(experienceStore===null||experienceStore===undefined?{}:{experienceStore}),
       },
       modelAdapter,resolveDestinationGeography,
       startingPlaceRef:startingPlace,

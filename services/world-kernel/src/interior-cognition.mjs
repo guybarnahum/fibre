@@ -1,4 +1,5 @@
 import { promptFor, promptRequest } from "./cognition-prompts.mjs";
+import { interestText } from "./thread-interests.mjs";
 import {
   assertId,
   assertIsoTimestamp,
@@ -101,18 +102,25 @@ function selectEvidence(threadId, sourceStores, policy, at, focus=null) {
   // This Thread's own regard for the person in focus comes before newer states.
   const regardsFocus=(item)=>item.domain==="relationship_attitude"
     &&focusIds.has(item.target?.targetId);
-  for (const item of [...(semanticStateStore.listCurrentState(threadId) ?? [])]
+  const states=[...(semanticStateStore.listCurrentState(threadId) ?? [])]
     .map((item) => owned(threadId, "semantic state", item.stateId, item))
     .sort((left, right) => Number(regardsFocus(right)) - Number(regardsFocus(left))
       || String(right.asOf ?? "").localeCompare(String(left.asOf ?? "")))
-    .slice(0, policy.maximumSemanticStates)) {
+    .slice(0, policy.maximumSemanticStates);
+  const stateCandidate=item=>{
     const target = item.target?.displayName ? ` toward ${item.target.displayName}` : "";
-    candidates.push(evidenceCandidate(
+    return evidenceCandidate(
       item.stateId,
       "semantic_state",
       `${item.domain}/${item.dimension}${target}: ${item.state}`,
-    ));
+    );
+  };
+  for(const item of states.filter(regardsFocus))candidates.push(stateCandidate(item));
+  // Then what this Thread itself cares about: its own subjects and questions.
+  for(const interest of sourceStores.experienceStore?.listCurrentInterests?.(threadId)??[]){
+    candidates.push(evidenceCandidate(interest.interestId,"interest",interestText(interest)));
   }
+  for(const item of states.filter(item=>!regardsFocus(item)))candidates.push(stateCandidate(item));
 
   for (const item of [...(identityView.assertions ?? [])]
     .filter((item) =>

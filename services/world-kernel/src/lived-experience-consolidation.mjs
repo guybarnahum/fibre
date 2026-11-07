@@ -3,6 +3,10 @@ import {promptRequest} from "./cognition-prompts.mjs";
 import {observablePerson} from "./world-observable-person.mjs";
 import {assertDescriptiveSemanticState} from "./semantic-state.mjs";
 import {
+  INTEREST_CHANGE_LIMIT,INTEREST_CHANGE_SCHEMA,admitInterestChanges,
+  formFormativeInterests,interestsInReflection,
+} from "./thread-interests.mjs";
+import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
   autobiographicalMeaningPartId,
@@ -89,6 +93,15 @@ function normalizeDecision(output){
   });
 
   const stances=normalizeStances(output.stances??[]);
+  // Decisions recorded before interests existed have none.
+  const interests=Object.freeze((Array.isArray(output.interests)?output.interests:[])
+    .slice(0,INTEREST_CHANGE_LIMIT)
+    .filter(item=>item!==null&&typeof item==="object"
+      &&["form","deepen","revise","let_go"].includes(item.change)
+      &&(item.interestRef===null||typeof item.interestRef==="string"))
+    .map(item=>Object.freeze({change:item.change,interestRef:item.interestRef,
+      subject:item.subject,draw:item.draw,selfImage:item.selfImage,
+      openQuestions:Object.freeze(Array.isArray(item.openQuestions)?[...item.openQuestions]:[])})));
 
   assertPlainObject("experience consolidation memory",output.memory);
   const memory=output.memory;
@@ -101,6 +114,7 @@ function normalizeDecision(output){
       journalEntry,
       afterthoughts:Object.freeze(afterthoughts),
       stances,
+      interests,
       memory:Object.freeze({
         outcome:"not_remembered",
         rememberedContent:null,
@@ -129,6 +143,7 @@ function normalizeDecision(output){
     journalEntry,
     afterthoughts:Object.freeze(afterthoughts),
     stances,
+    interests,
     memory:Object.freeze({
       outcome:"retained",
       rememberedContent:memory.rememberedContent,
@@ -154,6 +169,7 @@ async function formDecision({
   semanticStates,
   memories,
   people,
+  interests,
   modelAdapter,
 }){
   const storyById=new Map(encounterStories.map((story)=>[story.encounterId,story]));
@@ -169,6 +185,7 @@ async function formDecision({
       unresolvedIntentions:[...(thread.currentState?.unresolvedIntentions??[])],
     },
     semanticStates:semanticContext(semanticStates),
+    interests:interestsInReflection(interests),
     priorMemories:boundedMemories(memories),
     experiencedSituation:structuredClone(situation),
     experiences:experiences.map((experience)=>({
@@ -191,7 +208,7 @@ async function formDecision({
     responseSchema:{
       type:"object",
       additionalProperties:false,
-      required:["journalEntry","memory","afterthoughts","stances"],
+      required:["journalEntry","memory","afterthoughts","stances","interests"],
       properties:{
         journalEntry:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
         afterthoughts:{
@@ -207,6 +224,7 @@ async function formDecision({
             },
           },
         },
+        interests:INTEREST_CHANGE_SCHEMA,
         stances:{
           type:"array",
           maxItems:STANCE_LIMIT,
@@ -475,7 +493,16 @@ export function createExperienceConsolidationProcess({
       consolidation.consolidationId,
       "decision",
     );
+    const interestsHeld=typeof experienceStore.listCurrentInterests==="function";
     if(decisionStage===null){
+      // A Thread that has never held an interest first finds its own, once,
+      // in its formative past; this reflection then sees them.
+      if(interestsHeld){
+        await formFormativeInterests({
+          thread,memories:memoryStore.listCurrentMemories(consolidation.threadId),
+          experienceStore,modelAdapter,asOf:consolidation.startedAt,
+        });
+      }
       const decision=await formDecision({
         consolidation,
         thread,
@@ -485,6 +512,7 @@ export function createExperienceConsolidationProcess({
         semanticStates,
         memories,
         people,
+        interests:interestsHeld?experienceStore.listCurrentInterests(consolidation.threadId):[],
         modelAdapter,
       });
       decisionStage=experienceStore.recordThreadExperienceConsolidationStage({
@@ -547,6 +575,13 @@ export function createExperienceConsolidationProcess({
       stances:decision.stances,people,asOf:consolidation.startedAt,
     });
 
+    const interests=interestsHeld?admitInterestChanges({
+      experienceStore,threadId:consolidation.threadId,changes:decision.interests,
+      current:experienceStore.listCurrentInterests(consolidation.threadId),
+      evidenceRefs:experiences.map(experience=>experience.experienceId),
+      sourceRef:consolidation.consolidationId,asOf:consolidation.startedAt,
+    }):{admitted:[],dropped:0};
+
     const completion=experienceStore.recordThreadExperienceConsolidationStage({
       consolidationId:consolidation.consolidationId,
       stage:"complete",
@@ -557,6 +592,7 @@ export function createExperienceConsolidationProcess({
         memoryId:memory?.memoryId??null,
         afterthoughtCount:decision.afterthoughts.length,
         stanceRefs:stances.admitted,
+        interestRefs:interests.admitted,
       },
     });
 
@@ -595,6 +631,8 @@ export function createExperienceConsolidationProcess({
       afterthoughtDelivery,
       stanceRefs:completion.payload.stanceRefs??[],
       stancesDropped:stances.dropped,
+      interestRefs:completion.payload.interestRefs??[],
+      interestsDropped:interests.dropped,
     });
   }
 

@@ -39,7 +39,10 @@ test("a memory is held in mind by its gist while its full recollection stays the
       worldReader:world,semanticStateStore:semantic,memoryStore:memory,experienceStore:experience,
       livedNowStore:{getSituation:()=>({situationId:SITUATION,threadId:SELF,establishedAt:at(0),
         location:{kind:"place",placeRef:"wpl_cafe"},mediatedContext:null,activity:"At the café.",evidenceRefs:[]})},
-      modelAdapter:{async invoke(){return {output:outputs.shift(),provenance:{provider:"fixture",modelId:"fixture"}};}},
+      modelAdapter:{async invoke(request){
+        // This Thread's first reflection on its formative interests is not under test here.
+        if(request.clientRequestId.startsWith("interest-formation_"))return {output:{interests:[]}};
+        return {output:outputs.shift(),provenance:{provider:"fixture",modelId:"fixture"}};}},
       now:()=>new Date(clock).toISOString(),clock:()=>clock,groupWindowMs:60_000,
     });
     const live=async(minutes,recollection,gist)=>{

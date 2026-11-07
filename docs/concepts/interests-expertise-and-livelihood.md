@@ -66,9 +66,9 @@ How this concept fits the running social flow, and where it attaches, is in the 
 
 ## Causal status and deferral
 
-Nothing here is implemented yet; every part is **deferred** and arrives as separate slices, each judged on staging evidence:
+Every part arrives as a separate slice, each judged on staging evidence:
 
-1. Interests, formed in reflection and carried into initiation, live speech, planning and contact.
+1. **Interests — built (source, November 7).** Each holds what draws the Thread, how it sees itself in the subject (its self-image, which may be romantic: the one who knows it, could teach it, make or do something with it, be useful through it) and its open questions. A Thread's first interests come from one reflection over its own formative memories; delayed reflection then forms, deepens, revises or lets go of them, including from how others took what it shared. They lead its developed-self evidence in social choice, conversation, planning, Commons and paid work. **Context-only**; later contact does not read them yet ([social life §6](../architecture/social-life.md#6-afterwards-reflection-memory-stance-and-interests)).
 2. Useful-and-learning moments with their source person, the Thread's reactions, and its own felt standing per interest.
 3. A periodic self-appraisal of its social life (about one model call per Thread per day).
 4. Free showings of competence and paid work through the marketplace, with a resources need.

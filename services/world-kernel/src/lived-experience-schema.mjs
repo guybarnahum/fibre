@@ -284,6 +284,23 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    -- A Thread's own interests: append-only revisions, each formed in its
+    -- reflection and citing the memories or experiences it rests on.
+    CREATE TABLE IF NOT EXISTS thread_interests (
+      thread_id TEXT NOT NULL,
+      interest_id TEXT NOT NULL,
+      revision INTEGER NOT NULL CHECK (revision>=1),
+      status TEXT NOT NULL CHECK (status IN ('current','let_go')),
+      interest_json TEXT NOT NULL CHECK (json_valid(interest_json)),
+      evidence_refs_json TEXT NOT NULL CHECK (json_valid(evidence_refs_json)),
+      formed_by TEXT NOT NULL CHECK (formed_by IN ('formative_reflection','consolidation')),
+      source_ref TEXT NOT NULL,
+      as_of TEXT NOT NULL,
+      PRIMARY KEY (thread_id,interest_id,revision),
+      UNIQUE (thread_id,interest_id,source_ref),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS thread_experience_consolidation_stages (
       consolidation_id TEXT NOT NULL,
       stage TEXT NOT NULL CHECK (stage IN ('decision','complete')),

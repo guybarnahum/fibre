@@ -2387,6 +2387,71 @@ export class LivedExperienceStore {
     `).all(threadId,threadId,threadId);
   }
 
+  // A Thread's current interests: the latest revision of each not let go.
+  listCurrentInterests(threadId,{limit=4}={}){
+    assertId("interests threadId",threadId);
+    return this.#database.prepare(`
+      SELECT i.interest_id,i.revision,i.interest_json,i.evidence_refs_json,i.as_of
+      FROM thread_interests i
+      WHERE i.thread_id=? AND i.status='current' AND i.revision=(
+        SELECT MAX(revision) FROM thread_interests
+        WHERE thread_id=i.thread_id AND interest_id=i.interest_id)
+      ORDER BY i.as_of DESC,i.interest_id LIMIT ?
+    `).all(threadId,limit).map(row=>Object.freeze({
+      interestId:row.interest_id,revision:row.revision,asOf:row.as_of,
+      ...JSON.parse(row.interest_json),
+      evidenceRefs:Object.freeze(JSON.parse(row.evidence_refs_json)),
+    }));
+  }
+
+  hasFormedInterests(threadId){
+    assertId("interests threadId",threadId);
+    return this.#database.prepare(
+      "SELECT 1 FROM thread_interests WHERE thread_id=? LIMIT 1",
+    ).get(threadId)!==undefined;
+  }
+
+  // One revision of one interest, once per source: a retried reflection
+  // returns what it already recorded rather than a second revision.
+  recordInterest({threadId,interestId,status,interest,evidenceRefs,formedBy,sourceRef,asOf}){
+    assertId("interest threadId",threadId);
+    assertId("interestId",interestId);
+    assertId("interest sourceRef",sourceRef);
+    assertIsoTimestamp("interest asOf",asOf);
+    if(!["current","let_go"].includes(status))throw new TypeError("interest status is invalid");
+    if(!Array.isArray(evidenceRefs)||evidenceRefs.length===0)
+      throw new TypeError("an interest rests on at least one memory or experience");
+    return this.#database.transaction(()=>{
+      const existing=this.#database.prepare(`
+        SELECT revision FROM thread_interests
+        WHERE thread_id=? AND interest_id=? AND source_ref=?
+      `).get(threadId,interestId,sourceRef);
+      if(existing!==undefined)return Object.freeze({interestId,revision:existing.revision,inserted:false});
+      const revision=(this.#database.prepare(`
+        SELECT MAX(revision) AS r FROM thread_interests WHERE thread_id=? AND interest_id=?
+      `).get(threadId,interestId).r??0)+1;
+      this.#database.prepare(`
+        INSERT INTO thread_interests(thread_id,interest_id,revision,status,interest_json,
+          evidence_refs_json,formed_by,source_ref,as_of)
+        VALUES (?,?,?,?,?,?,?,?,?)
+      `).run(threadId,interestId,revision,status,canonicalJson(interest),
+        canonicalJson(evidenceRefs),formedBy,sourceRef,asOf);
+      return Object.freeze({interestId,revision,inserted:true});
+    });
+  }
+
+  inspectThreadInterests(threadId,{limit=24}={}){
+    assertId("interests threadId",threadId);
+    return this.#database.prepare(`
+      SELECT interest_id,revision,status,interest_json,evidence_refs_json,formed_by,source_ref,as_of
+      FROM thread_interests WHERE thread_id=? ORDER BY as_of DESC,interest_id,revision DESC LIMIT ?
+    `).all(threadId,limit).map(row=>({
+      interestId:row.interest_id,revision:row.revision,status:row.status,
+      ...JSON.parse(row.interest_json),evidenceRefs:JSON.parse(row.evidence_refs_json),
+      formedBy:row.formed_by,sourceRef:row.source_ref,asOf:row.as_of,
+    }));
+  }
+
   listThreadExperienceJournal(threadId,{limit=null}={}) {
     assertId("threadId", threadId);
     if(limit!==null&&(!Number.isSafeInteger(limit)||limit<1||limit>100)){

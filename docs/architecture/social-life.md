@@ -35,7 +35,7 @@ enacted life (Flight Plan → CurrentSituation at a real venue)
   → invitation → recipient accepts | declines | defers
   → conversation (Live Encounter): each opportunity → SAY | INTRODUCE | ACT | SILENT
   → one Story; one Experience per participant
-  → delayed consolidation: Journal, Memory (+ gist), afterthoughts, stances
+  → delayed consolidation: Journal, Memory (+ gist), afterthoughts, stances, interests
   → doors and ledger record the relational acts as they happen
   → later: a fresh decision to send a message; the recipient may notice it
   → the next opportunity sees what this Thread now knows and feels
@@ -104,16 +104,19 @@ Each live turn sees the Thread's own developed self, its current place, the othe
 
 The whole conversation becomes one Story, one Experience per participant and one consolidation entry each. An accepted invited conversation founds a factual `social_contact` life relation in each direction (place, date, count, last meeting), revised by later meetings ([ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md)); a continued exchange does not, so strangers learn names only by introducing themselves.
 
-## 6. Afterwards: reflection, memory and stance
+## 6. Afterwards: reflection, memory, stance and interests
 
 Noticed Experiences queue for delayed consolidation (a ~30 s World wake; one cluster is the same Thread and situation, at most eight Experiences within fifteen lived minutes). One model call decides, for the cluster:
 
 - a Journal entry, or none;
 - a Memory, or `not_remembered` — a retained Memory carries a **gist** in the Thread's own words, by which background cognition holds it; the full recollection stays authoritative ([memory meaning](genesis-memory-meaning-integration.md));
 - up to three private afterthoughts (`insight | question | intention`);
-- up to two **stances**: how this Thread now regards a person who acted in those experiences.
+- up to two **stances**: how this Thread now regards a person who acted in those experiences;
+- up to two changes to its **interests**: form, deepen, revise or let go.
 
 A stance names one aspect — fondness, trust, respect, attachment, resentment, guardedness — with a first-person description that carries the meaning. It is admitted as the Thread's own restricted `relationship_attitude` state (policy `relationship_stance_formation`), cites the experiences in which that person acted, and supersedes the Thread's earlier regard in the same aspect. A stance about someone who did not act, or one that prescribes rather than describes, is dropped. Stances are private and asymmetric.
+
+An **interest** is a subject that fascinates this Thread, in its own words: what draws it, how it sees itself in that subject (perhaps romantically — as the one who knows, makes or teaches it, someone others could find useful) and the questions it is still asking. A Thread holds up to four, as append-only revisions in `thread_interests`, each citing the memories or experiences it rests on. A Thread that has never held one finds its first in its own formative past, once, in a separate reflection over its own memories and self-description, before its next consolidation; after that, consolidation revises them, including from how others took what it shared or showed ([concept](../concepts/interests-expertise-and-livelihood.md)). Interests enter its developed-self evidence right after its regard for the person it faces, so social choice, conversation, Flight Planning, Commons and paid-work judgement all carry them. Nothing matches Threads by interest.
 
 Afterthoughts may surface as a private opportunity inside a later live conversation, or lead to **later contact**: a fresh, separate decision to keep it private or message one routable person, then a separate expression call. A delivered message is an exterior fact for its addressee alone; the recipient may notice it and form its own Experience. Delivery is never "read" or "answered".
 
@@ -149,7 +152,6 @@ Each extends the flow above without a new pipeline or model call unless stated.
 
 | Concept | Attaches at | First consequence |
 |---|---|---|
-| **Interests** | consolidation forms or revises them (§6); the choice, the live turn, Flight Planning and contact read them | a Thread brings its own subjects and open questions, so conversations probe and diverge |
 | **Felt expertise** | consolidation records useful and learning moments with their source person and the Thread's reaction | its own felt standing per interest, weighted by its regard for that person |
 | **Kindred minds** | nothing new: an emergent effect of stance (§6) leading cognition | measured by who Threads return to and stay in touch with |
 | **Showing and paid work** | an offer inside an encounter; paid work through the task marketplace's bids and contracts | a free taste rewarded socially; a price when the work costs real time and tokens |
@@ -167,6 +169,7 @@ Each extends the flow above without a new pipeline or model call unless stated.
 | Retained Memory and its gist in social choice | Context-only in staging; a controlled fixture shows retention changing a next-day choice | observed natural divergence |
 | Stance | Context-only: it leads cognition facing that person; no acceptance criterion yet requires it to change a judgement | a decline, a return or a message that cites it |
 | Doors and ledger | Notarial: no decision reads them | appointments kept or missed reaching a stance |
+| Interests | Context-only: they lead developed-self evidence in social choice, conversation and planning; later contact does not read them yet | conversations and plans that diverge by interest; a Thread seeking someone who rewarded it on one |
 | `social_contact` life relation | Future-state causal: makes a person contactable | — |
 | Scorecard, endings, social profile | Operator inspection only, by design | — |
 
