@@ -417,12 +417,19 @@ async function resolveNewPlaces({
 // What later cognition sees of a Flight Plan: the Thread's intended stops and
 // their purposes. The plan's stored cognition provenance stays with the record;
 // a past body state beside the current one would only contradict it.
-export function remainingPlanForCognition(plan) {
+// What is still ahead in the Thread's own plan: the stop underway and the
+// next two. Stops already lived are history, not intention.
+const REMAINING_PLAN_STOPS=3;
+export function remainingPlanForCognition(plan,at) {
   if (plan === null || plan === undefined) return null;
+  const instant=Date.parse(at);
+  if(!Number.isFinite(instant))throw new TypeError("remaining plan requires the present instant");
   return {
     horizonStart:plan.horizonStart??null,
     horizonEnd:plan.horizonEnd??null,
-    stops:structuredClone(plan.stops??[]),
+    stops:structuredClone((plan.stops??[])
+      .filter(stop=>Date.parse(stop.endAt)>instant)
+      .slice(0,REMAINING_PLAN_STOPS)),
   };
 }
 

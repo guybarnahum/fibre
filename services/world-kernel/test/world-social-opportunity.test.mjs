@@ -1095,7 +1095,7 @@ test("a noticed greeting recalls the recipient's earlier silence",async()=>{
       request.input.concern.externalContext.priorSocialChoicesThisVisit,
       [{
         at:"2026-10-23T09:00:00.000Z",act:"none",expression:null,
-        reportedReason:"I wanted to finish my book.",
+        reportedReason:"I wanted to finish my book.",towardThreadId:"thr_reconsider_neighbor",
       }],
       "a recipient's earlier choice was absent from a voluntary reply");
     observedChoices++;
@@ -1329,6 +1329,7 @@ test("a later voluntary choice recalls the Thread's own earlier silence",async()
     assert.deepEqual(prior,[{
       at:"2026-10-23T09:00:00.000Z",act:"none",expression:null,
       reportedReason:"I wanted to finish my book first.",
+      towardThreadId:"thr_reconsider_neighbor",
     }],"the Thread's earlier choice disappeared from its social context");
     decisions++;
     return {
@@ -2220,4 +2221,30 @@ test("only actual acquaintance reveals a name in an ordinary perceived person",(
     assert.equal(description.name,"Aisha N.",
       "the actual admitted meeting did not establish name knowledge");
   }finally{store.close();rmSync(directory,{recursive:true,force:true});}
+});
+
+test("choosing no one among the people present is remembered toward each of them",()=>{
+  const f=groundedReconsiderationFixture();
+  try{
+    const [reader,neighbor,bystander]=f.people;
+    const visit="2026-10-23T09:00:00.000Z";
+    f.enact(neighbor,"2026-10-23T08:00:00.000Z","Reading.");
+    f.enact(bystander,"2026-10-23T08:00:00.000Z","Reading.");
+    const own=f.enact(reader,visit,"Reading.",[neighbor,bystander]);
+    f.experience.enqueueSocialOpportunity({
+      threadId:reader,situationId:own.situationId,dueAt:visit,
+    });
+    assert.ok(f.experience.claimDueSocialOpportunity({at:visit}),"no durable choice");
+    f.experience.completeSocialOpportunity({
+      situationId:own.situationId,at:visit,outcome:"not_initiated",
+      decision:{counterpartyThreadId:null,consideredThreadIds:[neighbor,bystander],
+        initiation:{act:"none",expression:null,reportedReason:"I came to read."}},
+    });
+    for(const person of [neighbor,bystander]){
+      assert.deepEqual(f.experience.socialChoicesThisVisit({
+        threadId:reader,counterpartyThreadId:person,visitSince:visit,
+      }).map(choice=>[choice.act,choice.towardThreadId]),[["none",null]],
+      "an earlier choice to engage no one was forgotten toward someone in view");
+    }
+  }finally{f.close();}
 });

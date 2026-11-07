@@ -79,7 +79,10 @@ function evidenceCandidate(ref, kind, text) {
   return Object.freeze({ ref, kind, text });
 }
 
-function selectEvidence(threadId, sourceStores, policy, at, focusPartyId=null) {
+// focus: the people this Thread is facing (none, one, or the company it is
+// choosing among); its regard, relations and shared memories with them first.
+function selectEvidence(threadId, sourceStores, policy, at, focus=null) {
+  const focusIds=new Set(focus===null?[]:Array.isArray(focus)?focus:[focus]);
   const identityStore = requireMethod(sourceStores, "identityStore", "getCurrentIdentityView");
   const memoryStore = requireMethod(sourceStores, "memoryStore", "listCurrentMemories");
   const situatedLifeStore = requireMethod(sourceStores, "situatedLifeStore", "listCurrentLifeRelations");
@@ -89,15 +92,15 @@ function selectEvidence(threadId, sourceStores, policy, at, focusPartyId=null) {
   if (identityView?.threadId !== threadId) throw new TypeError("Interior Cognition identity view Thread mismatch");
 
   const candidates = [];
-  const sharedExperienceRefs=focusPartyId===null?null:new Set(
-    sourceStores.experienceStore?.listSharedExperienceRefs?.(
-      threadId,focusPartyId,{before:at,limit:64},
+  const sharedExperienceRefs=focusIds.size===0?null:new Set([...focusIds].flatMap(
+    partyId=>sourceStores.experienceStore?.listSharedExperienceRefs?.(
+      threadId,partyId,{before:at,limit:64},
     )??[],
-  );
+  ));
 
   // This Thread's own regard for the person in focus comes before newer states.
-  const regardsFocus=(item)=>focusPartyId!==null
-    &&item.domain==="relationship_attitude"&&item.target?.targetId===focusPartyId;
+  const regardsFocus=(item)=>item.domain==="relationship_attitude"
+    &&focusIds.has(item.target?.targetId);
   for (const item of [...(semanticStateStore.listCurrentState(threadId) ?? [])]
     .map((item) => owned(threadId, "semantic state", item.stateId, item))
     .sort((left, right) => Number(regardsFocus(right)) - Number(regardsFocus(left))
@@ -149,9 +152,9 @@ function selectEvidence(threadId, sourceStores, policy, at, focusPartyId=null) {
     .filter((item) => Array.isArray(item.relationshipFacts) && item.relationshipFacts.some((fact) =>
       typeof fact === "string" && fact.trim() !== ""))
     .sort((left, right) =>{
-      if(focusPartyId!==null){
-        const a=left.relatedParty?.partyId===focusPartyId;
-        const b=right.relatedParty?.partyId===focusPartyId;
+      if(focusIds.size>0){
+        const a=focusIds.has(left.relatedParty?.partyId);
+        const b=focusIds.has(right.relatedParty?.partyId);
         if(a!==b)return a?-1:1;
       }
       return String(left.relationId).localeCompare(String(right.relationId));
@@ -197,12 +200,16 @@ function normalizeConcern(concern) {
   const externalContext = concern.externalContext ?? {};
   assertJsonValue("Interior Cognition concern.externalContext", externalContext);
   const focusPartyId=concern.focusPartyId??null;
+  const focusPartyIds=concern.focusPartyIds??null;
+  if(focusPartyId!==null&&focusPartyIds!==null){
+    throw new TypeError("person focus is one person or a company, not both");
+  }
+  const observed=externalContext?.situatedPercept?.observed;
   if(focusPartyId!==null){
     assertId("Interior Cognition focusPartyId",focusPartyId);
     if(!["social_initiation","social_response"].includes(concern.kind)){
       throw new TypeError("person focus requires a social concern");
     }
-    const observed=externalContext?.situatedPercept?.observed;
     if(!Array.isArray(observed)||observed.length!==1
       ||observed[0]?.threadId!==focusPartyId
       ||(concern.kind==="social_response"
@@ -210,10 +217,23 @@ function normalizeConcern(concern) {
       throw new TypeError("social person focus must be the actually perceived counterpart");
     }
   }
+  if(focusPartyIds!==null){
+    // A company in focus is exactly the people actually perceived here.
+    if(concern.kind!=="social_initiation"||!Array.isArray(focusPartyIds)
+      ||focusPartyIds.length<2||!Array.isArray(observed)
+      ||observed.length!==focusPartyIds.length
+      ||!focusPartyIds.every((id,index)=>{
+        assertId("Interior Cognition focusPartyIds",id);
+        return observed[index]?.threadId===id;
+      })){
+      throw new TypeError("a social company in focus must be the actually perceived people");
+    }
+  }
   return Object.freeze({
     kind:concern.kind.trim(),
     question:concern.question.trim(),
     ...(focusPartyId===null?{}:{focusPartyId}),
+    ...(focusPartyIds===null?{}:{focusPartyIds:Object.freeze([...focusPartyIds])}),
     externalContext:structuredClone(externalContext),
   });
 }
@@ -302,7 +322,8 @@ export async function runInteriorCognition({
 
   const profile = INTERIOR_COGNITION_PROFILE;
   const selected = selectEvidence(
-    threadId,sourceStores,profile,at,normalizedConcern.focusPartyId??null,
+    threadId,sourceStores,profile,at,
+    normalizedConcern.focusPartyIds??normalizedConcern.focusPartyId??null,
   );
   const evidenceRefs = selected.evidence.map((item) => item.ref);
   const currentState = Object.freeze({

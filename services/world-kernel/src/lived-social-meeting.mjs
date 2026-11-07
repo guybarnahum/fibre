@@ -25,6 +25,11 @@ import { lifeRelationId } from "./situated-life-domain.mjs";
 import { selectDevelopedSelfEvidence } from "./interior-cognition.mjs";
 
 const MEMORY_LIMIT = 6;
+// How many of the people present one social consideration can hold at once.
+const COMPANY_LIMIT = 5;
+// Conversations do not yet record how long they last in World time; until
+// they do, a Thread that spoke in one within this span is still in it.
+const CONVERSATION_ENGAGEMENT_MS = 10*60_000;
 
 function requireMethod(name, value, method) {
   if (value === null || typeof value !== "object" || typeof value[method] !== "function") {
@@ -42,6 +47,17 @@ function rethrowSocialFailure(cause,counterpartyThreadId,salience){
     };
   }
   throw cause;
+}
+
+// Several salient people: one combined witness of what made them material.
+function companySalience(people){
+  return Object.freeze({
+    outcome:"salient",
+    anchors:Object.freeze([...new Set(people.flatMap(person=>person.salience.anchors))]),
+    sourceReferences:Object.freeze([...new Set(
+      people.flatMap(person=>person.salience.sourceReferences))]),
+    bodyAtGate:people[0].salience.bodyAtGate??null,
+  });
 }
 
 function contextFor({ threadId, worldReader, livedNowStore, semanticStateStore, memoryStore }) {
@@ -245,7 +261,33 @@ export function createSocialMeetingService({
     });
   }
 
-  async function discoverCoPresent(initiator, at, counterpartyThreadId=null) {
+  // Someone who has just been talking with another person is still in that
+  // conversation; they cannot hold a second private one meanwhile.
+  function inConversation(threadId,at){
+    if(!boundedVenueDiscovery)return false;
+    const instant=Date.parse(at);
+    return experienceStore.listEncounterStories(threadId,{limit:8}).some(story=>{
+      const elapsed=instant-Date.parse(story.occurredAt);
+      if(elapsed<0||elapsed>CONVERSATION_ENGAGEMENT_MS)return false;
+      const speakers=new Set(story.story.beats
+        .filter(beat=>beat.kind==="utterance"&&beat.actorThreadId!==null)
+        .map(beat=>beat.actorThreadId));
+      return speakers.has(threadId)&&speakers.size>1;
+    });
+  }
+
+  // The Thread's own earlier choices this visit toward anyone now in view.
+  function priorChoices(threadId,companyIds,visitSince){
+    const seen=new Map();
+    for(const counterpartyThreadId of companyIds){
+      for(const choice of experienceStore.socialChoicesThisVisit({
+        threadId,counterpartyThreadId,visitSince,
+      }))seen.set(choice.at+"|"+(choice.towardThreadId??""),choice);
+    }
+    return [...seen.values()].sort((a,b)=>a.at.localeCompare(b.at)).slice(-6);
+  }
+
+  async function discoverCoPresent(initiator, at, counterpartyThreadId=null, companyThreadIds=null) {
     // Indexed venue authority finds current people, including long-stayers.
     // Explicit /meet retains its existing general discovery semantics.
     const venue=boundedVenueDiscovery&&initiator.situation.location?.kind==="place"
@@ -262,7 +304,15 @@ export function createSocialMeetingService({
       ?livedNowStore.getWorldPlace(
         counterpartyThreadId,target.location.placeRef,{required:false},
       )?.physicalVenue?.ref??null:null;
-    const situations=counterpartyThreadId!==null
+    const atVenue=situation=>situation!==null&&situation.wakefulness!=="asleep"
+      &&situation.location?.kind==="place"&&venue!==null
+      &&livedNowStore.getWorldPlace(situation.threadId,situation.location.placeRef,
+        {required:false})?.physicalVenue?.ref===venue;
+    const situations=companyThreadIds!==null
+      // The company present when this chance was earned, still here now.
+      ?companyThreadIds.map(threadId=>livedNowStore.getCurrentSituation(threadId))
+        .filter(atVenue)
+      :counterpartyThreadId!==null
       ?target!==null&&target.wakefulness!=="asleep"&&venue!==null&&venue===targetVenue
         ?[target]:[]
       :boundedVenueDiscovery
@@ -306,10 +356,16 @@ export function createSocialMeetingService({
       });
       if (!compatible(initiator, candidate, livedNowStore)) continue;
 
+      // People already talking with someone else are occupied, not company
+      // to be approached; a specific person who addressed this Thread stays.
+      if(boundedVenueDiscovery&&counterpartyThreadId===null
+        &&inConversation(candidateSituation.threadId,at))continue;
       const refreshed = await currentContext(candidateSituation.threadId, at);
       if (refreshed!==null&&compatible(initiator, refreshed, livedNowStore)) {
         discovered.push(refreshed);
-        if(boundedVenueDiscovery)break; // One candidate, one bounded social decision.
+        // The Thread considers the people present together, a bounded few.
+        if(boundedVenueDiscovery&&(counterpartyThreadId!==null
+          ||discovered.length>=COMPANY_LIMIT))break;
       }
     }
 
@@ -704,6 +760,7 @@ export function createSocialMeetingService({
     async meet(input) {
       assertPlainObject("social meeting input", input);
       const counterpartyThreadId=input.counterpartyThreadId??null;
+      const companyThreadIds=input.companyThreadIds??null;
       const visitSince=input.reconsiderationVisitSince??null;
       const sourceKind=input.sourceKind??null;
       const sourceEncounterRef=input.sourceEncounterRef??null;
@@ -711,11 +768,23 @@ export function createSocialMeetingService({
         sourceKind!==null
           ?["initiatorThreadId","at","counterpartyThreadId","sourceKind","sourceEncounterRef"]
           :visitSince!==null
-            ?["initiatorThreadId","at","counterpartyThreadId","reconsiderationVisitSince"]
+            ?["initiatorThreadId","at",
+              companyThreadIds!==null?"companyThreadIds":"counterpartyThreadId",
+              "reconsiderationVisitSince"]
             :counterpartyThreadId===null
               ?["initiatorThreadId","at"]
               :["initiatorThreadId","at","counterpartyThreadId"]);
       if(visitSince!==null)assertIsoTimestamp("social revisit start",visitSince);
+      if(companyThreadIds!==null){
+        if(!boundedVenueDiscovery||!Array.isArray(companyThreadIds)
+          ||companyThreadIds.length===0)
+          throw new TypeError("a social company is the people present at a venue");
+        for(const threadId of companyThreadIds){
+          assertId("social company member",threadId);
+          if(threadId===input.initiatorThreadId)
+            throw new TypeError("a Thread cannot socially meet itself");
+        }
+      }
       assertId("social meeting initiatorThreadId", input.initiatorThreadId);
       assertIsoTimestamp("social meeting at", input.at);
       if(counterpartyThreadId!==null){
@@ -731,7 +800,7 @@ export function createSocialMeetingService({
         attempts:Object.freeze([]),encounterCount:0,
       });
       const discovered = await discoverCoPresent(
-        initiator,input.at,counterpartyThreadId,
+        initiator,input.at,counterpartyThreadId,companyThreadIds,
       );
       const perceived = projectSituatedPercept({
         observerThreadId:initiator.thread.threadId,
@@ -758,7 +827,12 @@ export function createSocialMeetingService({
       ]));
       const attemptByActor = new Map();
       const accepted = [];
+      // Facing a whole scene, the Thread considers the salient people
+      // together and itself chooses whom, if anyone, to engage.
+      const scene=boundedVenueDiscovery&&counterpartyThreadId===null;
+      const initiatorTalking=inConversation(initiator.thread.threadId,input.at);
 
+      const salient=[];
       for (const opportunity of opportunities) {
         const counterparty = discoveredById.get(opportunity.actorRef);
         if (counterparty === undefined) continue;
@@ -792,7 +866,16 @@ export function createSocialMeetingService({
           }));
           continue;
         }
+        salient.push(Object.freeze({counterparty,situatedPercept,salience}));
+      }
 
+      const considerations=scene&&salient.length>1
+        ?[salient.slice(0,COMPANY_LIMIT)]:salient.map(person=>[person]);
+      for (const consideration of considerations) {
+        const single=consideration.length===1?consideration[0]:null;
+        const company=consideration.map(person=>person.counterparty);
+        const companyIds=company.map(person=>person.thread.threadId);
+        let salience=single?.salience??companySalience(consideration);
         try{
         // An observed arrival or small act is a new opportunity inside
         // the same shared visit; the observer owns their earlier choices.
@@ -803,10 +886,24 @@ export function createSocialMeetingService({
             initiator.thread.threadId,initiator.situation.location.placeRef,
             {required:false},
           )?.physicalVenue?.ref??null:null;
-        const decisionVisitSince=visitSince??(venue===null?null
-          :sharedVisitSince(initiator,counterparty,venue));
-        const continuation=ongoingExchange({
-          initiator,counterparty,at:input.at,sourceKind,sourceEncounterRef,
+        const decisionVisitSince=visitSince??(venue===null||single===null?null
+          :sharedVisitSince(initiator,single.counterparty,venue));
+        // Neither person may already be in a conversation with someone else.
+        const conversationAvailable=!initiatorTalking
+          &&!(single!==null&&inConversation(single.counterparty.thread.threadId,input.at));
+        const continuation=single===null||!conversationAvailable?null:ongoingExchange({
+          initiator,counterparty:single.counterparty,at:input.at,
+          sourceKind,sourceEncounterRef,
+        });
+        const situatedPercept=single?.situatedPercept??projectSituatedPercept({
+          observerThreadId:initiator.thread.threadId,
+          situation:initiator.situation,
+          at:input.at,
+          observedThreads:company.map(observedThread),
+          situatedLifeStore,
+          livedNowStore,
+          embodimentStore,
+          experienceStore,
         });
         const initiation = await formSocialEncounterRequest({
           threadId:initiator.thread.threadId,
@@ -815,11 +912,7 @@ export function createSocialMeetingService({
             initiator.thread.threadId,situatedPercept,experienceStore,
           ),
           priorSocialChoicesThisVisit:decisionVisitSince===null?[]
-            :experienceStore.socialChoicesThisVisit({
-              threadId:initiator.thread.threadId,
-              counterpartyThreadId:counterparty.thread.threadId,
-              visitSince:decisionVisitSince,
-            }),
+            :priorChoices(initiator.thread.threadId,companyIds,decisionVisitSince),
           plan:livedNowStore.latestPlan(initiator.thread.threadId, "personal", { at:input.at }),
           situatedPercept,
           interoception:regulationFrame===null?null:projectInteroception(regulationFrame),
@@ -833,11 +926,22 @@ export function createSocialMeetingService({
           },
           modelAdapter,
           continuationEligible:continuation!==null,
+          conversationAvailable,
         });
+        const chosen=initiation.towardThreadId===null?null
+          :consideration.find(person=>
+            person.counterparty.thread.threadId===initiation.towardThreadId);
+        const counterparty=chosen?.counterparty??null;
+        salience=chosen?.salience??salience;
+        // Whom this Thread had in view, so its later choices remember all of it.
+        const considered=single===null?{consideredThreadIds:Object.freeze(companyIds)}:{};
+        const record=attempt=>attemptByActor.set(
+          counterparty?.thread.threadId??companyIds[0],
+          Object.freeze({...attempt,...considered}));
 
         if (initiation.act === "none") {
-          attemptByActor.set(counterparty.thread.threadId, Object.freeze({
-            counterpartyThreadId:counterparty.thread.threadId,
+          record({
+            counterpartyThreadId:single?.counterparty.thread.threadId??null,
             outcome:"not_initiated",
             salience,
             initiation,
@@ -845,7 +949,7 @@ export function createSocialMeetingService({
             stance:null,
             encounterStory:null,
             aftermath:null,
-          }));
+          });
           continue;
         }
 
@@ -859,8 +963,7 @@ export function createSocialMeetingService({
             suggestedAt:null,reason:initiation.reason,
             cognition:initiation.cognition,
           });
-          attemptByActor.set(counterparty.thread.threadId,
-            await formAcceptedEncounter({
+          record(await formAcceptedEncounter({
               initiator,counterparty,witnesses:[],at:input.at,
               salience,initiation,request,stance,interaction:null,continuation,
             }));
@@ -868,8 +971,7 @@ export function createSocialMeetingService({
         }
 
         if(initiation.act!=="invite_conversation"){
-          attemptByActor.set(counterparty.thread.threadId,
-            await enactSmallSocialAct({
+          record(await enactSmallSocialAct({
               initiator,counterparty,at:input.at,salience,initiation,
             }));
           continue;
@@ -919,7 +1021,7 @@ export function createSocialMeetingService({
         });
 
         if (stance.decision !== "accept") {
-          attemptByActor.set(counterparty.thread.threadId, Object.freeze({
+          record({
             counterpartyThreadId:counterparty.thread.threadId,
             outcome:"not_met",
             salience,
@@ -928,7 +1030,7 @@ export function createSocialMeetingService({
             stance,
             encounterStory:null,
             aftermath:null,
-          }));
+          });
           continue;
         }
 
@@ -939,9 +1041,10 @@ export function createSocialMeetingService({
           request,
           stance,
           interaction,
+          considered,
         }));
         }catch(cause){
-          rethrowSocialFailure(cause,counterparty.thread.threadId,salience);
+          rethrowSocialFailure(cause,single?.counterparty.thread.threadId??null,salience);
         }
       }
 
@@ -952,7 +1055,7 @@ export function createSocialMeetingService({
         try{
           attemptByActor.set(
             pending.counterparty.thread.threadId,
-            await formAcceptedEncounter({
+            {...pending.considered,...await formAcceptedEncounter({
               initiator,
               counterparty:pending.counterparty,
               witnesses,
@@ -962,7 +1065,7 @@ export function createSocialMeetingService({
               request:pending.request,
               stance:pending.stance,
               interaction:pending.interaction,
-            }),
+            })},
           );
         }catch(cause){
           rethrowSocialFailure(cause,pending.counterparty.thread.threadId,
@@ -970,9 +1073,11 @@ export function createSocialMeetingService({
         }
       }
 
+      // The Thread's own decision leads; people who stayed background follow.
       const attempts = opportunities
         .map((opportunity) => attemptByActor.get(opportunity.actorRef))
-        .filter((attempt) => attempt !== undefined);
+        .filter((attempt) => attempt !== undefined)
+        .sort((a,b)=>Number(a.outcome==="background")-Number(b.outcome==="background"));
       const encounterCount = attempts.filter((attempt) => attempt.outcome === "met").length;
       return Object.freeze({
         outcome:encounterCount > 0 ? "met" : "not_met",

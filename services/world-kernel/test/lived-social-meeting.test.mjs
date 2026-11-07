@@ -110,6 +110,7 @@ function fixture({
   moveAfterInitiation = false,
   boundedVenueDiscovery = false,
   dueThreadId = null,
+  recentConversationBetween = null,
 } = {}) {
   const minaCafe = placeEpisode(mina.threadId, "plce_n5_mina_cafe", "place_n5_cafe", placeProvenance);
   const noorCafe = placeEpisode(
@@ -190,6 +191,18 @@ function fixture({
       occurredAt:earlier,outcome:"noticed",experience,
     });
   }
+  if(recentConversationBetween!==null){
+    // Two people who were just talking with each other, two minutes ago.
+    stories.push({
+      encounterId:"story_recent_conversation",
+      occurredAt:new Date(Date.parse(AT)-2*60_000).toISOString(),
+      threadPresence:recentConversationBetween.map(threadId=>({
+        threadId,situationId:situations.get(threadId).situationId})),
+      story:{storyVersion:"encounter-story-v0.1",beats:recentConversationBetween
+        .map(threadId=>({actorThreadId:threadId,kind:"utterance",
+          text:"A person says something.",spokenText:"Something."}))},
+    });
+  }
   if(noticedArrivalWitness!==null){
     const observer=situations.get(mina.threadId);
     const witness=situations.get(noticedArrivalWitness);
@@ -220,6 +233,8 @@ function fixture({
     });
   }
   const initiationNames = [];
+  const initiationActs = [];
+  const observedCompanies = [];
   const observedAtInitiation=[];
   const liveInputs=[];
   const stanceNames = [];
@@ -248,20 +263,26 @@ function fixture({
         projectOpenAIStructuredOutputSchema(call.responseSchema),
       ),"social cognition sent an invalid strict response schema");
       if (call.input?.concern?.kind === "social_initiation") {
+        const company=call.input.concern.externalContext.situatedPercept.observed.length>1;
         assert.deepEqual(call.responseSchema?.properties?.result?.required,
-          ["act","expression","experienceText","reason","introducesSelf"],
+          ["act","expression","experienceText","reason","introducesSelf",
+            ...(company?["towardThreadId"]:[])],
           "initiation must require a boolean introduction choice");
-        assert.deepEqual(call.responseSchema?.properties?.result?.properties?.act?.enum,
-          ["none","acknowledge","greet","remark","invite_conversation"],
+        assert.deepEqual(call.responseSchema?.properties?.result?.properties?.act?.enum
+          .filter(act=>act!=="invite_conversation"),
+          ["none","acknowledge","greet","remark"],
           "the social mind lost its ordinary range of actions");
+        initiationActs.push([...call.responseSchema.properties.result.properties.act.enum]);
         initiationNames.push(call.input.thread.name);
         assert.equal(Object.hasOwn(call.input.thread, "stableTendencies"), false,
           "social initiation must not receive raw genome/persona traits");
         assert.equal(Array.isArray(call.input.developedSelfEvidence), true,
           "social initiation should receive Fibre-selected developed-self evidence");
         const percept = call.input.concern.externalContext.situatedPercept;
-        assert.equal(call.input.concern.focusPartyId,percept.observed[0]?.threadId,
-          "social cognition focused on someone other than the observed person");
+        assert.deepEqual(call.input.concern.focusPartyIds??[call.input.concern.focusPartyId],
+          percept.observed.map(person=>person.threadId),
+          "social cognition focused on someone other than the observed people");
+        observedCompanies.push(percept.observed.map(person=>person.threadId));
         assert.equal(percept.setting.place?.displayName, "The same neighborhood café",
           "social cognition should receive the actual setting");
         observedAtInitiation.push(structuredClone(percept.observed[0]));
@@ -306,6 +327,9 @@ function fixture({
           output:{
             result:{
               act:decision,
+              // Among several people, the Thread names whom it engages.
+              ...(percept.observed.length>1?{towardThreadId:decision==="none"?null
+                :selected?.toward??percept.observed[0].threadId}:{}),
               introducesSelf,
               expression:customExpression!==undefined?customExpression
                 :introducesSelf?"Hello, I'm "+call.input.thread.name+"."
@@ -756,6 +780,8 @@ function fixture({
     ensured,
     socialInteractions,
     initiationNames,
+    initiationActs,
+    observedCompanies,
     observedAtInitiation,
     liveInputs,
     stanceNames,
@@ -1510,12 +1536,10 @@ test("an arriving Thread considers its noticed witness before lower-ID bystander
   const result=await f.meeting.meet({
     initiatorThreadId:mina.threadId,at:AT,
   });
-  assert.deepEqual(result.discoveredThreadIds,[sela.threadId],
+  assert.equal(result.discoveredThreadIds[0],sela.threadId,
     "Thread-ID order displaced the actually noticed witness");
-  assert.equal(result.attempts.length,1,
+  assert.equal(result.attempts.filter(attempt=>attempt.outcome!=="background").length,1,
     "one noticed arrival created multiple social decisions");
-  assert.equal(result.attempts[0].counterpartyThreadId,sela.threadId,
-    "the arrival decision targeted an unseen bystander");
   assert.equal(result.attempts[0].outcome,"not_initiated",
     "noticing a witness compelled conversation");
 });
@@ -1536,4 +1560,42 @@ test("in conversation a Thread speaks from its own life toward the person in fro
   assert.match(noorFacing(known).developedSelfEvidence.map(item=>item.text).join("\n"),
     /Noor likes Mina/u,
     "live speech lost Noor's own relationship with the person in front of her");
+});
+
+test("among the people present a Thread itself chooses whom, if anyone, to engage",async()=>{
+  const company=[noor.threadId,sela.threadId];
+  const greeting=fixture({
+    boundedVenueDiscovery:true,selaPresent:true,plannedCompanionRefs:company,
+    initiationFor:()=>({act:"greet",toward:sela.threadId}),
+  });
+  const result=await greeting.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  assert.deepEqual(greeting.observedCompanies.map(ids=>[...ids].sort()),[[...company].sort()],
+    "the Thread did not see the people present together in one choice");
+  assert.equal(result.attempts[0].counterpartyThreadId,sela.threadId,
+    "World, not the Thread, chose whom to greet");
+  assert.equal(result.attempts[0].outcome,"acted","the chosen greeting did not happen");
+
+  const silence=fixture({
+    boundedVenueDiscovery:true,selaPresent:true,plannedCompanionRefs:company,
+    initiationFor:()=>"none",
+  });
+  const quiet=await silence.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  assert.equal(quiet.attempts[0].outcome,"not_initiated","choosing no one was not respected");
+  assert.equal(quiet.attempts[0].counterpartyThreadId,null,"choosing no one was pinned on someone");
+  assert.deepEqual([...quiet.attempts[0].consideredThreadIds].sort(),[...company].sort(),
+    "the people this Thread had in view were not kept with its choice");
+});
+
+test("someone already in a conversation is not drawn into a second one meanwhile",async()=>{
+  const f=fixture({
+    boundedVenueDiscovery:true,selaPresent:true,
+    plannedCompanionRefs:[noor.threadId,sela.threadId],
+    recentConversationBetween:[mina.threadId,sela.threadId],
+    initiationFor:()=>"greet",
+  });
+  await f.meeting.meet({initiatorThreadId:mina.threadId,at:AT});
+  assert.deepEqual(f.observedCompanies,[[noor.threadId]],
+    "a person mid-conversation was offered as company to approach");
+  assert.equal(f.initiationActs[0].includes("invite_conversation"),false,
+    "a Thread mid-conversation could start a second conversation");
 });

@@ -1,7 +1,7 @@
 ---
 id: architecture-social-life
 status: accepted
-last-reviewed: 2026-11-06
+last-reviewed: 2026-11-07
 canonical: true
 ---
 
@@ -56,10 +56,11 @@ A social opportunity is a durable, one-shot World record that says "this Thread 
 Rules that hold for every kind:
 
 - An opportunity **reads** the enacted scene and never advances it. A party with an unresolved life boundary due at the decision is ineligible until World enacts their life; nobody is kept at a venue or retroactively made to speak.
-- Counterparts come from World-current co-presence (at most eight candidates after resolving each one's latest situation), never from the caller. Each person in a scene is a separate opportunity; a café is not one forced group meeting.
+- Counterparts come from World-current co-presence, never from the caller. Facing a scene (an arrival, an activity change, a need band), the Thread sees up to five salient people at once and itself chooses whom, if anyone, to engage ([ADR-0028 amendment](../decisions/ADR-0028-event-driven-social-reconsideration.md#amendment--the-thread-chooses-whom-november-7-2026)); a reply to someone's act concerns that person. A café is not one forced group meeting.
+- A person is in one conversation at a time: someone who has just been talking (provisionally, within ten minutes of World time) is not approached as company, and while either party is talking, invitations and continuations are not offered.
 - A claimed opportunity is never replayed, even after an interrupted model call, because the other person may already have heard an overture.
 - Non-decisions are distinguished honestly: `no_co_presence`, `missed_window` (company existed at the event but had left — requires a recorded departure), `expired` (older than the one-hour freshness bound), `life_unresolved`, and `need_unreached` for a predicted band that was not reached.
-- Reconsideration is bounded at three per person per continuous visit and two per ordered pair.
+- Reconsideration is bounded at three per person per continuous visit and two per ordered pair; a choice counts toward everyone the Thread had in view.
 
 These limits bound computation. They are not social rules, rate targets or claims about how often people talk.
 
@@ -81,7 +82,7 @@ The [Salience Gate](situated-perception-and-salience.md#salience-is-mechanical-a
 
 ## 4. The choice
 
-Interior Cognition receives the percept, its developed self (identity, memories, states and relations, with those about the person in front of it first — `focusPartyId`), its interoception, and up to three of its own earlier choices toward the same person this visit (`priorSocialChoicesThisVisit`), including silence and why. It chooses one act ([ADR-0027](../decisions/ADR-0027-graded-social-acts.md)):
+Interior Cognition receives the percept, its developed self (identity, memories, states and relations, with those about the people in front of it first), its interoception, the stops still ahead in its own plan, and its own earlier choices this visit toward anyone in view (`priorSocialChoicesThisVisit`), including silence and why. Facing several people, it names whom its act is toward (`towardThreadId`), or no one. It chooses one act ([ADR-0027](../decisions/ADR-0027-graded-social-acts.md)):
 
 - `none` — nothing happened in anyone else's world;
 - `acknowledge` (a nod), `greet`, `remark` — one objective Story; the other person may not notice;

@@ -353,14 +353,18 @@ export class LivedExperienceStore {
         FROM world_observed_social_opportunities
         WHERE thread_id=? AND due_at>=? AND completed_at IS NOT NULL
       ) WHERE decision_json IS NOT NULL
-        AND json_extract(decision_json,'$.counterpartyThreadId')=?
+        AND (json_extract(decision_json,'$.counterpartyThreadId')=?
+          OR EXISTS (SELECT 1 FROM json_each(decision_json,'$.consideredThreadIds')
+            WHERE value=?))
         AND json_extract(decision_json,'$.initiation.act') IS NOT NULL
       ORDER BY due_at DESC LIMIT ?
-    `).all(threadId,visitSince,threadId,visitSince,counterpartyThreadId,limit)
+    `).all(threadId,visitSince,threadId,visitSince,counterpartyThreadId,
+      counterpartyThreadId,limit)
       .reverse().map(row=>{
         const witness=JSON.parse(row.decision_json);
         return Object.freeze({
           at:row.due_at,act:witness.initiation?.act??null,
+          towardThreadId:witness.counterpartyThreadId??null,
           expression:witness.initiation?.expression??null,
           reportedReason:witness.initiation?.reportedReason??null,
         });
@@ -372,8 +376,10 @@ export class LivedExperienceStore {
       SELECT COUNT(*) AS n FROM world_social_opportunities
       WHERE thread_id=? AND visit_since=? AND trigger_kind!='arrival'
         AND completed_at IS NOT NULL
-        AND json_extract(decision_json,'$.counterpartyThreadId')=?
-    `).get(threadId,visitSince,counterpartyThreadId).n;
+        AND (json_extract(decision_json,'$.counterpartyThreadId')=?
+          OR EXISTS (SELECT 1 FROM json_each(decision_json,'$.consideredThreadIds')
+            WHERE value=?))
+    `).get(threadId,visitSince,counterpartyThreadId,counterpartyThreadId).n;
   }
 
   // A conversation between two people answers the one-shot chances they still

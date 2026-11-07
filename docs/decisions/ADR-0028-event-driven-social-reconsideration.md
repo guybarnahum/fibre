@@ -1,7 +1,7 @@
 ---
 id: adr-0028-event-driven-social-reconsideration
 status: accepted
-last-reviewed: 2026-11-06
+last-reviewed: 2026-11-07
 canonical: true
 ---
 
@@ -44,6 +44,17 @@ silence, outward expression, time and the person's own reported reason.
 This is **context-only** until a differential live decision establishes
 a change in behavior; it does not mechanically alter a drive or infer a
 relationship.
+
+## Amendment — the Thread chooses whom (November 7, 2026)
+
+**Chosen by Guy November 7, 2026, from staging evidence.** With eight Threads in one library, World picked the single person each Thread could consider — whoever arrived first or appeared in a recent Story — so every choice was "Kadir or nothing" or "Hassan or nothing", and thirteen pairs of strangers spent hours together without one being considered. That made attention **Exogenous** and contradicted [situated perception](../architecture/situated-perception-and-salience.md#a-scene-yields-independent-actor-opportunities) ("Fibre must not arbitrarily choose the first person in the room").
+
+- An arrival, activity change or social-need band now offers the **people present** (up to five, each salient on its own) to one ordinary initiation decision. The Thread names whom it engages (`towardThreadId`), or no one. One model call, as before.
+- The decision keeps everyone it had in view (`consideredThreadIds`), so a choice to engage no one is recalled later toward each of them, and the per-pair bound counts it.
+- A reply to a specific person's act stays a choice about that person.
+- **A person is in one conversation at a time.** Someone who spoke in a conversation within the last ten minutes of World time is not offered as company to approach, and while either party is in one, invitations and continuations are not among the acts offered. Conversations do not yet record their span; ten minutes is a provisional bound, reversible when they do.
+
+Context-only until staging shows Threads choosing differently among the same company.
 
 ## Execution bounds
 

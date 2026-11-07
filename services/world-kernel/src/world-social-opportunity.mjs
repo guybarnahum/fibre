@@ -354,13 +354,14 @@ export function createWorldSocialOpportunity({
               company.sort((a,b)=>Number(noticed.has(b.threadId))
                 -Number(noticed.has(a.threadId)));
             }
-            const candidate=reconsideration?company.find(person=>
+            // Everyone the Thread has not already reconsidered twice this visit.
+            const eligible=reconsideration?company.filter(person=>
               experienceStore.reconsiderationCountForPair({
                 threadId:opportunity.threadId,
                 counterpartyThreadId:person.threadId,
                 visitSince:opportunity.visitSince,
-              })<2)??null:null;
-            const other=reconsideration?candidate!==null:observed?true
+              })<2):[];
+            const other=reconsideration?eligible.length>0:observed?true
               :livedNowStore.listCurrentVenueSituations({
                 venueRef:venue,at,limit:8,excludeThreadId:opportunity.threadId,
               }).some((situation)=>{
@@ -377,10 +378,10 @@ export function createWorldSocialOpportunity({
                 :missedWindow(livedNowStore,opportunity,at)
                   ?"missed_window":"no_co_presence";
             }else{
-              // One ordinary Thread decision, from already-enacted company.
+              // One ordinary Thread decision, among already-enacted company.
               const result=await meetingService.meet(reconsideration
                 ?{initiatorThreadId:opportunity.threadId,at,
-                  counterpartyThreadId:candidate.threadId,
+                  companyThreadIds:eligible.map(person=>person.threadId),
                   reconsiderationVisitSince:opportunity.visitSince}
                 :observed
                   ?{initiatorThreadId:opportunity.threadId,at,
@@ -394,10 +395,13 @@ export function createWorldSocialOpportunity({
                   ?"missed_window":"no_co_presence");
               // One witness for the actual opportunity, not a second
               // event or a retrospective explanation model.
-              if(typeof attempt?.counterpartyThreadId==="string"){
+              if(typeof attempt?.counterpartyThreadId==="string"
+                ||Array.isArray(attempt?.consideredThreadIds)){
                 const {salience,initiation,stance,encounterStory}=attempt;
                 decision={
                   counterpartyThreadId:attempt.counterpartyThreadId,
+                  ...(Array.isArray(attempt.consideredThreadIds)
+                    ?{consideredThreadIds:[...attempt.consideredThreadIds]}:{}),
                   salience:salience==null?null:{
                     outcome:salience.outcome,
                     anchors:[...salience.anchors],

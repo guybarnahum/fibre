@@ -75,6 +75,7 @@ export async function formSocialEncounterRequest({
   sourceStores,
   modelAdapter,
   continuationEligible=false,
+  conversationAvailable=true,
 }) {
   assertId("social encounter initiator Thread.threadId", threadId);
   assertIsoTimestamp("social encounter at", at);
@@ -82,34 +83,49 @@ export async function formSocialEncounterRequest({
   if (situatedPercept.observerThreadId !== threadId) {
     throw new TypeError("social encounter Situated Percept belongs to another Thread");
   }
-  if (!Array.isArray(situatedPercept.observed) || situatedPercept.observed.length !== 1) {
-    throw new TypeError("social encounter initiation requires exactly one observed actor opportunity");
+  const observed=situatedPercept.observed;
+  if (!Array.isArray(observed) || observed.length < 1) {
+    throw new TypeError("social encounter initiation requires an observed actor opportunity");
   }
+  // Among several people present, the Thread itself chooses whom, if anyone.
+  const company=observed.length>1;
+  const companyIds=observed.map(person=>person.threadId);
+  if(continuationEligible&&(company||!conversationAvailable)){
+    throw new TypeError("continuing an exchange concerns one available person");
+  }
+  // Someone already in a conversation cannot start a second one meanwhile.
+  const acts=[...SOCIAL_ACTS.filter(act=>conversationAvailable||act!=="invite_conversation"),
+    ...(continuationEligible?["continue_conversation"]:[])];
+  const schema=SOCIAL_INITIATION_ADAPTER.resultSchema;
+  const resultSchema=company?{
+    ...schema,required:[...schema.required,"towardThreadId"],
+    properties:{...schema.properties,act:{type:"string",enum:acts},
+      towardThreadId:{anyOf:[{type:"string",enum:companyIds},{type:"null"}]}},
+  }:{...schema,properties:{...schema.properties,act:{type:"string",enum:acts}}};
 
   const cognition = await runInteriorCognition({
     threadId,
     at,
     concern:{
       kind:"social_initiation",
-      focusPartyId:situatedPercept.observed[0].threadId,
-      question:"How, if at all, do I engage this person right now?",
+      ...(company?{focusPartyIds:companyIds}:{focusPartyId:companyIds[0]}),
+      question:company?"Whom here, if anyone, do I engage right now, and how?"
+        :"How, if at all, do I engage this person right now?",
       externalContext:{
         situatedPercept:structuredClone(situatedPercept),
         recentPersonalExperiences:structuredClone(recentPersonalExperiences),
         priorSocialChoicesThisVisit:structuredClone(priorSocialChoicesThisVisit),
         ...(interoception===null?{}:{interoception:structuredClone(interoception)}),
-        remainingFlightPlan:remainingPlanForCognition(plan),
+        remainingFlightPlan:remainingPlanForCognition(plan,at),
       },
     },
-    adapter:continuationEligible?{
+    adapter:{
       ...SOCIAL_INITIATION_ADAPTER,
-      prompt:"interior.social-initiation.ongoing-exchange",
-      resultSchema:{
-        ...SOCIAL_INITIATION_ADAPTER.resultSchema,
-        properties:{...SOCIAL_INITIATION_ADAPTER.resultSchema.properties,
-          act:{type:"string",enum:[...SOCIAL_ACTS,"continue_conversation"]}},
-      },
-    }:SOCIAL_INITIATION_ADAPTER,
+      prompt:company?"interior.social-initiation.company"
+        :continuationEligible?"interior.social-initiation.ongoing-exchange"
+          :SOCIAL_INITIATION_ADAPTER.prompt,
+      resultSchema,
+    },
     sourceStores,
     modelAdapter,
   });
@@ -117,10 +133,17 @@ export async function formSocialEncounterRequest({
   assertPlainObject("social encounter request output", cognition.result);
   assertExactKeys("social act output",cognition.result,[
     "act","expression","experienceText","reason","introducesSelf",
+    ...(company?["towardThreadId"]:[]),
   ]);
-  if(!(SOCIAL_ACTS.includes(cognition.result.act)
-    ||(continuationEligible&&cognition.result.act==="continue_conversation"))){
+  if(!acts.includes(cognition.result.act)){
     throw new TypeError("social act is invalid");
+  }
+  const towardThreadId=company?cognition.result.towardThreadId:companyIds[0];
+  if(company&&(cognition.result.act==="none")!==(towardThreadId===null)){
+    throw new TypeError("a social act is toward one person present, and none toward no one");
+  }
+  if(towardThreadId!==null&&!companyIds.includes(towardThreadId)){
+    throw new TypeError("a social act must be toward someone actually present");
   }
   assertNonEmpty("social act reason",cognition.result.reason);
   if(typeof cognition.result.introducesSelf!=="boolean"){
@@ -151,6 +174,7 @@ export async function formSocialEncounterRequest({
 
   return Object.freeze({
     act:cognition.result.act,
+    towardThreadId:cognition.result.act==="none"&&company?null:towardThreadId,
     introducesSelf,
     disclosedName,
     expression:spoken?spokenWords(cognition.result.expression):cognition.result.expression,
@@ -158,7 +182,8 @@ export async function formSocialEncounterRequest({
     reason:cognition.result.reason,
     decisionContext:Object.freeze({
       interoception:interoception===null?null:structuredClone(interoception),
-      observedThreadId:situatedPercept.observed[0]?.threadId??null,
+      observedThreadId:company?null:companyIds[0],
+      ...(company?{consideredThreadIds:Object.freeze([...companyIds])}:{}),
       recentPersonalExperienceRefs:Object.freeze(recentPersonalExperiences
         .map(experience=>experience.experienceId).filter(Boolean)),
       priorSocialChoicesThisVisit:Object.freeze(
@@ -198,7 +223,7 @@ async function formSocialResponse({
       externalContext:{
         socialRequest:structuredClone(socialRequest),
         ...structuredClone(observedContext),
-        remainingFlightPlan:remainingPlanForCognition(plan),
+        remainingFlightPlan:remainingPlanForCognition(plan,at),
       },
     },
     adapter:SOCIAL_RESPONSE_ADAPTER,

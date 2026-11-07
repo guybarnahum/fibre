@@ -45,7 +45,7 @@ export async function formCommonsEntryChoice({
       question:"Do I want Fibre Commons quietly present in the background right now?",
       externalContext:{
         currentSituation:structuredClone(situation),
-        remainingFlightPlan:remainingPlanForCognition(plan),
+        remainingFlightPlan:remainingPlanForCognition(plan,at),
         commons:{
           name:"Fibre Commons",
           description:"A quiet ambient mediated common space that can stay open in the background while ordinary life continues; presence does not imply conversation.",

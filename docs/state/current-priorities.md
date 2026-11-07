@@ -1,7 +1,7 @@
 ---
 id: fibre-current-priorities
 status: accepted
-last-reviewed: 2026-11-06
+last-reviewed: 2026-11-07
 canonical: true
 ---
 
@@ -19,7 +19,7 @@ Architecture: [social life](../architecture/social-life.md). Concepts: [relation
 
 **Next, in order:**
 
-1. **Conversation-quality baseline** from the November 7 scorecard with eight living Threads: agreement, pushback, topic overlap, how conversations end, introductions between strangers. Fix the largest measured weakness first.
+1. **Choosing whom, one conversation at a time.** The November 7 baseline (eight Threads in one library) showed World picking the single person each Thread could consider, one Thread in three conversations at once, and no stranger ever approached; first pushback appeared (6 turns). Now: a Thread facing a scene chooses among the people present, and a person is in one conversation at a time ([ADR-0028 amendment](../decisions/ADR-0028-event-driven-social-reconsideration.md#amendment--the-thread-chooses-whom-november-7-2026)). Measure: strangers approached and introduced, conversations per Thread, the hub effect.
 2. **Interests** — Thread-authored fascinations formed in reflection and carried into conversation, planning and contact (no new model call).
 3. **Useful and learning moments** — feedback with its source person, the Thread's reactions, and its own felt standing per interest.
 4. **Appointments (time door)** — proposing to meet at a place and time; kept or missed appointments become the first trust evidence a stance can cite.
