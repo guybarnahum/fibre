@@ -42,6 +42,7 @@ test("a Thread finds its first interests in its own past, then lives with them a
       livedNowStore:{getSituation:()=>({situationId:SITUATION,threadId:SELF,establishedAt:at(0),
         location:{kind:"place",placeRef:"wpl_cafe"},mediatedContext:null,activity:"At the café.",evidenceRefs:[]})},
       modelAdapter:{async invoke(request){
+        if(request.clientRequestId.startsWith("memory-gist_"))return {output:{gists:[]}};
         if(request.clientRequestId.startsWith("interest-formation_")){
           formations.push(request.input);
           const [own]=request.input.formativeMemories.map(item=>item.memoryId);

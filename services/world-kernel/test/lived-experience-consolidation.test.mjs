@@ -173,6 +173,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
           }};
         }
         if(request.clientRequestId.startsWith("interest-formation_"))return {output:{interests:[]}};
+        if(request.clientRequestId.startsWith("memory-gist_"))return {output:{gists:[]}};
         calls.push(structuredClone(request.input));
         return {
           output:structuredClone(decisions[calls.length-1]),
@@ -356,6 +357,7 @@ test("N7.5 retry reuses the durable consolidation decision",async()=>{
     const modelAdapter={
       async invoke(request){
         if(request.clientRequestId.startsWith("interest-formation_"))return {output:{interests:[]}};
+        if(request.clientRequestId.startsWith("memory-gist_"))return {output:{gists:[]}};
         cognitionCalls+=1;
         return {
           output:{

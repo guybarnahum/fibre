@@ -32,7 +32,7 @@ function requestId(input) {
 
 function boundedPriorMemories(memories) {
   return [...memories]
-    .sort((left, right) => Date.parse(right.recordedAt) - Date.parse(left.recordedAt))
+    .sort((left, right) => Date.parse(right.asOf) - Date.parse(left.asOf))
     .slice(0, MAX_PRIOR_MEMORIES)
     .map((memory) => ({
       memoryId: memory.memoryId,

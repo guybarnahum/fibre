@@ -34,6 +34,7 @@ test("a memory is held in mind by its gist while its full recollection stays the
       world.seedThread(thread);
     }
     const outputs=[];
+    let olderGist=null;
     let clock=T0;
     const process=createExperienceConsolidationProcess({
       worldReader:world,semanticStateStore:semantic,memoryStore:memory,experienceStore:experience,
@@ -42,6 +43,8 @@ test("a memory is held in mind by its gist while its full recollection stays the
       modelAdapter:{async invoke(request){
         // This Thread's first reflection on its formative interests is not under test here.
         if(request.clientRequestId.startsWith("interest-formation_"))return {output:{interests:[]}};
+        if(request.clientRequestId.startsWith("memory-gist_"))return {output:{gists:olderGist===null?[]
+          :request.input.memories.map(item=>({memoryId:item.memoryId,gist:olderGist}))}};
         return {output:outputs.shift(),provenance:{provider:"fixture",modelId:"fixture"}};}},
       now:()=>new Date(clock).toISOString(),clock:()=>clock,groupWindowMs:60_000,
     });
@@ -80,6 +83,18 @@ test("a memory is held in mind by its gist while its full recollection stays the
     assert.deepEqual(Object.keys(held("flower")).filter(key=>key!=="memoryId"),["gist"],
       "a memory with a gist was carried in full");
     assert.equal(held("grandmother")?.rememberedContent,OLD,"a memory without a gist lost its recollection");
+
+    // A memory from before gists gains the Thread's own gist as a revision of
+    // the same memory: its recollection stays, and it does not become recent.
+    const before=memories.find(item=>item.rememberedContent===OLD);
+    olderGist="Noor told me about her grandmother's rooftop bees and their seasonal honey.";
+    await live(60,"Noor and I walked to the market and argued happily about honey.",null);
+    const newestFirst=memory.listCurrentMemories(SELF,{newestFirst:true}).map(item=>item.rememberedContent);
+    const older=memory.listCurrentMemories(SELF).find(item=>item.memoryId===before.memoryId);
+    assert.equal(older.gist,olderGist,"an older memory did not gain the Thread's gist");
+    assert.deepEqual([older.revision,older.rememberedContent,older.asOf],
+      [before.revision+1,OLD,before.asOf],"writing a gist changed the memory itself");
+    assert.ok(newestFirst.indexOf(NEW)<newestFirst.indexOf(OLD),"a gist made an old memory recent");
   }finally{
     semantic.close();memory.close();experience.close();world.close();
     rmSync(directory,{recursive:true,force:true});

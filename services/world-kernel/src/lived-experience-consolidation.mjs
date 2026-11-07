@@ -2,6 +2,7 @@ import {EXPERIENCE_CONSOLIDATION_DELAY_MS} from "./lived-experience-consolidatio
 import {promptRequest} from "./cognition-prompts.mjs";
 import {observablePerson} from "./world-observable-person.mjs";
 import {assertDescriptiveSemanticState} from "./semantic-state.mjs";
+import {writeMissingGists} from "./memory-gists.mjs";
 import {
   INTEREST_CHANGE_LIMIT,INTEREST_CHANGE_SCHEMA,admitInterestChanges,
   formFormativeInterests,interestsInReflection,
@@ -40,7 +41,7 @@ function requireMethod(name,value,method){
 
 function boundedMemories(memories){
   return [...memories]
-    .sort((left,right)=>Date.parse(right.recordedAt)-Date.parse(left.recordedAt))
+    .sort((left,right)=>Date.parse(right.asOf)-Date.parse(left.asOf))
     .slice(0,MEMORY_LIMIT)
     .map((memory)=>({
       memoryId:memory.memoryId,
@@ -495,6 +496,9 @@ export function createExperienceConsolidationProcess({
     );
     const interestsHeld=typeof experienceStore.listCurrentInterests==="function";
     if(decisionStage===null){
+      // Memories formed before gists existed gain the Thread's own gist, a
+      // few per reflection, until every memory can be held by one.
+      await writeMissingGists({thread,memoryStore,modelAdapter,now});
       // A Thread that has never held an interest first finds its own, once,
       // in its formative past; this reflection then sees them.
       if(interestsHeld){

@@ -192,7 +192,9 @@ export class AutobiographicalMemoryStore {
     if (typeof newestFirst !== "boolean") throw new TypeError("newestFirst must be boolean");
     if(worldSchemaReady(this.#database)){
       // Current heads are admitted: audit alone replays all lineage witnesses.
-      const order=newestFirst?"current.recorded_at DESC,current.memory_id DESC":"current.memory_id";
+      // Newest by when the memory holds, not by its latest revision: a later
+      // gist or correction does not make an old memory recent.
+      const order=newestFirst?"records.as_of DESC,current.memory_id DESC":"current.memory_id";
       const rows=this.#database.prepare(`
         SELECT records.record_json
         FROM autobiographical_memory_current_heads current
@@ -204,7 +206,7 @@ export class AutobiographicalMemoryStore {
       return rows.map(row=>rehydrateAutobiographicalMemory(JSON.parse(row.record_json)));
     }
     const order = newestFirst
-      ? "current.recorded_at DESC,current.memory_id DESC"
+      ? "records.as_of DESC,current.memory_id DESC"
       : "current.memory_id";
     const sql = `
       SELECT

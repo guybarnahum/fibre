@@ -13,7 +13,7 @@ const MAX_MEMORIES = 6;
 
 function boundedMemories(memories) {
   return [...(memories ?? [])]
-    .sort((left, right) => Date.parse(right.recordedAt) - Date.parse(left.recordedAt))
+    .sort((left, right) => Date.parse(right.asOf) - Date.parse(left.asOf))
     .slice(0, MAX_MEMORIES)
     .map((memory) => ({
       memoryId:memory.memoryId,
