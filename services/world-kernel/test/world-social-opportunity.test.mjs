@@ -2086,7 +2086,7 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       &&!beat.text.includes("expecting conversation")),
     "private intent entered the objective Story");
     for(const [observer,role] of [[ids[2],"arriver"],[ids[3],"witness"]]){
-      const input=attentionInputs.find(item=>item.currentSituation.threadId===observer);
+      const input=attentionInputs.find(item=>item.thread.threadId===observer);
       assert.ok(input,role+" never received the objective Story");
       const own=input.encounterStory.story.beats.find(beat=>beat.actorThreadId===observer);
       const other=input.encounterStory.story.beats.find(beat=>beat.actorThreadId!==observer);

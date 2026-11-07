@@ -1,3 +1,4 @@
+import { situationInMind } from "./situation-in-mind.mjs";
 import { memoryInMind } from "./memory-in-mind.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
 import {
@@ -58,7 +59,7 @@ export async function formThreadEncounterExperience({
       state:state.state,
     })),
     autobiographicalMemories:boundedMemories(memories),
-    currentSituation:structuredClone(situation),
+    currentSituation:situationInMind(situation),
     encounterStory:{
       occurredAt:encounterStory.occurredAt,
       others:structuredClone(others),
@@ -68,6 +69,7 @@ export async function formThreadEncounterExperience({
 
   const invocation = await modelAdapter.invoke({
     ...promptRequest("encounter.experience",{threadId:thread.threadId}),
+    cacheThrough:"currentSituation",
     input,
     responseSchema:{
       type:"object",

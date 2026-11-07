@@ -220,7 +220,8 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
       async invoke(call){
         if(call.clientRequestId.startsWith("later-contact-decision_")){
           decisions.push(structuredClone(call.input));
-          assert.equal(call.input.currentSituation?.threadId,kaleo.threadId,
+          assert.equal(call.input.currentSituation?.activity,
+            "Continuing the day when a delayed thought becomes relevant again.",
             "contact decision did not receive ensured lived context");
           const residue=call.input.delayedPrivateResidue[0].text;
           assert.equal(call.input.autobiographicalMemories.length,0,
@@ -261,7 +262,8 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
         }
         if(call.clientRequestId.startsWith("later-contact-expression_")){
           expressions.push(structuredClone(call.input));
-          assert.equal(call.input.currentSituation?.threadId,kaleo.threadId,
+          assert.equal(call.input.currentSituation?.activity,
+            "Continuing the day when a delayed thought becomes relevant again.",
             "contact expression did not receive ensured lived context");
           const recipient=call.input.recipient.partyId;
           return {

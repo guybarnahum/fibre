@@ -1,3 +1,4 @@
+import { situationInMind } from "./situation-in-mind.mjs";
 import { memoryInMind } from "./memory-in-mind.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
 import {
@@ -78,7 +79,7 @@ export async function decideLaterContact({
     semanticStates:semanticContext(semanticStates),
     autobiographicalMemories:boundedMemories(memories),
     routableKnownParties:routableCandidates,
-    currentSituation:currentSituation===null?null:structuredClone(currentSituation),
+    currentSituation:situationInMind(currentSituation),
     delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
   };
   const invocation=await modelAdapter.invoke({
@@ -149,7 +150,7 @@ export async function expressLaterContact({
     },
     semanticStates:semanticContext(semanticStates),
     autobiographicalMemories:boundedMemories(memories),
-    currentSituation:currentSituation===null?null:structuredClone(currentSituation),
+    currentSituation:situationInMind(currentSituation),
     delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
     recipient:{
       partyId:candidate.partyId,

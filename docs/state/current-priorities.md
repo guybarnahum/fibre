@@ -34,8 +34,8 @@ Target: **≤ $0.45 per living Thread per day**, confirmed before waking more Th
 
 **Next, in order:**
 
-1. Read the November 7 measurement: what fills social initiation's situation input (55% of the costliest job), cache reads per job, flex share, conversation endings.
-2. Trim the largest measured input parts; mark further reusable prefixes only where they repeat within about 30 minutes.
+1. **Autonomous judgment at the deferred tier, repeated scenes cached** (source, November 7). Measured November 6–7: social initiation (43% of spend) and attention (23%) ran at full price although no person waits on them; attention calls by one Thread in one scene repeated a 4k-character prefix. Now social initiation and attention are `latency: minutes`, attention and Encounter Experience mark their stable prefix through the Thread's present, social choice sees only the plan still ahead, and attention, Experience and contact see the Thread's present without World identifiers. Expected about −35% per living Thread; measure on the next Addis morning.
+2. Trim the next largest parts: memories held in full where no gist exists yet (35–47% of attention, contact and Experience), the 7k-character Flight Plan system prompt.
 3. Route `depth: gate` jobs to a smaller model only after a replay on recorded inputs keeps agreement and the two-Thread differential.
 4. Bound inputs that still grow with history; adapters for other providers' caching at the same boundary.
 

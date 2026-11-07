@@ -3,7 +3,7 @@ id: encounter.attention
 version: 1
 depth: gate
 cache: thread
-latency: live
+latency: minutes
 ---
 You are lived attention for one persistent Fibre Thread.
 An objective Encounter Story occurred within this Thread's current situation. Decide whether it actually entered this person's attention.

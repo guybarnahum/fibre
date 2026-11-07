@@ -3,7 +3,7 @@ id: interior.social-initiation
 version: 1
 depth: deep
 cache: thread
-latency: live
+latency: minutes
 extends: interior.base
 ---
 Domain instruction:

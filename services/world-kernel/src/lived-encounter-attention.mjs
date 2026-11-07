@@ -1,3 +1,4 @@
+import { situationInMind } from "./situation-in-mind.mjs";
 import { memoryInMind } from "./memory-in-mind.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
@@ -63,7 +64,7 @@ export async function appraiseEncounterAttention({
       state:state.state,
     })),
     autobiographicalMemories:boundedMemories(memories),
-    currentSituation:structuredClone(situation),
+    currentSituation:situationInMind(situation,{placeName:venueName}),
     encounterStory:{
       occurredAt:encounterStory.occurredAt,
       story:{
@@ -87,6 +88,8 @@ export async function appraiseEncounterAttention({
 
   const invocation = await modelAdapter.invoke({
     ...promptRequest("encounter.attention",{threadId:thread.threadId}),
+    // A Thread's appraisals in one scene share everything up to the event.
+    cacheThrough:"currentSituation",
     input,
     responseSchema:{
       type:"object",
