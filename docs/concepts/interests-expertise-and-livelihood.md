@@ -62,6 +62,8 @@ Each tie counts as **sentiment × currency**, and the Thread judges the **breadt
 - Reputation is per observer: others know a Thread's competence only through what they actually experienced of it.
 - Operator measures (interests per Thread, distinct topics, learned/taught moments, returning to those who rewarded, weighted breadth and depth, paid work) are inspection only, never Thread inputs.
 
+How this concept fits the running social flow, and where it attaches, is in the [social life architecture](../architecture/social-life.md).
+
 ## Causal status and deferral
 
 Nothing here is implemented yet; every part is **deferred** and arrives as separate slices, each judged on staging evidence:

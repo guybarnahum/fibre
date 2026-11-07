@@ -12,6 +12,7 @@ Architecture documents define technical authorities, boundaries, flows, storage/
 - [`interior-cognition.md`](interior-cognition.md) — reusable private-thought pipeline from organismic pressure through developed-self deliberation to domain-specific stance, plan, reflection or meaning.
 - [`lived-now-and-meetings.md`](lived-now-and-meetings.md) — continuous present-life reconciliation across dormancy, Flight Plan renewal, and Person/Thread meetings that enter already-existing lives.
 - [`social-city-guide.md`](social-city-guide.md) — Fibre's accepted public city-magazine model, city-keyed editorial manifest and independent directories, distinct from real attendance and voluntary encounters.
+- [`social-life.md`](social-life.md) — the social flow end to end: opportunities, perception of others, graded acts, conversation, reflection and stance, doors and ledger, measures, and where interests, felt expertise, livelihood and attraction attach.
 - [`situated-perception-and-salience.md`](situated-perception-and-salience.md) — grounded World opportunities and selective attention.
 - [`encounters-and-experience.md`](encounters-and-experience.md) — one objective Encounter Story, separate Thread-specific attention, Experience and optional aftermath.
 - [`live-encounters.md`](live-encounters.md) — asynchronous, interruptible encounter coordination without creating a turn owner or chat-session authority.

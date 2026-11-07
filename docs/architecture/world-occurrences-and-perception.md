@@ -1,7 +1,7 @@
 ---
 id: architecture-world-occurrences-and-perception
 status: accepted
-last-reviewed: 2026-10-22
+last-reviewed: 2026-11-06
 canonical: false
 ---
 
@@ -20,7 +20,7 @@ actor's action occurs. Compute may omit *materialization* of speculative,
 unobserved ambient activity in empty places. That optimization does not
 assert that the rest of reality stopped happening.
 
-## Readable arrival Stories (October 24 source)
+## Readable arrival Stories
 
 One objectively admitted arrival into an occupied public venue gives one
 short sentence for the arriving Thread and one for each real witness.
@@ -119,34 +119,9 @@ may cause an arousal opportunity via the established Body/attention mechanism
 when that capability is explicitly accepted. Never wake someone merely
 because a scheduling callback fires.
 
-## Event-derived reconsideration, never a social clock (October 23 source)
+## Social opportunities come from events, never a clock
 
-LivedNow's ordinary `onSituationEnacted` callback is the only producer
-of in-venue activity-change reconsideration. Both local and Cloudflare
-World hosts use the same helper against enacted CurrentSituations.
-The movement classifier remains distinct: an activity change is neither
-an arrival nor a departure, and cannot author an arrival Story.
-An occupied, continuously evidenced venue visit earns one durable
-`activity_change` opportunity per changed situation. An unchanged plan
-renewal, sleeper, unobserved partner or empty venue earns none.
-
-When the existing social-contact evidence is grounded, the same enactment
-may schedule the next analytic need-band crossing (0.4 or 0.6) before
-the next personal life boundary. The existing World alarm schedules that
-specific predicted instant; there is no new timer or polling process.
-At the due instant, the observed company and Body evidence are checked
-again. A band not reached is completed as `need_unreached` with no
-social model call; a missed visit is not replayed. A later band can be
-scheduled through the same frontier after the earlier one completes.
-
-The original `world_social_opportunities` queue retains the true scene
-identity and a deterministic per-trigger opportunity identity. For
-reconsiderations its optional trigger, threshold and shared-visit start
-are durable execution evidence. World still enforces single claims,
-freshness, unresolved-life deferral and no model reroll after interruption.
-The Thread's own past decisions are only a bounded cognition context.
-The limit of three reconsiderations per venue visit and two per ordered
-pair is operational, not a social rule or rate target.
+LivedNow's `onSituationEnacted` callback is the only producer of in-venue activity-change reconsideration, and the same enactment may schedule the next predicted `social_contact` band crossing on the existing World alarm. There is no social tick, polling process or venue scan. What earns a social opportunity, its bounds and its honest non-decisions are owned by [social life §1](social-life.md#1-opportunities).
 
 ## Processing a World occurrence
 
@@ -220,136 +195,15 @@ admitted facts and deliberate handling of unresolved speculative decisions.
 The civil-minute boundary is only sparse compute scheduling, never a World
 event time rule, quota or recurring simulation tick.
 
-## Spoken introductions and World-founded acquaintance (October 23 source)
+## Arrivals: one objective Story, independent noticing
 
-An introduction is neither an ordinary name-bearing description nor a
-machine-inferred interpretation of free-form language. The speaker's
-independent initiation decision may mark an actual utterance
-`disclosesSpeakerName: true` only if its words contain the speaker's
-own name. The World Encounter Story retains that exterior beat;
-each observer's independent noticed/not-noticed attention determines
-whether the name becomes observer-known later.
+An enacted arrival at a venue where someone is already awake earns at most one durable `world_arrival_perception_work` obligation. Up to two witnesses are captured **at the event time**, before any later query can rewrite the scene; an empty venue creates nothing. The two-witness bound is a computational sample, not a claim that others were absent.
 
-When a consented live conversation actually yields its admitted World
-Story, its two participants each receive a stable, revisable
-`social_contact` life relation. It cites the participant-owned Story
-and accepted interaction; its content is limited to objective place/date,
-count and last-meeting facts. A second consented meeting revises those
-World facts, never creates a different acquaintance identity. Declines,
-deferred invitations, nods and greetings alone create no relation.
-Subjective attraction, dislike or interpersonal meaning remain private
-Experience and Memory rather than relation facts.
+World admits **one** objective Encounter Story: the arrival beat and a presence beat per captured witness, built only from public appearance and enacted `outwardActivity` — never a civil name a stranger has not learned (an appearance brief that happens to contain the name is redacted). Each witness appraises attention independently, then the arriver may notice the same Story; a noticed result earns that person an Experience, a miss earns nothing. Inside each person's own attention request only, their own beat carries `self:true`. Interrupted attention retries against the same Story without rerolling an admitted result, and attention more than an hour late is not invented retroactively.
 
-The existing later-contact process can now select this counterpart as
-contactable, but it still requires an already consolidated private
-afterthought and a separate Thread-owned outreach decision. The added
-World reads are bounded participant-owned Story/attention and Experience
-joins; no extra cognitive invocation or general venue scan.
-**Source-only**, not staging-observed autonomous relationships. See
-[accepted ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md).
+A bystander who noticed the arrival earns one observed social opportunity to respond; the arriver, having noticed its witnesses, considers them first. Both go through the ordinary social path in [social life](social-life.md) — salience, a free choice, the recipient's consent — and an interrupted outward attempt is never replayed.
 
-## Actor-arrival bystander attention — October 19 source cut
-
-An authentic World-enacted arrival overlapping an already-present waking
-person now earns at most one durable `world_arrival_perception_work` obligation
-for that enacted situation. The local and Cloudflare producers capture at
-most two independently grounded bystander situation references *at the event
-time*, before an operator, later alarm or fresh venue population query can
-rewrite the scene. An empty venue creates no obligation. This is an indexed,
-one-shot reconciliation frontier, not another event authority or a
-per-Thread polling loop.
-
-At reconciliation, the existing Encounter Story authority projects the
-enacted arrival as one objective action with the original situation ID,
-occurred time and venue evidence. The existing independent attention and
-Experience authority then allows each bystander to notice or miss it.
-Interrupted attention can retry against the same objective Story and cannot
-reroll a previously admitted observer's attention. The actor is not forced
-to appraise its own movement. When reconciliation is more than one hour late,
-the objective Story remains inspectable but *retroactive private attention
-is not invented*. World Observatory joins this Story's admitted witness
-perspectives to the enacted arrival when both sources are within its bounded
-read window, rather than counting a second city event.
-
-This slice is **source-implemented only** pending Guy's focused and complete
-local validation, schema deployment and staging evidence. The two-witness
-bound is a computational sample, not a claim that other people were absent.
-It does not yet implement general event-time witness discovery, spatially
-remote observers, actor reaction to a bystander's attention, endogenous
-bystander contact initiation, or later history-caused social choice.
-Existing social initiation/consent remains independent, not compelled by
-the arrival or any resulting Experience.
-
-## Bystander-owned social choice — October 19 source cut
-
-A bystander who **noticed** an actual arrival now earns one additional,
-durable `world_observed_social_opportunities` consideration scoped to the
-objective Encounter Story and observer identity. Neither ordinary co-presence
-nor `not_noticed` earns that work. This is distinct from the existing
-arrival-based social consideration so a person can respond later in the
-same stay after spending an earlier chance to make contact.
-
-The existing World social reconciler claims both kinds of opportunities
-under one sparse alarm and one unrepeated attempt boundary. It verifies
-that the observer and the specific observed newcomer still inhabit the
-same attested venue, then passes the chosen target to the **existing**
-social meeting engine. The same situated salience, Body needs, individual
-initiation decision, recipient consent, Encounter Story and private
-Experience govern any subsequent conversation. A salient arrival can
-still yield `not_initiated`; the recipient can decline. An interrupted
-outward attempt is not automatically replayed.
-
-### Observer-relative arrival decisions — October 22 source correction
-
-The admitted arrival Story stays objective. Inside each individual's
-attention request only, every beat carries `self:true` exactly when its
-actor is that observer. Neither World history nor another observer receives
-those private perspective markers.
-
-An arriving Thread whose own attention actually **noticed** an arrival
-Story considers still-present, eligible people captured in that Story before
-unrelated occupants discovered later. This affects only the bounded ordering
-of one potential counterpart; the existing salience gate, initiator choice
-and recipient consent remain authoritative. No one is forced to initiate.
-
-A public appearance brief can inadvertently contain the represented
-person's name. The World Story supplies the actual identity name **only to
-the redaction projection**, which removes full and constituent names
-before admitting objective prose. No name is disclosed merely because
-World can look it up. Grounded non-name appearance details remain usable.
-
-**Status:** source-only pending Guy's local tests and staging. These changes
-repair observer perspective, noticed-witness targeting and objective name
-redaction. They do not prove increased meeting rates, recognition, learned
-introductions or observer-owned interpretation beyond existing cognition.
-
-### Mutual noticing and objective arrival presence — October 22 source
-
-A verified arrival with captured awake company records **one** objective
-Encounter Story: the newcomer's arrival action and a presence beat for
-each bounded existing witness (at most two). Each beat may use only
-authoritative public appearance and enacted activity; it may not speak
-the globally stored civil name as if a stranger learned it. No new event
-or environmental author's model call is created to manufacture a scene.
-
-Within the existing one-hour freshness window, all witnesses independently
-appraise attention, **then the arriver** may notice the same objective Story
-through ordinary `admitEncounterAttention`. Each noticed result earns an
-observer-owned Experience that can alter the next individual social salience
-gate; a not-noticed appraisal earns none. The arriving person's one-shot
-social opportunity remains **unclaimed** until its own arrival-perception
-work is completed. A deferred perception obligation waits for its existing
-life recovery, never a new timer or a replay of outward words.
-
-Familiarity is observer-relative, not a World property: names in the
-Situated Percept require an established life relation or an admitted
-previous meeting with actual speech. Recognizing introductions and
-learning names remain deferred. Public embodiment only changes the
-bounded observable description given to cognition; it does not claim
-that appearance alone produces a social decision. See
-[observer knowledge decision](../decisions/observer-grounded-person-knowledge.md).
-
-### World-time social correctness — October 22 source correction
+## World-time correctness of life and social opportunities
 
 A social opportunity must **read** an enacted scene, never advance it. The
 automatic venue-bounded social engine now reads both parties' current
@@ -415,199 +269,6 @@ remains `expired`. An empty ordinary social result uses the same
 classification rather than silently defaulting to `no_co_presence`.
 No historical scene licenses retrospective conversation or alters the
 one-shot claim and no-replay-on-interruption rules.
-
-**Status:** source-only, pending Guy's local validation and staging evidence.
-This is a repair of World causal correctness, **not proof that spontaneous
-meetings have increased**. Explicit `/meet`, salience thresholds, recipient
-consent, private attention, retention, and the number of opportunities per
-arrival retain their existing authority. Staging must independently show
-plan-time departures and scene-faithful social outcomes before closing it.
-
-### Social opportunity timing and lost windows — October 21 source
-
-World now distinguishes three non-decisions when a social chance is
-reconciled: `no_co_presence` means no eligible peer was established;
-`missed_window` means an actual arrival or noticed shared event had
-company **at the event time**, but present eligibility was gone before
-consideration; `expired` means a still-present opportunity exceeded the
-existing one-hour freshness bound. Historical company is checked only
-on the failure path using the bounded venue index. A noticed shared
-arrival already carries the admitted historical witness; an
-arrival-triggered opportunity instead verifies company at its original
-`dueAt` through World situations. Historical evidence is explanatory,
-not permission to retroactively approach anyone.
-
-The existing durable `started_at` and `due_at` now project as
-`startedAt` and `dueAt` in Thread social inspection, with the recorded
-`completedAt` set when the decision actually returns, rather than
-copied from its claim time. The read-only `world-social:probe` reports
-the elapsed occurrence-to-claim delay. The observed-arrival attention
-`occurredAt` is the historical **World event time**, not the instant
-perception cognition finished; that additional processing-latency
-measurement is not claimed. Departure times are separately admitted
-World situations. No new time signal, persistence schema, model call,
-or scheduler frequency is introduced.
-
-A small behavioral proof distinguishes a four-second missed co-presence
-from a fifteen-minute shared visit that reaches existing voluntary
-social initiation and can choose not to speak. This exercises eligibility
-and decision routing, **not** a staging-observed spontaneous conversation
-or a claim of causal personality differentiation. The reconciler still
-advances due life boundaries before perception and social opportunities:
-it must never keep a Thread at a venue, retrospectively make it speak, or
-force social compliance to satisfy a demonstration.
-
-The Situated Percept's recent Encounter Stories now require the observer's
-admitted `noticed` attention before that Story can influence that
-observer's private social judgment. This prevents missed World events
-from becoming unexplained private knowledge. Noticed recent history can
-make another person's presence salient without obliging speech.
-
-**Source-only pending local validation and staging observation.** Targeted
-consideration is not evidence that a natural interaction actually happened,
-nor proof of long-term relationship formation. Observed invitations remain
-limited to recent, co-present Thread-to-Thread arrivals; broader endogenous
-life events, distant observers, and historical consequences remain deferred.
-
-## Recent Experience becomes a later social cause — October 19
-
-A shared Encounter Story is public World evidence; the observer's noticed
-Experience is a different, private record. Situated Percept continues to
-carry only the observer's bounded, **actually noticed exterior events**.
-Separately, Fibre retrieves that observer's own admitted
-`thread_encounter_experiences` into **private social Interior Cognition**
-as `recentPersonalExperiences` tied to the same World event references.
-This keeps private feelings out of the exterior World projection, prevents
-another observer's interpretation leaking across persons, and excludes
-unappraised or `not_noticed` episodes from private knowledge. No new model
-call, event authority, long-term memory store or population scan is added.
-
-This implementation uses a **provisional six-hour recent-availability
-window** at the actual subsequent decision time, with the existing
-twelve-story lookup cap and four-encounter presentation cap. That is a
-reversible, low-cost runtime boundary, not a constitutional claim that human
-recollection lasts six hours. Past that boundary, ordinary social cognition
-must rely on already-retained autobiographical Memory supplied by the
-existing Interior Cognition selector; it may not mine World history and call
-the result recollection. The precise recent availability policy remains
-deferred to the epistemic access work.
-
-A local differential scenario holds the Thread, other actor, objective
-World arrival, scene, social opportunity and selector constant, then varies
-only the previously admitted first-person Experience. The same existing
-social engine must allow one later voluntary initiation and another
-`not_initiate`, with correspondingly distinct durable outward consequences.
-This proves a **bounded fixture differential**, not the standing cross-Thread
-differential gate, a naturally authored staging Experience, or a mature
-relationship/development system. Live staging testimony and real retained
-Memory changing a still-later choice remain open.
-
-## Retained Memory changes next-day social choice — October 19
-
-The existing consolidation authority can select `retained` or
-`not_remembered` after one admitted Thread Experience. When retained,
-it persists a first-person autobiographical Memory with actual Experience
-references and separately owned remembered meaning. Ordinary Interior
-Cognition already resolves bounded, accessible **Memory content**, rather
-than only record IDs, using the Thread's own memory store.
-
-A new end-to-end local proof exercises this unchanged production path:
-one identical admitted World Story and noticed personal Experience,
-independently consolidated with either `retained` or `not_remembered`.
-At an otherwise equivalent café encounter **the next day**, beyond the
-short-lived recent-Experience window, the ordinary social engine
-retrieves the Memory when retained and leaves absent what was not
-remembered. A controlled social cognition fixture responds to that
-Fibre-selected evidence, resulting in an outward invitation and recorded
-decline in the retained case; it chooses `not_initiate` and produces no
-outward social history without retention. Neither branch invents a
-reciprocal meeting. No new memory store, model call, scheduler or social
-policy is introduced.
-
-One source correction ensures autobiographical Memory is eligible for
-Interior Cognition only after both its `asOf` and `recordedAt` times.
-A separate negative test prohibits Memory admitted in the future from
-changing a historically earlier private choice.
-
-**Acceptance boundary:** source-implemented, Guy's local validation
-pending. This is a controlled **retention/decision differential**, not
-a natural staging Memory, not independently spontaneous model behavior,
-not a relationship mutation, and not the standing two-Thread
-causal-individuality gate. Future work must observe actual live
-retention/non-retention and later autonomous divergence, and eventually
-replace the provisional six-hour recent-availability threshold with an
-accepted ephemeral-availability policy.
-
-## Read-only natural-life causal inspection — October 19
-
-The established `world-social:probe` now includes a bounded
-`causalContinuity` section, derived solely from the existing private
-Thread Observatory response. No new runtime queries, World records,
-persistent tables or model calls are needed. Operators should begin
-with `--thread thr_...` (one World inspection) rather than scanning
-the whole published population.
-
-The read-only join follows **specific record references**:
-objective shared Encounter Story → this observer's `noticed` attention
-and Experience → completed Experience consolidation → actual retained
-autobiographical Memory containing the same Experience ID → optional
-later outgoing social interaction with someone present in that Story.
-A Memory is not inferred merely from a positive consolidation decision;
-it must be currently admitted under this Thread's own memory authority.
-A second observed Thread's attention/Experience can corroborate the
-shared event while remaining independently personal. No private experience
-text is copied into the probe evidence.
-
-This tool's evidentiary ceiling is intentional: a later invitation
-after a retained Memory is **sequence**, not proof of historical causation.
-Existing Observatory records do not show which autobiographical
-evidence the initiating Thread's cognition actually consumed. The probe
-reports `causalProof: not_established_by_observatory` even when all
-temporal links exist. All source windows are bounded and missing
-links may lie outside the inspected window; absence is not
-automatically `not_remembered`.
-
-**Source-only pending Guy's focused and full validation and targeted
-staging evidence.** The next runtime change, *only if live evidence
-justifies it*, should record a minimal already-derived cognition evidence
-reference against the ordinary social choice, then let this same probe
-link the consumed Memory to that subsequent outward decision. Do not
-synthesize conversations or memory simply to close the gate.
-
-## Execution slices and acceptance
-
-1. **Actor occurrence contract.** Project actual LivedNow changes into
-   immutable actor-caused occurrence identities at exact enacted time,
-   without manufacturing arrival from a plan refresh, a Genesis start or a
-   generic context. A real shared-place arrival can expose perception/social
-   possibilities to independently co-present inhabitants immediately, and
-   an empty venue invents nobody. No generic event bus.
-2. **World-scene ambient frontier.** Replace per-Thread arrival/stay speculative
-   queues with a sparse, durable, single next consideration per active scene.
-   The same café's visitors share the same occurrence; one quiet/no-change
-   result stays quiet without calling anyone's Interior Cognition. Return to
-   dormancy when no potential observer remains; future activity re-arms.
-3. **Unified witness and attention admission.** For actor, ambient and social
-   stories, derive grounded potential observers from actual event-time scene
-   and geography. Independent notice/no-notice, retry and selective delayed
-   consolidation use the same established helper. Preserve physical
-   privacy and historical non-retroactivity.
-4. **Causal consequences and social choice.** Witnessed actions can alter
-   scene opportunities and Body/individual behavior; freely chosen
-   interaction/decline must become an objective social occurrence. Prove two
-   independently living Threads co-present, one event, distinct subjective
-   outcomes and a later choice causally influenced by experience.
-5. **Connected humans and additional actors.** Extend the same occurrence
-   path to grounded human physical participation, animals, objects and
-   long-running environmental state when demanded by actual evidence. Remote
-   online access must never masquerade as physical co-presence.
-
-The first implementation should prove exactly one strong vertical causal
-path rather than building an event framework: **real public-venue arrival →
-independent co-present observer has a noticing opportunity → voluntary
-response or indifference → persisted individual consequence**. Ambient
-scenes then reuse the same occurrence/observer seam. The World must not
-force a happy encounter for a passing test.
 
 ## Deliberate exclusions and extension paths
 

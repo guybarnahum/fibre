@@ -1,7 +1,7 @@
 ---
 id: architecture-live-encounters
 status: accepted
-last-reviewed: 2026-10-07
+last-reviewed: 2026-11-06
 canonical: true
 ---
 
@@ -24,20 +24,9 @@ participant B speech/actions  <----
 
 There is no turn owner.
 
-## Small social acts before conversation
+## Before a conversation
 
-Ordinary first contact need not request an entire conversation. An
-independently salient nearby person may be acknowledged by a nod, greeted,
-or addressed with a brief remark. That observable act is admitted to one
-objective World Encounter Story; the recipient may notice it, experience
-it differently, and choose a separate response. A gesture is not a
-conversation request, a recipient's attention is not consent, and none of
-these acts automatically starts a Live Encounter.
-
-Only an explicit `invite_conversation` proceeds through the existing
-recipient `accept | decline | defer` judgment and, on acceptance, the
-Live Encounter coordinator. No speech quota, default social response or
-mandatory escalation follows from the availability of small acts.
+Most social contact never becomes a Live Encounter: a nod, a greeting or a remark is one objective Story that the other person may not even notice. Only an accepted `invite_conversation`, or a chosen continuation of an ongoing exchange, starts one. How a Thread gets there is owned by [social life](social-life.md).
 
 ## Authority model
 
@@ -311,7 +300,7 @@ These are private cognitive residue only. They are not automatic speech, commitm
 
 A retained memory also carries a **gist** in the Thread's own words: the short form by which background cognition holds it, while the full recollection remains the memory (see [memory meaning](genesis-memory-meaning-integration.md)).
 
-Consolidation may also form up to two **stances**: how this Thread now regards a person who acted in the cluster, admitted through the semantic-state authority as the Thread's own `relationship_attitude` (see [Stance](encounters-and-experience.md#stance)). No other semantic-state, relationship, door or life-relation mutation is part of this consolidation writer.
+Consolidation may also form up to two **stances**: how this Thread now regards a person who acted in the cluster, admitted through the semantic-state authority as the Thread's own `relationship_attitude` (see [social life §6](social-life.md#6-afterwards-reflection-memory-and-stance)). No other semantic-state, relationship, door or life-relation mutation is part of this consolidation writer.
 
 ## Observatory causal projection
 
@@ -335,20 +324,8 @@ A retained memory is linked through its existing Experience event refs. A semant
 Journal and autobiographical Memory remain standalone views and authorities. A private journal-book object is presentation, not the Journal authority, and may lag newly consolidated World journal records.
 ## Social analytics are observation, not personality
 
-Admin may derive a time-windowed social profile from existing admitted history. This profile is deliberately multi-dimensional rather than a scalar `sociability` score:
+Operator measures of social life — the Observatory social profile, the Social Life Scorecard and conversation endings — are inspection only, never semantic state, personality, rewards or cognition context. They are described in [social life §8](social-life.md#8-measuring-social-life). Fibre must not implement `sociability += 0.1` as a developmental mechanism; the causal object remains lived meaning and its validated consequences.
 
-- exposure — objective social episodes, with noticed exposure distinguished from mere presence;
-- initiative — Thread-opened episodes and outgoing overtures;
-- responsiveness — answered external openings plus incoming accept/decline/defer outcomes;
-- breadth — distinct known counterparties, with anonymous visitors kept separate;
-- reciprocity — counterparties with both incoming and outgoing overtures;
-- depth — admitted continuation across Encounter Stories, not prose length;
-- continuity — counterparties recurring across distinct episodes;
-- consequence — episodes that later link to Journal, Memory, delayed residue, semantic state or relationship authority.
-
-These values are **Observatory analytics only**. They are not semantic state, personality, regulation targets, rewards, labels or cognition context. A quiet period does not mean introversion; a high count does not mean sociability; a refusal does not count as social failure. The authoritative lived records remain underneath the projection.
-
-Anonymous Person encounters must never be counted as multiple known relationships merely because they occurred on different dates. Stable Person identity can improve breadth/continuity later when N7 adds that authority.
 ## Delayed private residue can reopen expression
 
 Experience consolidation may produce private `insight`, `question` or `intention` residue. That residue is durable because it belongs to the consolidation decision, not because it is spoken.
@@ -471,13 +448,7 @@ Acceptance also does not reserve the scene. Immediately before the live encounte
 
 The reason to interact should come from lived salience, relationship/history, current need, curiosity, shared task or other grounded context. Conversation length is not a proxy for value.
 
-## Social analytics
 
-Admin may derive time-windowed analytics such as exposure, initiative, responsiveness, breadth, reciprocity, depth, continuity and consequence.
-
-These are inspection analytics, not causal personality scores. Fibre must not implement `sociability += 0.1` as the developmental mechanism.
-
-The causal object remains lived meaning and its validated consequences.
 
 ## Non-goals
 

@@ -84,6 +84,6 @@ The accepted [Constitution](../foundations/constitution.md), [Thirteen Principle
 
 ## Known limits
 
-- Conversations are warm and agreeable: no invitation has been declined in staging and every stance so far is positive. Measured from November 7 by the [Social Life Scorecard](../architecture/encounters-and-experience.md#doors-and-ledger) (agreement, pushback, topic overlap, how conversations end).
+- Conversations are warm and agreeable: no invitation has been declined in staging and every stance so far is positive. Measured from November 7 by the [Social Life Scorecard](../architecture/social-life.md#8-measuring-social-life) (agreement, pushback, topic overlap, how conversations end).
 - A continued conversation founds no acquaintance (ADR-0029 grants it only after an accepted invitation), so strangers can talk without learning names unless they introduce themselves.
 - Most of the population rests: social findings come from one city and eight living Threads.

@@ -1,7 +1,7 @@
 ---
 id: architecture-situated-perception-salience
 status: accepted
-last-reviewed: 2026-10-22
+last-reviewed: 2026-11-06
 canonical: true
 ---
 
@@ -158,62 +158,11 @@ Direct address need not pass ordinary low-level salience because being actually 
 Do not invent a human's feelings, motives, intentions or personality from appearance. Only admitted observable/public facts may enter the Situated Percept. Continuous conversation should remain a continuing encounter made of outward acts, not a separate conversation-store authority.
 
 
-## Observing people: what a Thread can actually know (October 22)
+## Observing people: what a Thread can actually know
 
-A physical presence does not disclose a person's internal Thread ID or
-globally registered name. The World-owned `observablePerson` projection
-gives an observer a short human-readable phrase from an **available public
-portrait Embodiment**: canonical presented sex, an age band from the
-authoritative birth date at World time, and one or two visible hair cues
-from structured surface fields. Rendering/genome specification text does
-not become perception. Legacy portraits supply at most a bounded first
-plain-language clause; absent public portrait means simply "a person".
-No appearance asserts nationality, religion, ancestry, temperament, intent
-or worth. This description is **context-only**, not authority to invent
-a gesture or assert another person's inner life.
+A physical presence does not disclose a person's Thread ID or civil name. What an observer can know of another person — public appearance, outward activity, a name only when observer-known, its own familiarity and recently noticed experiences — is set out in [social life §2](social-life.md#2-what-a-thread-perceives-of-another-person) and the [observer knowledge decision](../decisions/observer-grounded-person-knowledge.md). The same view is used inside a live conversation. It is **context-only**: it shapes what the Thread can draw on, never authority to invent a gesture or assert another person's inner life.
 
-A name is observer-known only if the two Threads have a current lived
-relation or a prior accepted-and-spoken Encounter Story. Otherwise
-`observed.name` is `null`, even when World itself knows the civil name.
-Introductions, speaker-claimed names, remembering introductions and
-recognizing faces across time are **deferred**, not silently guessed from
-a portrait. See [observer knowledge owner decision](../decisions/observer-grounded-person-knowledge.md).
-
-**The same rule holds inside a live conversation (November 4 source).**
-Each participant's live turn (one streamed call that chooses speech, action or
-silence and carries any words) now receives that participant's
-own perspective, not World identity: its bounded developed-self evidence
-(identity, memories, states and relationships, as Interior Cognition selects
-them, preferring those involving the person in front of it), its current place
-by name, and the other person as it perceives them (observer-known name or
-`null`, observable appearance, and up to two of its own earlier noticed
-Experiences of them). The participant's Encounter Experience receives the same
-view of the others. This is **context-only**: it shapes what the Thread can
-draw on, and no acceptance criterion yet requires it to change a choice.
-
-**Outward activity is not private purpose (October 24 source).**
-A newly authored Flight Plan stop has both private `activity` (what the
-Thread intends) and short `outwardActivity` (what others might see).
-World carries outward activity into enacted CurrentSituation, public
-presence Stories, and other Threads' `observed[].currentActivity`.
-A counterpart never receives the private plan activity or purpose
-through Situated Percept. Historic plans or situations without the new
-field show no activity, not a fallback to private prose. This is
-Thread-authored outward behaviour enacted by World, not independent
-evidence of motive, consent or a prediction of another's response.
-
-A recent, personally **noticed** arrival Story can make the newcomer
-salient to a witness through `recent_observable_history` and, if the
-newcomer is still unfamiliar, make the person's novelty relevant to an
-existing exploration drive. `novel_person_under_exploration_pressure`
-is a genuine drive×stimulus anchor; generic prolonged stillness is not.
-For an arriver, actually noticing already-present witnesses similarly
-makes their established presence recent observable history. Body
-regulation still records both `exploration` and `social_contact` even
-when no social gate opens. The exploration regulator's
-`exploration:{novelty:0}` is provisional low-stimulation evidence from
-sustained sameness, **not** a general boredom or stranger-interest score;
-real novelty and engagement refinement remain deferred to Body-needs work.
+A recent, personally **noticed** arrival can make the newcomer salient through `recent_observable_history`, and, if the newcomer is still unfamiliar, make novelty relevant to an existing exploration drive (`novel_person_under_exploration_pressure`, a genuine drive × stimulus anchor; generic prolonged stillness is not). The exploration regulator's `novelty:0` is provisional low-stimulation evidence from sustained sameness, not a general boredom or stranger-interest score.
 
 ## Salience is mechanical attention, not meaning
 
@@ -278,7 +227,7 @@ If no materiality anchor is present, compatible co-presence remains `background`
 
 If an anchor is present, the gate returns `salient` and ordinary Interior Cognition may still decide `not_initiate`. The gate therefore controls whether cognition is warranted, not what the person wants.
 
-The profile remains intentionally conservative. W4 added World-derived opportunities, W5 grounded exploration pressure in repeated enacted sameness, and D2 adds sufficiently material evidenced `social_contact` pressure from the same Body frame. Either can make otherwise-background co-presence worth consideration; neither labels an emotion, commands an approach, asserts a relationship or creates a Story. Weak social pressure stays background to avoid speculative cognition.
+The profile remains intentionally conservative. Besides the anchors above, exploration pressure grounded in repeated enacted sameness and sufficiently material evidenced `social_contact` pressure from the same Body frame can each make otherwise-background co-presence worth consideration; neither labels an emotion, commands an approach, asserts a relationship or creates a Story. Weak social pressure stays background to avoid speculative cognition.
 
 Do not convert these anchors into a universal human-attention formula or weighted score.
 
@@ -323,198 +272,11 @@ long low-novelty wait
 
 Do not infer boredom merely because a clock advanced.
 
-## Graded social acts and reciprocal attention (October 23 source)
+## From salience to social choice
 
-Once the existing salience gate earns a person-specific consideration,
-Interior Cognition asks neutrally how, if at all, that Thread engages:
-`none | acknowledge | greet | remark | invite_conversation`.
-Neither suppress nor manufacture interest. The situated setting includes
-bounded, World-admitted public-place affordances as **context**, not a
-behavioral command. Affordances remain context-only until live differential
-choice is shown.
+Once salience earns a person-specific consideration, the social path — graded acts, invitations, continuation of an ongoing exchange, reconsideration within a visit, introductions and acquaintance — is owned by [social life](social-life.md) ([ADR-0027](../decisions/ADR-0027-graded-social-acts.md), [0028](../decisions/ADR-0028-event-driven-social-reconsideration.md), [0029](../decisions/ADR-0029-recognition-and-acquaintance.md), [0033](../decisions/ADR-0033-ongoing-exchange-may-become-conversation.md)).
 
-A chosen nod, greeting or remark creates one objective Encounter Story
-(`action` for acknowledgment, `utterance` for speech), with the initiator's
-immediate, observer-owned Experience and independently appraised recipient
-attention. The other person may not notice. Only a noticed act earns a
-single observed social opportunity to choose an act of their own. The
-recipient can ignore, gesture, speak, invite a conversation, or do nothing;
-no reply is prescribed. An invitation alone retains the existing
-accept/decline/defer and Live Encounter path. `none` remains
-`not_initiated`; a small outward act completes as `acted`, not `met`.
-
-Reciprocity reuses the claimed, one-shot World observed-opportunity record.
-For each pair and independently continuous shared venue visit, at most
-four act-triggered opportunities are admitted across **both directions**.
-The visit's start is derived conservatively from bounded, World-enacted
-situation history; without a provable start, no further opportunity is
-created. This cap prevents unbounded cognition, not long conversation or
-social agency. There is no added timer, global scan, forced contact or
-new meeting state machine. A recipient's possible response requires one
-attention appraisal; a noticed response opportunity later spends the
-ordinary social decision model call.
-
-**Deferred:** a greeting satisfying Body social need, explicit learning
-of names through speech, event-driven reconsideration during continuous
-co-presence beyond these acts, and proof that Memory changes a subsequent
-unforced social choice.
-
-Social initiation uses strict structured output: `introducesSelf` is always
-present as a boolean, false when no introduction is chosen.
-
-### A spoken exchange may become a conversation (proposed November 2)
-
-The ordinary repertoire stays unchanged for first contact, arrivals, gestures,
-and one-way remarks. When an observed `social_act` is a noticed spoken small
-act from a counterpart this Thread **itself spoke to** earlier during the
-same demonstrably uninterrupted shared venue visit, the social mind also
-has `continue_conversation` as a genuine choice. The Thread can still choose
-silence or a brief remark. Reciprocal speech is an opportunity, not consent.
-
-Choosing continuation seeds the existing live encounter with the counterpart's
-exact `spokenText` and this Thread's chosen words. Ordinary small-act beats
-retain their narrated public `text`; old beats without independently stored
-`spokenText` do not qualify, and no quotes are parsed. Each later contribution
-is independently voluntary. Silence declines the present opportunity, but
-a later independent opportunity may still be considered. One shared Story
-then bears the earlier small-act Story references; each
-participant receives one Experience and consolidation entry for the whole
-conversation. No act-triggered reply fanout occurs for its live turns.
-This is **not** an explicitly accepted invitation, so no factual
-`social_contact` acquaintance is established. See
-[proposed ADR-0033](../decisions/ADR-0033-ongoing-exchange-may-become-conversation.md).
-
-## Familiarity, introductions, and person-owned social history (October 23 source)
-
-When a Thread sees a real co-present person, Situated Percept may include
-`familiarity` from **this observer's own** noticed Encounter Stories
-containing that person, but never the current encounter or the current
-continuous shared visit. The query's strict upper bound is the earlier of
-six hours before consideration and the proven start of this shared visit.
-Immediate noticed episodes remain in `recentPersonalExperiences`, not
-duplicated as established familiarity. A single indexed query reads at most
-twelve relevant records,
-including a bounded noticed count, last time, available World-attested
-place names and up to two of the observer's own Experience texts. The
-count is bounded inspection evidence, not a lifetime encounter total.
-Merely sharing a venue or another observer's `noticed` attention cannot
-create familiarity. The deterministic `recognized_person` salience
-anchor earns voluntary consideration, not contact.
-
-An explicitly selected `introducesSelf: true` on a spoken act may disclose
-the speaker's full name **or a name token actually spoken**. The World Story
-beat records `disclosesSpeakerName` and the specific `disclosedName`
-(e.g. "Surafel", not an unheard surname). Only observers whose own
-attention `noticed` the admitted Story can learn that disclosed fragment.
-A claimed introduction without any spoken name token is simply an ordinary
-act; it does not interrupt the meeting. Existing life-relation and
-accepted-spoken-encounter full-name knowledge remain separate rules, as
-before this correction. Unknown name parts stay redacted in an
-introduction-only projection. This is observer-relative knowledge, never a
-global rename, inferred introduction from unmarked prose, or grant of
-the speaker's complete civil identity.
-
-An actually admitted, consented conversation establishes one factual
-`social_contact` relation in **each** direction; another meeting adds
-a revision. Private liking and relationship meaning stay in Experience,
-Memory and semantic life, not the World-fact relationship record.
-`social_contact` makes a person a possible later-contact candidate;
-the existing contact engine still waits for a completed private
-consolidation with afterthoughts and makes a separate autonomous
-decision. No new contact scheduling or model invocation is added.
-
-Social initiation and social response supply a Fibre-owned
-`focusPartyId` from the counterpart in the Situated Percept. Existing
-Interior Cognition selection first prefers that party's own relations,
-then Memories whose event refs resolve through the observer's own
-Experience → Encounter Story → that party's actual attributed action.
-Mere co-presence does not make a bystander's Memory person-specific.
-The same six relations / four Memories budgets and default tie-breakers remain.
-One indexed, bounded retrieval of up to 64 shared Experience IDs
-supports person-keyed Memory selection. A stranger uses default
-ranking. This is context-only until a later voluntary choice shows
-an attributable difference; neither counting a person as familiar
-nor retrieving their Memory proves friendship or changed behavior.
-
-**Status:** source-only; Guy has not locally validated this slice and
-will not deploy until natural staging evidence for earlier social
-slices has been reviewed. The limitations above are computational
-bounds, not permanent personhood restrictions. Owner decision is
-[accepted ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md).
-
-## Reconsideration after an enacted change (October 23 source)
-
-A prior voluntary `none` does not become a permanent stance toward
-someone sharing the same venue. World may earn another *opportunity*
-without prescribing a changed answer, but only for two real changes:
-
-- **Activity change:** a new World-enacted situation has a different
-  activity but the same physical venue, with another awake person present.
-  A refreshed plan with unchanged activity is not an event.
-- **Predicted social-contact band:** where earlier enacted history already
-  grounds the Body's `social_contact` drive, Fibre analytically predicts
-  when its existing pressure would cross 0.4 or 0.6, using the inherited
-  social sensitivity and the current observed-contact evidence. The
-  prediction must precede the Thread's next lived boundary. One band is
-  recorded **once per continuous venue visit**, keyed by Thread, visit
-  start and threshold rather than by the situation at the moment of
-  prediction. Repeated activity changes cannot re-arm it, even after
-  completion. The next higher band is considered after the earlier
-  obligation fires. At the instant due, the existing regulator checks
-  the signal again; intervening accepted contact may invalidate it.
-  Missing evidence never becomes clock-derived loneliness or a wake.
-
-A genuine arrival also offers this prediction to at most two already
-present, eligible witnesses. A solitary occupant gains no social timer,
-but when another person really arrives, previously grounded Body
-pressure can earn a future band crossing without forcing the occupant
-to refresh their own life. Departure before the crossing cancels the
-social possibility; no lost event is retrospectively replayed.
-
-Both events reuse the durable social-opportunity claim and existing
-freshness, company-continuity and life-debt rules. During consideration,
-one person is selected from the actual company present at the event.
-A recently noticed Story with that person gives a bounded preference;
-neither that preference nor a previous social decision grants a right
-to contact. Interior Cognition sees up to three of the Thread's *own*
-previous choices toward the same counterpart in this shared visit
-(`priorSocialChoicesThisVisit`), including silence and its explanation.
-This is also available to a person who independently notices and
-considers replying to a witnessed arrival or small social act.
-This is **context-only**, not automatic reversal or persistence of a
-stance. The normal salience gate and five-act choice remain decisive.
-
-At most three triggered reconsiderations per person per continuous
-venue visit, and at most two per ordered pair, are computation limits.
-Continuous presence is established through at most sixteen prior
-World-enacted situations; missing history is not assumed company.
-No general social tick, repeated pair scan, model call on background
-salience or exploration-band timer was added. Exploration remains a
-provisional organismic proxy, not an automatic interest in strangers.
-This source implementation still requires local validation and natural
-staging observation; it does not establish additional meetings or
-Memory-driven relationship formation.
-
-## Reciprocal social momentum
-
-Actual outward interaction is part of the exterior world and may influence later salience and cognition.
-
-Persisted pairwise evidence may include:
-
-```text
-A asked B -> B accepted
-B asked A -> A accepted
-A asked B -> B deferred
-A asked B -> B declined
-```
-
-Later Situated Percepts may project a bounded perspective-aware recent history.
-
-This remains evidence, not a `socialMomentumScore`.
-
-A private `not_initiate` thought is not shared history because nothing happened in the other Thread's world.
-
-Prior Encounter Stories and the perceiving Thread's own memories/relationship state remain separate authorities: the shared event says what happened; the Thread's private history says what it came to mean.
+Recent reciprocal history (who asked whom, who accepted, declined or deferred) is derived on demand from admitted Stories and stances. It is evidence, never a `socialMomentumScore`, and a private `not_initiate` is not shared history because nothing happened in the other Thread's world. The shared event says what happened; the Thread's own history says what it came to mean.
 
 ## Attraction and embodiment
 
@@ -533,7 +295,7 @@ observable embodiment
   -> Interior Cognition
 ```
 
-Do not add an `attractivenessScore`.
+Do not add an `attractivenessScore`. The accepted concept is [attraction and orientation](../concepts/attraction-and-orientation.md).
 
 ## Bounded microvariation
 
@@ -596,31 +358,7 @@ Do not persist every Situated Percept, background opportunity, salience score or
 
 For debugging and validation, a bounded replayable witness may record source refs and mechanical salience inputs/outcome without becoming semantic evidence.
 
-**One-shot social decision evidence (October 20 source):** the ordinary
-completed World social-opportunity row now retains `salience.bodyAtGate`
-with the regulation frame's `asOf` and the actual `social_contact` and
-`exploration` drive orientations, pressures and evidence refs presented
-to the gate. `null` means no regulation frame was available; a present
-frame with no relevant drive means no such supported reading, not zero
-pressure. This is deliberately limited to already-admitted, one-shot
-social opportunities, including `background`: there is no new polling,
-event, store, private decision, model call, or retroactive reconstruction.
-The operator probe shows the Body reading for a background outcome, and
-older rows lacking the witness remain explicitly `not recorded`.
-This is **Notarial/mechanical diagnostic evidence**, not proof that the
-organism felt lonely, a social opportunity should become a conversation,
-or that a reported motive caused the decision. The existing materiality
-threshold and individual initiation/consent remain unchanged.
-
-**Live diagnostic motivating this witness:** on October 20 in staging,
-Giorgi's 11:35 UTC co-presence yielded `background` with no anchors and
-no stored Body reading; Ioseb's separate 07:45 UTC consideration was
-`salient` through noticed history and reached his independently
-authored `not_initiate` decision despite a modest measured
-`social_contact` pressure of `0.375197`. A missing Giorgi reading must
-not be interpreted as `0`, and Ioseb's autonomous restraint is not a
-salience failure. The new witness will only illuminate **future**
-one-shot opportunities after deployment.
+**Body reading at the gate.** A completed social opportunity, including `background`, keeps `salience.bodyAtGate`: the regulation frame's `asOf` and the `social_contact` and `exploration` orientations, pressures and evidence refs the gate saw. `null` means no frame was available, not zero pressure. This is Notarial diagnostic evidence for operators, not proof of loneliness or of a motive behind the decision.
 
 ## Implementation shape
 

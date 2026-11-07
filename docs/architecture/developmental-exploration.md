@@ -123,7 +123,7 @@ E6a now authors bounded environmental occurrences from exterior current-scene ev
 
 This matters because developmental exploration must not become accidentally social-biased merely because people are easier for runtime code to discover than weather, animals, objects, overheard interactions or other ordinary World events.
 
-The next prerequisite is therefore [E6 in Encounter stories and Thread experience](encounters-and-experience.md#e6--autonomous-encounter-productiondiscovery):
+The next prerequisite is therefore [autonomous occurrence production](encounters-and-experience.md#autonomous-occurrence-production):
 
 ```text
 X4 closed history -> future development

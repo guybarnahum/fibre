@@ -1,7 +1,7 @@
 ---
 id: architecture-encounters-and-experience-v0-1
 status: accepted
-last-reviewed: 2026-10-06
+last-reviewed: 2026-11-06
 canonical: false
 ---
 
@@ -306,99 +306,15 @@ without collapsing any of them into a permanent relationship label.
 
 Automatic incidental-witness discovery uses the same model: World derives candidate witnesses from compatible authoritative LivedNow presence, then each Thread independently notices or does not notice the occurrence.
 
-### Doors and ledger
+### Relationships after an encounter
 
-Relationships are modelled as **doors**, a **ledger** and **stances** ([relationships concept](../concepts/relationships-doors-and-trust.md), accepted November 5, 2026). A door is a kind of access two Threads have opened to each other; it opens only when both consent — one offers, the other accepts — and either may close it alone. The ledger records observable relational acts (`offered`, `accepted`, `declined`, `opened`, `closed`, `kept`, `broken`, `repaired`) as facts, never judgments; World never derives trust or attitude from it.
+What World records of a relationship (doors and the relational ledger) and what the Thread privately comes to feel (its stance, formed in delayed consolidation) are owned by [social life §6–§8](social-life.md#7-relationships-doors-ledger-and-stance), under the [relationships concept](../concepts/relationships-doors-and-trust.md). Neither is derived from the other, and Encounter Story never carries a relationship verdict.
 
-World records acts inside the same transaction that admits the fact they come from, so nothing else has to remember to call it:
+## Autonomous occurrence production
 
-- **attention** — a Thread's spoken words in a two-person Story offer it; the other's speech back accepts and opens it. Gestures and repeated unanswered remarks add nothing.
-- **name** — a spoken self-introduction (`disclosedName`), chosen when opening an encounter or as an `INTRODUCE:` turn inside a live one, offers it; the other's introduction opens it. An accepted, spoken invitation also opens it, since ADR-0029 acquaintance already grants both names.
-- **conversation** — an invitation is an explicit offer; the invitee's stance accepts or declines it (a deferral declines this offer). The spoken conversation that follows an acceptance opens the door. A conversation entered by continuing an ongoing exchange (ADR-0033) records the first speaker's offer and the other's acceptance when both speak.
-- **contact** — a message to another Thread offers it; a message back opens it.
+Callers supply only a Thread and a time, or trigger ordinary World reconciliation. World authors at most one bounded observable occurrence from the exterior scene, admits it as an ordinary Encounter Story, and derives incidental witnesses from authoritative co-presence; each witness independently notices or not, and gets no fabricated beat or social stance. Zero occurrences, and zero noticed witnesses, are valid life outcomes; no negative "nothing happened" record is kept. Witnessing in a naturally formed three-Thread scene is implemented but not yet observed.
 
-`relationship_ledger` is append-only (update and delete are refused by trigger); a trigger maintains `relationship_doors`, one compact row per open door, never written directly. Installation replays existing invitations, spoken Stories and Thread messages once through the same rules. `GET /internal/relationships` (private token) returns bounded current doors, recent ledger acts, the spoken shape of recent Stories (turns, questions, turns opening in agreement and turns pushing back per speaker, interruptions, and how much a conversation's words overlap with other pairs' that day — never the words; the agreement and pushback measures are English heuristics in `conversation-shape.mjs`) and Thread-to-Thread messages; `npm run world-social:quality -- --env staging [--days N] [--top N]` prints the operator **Social Life Scorecard** and saves its evidence under `.fibre/world-social/<env>/`. The scorecard's stage (stranger, acknowledged, acquainted, conversed, in touch…) is the furthest contiguous open door: closing a door lowers it while the ledger remembers, and doors open past that gap are reported beside it. Stage, mileage and shares are operator-only derivations, never model-visible and never authoritative.
-
-### Stance
-
-A Thread's **stance** toward another person is its own private, asymmetric regard, formed in delayed consolidation (no new model call): up to two per cluster, each naming a person who acted in those experiences, one registered `relationship_attitude` aspect (fondness, trust, respect, attachment, resentment, guardedness) and a first-person description, which carries the meaning. World admits it as restricted semantic state (`relationship_stance_formation`, authored by the Thread), grounded in the cluster's experiences in which that person acted, superseding the Thread's earlier regard in that aspect; a stance naming no one who acted, or prescribing instead of describing, is dropped and counted. Doors, ledger and life relations are untouched. When the Thread later faces that person — social initiation and response, and each live turn — its regard for that person leads its developed-self evidence.
-
-**Causal status.** Doors and ledger are **Notarial**: no Thread decision, prompt or model call reads them yet. Stance is **Context-only**: it changes what the Thread's cognition sees first when facing that person, but no acceptance criterion yet requires it to change a judgment (for example, declining an invitation). The **time** and **place** doors (E5/E6) are deferred; `endedBy` of a live conversation is not persisted. The full door vocabulary is already admitted by the schema, so these extend it without migration.
-
-## Current autonomy status
-
-The **encounter semantics and aftermath are general**. Fibre can persist environmental occurrences, social dialogue, n-ary stories, silent-witness attention, subjective journal entries and selective memory through one authority stack.
-
-E6 has removed the caller-orchestration gap in implementation:
-
-1. **Environmental occurrence production (E6a)** — callers supply Thread/time only; World authors one bounded observable occurrence from exterior CurrentSituation/place evidence, admits the Encounter Story, and runs ordinary selective attention/aftermath. Focused proof is green and staging is live-proven.
-2. **Incidental witness discovery (E6b)** — accepted social stories derive incidental witness candidates from authoritative co-presence; callers do not supply witness IDs, witnesses get no social stance or fabricated story beat, and each independently notices or does not notice. Focused proof is green.
-
-E6 overall remains current because the E6b path has not yet been observed in a genuine live three-Thread co-present scene. A bounded probe reports `blocked_by_world_state` rather than manufacturing that scene. This is an acceptance/evidence gap, **not an ontology or implementation gap**. Do not answer it by adding separate environmental-memory, overheard-conversation or witness subsystems.
-
-## E6 — Autonomous encounter production/discovery
-
-Address this gap **after developmental-exploration X4 is accepted and before the X5+ rich-Person/social-discoverability extensions**.
-
-Why this ordering matters:
-
-- X4 first closes the internal developmental loop using already-supported encounter semantics.
-- E6 then makes ordinary non-social life and incidental witnessing arise without caller orchestration.
-- Only after that should Fibre enrich Person presence/social discoverability, otherwise the easiest autonomously discoverable opportunities will be people and conversations and developmental life will become accidentally social-biased.
-
-E6 should remain bounded and event-driven:
-
-```text
-explicit bounded occurrence-production boundary / current scene
-  -> one World-authored observable occurrence
-  -> one admitted textual environmental Encounter Story
-  -> ordinary attention / aftermath
-
-any admitted Encounter Story
-  + authoritative co-present CurrentSituations
-  -> derive candidate incidental witnesses
-  -> each independently noticed | not_noticed
-  -> ordinary aftermath only when noticed
-```
-
-The caller may identify the Thread/time or trigger the ordinary World reconciliation seam. It must **not** supply the environmental event text, choose the witnesses, or label an occurrence as interesting. Invoking the producer means authoring one bounded occurrence; ordinary life is not required to invoke the producer at every scene boundary, so zero environmental encounters remains a valid life outcome without persisting negative "nothing happened" records.
-
-Do not build:
-
-- a universal event bus;
-- a minute-by-minute simulator;
-- a physics/sensory engine;
-- a global object ontology;
-- a quota of encounters per day;
-- a model loop that samples until something interesting happens;
-- automatic memory or journal writing merely because an event was generated.
-
-A small stable World-authoring policy may use existing place/scene meaning and bounded generation to create an occurrence. Once admitted, that occurrence is ordinary World history and all later attention/experience semantics remain unchanged.
-
-### E6 acceptance
-
-One environmental proof:
-
-```text
-caller supplies Thread + time only
-  -> World/LivedNow supplies current scene
-  -> Fibre authors one bounded textual occurrence from that scene
-  -> Encounter Story is admitted
-  -> Thread independently notices or does not notice
-```
-
-One witness proof:
-
-```text
-A/B Encounter Story occurs
-  + C is independently co-present
-  + caller never names C
-  -> World derives C as a candidate witness
-  -> C independently noticed | not_noticed
-  -> if noticed, ordinary Experience / Journal / Memory aftermath
-```
-
-The stop condition is **autonomous opportunity production, not encounter frequency**. A scene may have zero generated environmental encounters because no production boundary was invoked; a produced encounter may still be `not_noticed`. Zero noticed witnesses also remains valid.
+Do not build a universal event bus, a minute-by-minute simulator, a physics or sensory engine, a global object ontology, an encounter quota, a model loop that samples until something interesting happens, or automatic memory or journal writing because an event was generated.
 
 ## Presence and place
 
@@ -557,31 +473,7 @@ The Admin-facing `journals/<threadId>/journal.md` document is assembled on reque
 
 Existing immutable presentation/media R2 objects remain untouched.
 
-## What the current implementation spike taught us
 
-The first N5 implementation correctly exposed several reusable pieces:
-
-- independent ensure-LivedNow for social participants;
-- place compatibility across Thread-specific situated-life evidence;
-- Thread-owned `accept | decline | defer` meeting stance;
-- one shared objective record with separate private aftermath;
-- n-ary story persistence direction;
-- witness-specific experience direction;
-- subjective journal separated from selective memory;
-- distinct private Journal authority and Admin book presentation (subsequently moved to state-backed read-time projection).
-
-But the spike overfit the central orchestration to **meeting**.
-
-Specifically:
-
-- it assumed the encounter begins from an invitation;
-- it treated all present Threads as meeting participants who must accept;
-- it treated social dialogue as the default story shape;
-- it did not yet have a general noticing step;
-- it did not yet support a Thread encountering a non-person subject without inventing a social participant;
-- some persistence/API names still encode `meeting` or `reciprocal` where the domain concept is now encounter story / Thread experience.
-
-Those are redesign findings, not reasons to discard the useful pieces.
 
 ## Implementation rule
 

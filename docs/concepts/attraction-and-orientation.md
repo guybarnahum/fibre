@@ -38,6 +38,8 @@ Unwanted attention meets the other Thread's own guardedness and a declined roman
 - **Not deterministic.** There is no compatibility score. Whether a pull arises, and what a Thread makes of it, comes from its own Body and cognition over its own history.
 - **Operator measures** (one-sided versus mutual attraction, declined romance offers) are inspection only, never Thread inputs.
 
+How this concept fits the running social flow, and where it attaches, is in the [social life architecture](../architecture/social-life.md).
+
 ## Causal status and deferral
 
 Nothing here is implemented yet; every part is **deferred** and arrives as separate slices, in this order:

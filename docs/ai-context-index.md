@@ -10,6 +10,7 @@ Profiles follow evidence lifecycle:
 
 - `core` — bounded current doctrine, lived-world vision and M2 context; N7 validation detail is linked below for task-specific reading;
 - `request-processing` — appraisal, authorization, disclosure, affect and response behavior built on `core`;
+- `social-life` — how Threads notice, approach, talk with, remember and come to regard one another, built on `core`;
 - `full` — broad current context plus selected historical/sealed evidence with continuing explanatory value.
 
 Profiles are **curated bounded working sets**, not an index of every accepted canonical document. Canonical status means a document is authoritative for its subject; profile membership means that document is useful enough to include in a particular bounded AI context. Adding a canonical document does not by itself require adding it to a profile or block runtime deployment.
@@ -43,11 +44,7 @@ For implementation agents, also read repository-root `AGENTS.md` and the relevan
 
 What Fibre can do now, by capability and evidence level, is [`state/current-state.md`](state/current-state.md); the two active tracks — social life and model efficiency — are in [`state/current-priorities.md`](state/current-priorities.md).
 
-For social-life work, load:
-
-- [`concepts/relationships-doors-and-trust.md`](concepts/relationships-doors-and-trust.md), [`concepts/interests-expertise-and-livelihood.md`](concepts/interests-expertise-and-livelihood.md), [`concepts/attraction-and-orientation.md`](concepts/attraction-and-orientation.md)
-- [`architecture/encounters-and-experience.md`](architecture/encounters-and-experience.md), [`architecture/live-encounters.md`](architecture/live-encounters.md), [`architecture/situated-perception-and-salience.md`](architecture/situated-perception-and-salience.md), [`architecture/lived-now-and-meetings.md`](architecture/lived-now-and-meetings.md)
-- ADR-0027, 0028, 0029, 0033 and 0034 in [`decisions/`](decisions/)
+For social-life work, start with [`architecture/social-life.md`](architecture/social-life.md) — the whole flow, its measures and where the accepted social concepts attach — or load the `social-life` profile.
 
 For model-efficiency work, load the prompt rules in `AGENTS.md`, `services/world-kernel/prompts/README.md` and [`operations/world-write-diet.md`](operations/world-write-diet.md).
 

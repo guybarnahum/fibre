@@ -81,6 +81,8 @@ Nothing moves automatically. No timer closes a door and no threshold opens one; 
 
 The operator Social Life Scorecard reads stage over time (both directions), **social mileage** (spoken turns, messages and shared time, weighted toward recent activity), trust health (kept versus broken expectations, and whether each Thread's own trust tracks that evidence) and initiation symmetry. These are inspection measures, never Thread inputs.
 
+How this concept fits the running social flow, and where it attaches, is in the [social life architecture](../architecture/social-life.md).
+
 ## Causal status and deferral
 
 Doors and ledger for attention, name, conversation and contact are recorded today and are **Notarial**: no decision reads them yet. Stance is formed in the Thread's delayed consolidation from its experiences and is **Context-only**: it leads the Thread's cognition when facing that person, but no decision is yet required to follow it; citing ledger acts as stance evidence is deferred until trust-bearing acts (kept and broken expectations) exist. The time, place, confidence, care, romance and commitment doors are **deferred** and arrive as separate slices; romance and commitment require their own decision record.

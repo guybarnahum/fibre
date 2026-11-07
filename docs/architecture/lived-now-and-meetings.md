@@ -448,36 +448,7 @@ The caller may identify Threads to consider the Commons opportunity, but cannot 
 
 ### Situated perception, then social judgment
 
-Shared presence is only one kind of opportunity. Social cognition now follows the general [Situated Percept + Salience](situated-perception-and-salience.md) architecture rather than owning a separate social-context model.
-
-A credible social overture should therefore begin with a bounded **Situated Percept** owned by World/Fibre rather than a caller-authored persona packet. The same perceptual seam is intended to support environmental noticing, curiosity, helping, avoidance and other ordinary lived reactions.
-
-For each potential counterparty, that context may include only authorized observable facts such as:
-
-- canonical visible embodiment / approximate encounter-time age where relevant;
-- current observable activity and outward behavior;
-- whether the counterparty is known or unfamiliar;
-- the actual physical or mediated place and its social affordance;
-- recent admitted outward interaction between the same parties.
-
-The initiator's private relationship facts, memories, feelings, needs and interpretations remain Thread-owned context selected through Interior Cognition. The counterparty's private interior never becomes input merely because she is being considered socially.
-
-Recent reciprocal history should be derived on demand from authoritative social events and stances, for example:
-
-```text
-A initiated -> B accepted
-B initiated -> A accepted
-A initiated -> B deferred
-A initiated -> B declined
-```
-
-This is **social momentum**, not a durable scalar. Do not add a `socialMomentumScore` or mechanically translate recent acceptance into consent. Recency, direction, context and the Thread's own remembered meaning all matter.
-
-A private decision not to initiate creates no shared interaction record. Only outward social action and the other party's observable response can become reciprocal history.
-
-Appearance can be part of observable social reality. Where developmentally appropriate, another person's visible embodiment may become attractive, uninteresting or aversive to this particular Thread through her own orientation, preferences, regulation, experience and cognition. Fibre must not represent beauty or attraction as an objective person-level score.
-
-Place matters similarly. A quiet library, café, household, work session, crowded event, transit setting and Fibre Commons create different affordances even when the same two Threads are present.
+Social cognition follows the general [Situated Percept and salience](situated-perception-and-salience.md) architecture rather than owning a separate social-context model. The counterparty's private interior never becomes input because she is being considered; recent reciprocal history is derived on demand, never a score. Appearance and place are part of observable social reality: another person's embodiment may become attractive, uninteresting or aversive only through this Thread's own orientation, history and cognition, and a library, café, household or Fibre Commons afford different things to the same two Threads. The full social path is in [social life](social-life.md).
 
 ### Shared live physical places
 
@@ -613,77 +584,11 @@ The existing World-place read authority now resolves admitted public `wpl_*` ide
 
 **October 14 staging witness:** Guy ran 13 focused tests and 1,604 full tests successfully, deployed World kernel SHA `4243904008cd6340713936d954b935d23382440d`, admitted and independently listed the Tbilisi library, and admitted three distinct Threads' current Saburtalo residences at **locality precision** with `publicGranularity: hidden`, no invented private addresses and no exact coordinates. A subsequent bounded read-only social probe confirmed `privatelyLocatedThreadCount: 3`, `exactResidentialAddressCount: 0`, no current public-venue visits and no recorded social opportunities in its 40-Thread sample. The `no_attested_venues_in_sample` blocker is expected and does not invalidate S0. Nothing establishes a physical Thread visit or social contact. The next accepted discovery direction is the [Fibre City Guide](social-city-guide.md): a public editorial manifest of possible destinations, followed by Thread-owned memory or guide consultation, voluntary venue selection and World-enacted visits.
 
-### Unprompted social consideration during lived arrival (deployed mechanism, natural acceptance open)
+### Unprompted social consideration and scene discovery
 
-A genuinely enacted, awake or unknown-wakefulness *at-place* situation can earn **one** future social consideration when its World place has an independently attested physical-venue identity. This is queued for the existing World reconciliation alarm, not a new social clock or caller-written request. At the due boundary, World first checks that the exact original situation is still current and selects at most eight **already-enacted** people through indexed venue-bound current-life evidence (not merely recent arrivals; someone already reading in the café for hours remains discoverable). If nobody else is actually there, there is no social cognition.
+Thread-to-Thread social consideration begins from one Thread's World-owned current life. The caller may choose whose life to advance, never which nearby Thread she should consider. An enacted arrival at an attested public venue earns one durable social opportunity on the existing World alarm; when due, World checks the situation is still current, discovers at most eight already-enacted co-present people (long-stayers included), and each becomes an independent opportunity. Nobody else there means no social cognition, and the whole population is never woken to search for company. Opportunity kinds, bounds and outcomes are in [social life §1](social-life.md#1-opportunities); `world-social:probe` inspects them read-only.
 
-An eligible initiator reuses the existing meeting service in a stricter, single-candidate mode. Situated Percept, social/exploration-driven salience, private initiation choice, the recipient's independent stance, Encounter Story, individual Experience and selective consolidation retain their existing ownership. A background opportunity or `not_initiate` must create no reciprocal social history. Decline/defer remain legitimate; an accepted conversation must not be prescribed, and the public `/meet` request path stays unchanged.
-
-Each offered situation has one durable claim. If a model call or outward expression is interrupted, the attempt remains explicitly `interrupted` for inspection and is **not silently retried** because the other person may already have heard an overture. This is a deliberately conservative at-most-once trade-off, not an assertion that an interrupted attempt completed. The new social opportunity adds **no** population polling, global co-presence scan, invented shared location, or compulsory conversation. The query returns at most eight real, awake or unknown-wakefulness co-present candidates **after** resolving their latest enacted situation and excluding the arriving Thread; it no longer discards real long-stayers merely because more than 32 Threads have historical bindings to that venue. It remains a bounded, indexed venue read rather than a population-wide search. The choice of counterpart is still limited by its small returned candidate set; very crowded venue costs and social selection diversity remain unmeasured. Transit, Human-initiated contact and richer continuation remain separate work. Natural live staging evidence and measured provider costs are open.
-
-Guy locally validated and deployed the initial autonomous opportunity source at `6ae2d0e` on October 13. The subsequent corrected venue query and read-only `world-social:probe` await their own local validation and staging deployment. The probe samples up to 40 discoverable Threads and reports actual opportunity records and the shared-place scene without issuing meeting requests or waking anyone to socialize; absence from that bounded scan cannot prove population-wide absence.
-
-**Operator output (October 19):** `npm run world-social:probe -- --env staging --thread thr_...`
-prints a readable current-life, social-opportunity, Experience/Memory-continuity,
-and evidence-limitations report. `--json` preserves the previous single-line
-machine event for scripts. Both forms save the same bounded detailed evidence
-under `.fibre/world-social/<environment>/`; neither performs any additional
-World reads, wakes a Thread or presents a temporal Memory/contact chain as proof
-that Memory caused the later choice. A deployed-revision mismatch appears as
-a provenance note instead of obscuring substantive World findings. Private
-home descriptions and exact addresses are omitted from human summaries.
-A single-Thread `--thread` view intentionally **does not check concurrent
-co-presence**: no population/venue query runs, and a zero in the underlying
-sample is not a declaration that nobody else was at the venue. The friendly
-report labels that question `not checked` and grounds the current locality
-in the actually occupied verified public venue when available. A historical
-`no_co_presence` opportunity is about its own due time, not a later visit.
-
-### Scene discovery, not caller-selected counterparties
-
-Thread-to-Thread social consideration now begins from one Thread's World-owned current life. The caller may choose **whose life to advance/inspect**, but not which nearby Thread she should consider.
-
-```text
-ensure initiator LivedNow
-  -> inspect already-established World-current situations
-  -> discover every compatibly co-present Thread
-  -> refresh each discovered candidate
-  -> re-check presence
-  -> Situated Percept projects one actor opportunity per Thread
-  -> independent salience / cognition per opportunity
-```
-
-A café may therefore produce several independent social opportunities in the same lived interval. Mina may ignore one person, approach another, and have separate encounters with two people without those people being collapsed into a caller-authored group.
-
-The first discovery seam is intentionally bounded to Threads that already have current-life evidence. It does not wake the whole population to search for possible co-presence.
-
-Explicit witness IDs remain controlled E3 scaffolding only; automatic incidental-witness discovery is still deferred. Witness selection must not become a way to choose the initiator's social counterparties.
-
-Human presence follows the same exterior model once Fibre has an authoritative person-presence/action record. A human directly addressing a Thread is an admitted outward social act and warrants appraisal, but never forces participation or response.
-
-
-
-
-
-Before an endogenous Thread-to-Thread social encounter:
-
-- the initiating Thread has an independently reconciled LivedNow;
-- nearby candidate Threads come from World-current situations, not caller selection;
-- every discovered candidate is refreshed and must still be physically or mediately compatible;
-- each actor opportunity is considered independently;
-- every addressed Thread independently decides whether to participate;
-- physical or mediated compatibility is required without teleportation or silent replanning.
-
-Each actual shared event records **one objective Encounter Story**. Do not split one genuine group event into a pairwise matrix merely because several people participated. Conversely, several distinct interactions in the same café interval remain several Encounter Stories rather than being collapsed into one room-wide meeting. Any number of people present in one actual event may then form distinct private experiences from that story. A Thread may speak, act, be addressed, or silently witness what others do.
-
-A silent witness can be affected by the encounter even though she never spoke. Conversely, a nearby Thread who does not notice the occurrence should not receive a fabricated experience.
-
-Shared story does not imply shared meaning.
-
-Journal reflection and autobiographical memory remain separate private consequences. Two Threads may journal the same story differently; either may later remember or forget it independently.
-
-The durable encounter semantics are owned by [Encounter stories and Thread experience](encounters-and-experience.md).
-
+Each actual shared event records **one objective Encounter Story**; a genuine group event is not split into a pairwise matrix, and several distinct interactions in one café interval stay several Stories ([Encounter Story and Experience](encounters-and-experience.md#social-and-group-encounters)). Shared story does not imply shared meaning: a silent witness may be affected, a Thread that did not notice gets no fabricated Experience, and each participant journals and remembers independently.
 
 ## insidefibre.com north-star experience
 
@@ -730,67 +635,7 @@ Genesis
 
 Genesis history supplies the past. LivedNow owns the continuing present after Fibre birth.
 
-## What exists today
 
-Current Fibre already contains meaningful substrate:
-
-- `lived-now.mjs` — Flight Plan / CurrentSituation semantics;
-- `lived-plan-cognition.mjs` — bounded Thread-authored plan cognition;
-- `lived-now-store.mjs` — durable lived-plan/current-situation persistence;
-- `lived-now-publication-service.mjs` — present-life projection;
-- `flight-plan-regulation.mjs` — plan vs enacted-state regulation;
-- `lived-encounter-*.mjs` — situated human encounter, reflection and memory formation;
-- B2 continuity evidence proving a later meeting can receive only retained autobiographical consequence.
-
-These are **bounded primitives/proofs**, not yet continuous LivedNow.
-
-Missing north-star capability includes:
-
-- automatic plan renewal;
-- elapsed-time coverage across dormant/frozen intervals;
-- retrospective lived catch-up;
-- a single World-owned ensure-LivedNow seam used by real `/meet`;
-- a general encounter-story / Thread-experience seam used by social and environmental life;
-- rich public meeting composition against continuously maintained life.
-
-## Recommended implementation sequence
-
-### N1 — One World-owned ensure-LivedNow seam
-
-Compose existing Flight Plan, CurrentSituation, regulation and persistence into one operation that can establish a valid present for `threadId, at`.
-
-Do not build a generic scheduler framework.
-
-### N2 — Dormant interval catch-up
-
-When plan/history coverage does not reach `at`, synthesize the smallest credible elapsed-life continuation, admit it with explicit retrospective provenance, run ordinary consequence formation, and then establish the present.
-
-Prove a multi-day dormant gap.
-
-### N3 — Genesis -> first continuous LivedNow
-
-Prove a newly born Thread exits Genesis into the same continuing-life seam used later: initial lived anchor, first personal Flight Plan, CurrentSituation, compute dormancy, retrospective catch-up, renewed plan and authoritative present. No demo-only life engine or meeting fixture.
-
-### N4 — Person -> Thread /meet over real LivedNow
-
-Route public meeting through ensure-LivedNow. The first deployed proof should show that the returned scene was determined by the Thread's prior life + elapsed continuity, not a meeting fixture.
-
-### N5 — General encounter seam + reciprocal social proof — REPLANNED
-
-N5 is no longer scoped as a two-Thread conversation engine.
-
-The accepted target is one light encounter seam that can prove three cases without separate engines:
-
-1. **environmental encounter** — a Thread notices something small in the World, such as a bee on a flower, and may privately react/journal/remember;
-2. **voluntary social meeting** — independently current Threads may accept, decline or defer without teleportation or silent replanning;
-3. **witness consequence** — a third Thread may silently witness how one Thread treats another and form her own private experience/consequence.
-
-The first implementation spike produced useful components—meeting stance, n-ary story direction, witness experience direction, journal book and selective memory—but overfit orchestration to invited social meetings. It is therefore **not accepted for deployment** and should be reshaped around Encounter Story -> Thread Experience before N5 staging acceptance.
-
-
-### N6 — Rich insidefibre.com meeting
-
-Render the current scene, movement/activity, public intention/context and current embodiment; allow the encounter; later revisit the same Thread after life has moved.
 
 ## High-value acceptance proofs
 

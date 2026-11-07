@@ -13,7 +13,7 @@ Work runs as two tracks in parallel, each judged on staging evidence from the li
 
 ## Track E — Social life
 
-Concepts: [relationships](../concepts/relationships-doors-and-trust.md), [attraction and orientation](../concepts/attraction-and-orientation.md), [interests, felt expertise and livelihood](../concepts/interests-expertise-and-livelihood.md).
+Architecture: [social life](../architecture/social-life.md). Concepts: [relationships](../concepts/relationships-doors-and-trust.md), [attraction and orientation](../concepts/attraction-and-orientation.md), [interests, felt expertise and livelihood](../concepts/interests-expertise-and-livelihood.md).
 
 **Done (staging):** conversation fixes; conversation relieves the need for contact; Threads speak from their own developed self to the person they actually perceive; doors and relational ledger; the Social Life Scorecard; introductions inside a conversation; a Thread's own stance toward a person.
 
