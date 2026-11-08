@@ -104,8 +104,13 @@ async function main() {
   // 2. Judges read: fidelity, attribution among four sources, pairwise reading.
   const sourcePool = requests.map((event) => ({ scope: scopeOf(options.prompt, event.input), source: job.source?.(event.input) }))
     .filter((entry) => entry.source);
-  const verdict = (judge, task, material) => cached({ kind: task, judge: judge.model, material },
-    () => judge.ask(task, material).catch((error) => ({ error: String(error?.message ?? error).slice(0, 200) })));
+  const judgeErrors = new Map();
+  const verdict = async (judge, task, material) => {
+    const result = await cached({ kind: task, judge: judge.model, material },
+      () => judge.ask(task, material).catch((error) => ({ error: String(error?.message ?? error).slice(0, 300) })));
+    if (result.error) judgeErrors.set(judge.model, [...(judgeErrors.get(judge.model) ?? []), result.error]);
+    return result;
+  };
   const report = { prompt: options.prompt, requests: requests.length, judges: judges.map((j) => j.model), models: [] };
   let judgeCost = 0;
   const reference = options.models[0].model;
@@ -125,13 +130,18 @@ async function main() {
       for (const judge of readers) {
         // A gist answers to its own memory; other answers to everything the job was given.
         const evidence = entry.siblings ? { thread: entry.request.input.thread, memory: entry.source } : entry.request.input;
-        const fidelity = await verdict(judge, "fidelity", { evidence, answer: entry.text });
-        const attribution = round === null ? null : await verdict(judge, "attribute", {
-          whatEachSourceIs: job.lineupOf, faced: round.faced, answer: round.answer,
+        const fidelity = await verdict(judge, "fidelity", { whatCounts: job.faithful, evidence, answer: entry.text });
+        const lineupMaterial = (answer) => ({ whatEachSourceIs: job.lineupOf, faced: round.faced, answer,
           sources: Object.fromEntries(round.sources.map((source, index) => [index + 1, source])) });
-        judgeCost += (fidelity.cost ?? 0) + (attribution?.cost ?? 0);
+        const attribution = round === null ? null : await verdict(judge, "attribute", lineupMaterial(round.answer));
+        // The same lineup without the answer: how far what was faced alone
+        // points to the source. Shared by every model, so judged once.
+        const control = round === null ? null : await verdict(judge, "attribute",
+          lineupMaterial("(not shown: choose the most likely source from what was faced alone)"));
+        judgeCost += (fidelity.cost ?? 0) + (attribution?.cost ?? 0) + (control?.cost ?? 0);
+        const right = (result) => result?.verdict ? result.verdict.choice - 1 === round.truth : null;
         results[judge.model] = { invented: fidelity.verdict?.invented ?? null, example: fidelity.verdict?.example ?? null,
-          correct: attribution?.verdict ? attribution.verdict.choice - 1 === round.truth : null };
+          correct: right(attribution), withoutAnswer: right(control), choices: round?.sources.length ?? null };
       }
       progress(`judges reading ${model} ${++read}/${items.length}`);
       return { key: entry.key, request: entry.request, text: entry.text, results };
@@ -154,7 +164,8 @@ async function main() {
         const result = await verdict(judge, "compare", { criteria: job.readable, request: pair.input, A: a, B: b });
         judgeCost += result.cost ?? 0;
         const better = result.verdict?.better;
-        votes.push(better === "same" || !better ? "same" : (better === "A") === candidateFirst ? "candidate" : "reference");
+        if (!better) continue;
+        votes.push(better === "same" ? "same" : (better === "A") === candidateFirst ? "candidate" : "reference");
       }
       return { ...pair, candidateFirst, votes };
     });
@@ -163,6 +174,8 @@ async function main() {
     const tally = (pick) => { const values = judged.flatMap(pick).filter((v) => v !== null && v !== undefined);
       return [values.filter(Boolean).length, values.length]; };
     const attributed = Object.fromEntries(readers.map((judge) => [judge.model, tally((row) => [row.results[judge.model]?.correct])]));
+    const unaided = Object.fromEntries(readers.map((judge) => [judge.model, tally((row) => [row.results[judge.model]?.withoutAnswer])]));
+    const chance = mean(judged.flatMap((row) => Object.values(row.results).map((value) => value.choices ? 1 / value.choices : null)));
     const invented = Object.fromEntries(readers.map((judge) => [judge.model, tally((row) => [row.results[judge.model]?.invented])]));
     const decided = answered.filter((item) => item.perturbedOutput !== undefined);
     const invariant = [decided.filter((item) => decision(options.prompt, item.output) === decision(options.prompt, item.perturbedOutput)).length, decided.length];
@@ -175,7 +188,7 @@ async function main() {
       model, answered: answered.length, failed, costPerCall: mean(answered.map((item) => item.cost)),
       defects: [defects.filter((list) => list.length > 0).length, answered.length],
       defectExamples: [...new Set(defects.flat())].slice(0, 5),
-      invented, attributed, invariant, nothingRate: nothing, alarms: dayAlarms(options.prompt, answered),
+      invented, attributed, unaided, chance, invariant, nothingRate: nothing, alarms: dayAlarms(options.prompt, answered),
       readableAgainst: model === reference ? null : { reference, ...readable },
       tooFew: answered.length < MIN_CASES,
     };
@@ -185,7 +198,7 @@ async function main() {
     console.log(`  cost ${result.costPerCall === null ? "unknown" : `$${(result.costPerCall * 1000).toFixed(2)} per 1,000 calls`}${failed ? ` · ${failed} requests failed` : ""}`);
     console.log(`  valid: defects in ${share(result.defects)}${result.defectExamples.length ? ` (${result.defectExamples.join("; ")})` : ""}`);
     for (const judge of readers) console.log(`  invented a fact (${judge.model}): ${share(invented[judge.model])}`);
-    for (const judge of readers) console.log(`  attributable (${judge.model}, chance 25%): ${share(attributed[judge.model])}`);
+    for (const judge of readers) console.log(`  attributable (${judge.model}): ${share(attributed[judge.model])} · without the answer ${share(unaided[judge.model])} · chance ${percent(chance)}`);
     console.log(`  invariant: ${share(invariant)} · "nothing" chosen ${share(nothing)}`);
     console.log(`  day alarms: ${result.alarms.length ? result.alarms.join("; ") : "none"}`);
     if (result.readableAgainst) console.log(`  readable vs ${reference}: better ${readable.candidate} · worse ${readable.reference} · same ${readable.same} · judges disagreed ${readable.judgesDisagreed}`);
@@ -217,6 +230,9 @@ async function main() {
   await writeFile(join(out, `pairs-key-${options.prompt}-${stamp}.json`), JSON.stringify(pairsForGuy.map((pair, index) =>
     ({ pair: index + 1, candidate: pair.model, candidateIs: pair.candidateFirst ? "A" : "B" })), null, 2));
   report.judgeCost = judgeCost;
+  for (const [model, errors] of judgeErrors) {
+    console.log(`judge ${model}: ${errors.length} verdicts failed, e.g. ${errors[0]}`);
+  }
   await writeFile(join(out, `quality-${options.prompt}-${stamp}.json`), JSON.stringify(report, null, 2));
   console.log(`\njudges spent ≈ $${judgeCost.toFixed(2)} this run (cached verdicts are free)`);
   console.log("evidence: .fibre/model-quality/ (scorecard, the morning and pairs for a blind read; keys kept separately)");

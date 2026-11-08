@@ -9,11 +9,22 @@ import { decisionOf } from "./model-replay-judge.mjs";
 const without = (object, ...keys) => Object.fromEntries(Object.entries(object ?? {})
   .filter(([key]) => !keys.includes(key)));
 
-// The person a Thread job answers as: everything Thread-owned in its input.
-// What it faces is shown once; a lineup offers four persons facing it.
+// Record identities and times say nothing about who a person is, but would
+// let a reader match a source to an answer by its timestamp or reference.
+const VOLATILE = /^(threadId|targetId|memoryId|stateId|situationId|partyId|asOf|recordedAt|since|occurredAt|establishedAt|startAt|endAt|provenance|evidenceRefs|eventRefs|evidenceReferences|sourceReferences|supportingEvidenceRefs|contradictingEvidenceRefs|factualRoleRefs|[a-zA-Z]*Ref)$/u;
+function identityOnly(value) {
+  if (Array.isArray(value)) return value.map(identityOnly);
+  if (value === null || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value).filter(([key]) => !VOLATILE.test(key))
+    .map(([key, item]) => [key, identityOnly(item)]));
+}
+
+// The person a Thread job answers as: its own self, states and history. What
+// it faces — the event, its present, its own afterthought — is shown once,
+// and a lineup asks which of four persons answered.
 function person(input, ...fields) {
-  return { thread: without(input.thread, "threadId"), ...Object.fromEntries(fields
-    .filter((field) => input[field] !== undefined).map((field) => [field, input[field]])) };
+  return identityOnly({ thread: input.thread, ...Object.fromEntries(fields
+    .filter((field) => input[field] !== undefined).map((field) => [field, input[field]])) });
 }
 
 const nameOf = (input, partyId) => (input.routableKnownParties ?? [])
@@ -26,9 +37,9 @@ const nameOf = (input, partyId) => (input.routableKnownParties ?? [])
 export const JOBS = Object.freeze({
   "encounter.attention": {
     lineupOf: "a Thread facing this event",
-    source: (input) => person(input, "semanticStates", "autobiographicalMemories", "currentSituation"),
+    source: (input) => person(input, "semanticStates", "autobiographicalMemories"),
     items: (input, output) => [{ key: "answer", source: JOBS["encounter.attention"].source(input),
-      faced: { encounterStory: input.encounterStory },
+      faced: identityOnly({ currentSituation: without(input.currentSituation, "purpose"), encounterStory: input.encounterStory }),
       text: output?.experienceText ?? output?.passedReason ?? null }],
     nothing: (output) => output?.outcome === "not_noticed",
     defects(input, output) {
@@ -44,13 +55,14 @@ export const JOBS = Object.freeze({
         && beats.some((beat) => beat.self !== true && beat.kind === "utterance" && beat.actorThreadId);
     },
     unordered: ["semanticStates", "autobiographicalMemories"],
+    faithful: "Whether and how this Thread noticed, what it felt, and its bodily response are its own to decide, never invented facts. Report invented only for an exterior fact — an event, action, speech, object or place detail — absent from the Story, or naming a person whose name the evidence does not give.",
     readable: "concrete; what this person noticed and a feeling, association or bodily response of its own, in the first person; concise; nothing absent from the Story; no lasting meaning, memory or plan claimed",
   },
   "body.interoception": {
     lineupOf: "a Thread whose body gave these signals",
     source: (input) => person(input, "currentSemanticState"),
     items: (input, output) => [{ key: "answer", source: JOBS["body.interoception"].source(input),
-      faced: { interoception: input.interoception },
+      faced: identityOnly({ interoception: input.interoception }),
       text: (output?.states ?? []).map((state) => `${state.domain}/${state.dimension}: ${state.state}`).join("\n") || null }],
     nothing: (output) => (output?.states ?? []).length === 0,
     defects(input, output) {
@@ -59,14 +71,15 @@ export const JOBS = Object.freeze({
       return states.length > 3 ? ["more than three states"] : [];
     },
     unordered: ["currentSemanticState"],
+    faithful: "The felt states are this Thread's own interpretation and never invented facts. Report invented only for an exterior event, person or circumstance the evidence does not hold.",
     readable: "first person; what these signals mean to this particular person now; descriptive, never a command, commitment or consent; no mechanical mapping such as pressure to worry",
   },
   "contact.decision": {
     lineupOf: "a Thread after its own reflection",
-    source: (input) => person(input, "semanticStates", "autobiographicalMemories", "currentSituation",
-      "delayedPrivateResidue", "routableKnownParties"),
+    source: (input) => person(input, "semanticStates", "autobiographicalMemories"),
     items: (input, output) => [{ key: "answer", source: JOBS["contact.decision"].source(input),
-      faced: {},
+      faced: identityOnly({ currentSituation: without(input.currentSituation, "purpose"), afterReflection: input.delayedPrivateResidue,
+        reachable: (input.routableKnownParties ?? []).map((party) => party.displayName) }),
       text: output?.decision === "contact"
         ? `Contact ${nameOf(input, output.recipientPartyId) ?? "someone"}: ${output.reason}`
         : `Keep private: ${output?.reason ?? ""}` }],
@@ -80,12 +93,13 @@ export const JOBS = Object.freeze({
       return found;
     },
     unordered: ["semanticStates", "autobiographicalMemories", "routableKnownParties"],
+    faithful: "The decision and its reasons are this Thread's own. Report invented only for a shared event, statement or fact about the other person that the evidence does not hold.",
     readable: "the decision and its private reason follow this person's own reflection, its regard for the person and their shared history; keeping private is normal; no contact merely because a route exists",
   },
   "world.happening": {
     lineupOf: "a place and time",
-    source: (input) => ({ at: input.occurrenceAt, ...without(input.initiatingSituation, "situationId", "physicalVenue"),
-      place: without(input.initiatingSituation?.physicalVenue, "ref") }),
+    source: (input) => ({ at: input.occurrenceAt, ...identityOnly(without(input.initiatingSituation, "physicalVenue")),
+      place: identityOnly(input.initiatingSituation?.physicalVenue) }),
     items: (input, output) => output?.outcome === "changed" ? [{ key: "answer",
       source: JOBS["world.happening"].source(input), faced: {}, text: output.occurrenceText }] : [],
     nothing: (output) => output?.outcome !== "changed",
@@ -101,6 +115,7 @@ export const JOBS = Object.freeze({
     },
     venue: (input) => input.initiatingSituation?.physicalVenue?.name ?? input.initiatingSituation?.sceneDescription ?? "unknown",
     unordered: ["potentialObservers"],
+    faithful: "A World event is new by design. Report invented only when it gives a Thread an action, speech or inner life, brings in a person who is not there, or is physically impossible for this place and time.",
     readable: "one ordinary, specific, plainly observable event that belongs to this place and time; no Thread action, interior or invented person; not staged to excite",
   },
   "experience.memory-gist": {
@@ -108,10 +123,10 @@ export const JOBS = Object.freeze({
     items(input, output) {
       const memories = new Map((input.memories ?? []).map((memory) => [memory.memoryId, memory]));
       return (output?.gists ?? []).filter((item) => memories.has(item.memoryId)).map((item) => ({
-        key: item.memoryId, source: without(memories.get(item.memoryId), "memoryId"), faced: {}, text: item.gist,
-        // Distractors are the same Thread's other memories in this request.
-        siblings: [...memories.values()].filter((memory) => memory.memoryId !== item.memoryId)
-          .map((memory) => without(memory, "memoryId")),
+        key: item.memoryId, source: identityOnly(memories.get(item.memoryId)), faced: {}, text: item.gist,
+        // Every other memory of the same Thread in this request is a candidate,
+        // so a gist must pick its own out of up to ten.
+        siblings: [...memories.values()].filter((memory) => memory.memoryId !== item.memoryId).map(identityOnly),
       }));
     },
     nothing: () => false,
@@ -126,6 +141,7 @@ export const JOBS = Object.freeze({
       return found;
     },
     unordered: [],
+    faithful: "A gist is the Thread's own short version of this memory. Report invented for any event, person, place, feeling or particular the memory does not hold.",
     readable: "first person; carries this memory's essence and its particulars — who, where, what happened — with its feeling and uncertainty; adds nothing the recollection does not hold",
   },
 });
@@ -174,7 +190,8 @@ export function lineup({ item, scope, requestKey, pool }) {
     return true;
   });
   if (others.length < 3) return null;
-  const distractors = shuffle(others, `${requestKey}|${item.key}|pick`).slice(0, 3);
+  // Four persons, places or times; every sibling memory for a gist.
+  const distractors = shuffle(others, `${requestKey}|${item.key}|pick`).slice(0, item.siblings ? others.length : 3);
   const sources = shuffle([item.source, ...distractors], `${requestKey}|${item.key}|order`);
   return { faced: item.faced, answer: item.text, sources, truth: sources.indexOf(item.source) };
 }
