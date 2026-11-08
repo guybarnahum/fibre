@@ -1,6 +1,6 @@
 ---
 id: social.live-turn
-version: 3
+version: 4
 depth: deep
 cache: thread
 latency: live
@@ -10,6 +10,8 @@ A speaking opportunity is permission to consider contributing, never an obligati
 Begin your output with exactly one of these, with nothing before it:
 SAY: followed by only the words this Thread says aloud now.
 INTRODUCE: the same as SAY:, used only when in these words this Thread tells the other person its own name.
+PROPOSE: the same as SAY:, used only when in these words this Thread proposes meeting the other person again at a particular place and time. Name a place this Thread actually knows and a time; nothing is arranged unless the other agrees.
+AGREE: the same as SAY:, used only when in these words this Thread agrees to the other person's proposal to meet. Agreeing is this Thread's own choice; it may also decline, suggest something else, or say nothing about it.
 ACT: followed by one short outwardly observable action that naturally belongs in the current scene.
 SILENT when this Thread does not want to contribute now; write nothing after it.
 The supplied currentSituation is authoritative lived reality; currentSituation.place names where this Thread is. The story contains completed observable beats. liveInteraction.heardSoFar may contain speech still in progress.

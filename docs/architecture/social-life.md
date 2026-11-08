@@ -33,10 +33,11 @@ enacted life (Flight Plan → CurrentSituation at a real venue)
   → small act → one objective Story → each person independently notices or not
                  → a noticed act may earn the other a response opportunity
   → invitation → recipient accepts | declines | defers
-  → conversation (Live Encounter): each opportunity → SAY | INTRODUCE | ACT | SILENT
+  → conversation (Live Encounter): each opportunity → SAY | INTRODUCE | PROPOSE | AGREE | ACT | SILENT
   → one Story; one Experience per participant
   → delayed consolidation: Journal, Memory (+ gist), afterthoughts, stances, interests
   → doors and ledger record the relational acts as they happen
+  → an agreed proposal to meet → each Thread's own next plan → kept or broken, read from where both were
   → later: a fresh decision to send a message; the recipient may notice it
   → the next opportunity sees what this Thread now knows and feels
 ```
@@ -97,6 +98,7 @@ An accepted invitation, or a chosen continuation, opens a [Live Encounter](live-
 
 - `SAY:` — speech, streamed from its first word;
 - `INTRODUCE:` — the same, chosen to tell the other person its own name; World admits only the name part actually spoken;
+- `PROPOSE:` — the same, proposing to meet again at a place and time; `AGREE:` — the same, agreeing to the other's proposal (§7, appointments);
 - `ACT:` — one observable action;
 - `SILENT` — nothing.
 
@@ -135,8 +137,11 @@ The [relationships concept](../concepts/relationships-doors-and-trust.md) separa
 | name | a spoken self-introduction — when opening an encounter or as an `INTRODUCE:` turn | the other's introduction; an accepted spoken invitation also opens it |
 | conversation | an invitation (a deferral declines this offer); in a continued exchange, the first speaker | the conversation that follows acceptance; in a continued exchange, the other speaking |
 | contact | a message | a message back |
+| time | a spoken proposal to meet at a place and time (`PROPOSE:`) | the other's spoken agreement (`AGREE:`) |
 
-`relationship_ledger` is append-only; `relationship_doors` is maintained by trigger, one row per open door. Time, place, confidence, care, romance and commitment doors are accepted and already admitted by the schema, not yet produced.
+`relationship_ledger` is append-only; `relationship_doors` is maintained by trigger, one row per open door. Place, confidence, care, romance and commitment doors are accepted and already admitted by the schema, not yet produced.
+
+**Appointments** are the first expectation that can be kept or broken. After a conversation in which one Thread proposed to meet, the proposer makes one small call (`social.meeting-proposal`) that grounds its own words in a World-attested public venue it knows — where it is, where it has recently been, a venue it was told of, or today's City Guide — and a local time; words it cannot ground stay talk. Being told where is learning a place: the other person can plan to visit that venue later whether or not it agreed. An agreement the other spoke after the proposal becomes a `thread_appointments` row and opens the time door (`offered` by the proposer, `accepted` by the other). For now the time must fall after both people's current Flight Plans end and within three days, so each meets the appointment in its own next plan, which lists it under `agreedAppointments` and offers its venue; whether to go is the Thread's own choice. After the window closes (15 minutes before to 30 after the agreed time), World reads where each actually was — waiting while either life has not yet been enacted through the window — and records `kept` for each who was there and `broken` for each who was not. Each absent party, and anyone who waited, receives a plain factual Experience ("Habiba did not come to Corner Cafe around the time we had agreed to meet there."); what it meant is decided in its own reflection. Being there keeps the appointment; whether they then talk remains each Thread's choice. Cancelling with notice (`withdrawn`) needs a message route and is the next step.
 
 **Stance** (§6) is the Thread's own and is never derived from the ledger. World never computes trust or liking.
 
@@ -144,7 +149,7 @@ The [relationships concept](../concepts/relationships-doors-and-trust.md) separa
 
 Operators measure; Threads never see the measures. Everything here is derived for inspection, never model-visible and never authoritative.
 
-- **Social Life Scorecard** — `npm run world-social:quality -- --env staging [--days N] [--top N]`, from `GET /internal/relationships`: open doors per pair, recent ledger acts, the stage of each pair (stranger → acknowledged → acquainted → conversed → in touch, the furthest contiguous open door), and per day: turns, questions, turns opening in agreement, turns pushing back, interruptions, how much each conversation's words overlap with other pairs' that day, how many people and pairs talked, the share of conversations held by the one person in most of them, and which doors opened. Words never leave World. Agreement and pushback are English heuristics (`conversation-shape.mjs`).
+- **Social Life Scorecard** — `npm run world-social:quality -- --env staging [--days N] [--top N]`, from `GET /internal/relationships`: open doors per pair, recent ledger acts, the stage of each pair (stranger → acknowledged → acquainted → conversed → in touch, the furthest contiguous open door), and per day: turns, questions, turns opening in agreement, turns pushing back, interruptions, how much each conversation's words overlap with other pairs' that day, how many people and pairs talked, the share of conversations held by the one person in most of them, which doors opened, and appointments agreed, kept and broken. Words never leave World. Agreement and pushback are English heuristics (`conversation-shape.mjs`).
 - **Conversation endings** — `live-social-encounter-ended` with how each ended; `npm run infra:measure` counts them beside per-call cost, cache and prompt-part sizes.
 - **Observatory social profile** — exposure, initiative, responsiveness, breadth, reciprocity, depth, continuity and consequence, as separate dimensions. There is no `sociability` score; a quiet week is not introversion and a refusal is not failure.
 - **Probes** — `world-social:probe` reports a Thread's opportunities and the chain Story → noticing → Experience → Memory → later choice as *sequence*, never as proof that the Memory caused the choice.
@@ -158,7 +163,6 @@ Each extends the flow above without a new pipeline or model call unless stated.
 | **Kindred minds** | nothing new: an emergent effect of stance (§6) leading cognition | measured by who Threads return to and stay in touch with |
 | **Showing and paid work** | an offer inside an encounter; paid work through the task marketplace's bids and contracts | a free taste rewarded socially; a price when the work costs real time and tokens |
 | **Judging one's own social life** | a periodic Thread-owned reflection over its people and its regard for them | feelings (belonging, loneliness, pride) that pull behaviour; operators may compute sentiment × social currency over breadth and depth, the Thread never receives the number |
-| **Appointments (time door)** | an offer to meet at a place and time inside a conversation; World enacts both plans | kept or missed appointments, the first trust evidence a stance can cite |
 | **Home invitations (place door)**, confidence, care | the same offer/accept pattern | access that stance and reflection can weigh |
 | **Attraction and orientation** | an inherited felt pull and lived self-understanding, held apart, entering the percept's private interpretation and consolidation; adults only | romance and commitment last, with their own decision record |
 
@@ -170,7 +174,8 @@ Each extends the flow above without a new pipeline or model call unless stated.
 | Observer-known names, familiarity, recent noticed experiences | Context-only | a later choice that differs because of them |
 | Retained Memory and its gist in social choice | Context-only in staging; a controlled fixture shows retention changing a next-day choice | observed natural divergence |
 | Stance | Context-only: it leads cognition facing that person; no acceptance criterion yet requires it to change a judgement | a decline, a return or a message that cites it |
-| Doors and ledger | Notarial: no decision reads them | appointments kept or missed reaching a stance |
+| Doors and ledger | Notarial: no decision reads them; `kept` and `broken` now exist as facts | a stance citing a kept or missed appointment |
+| Appointments | Future-state causal: an agreement puts the meeting and its venue in each Thread's next plan, and the outcome becomes each party's Experience | a Thread actually going (or not) because it agreed, and a later stance or choice citing the outcome |
 | Interests | Context-only: they lead developed-self evidence in social choice, conversation and planning; later contact does not read them yet | conversations and plans that diverge by interest; a Thread seeking someone who rewarded it on one |
 | Useful and learning moments, felt standing | Context-only: reflection records them with their person and revises standing from them; they lead evidence facing that person | a Thread returning to, or seeking out, someone it was useful to or learned from |
 | `social_contact` life relation | Future-state causal: makes a person contactable | — |

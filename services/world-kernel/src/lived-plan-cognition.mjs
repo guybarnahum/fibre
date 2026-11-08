@@ -448,6 +448,7 @@ export async function formPersonalLivedPlan({
   interoception = null,
   startingSituationId = null,
   cityGuidePlaces = [],
+  agreedAppointments = [],
   resolveDestinationGeography = null,
   planningRejection = null,
   unobservedSince = null,
@@ -528,6 +529,14 @@ export async function formPersonalLivedPlan({
           })),
         }),
         ...(startingPlaceRef === null ? {} : { startingPlaceRef }),
+        // Its own agreements to meet someone: whether to go is its own choice.
+        ...(agreedAppointments.length === 0 ? {} : {
+          agreedAppointments:agreedAppointments.map(item=>({
+            with:item.with,placeRef:item.placeRef,placeName:item.placeName,
+            ...(timeZone===null?{startsAt:item.startsAt}:{localStart:localCivilMoment(item.startsAt,timeZone)}),
+            proposedBy:item.proposedBy,
+          })),
+        }),
         ...(workCommitments.length === 0 ? {} : {
           requiredWorkCommitments:workCommitments.map((item) => structuredClone(item)),
         }),
@@ -630,6 +639,8 @@ export async function formPersonalLivedPlan({
         startingSituationId,
         offeredPlaceRefs:places.map(place=>place.ref),
         cityGuidePlaceRefs:cityGuidePlaces.map(place=>place.ref),
+        ...(agreedAppointments.length===0?{}:{
+          appointmentRefs:agreedAppointments.map(item=>item.appointmentRef)}),
         interoception:planningInteroception,
       },
     },

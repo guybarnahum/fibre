@@ -152,10 +152,12 @@ export async function runThreadLiveSocialEncounter({
       if(turn.decision==="silent")return;
       // The beat for this speech was recorded when it ended; a chosen
       // introduction marks it so World can admit the name actually spoken.
-      if(turn.introducesSelf){
+      if(turn.introducesSelf||turn.proposesMeeting||turn.agreesToMeet){
         const spoken=story.beats.findLast(beat=>
           beat.actorThreadId===participantId&&beat.kind==="utterance");
-        if(spoken)spoken.disclosesSpeakerName=true;
+        if(spoken&&turn.introducesSelf)spoken.disclosesSpeakerName=true;
+        if(spoken&&turn.proposesMeeting)spoken.proposesMeeting=true;
+        if(spoken&&turn.agreesToMeet)spoken.agreesToMeet=true;
       }
       if(turn.decision==="act"){
         if(stopped)return;

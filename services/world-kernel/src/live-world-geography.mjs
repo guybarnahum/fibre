@@ -217,6 +217,22 @@ function publicPlaceFromRow(row,db){
   });
 }
 
+// Public venues this Thread has been told of (for example, as a place to meet).
+// Knowing a venue is not being there.
+export function learnWorldPublicPlace(db,threadId,placeRef){
+  assertId("learning Thread",threadId);
+  if(getWorldPublicPlace(db,placeRef)===null)throw new TypeError("only an admitted public venue can be learned");
+  db.prepare("INSERT OR IGNORE INTO thread_known_places(thread_id,place_ref) VALUES(?,?)").run(threadId,placeRef);
+}
+
+export function listKnownWorldPublicPlaces(db,threadId,{limit=12}={}){
+  assertId("known venues Thread",threadId);
+  return Object.freeze(db.prepare(`SELECT p.record_json,p.record_digest,p.discovery_json,p.appearance_json
+    FROM thread_known_places k JOIN world_public_places p ON p.place_ref=k.place_ref
+    WHERE k.thread_id=? ORDER BY p.place_ref LIMIT ?`).all(threadId,limit)
+    .map(row=>publicPlaceFromRow(row,db)));
+}
+
 export function getWorldPublicPlace(db,placeRef){
   if(typeof placeRef!=="string"||!placeRef.startsWith("wpl_"))return null;
   return publicPlaceFromRow(db.prepare(

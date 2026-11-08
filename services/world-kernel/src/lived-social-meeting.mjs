@@ -23,6 +23,7 @@ import { observablePerson } from "./world-observable-person.mjs";
 import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
 import { lifeRelationId } from "./situated-life-domain.mjs";
 import { selectDevelopedSelfEvidence } from "./interior-cognition.mjs";
+import { admitMeetingProposal } from "./appointments.mjs";
 
 const MEMORY_LIMIT = 6;
 // How many of the people present one social consideration can hold at once.
@@ -657,6 +658,22 @@ export function createSocialMeetingService({
       threadIds:[initiator.thread.threadId,counterparty.thread.threadId],
       at,encounterRef:encounterStory.encounterId,
     });
+    // A proposal to meet again: the other is told where, whatever it answered,
+    // and an agreed one becomes an appointment. A failure here loses only the
+    // appointment, never the conversation.
+    if(typeof experienceStore.recordAppointment==="function"
+      &&typeof livedNowStore.learnPublicPlace==="function"){
+      try{
+        const meeting=await admitMeetingProposal({encounterStory,
+          threads:[latestInitiator.thread,latestCounterparty.thread],
+          livedNowStore,situatedLifeStore,experienceStore,modelAdapter,at});
+        if(meeting!==null)console.log(JSON.stringify({event:"live-social-meeting-proposal",
+          outcome:meeting.outcome,startsAt:meeting.startsAt??null}));
+      }catch(error){
+        console.warn(JSON.stringify({event:"live-social-meeting-proposal",outcome:"failed",
+          message:String(error?.message??error).slice(0,160)}));
+      }
+    }
     const place=latestInitiator.situation.location?.kind==="place"
       ?livedNowStore.getWorldPlace?.(
         initiator.thread.threadId,latestInitiator.situation.location.placeRef,

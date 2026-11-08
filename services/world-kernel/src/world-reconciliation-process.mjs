@@ -127,7 +127,8 @@ export function worldReconciliationNeedsRetry(result) {
     || environmentNeedsRetry(result.environmentEvolution)
     || (result.socialOpportunity?.enabled===true&&result.socialOpportunity.ok!==true)
     || livedBoundaryNeedsRetry(result.livedBoundary)
-    || livedBoundaryNeedsRetry(result.firstLife);
+    || livedBoundaryNeedsRetry(result.firstLife)
+    || (result.appointments?.enabled===true&&result.appointments.ok!==true);
 }
 
 export function createWorldReconciliationProcess({
@@ -140,6 +141,7 @@ export function createWorldReconciliationProcess({
   socialOpportunityProcess = null,
   livedBoundaryProcess = null,
   firstLifeProcess = null,
+  appointmentProcess = null,
   onError = null,
 } = {}) {
   const delivery = optionalMethod("presentationDelivery", presentationDelivery, "deliverPending");
@@ -163,6 +165,7 @@ export function createWorldReconciliationProcess({
   let livedBoundary=optionalMethod("livedBoundaryProcess",livedBoundaryProcess,"runOnce");
   let firstLife=optionalMethod("firstLifeProcess",firstLifeProcess,"runOnce");
   let socialOpportunity=optionalMethod("socialOpportunityProcess",socialOpportunityProcess,"runOnce");
+  let appointments=optionalMethod("appointmentProcess",appointmentProcess,"runOnce");
   if (onError !== null && typeof onError !== "function") {
     throw new TypeError("World reconciliation onError must be a function or null");
   }
@@ -216,6 +219,10 @@ export function createWorldReconciliationProcess({
       firstLife=optionalMethod("firstLifeProcess",process,"runOnce");
     },
 
+    setAppointmentProcess(process){
+      appointments=optionalMethod("appointmentProcess",process,"runOnce");
+    },
+
     async runOnce() {
       if (running) return Object.freeze({ skipped: true, reason: "already_running" });
       running = true;
@@ -259,6 +266,11 @@ export function createWorldReconciliationProcess({
           "world_social_opportunity",
           socialOpportunity===null?null:()=>socialOpportunity.runOnce(),
         );
+        // After lives are enacted: whether each came to an agreed meeting.
+        const appointmentResult=await isolated(
+          "thread_appointments",
+          appointments===null?null:()=>appointments.runOnce(),
+        );
         // Partial per-opportunity failures stay retryable and report through
         // the same injected boundary as other reconciliation failures.
         for(const failure of environmentResult.result?.results??[]){
@@ -288,6 +300,7 @@ export function createWorldReconciliationProcess({
           socialOpportunity:socialResult,
           livedBoundary:livedBoundaryResult,
           firstLife:firstLifeResult,
+          appointments:appointmentResult,
         });
       } finally {
         running = false;
@@ -408,6 +421,7 @@ export function createWorldReconciliationRuntime({
       result.livedBoundary?.result?.nextDueAt,
       result.firstLife?.result?.nextDueAt,
       result.contactReception?.result?.nextDueAt,
+      result.appointments?.result?.nextDueAt,
     ].filter(Boolean).sort()[0]??null;
     if(dueAt!==null){
       const timestamp=Date.parse(dueAt);

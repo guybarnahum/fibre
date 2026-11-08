@@ -18,6 +18,7 @@ import {
   enqueueEnactedSocialReconsideration,
   enqueueArrivalWitnessSocialNeedBands,
 } from "#services/world-kernel/src/world-social-opportunity.mjs";
+import { createAppointmentProcess } from "#services/world-kernel/src/appointments.mjs";
 import { createSocialMeetingWriteApi } from "#services/world-kernel/src/lived-social-meeting-write-api.mjs";
 import { createLivedCommonsService } from "#services/world-kernel/src/lived-commons.mjs";
 import { createLivedCommonsWriteApi } from "#services/world-kernel/src/lived-commons-write-api.mjs";
@@ -351,6 +352,12 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       runtime.reconciliationProcess.setSocialOpportunityProcess(
         this.worldSocialOpportunityProcess,
       );
+      // Whether each came to a meeting two Threads agreed to; no model call.
+      runtime.reconciliationProcess.setAppointmentProcess(createAppointmentProcess({
+        experienceStore,livedNowStore,worldReader:runtime.worldStore,situatedLifeStore,
+        embodimentStore:openEmbodimentStore(runtime.worldStorage),
+        onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
+      }));
     }
     return this.worldSocialOpportunityProcess;
   }

@@ -9,7 +9,10 @@ import { migrateDatabase, translateStorageError } from "./persistence-sqlite.mjs
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 import { openWorldStateDatabase,worldTableExists } from "./world-state-storage.mjs";
 import { spokenNameDisclosure } from "./spoken-name.mjs";
-import { recordInvitationRelationalActs,recordStoryRelationalActs } from "./relationship-doors.mjs";
+import {
+  recordAppointmentOutcomeActs,recordAppointmentRelationalActs,
+  recordInvitationRelationalActs,recordStoryRelationalActs,
+} from "./relationship-doors.mjs";
 
 function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
@@ -148,6 +151,10 @@ function normalizeStory(candidate, participantIds) {
           throw new TypeError("encounter story beat completion is invalid");
         }
       }
+      // Proposing to meet, or agreeing to the other's proposal, is speech.
+      const meeting=["proposesMeeting","agreesToMeet"].filter(key=>beat[key]===true);
+      if(meeting.length>1||(meeting.length===1&&beat.kind!=="utterance"))
+        throw new TypeError("proposing or agreeing to meet requires one spoken beat");
       return {
         actorThreadId:beat.actorThreadId ?? null,
         kind:beat.kind,
@@ -157,6 +164,7 @@ function normalizeStory(candidate, participantIds) {
         ...(disclosesSpeakerName&&typeof beat.disclosedName==="string"
           ?{disclosedName:beat.disclosedName}:{}),
         ...(completion===null?{}:{completion}),
+        ...(meeting.length===0?{}:{[meeting[0]]:true}),
       };
     }),
   };
@@ -168,6 +176,17 @@ function environmentOpportunityTable(kind){
   if(kind==="stay")return "world_environment_stay_opportunities";
   if(kind==="scene")return "world_ambient_scene_frontier";
   throw new TypeError("World opportunity kind must be arrival or stay");
+}
+
+function appointmentFromRow(row){
+  return Object.freeze({
+    appointmentId:row.appointment_id,proposerThreadId:row.proposer_thread_id,
+    partnerThreadId:row.partner_thread_id,placeRef:row.place_ref,venueRef:row.venue_ref,
+    placeName:row.place_name,
+    startsAt:row.starts_at,agreedAt:row.agreed_at,encounterRef:row.encounter_ref,
+    outcome:row.outcome??null,absent:row.absent_json?Object.freeze(JSON.parse(row.absent_json)):null,
+    settledAt:row.settled_at??null,
+  });
 }
 
 export class LivedExperienceStore {
@@ -2478,6 +2497,87 @@ export class LivedExperienceStore {
       evidenceRefs:Object.freeze(JSON.parse(row.evidence_refs_json)),
       sourceRef:row.source_ref,asOf:row.as_of,
     }));
+  }
+
+  // An appointment agreed in a Story, once; agreeing opens the time door.
+  recordAppointment({appointmentId,proposerThreadId,partnerThreadId,placeRef,venueRef,placeName,
+    startsAt,agreedAt,encounterRef}){
+    assertId("appointment id",appointmentId);
+    assertId("appointment proposer",proposerThreadId);
+    assertId("appointment partner",partnerThreadId);
+    assertId("appointment place",placeRef);
+    assertId("appointment venue",venueRef);
+    assertNonEmpty("appointment place name",placeName);
+    assertIsoTimestamp("appointment startsAt",startsAt);
+    assertIsoTimestamp("appointment agreedAt",agreedAt);
+    assertId("appointment encounter",encounterRef);
+    if(Date.parse(startsAt)<=Date.parse(agreedAt))throw new TypeError("an appointment is for later");
+    const appointment=Object.freeze({appointmentId,proposerThreadId,partnerThreadId,placeRef,
+      venueRef,placeName:placeName.trim(),startsAt,agreedAt,encounterRef});
+    return this.#database.transaction(()=>{
+      const inserted=this.#database.prepare(`
+        INSERT INTO thread_appointments(appointment_id,proposer_thread_id,partner_thread_id,
+          place_ref,venue_ref,place_name,starts_at,agreed_at,encounter_ref)
+        VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING
+      `).run(appointmentId,proposerThreadId,partnerThreadId,placeRef,venueRef,appointment.placeName,
+        startsAt,agreedAt,encounterRef).changes===1;
+      if(inserted)recordAppointmentRelationalActs(this.#database,appointment);
+      return Object.freeze({...appointment,inserted});
+    });
+  }
+
+  // A Thread's appointments, newest first, each with its outcome once settled.
+  listAppointments(threadId,{from=null,to=null,limit=12}={}){
+    assertId("appointments threadId",threadId);
+    if(from!==null)assertIsoTimestamp("appointments from",from);
+    if(to!==null)assertIsoTimestamp("appointments to",to);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>48)throw new TypeError("appointments must be bounded");
+    return this.#database.prepare(`
+      SELECT a.*,o.outcome,o.absent_json,o.settled_at FROM thread_appointments a
+      LEFT JOIN thread_appointment_outcomes o ON o.appointment_id=a.appointment_id
+      WHERE (a.proposer_thread_id=? OR a.partner_thread_id=?)
+        AND (? IS NULL OR a.starts_at>=?) AND (? IS NULL OR a.starts_at<=?)
+      ORDER BY a.starts_at DESC,a.appointment_id LIMIT ?
+    `).all(threadId,threadId,from,from,to,to,limit).map(appointmentFromRow);
+  }
+
+  listDueAppointments({before,limit=4}){
+    assertIsoTimestamp("due appointments before",before);
+    return this.#database.prepare(`
+      SELECT a.*,NULL AS outcome,NULL AS absent_json,NULL AS settled_at FROM thread_appointments a
+      WHERE a.starts_at<=? AND NOT EXISTS (
+        SELECT 1 FROM thread_appointment_outcomes o WHERE o.appointment_id=a.appointment_id)
+      ORDER BY a.starts_at,a.appointment_id LIMIT ?
+    `).all(before,limit).map(appointmentFromRow);
+  }
+
+  nextUnsettledAppointmentStart(){
+    return this.#database.prepare(`
+      SELECT MIN(a.starts_at) AS at FROM thread_appointments a WHERE NOT EXISTS (
+        SELECT 1 FROM thread_appointment_outcomes o WHERE o.appointment_id=a.appointment_id)
+    `).get().at??null;
+  }
+
+  // Whether each came, once: the outcome and its time-door acts together.
+  settleAppointment({appointmentId,absent,settledAt}){
+    assertId("appointment id",appointmentId);
+    assertIsoTimestamp("appointment settledAt",settledAt);
+    return this.#database.transaction(()=>{
+      const row=this.#database.prepare(
+        "SELECT * FROM thread_appointments WHERE appointment_id=?").get(appointmentId);
+      if(row===undefined)throw new TypeError("appointment was not found");
+      const appointment=appointmentFromRow(row);
+      const parties=[appointment.proposerThreadId,appointment.partnerThreadId];
+      if(!Array.isArray(absent)||absent.some(id=>!parties.includes(id)))
+        throw new TypeError("only a party to an appointment can be absent from it");
+      const outcome=absent.length===0?"kept":"broken";
+      const inserted=this.#database.prepare(`
+        INSERT INTO thread_appointment_outcomes(appointment_id,outcome,absent_json,settled_at)
+        VALUES (?,?,?,?) ON CONFLICT DO NOTHING
+      `).run(appointmentId,outcome,canonicalJson([...new Set(absent)].sort()),settledAt).changes===1;
+      if(inserted)recordAppointmentOutcomeActs(this.#database,{appointment,absent,at:settledAt});
+      return Object.freeze({appointmentId,outcome,inserted});
+    });
   }
 
   inspectThreadInterests(threadId,{limit=24}={}){

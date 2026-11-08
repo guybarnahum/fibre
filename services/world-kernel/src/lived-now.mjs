@@ -134,8 +134,9 @@ function normalizeCognition(value) {
     const witness=value.decisionContext;
     assertPlainObject("plan decisionContext",witness);
     assertExactKeys("plan decisionContext",witness,[
-      "startingSituationId","offeredPlaceRefs","cityGuidePlaceRefs","interoception",
+      "startingSituationId","offeredPlaceRefs","cityGuidePlaceRefs","interoception","appointmentRefs",
     ]);
+    if(witness.appointmentRefs!==undefined)normalizeIds("plan appointmentRefs",witness.appointmentRefs);
     if(witness.startingSituationId!==null)assertId("plan startingSituationId",witness.startingSituationId);
     const offered=normalizeIds("plan offeredPlaceRefs",witness.offeredPlaceRefs);
     const guide=normalizeIds("plan cityGuidePlaceRefs",witness.cityGuidePlaceRefs);

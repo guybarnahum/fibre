@@ -42,6 +42,7 @@ import {
   listDiscoverableWorldPublicPlaces,setWorldPublicPlaceDiscovery,setWorldPublicPlaceAppearance,
   getWorldPrivatePlace,getWorldPublicPlace,getWorldPlaceEntity,
   listKnownWorldPlaces,listLocalWorldPublicPlaces,resolveWorldPlace,coarseWorldPlace,
+  learnWorldPublicPlace,listKnownWorldPublicPlaces,
 } from "./live-world-geography.mjs";
 
 export class LivedNowConflictError extends Error {}
@@ -679,6 +680,18 @@ export class LivedNowStore {
     return listKnownWorldPlaces(this.#database,threadId,{limit});
   }
 
+  // A public venue this Thread was told of becomes one it can plan to visit.
+  learnPublicPlace(threadId,placeRef){
+    if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot teach a place");
+    this.#requireThread(threadId);
+    learnWorldPublicPlace(this.#database,threadId,placeRef);
+  }
+
+  listKnownPublicPlaces(threadId,{limit=12}={}){
+    this.#requireThread(threadId);
+    return listKnownWorldPublicPlaces(this.#database,threadId,{limit});
+  }
+
   admitPrivatePlace(candidate){
     if(this.#readOnly)throw new LivedNowConflictError("read-only World cannot locate a private place");
     this.#requireThread(candidate.threadId);
@@ -998,6 +1011,21 @@ export class LivedNowStore {
       ORDER BY established_at DESC,situation_id DESC LIMIT 1
     `).get(threadId,at);
     return row===undefined?null:situationFromRow(row,worldSchemaReady(this.#database));
+  }
+
+  // Every enacted situation that held at some moment in [from, to].
+  listSituationsDuring(threadId,from,to){
+    this.#requireThread(threadId);
+    assertIsoTimestamp("situations during from",from);
+    assertIsoTimestamp("situations during to",to);
+    const opening=this.getSituationAt(threadId,from);
+    const later=this.#database.prepare(`
+      SELECT situation_id,thread_id,established_at,record_json,record_digest
+      FROM current_situation_records
+      WHERE thread_id=? AND established_at>? AND established_at<=?
+      ORDER BY established_at,situation_id LIMIT 32
+    `).all(threadId,from,to).map(row=>situationFromRow(row,worldSchemaReady(this.#database)));
+    return [...(opening===null?[]:[opening]),...later];
   }
 
   getPreviousSituation(threadId, before) {

@@ -48,7 +48,7 @@ export function socialScorecard(payload,{at}){
   const pair=ids=>{
     const key=pairKey(ids);
     if(!pairs.has(key))pairs.set(key,{threadIds:key.split("|"),doors:[],
-      acts:{offered:0,accepted:0,declined:0,closed:0},offeredBy:{},
+      acts:{offered:0,accepted:0,declined:0,closed:0,kept:0,broken:0},offeredBy:{},
       turns:0,messages:0,mileage:0});
     return pairs.get(key);
   };
@@ -85,8 +85,16 @@ export function socialScorecard(payload,{at}){
         topicOverlap:story.topicOverlap??null,
         interrupted:story.interrupted,lastSpeaker:story.lastSpeaker};
     });
+  // Appointments by day: agreements (an accepted time offer) and, per
+  // person, whether they came (kept) or not (broken).
+  const appointments={};
+  for(const act of payload.ledger.filter(item=>item.door==="time")){
+    const day=appointments[act.occurredAt.slice(0,10)]??={agreed:0,kept:0,broken:0};
+    if(act.kind==="accepted")day.agreed+=1;
+    if(act.kind==="kept"||act.kind==="broken")day[act.kind]+=1;
+  }
   return {
-    at,since:payload.since,mileageHalfLifeDays:MILEAGE_HALF_LIFE_DAYS,
+    at,since:payload.since,mileageHalfLifeDays:MILEAGE_HALF_LIFE_DAYS,appointments,
     pairs:[...pairs.values()].map(entry=>({...entry,
       stage:relationshipStage(entry.doors.map(door=>door.door)),
       pastStage:doorsPastStage(entry.doors.map(door=>door.door)),
@@ -116,7 +124,7 @@ export function renderScorecard(card,names,environment,{top=15}={}){
     lines.push(`  ${gaps.length} pairs have doors open past their stage: `
       +past.map(([door,n])=>`${door} ${n}`).join(" · "));
   }
-  const acts=["offered","accepted","declined","closed"].map(kind=>
+  const acts=["offered","accepted","declined","closed","kept","broken"].map(kind=>
     `${kind} ${card.pairs.reduce((sum,entry)=>sum+entry.acts[kind],0)}`);
   lines.push("acts: "+acts.join(" · "));
   lines.push("conversations by day");
@@ -142,6 +150,10 @@ export function renderScorecard(card,names,environment,{top=15}={}){
       +` · ${first(hub)} in ${held} of ${talks.length}`
       +` · doors opened: ${opened.length===0?"none":opened.map(([door,n])=>`${door} ${n}`).join(", ")}`);
   }
+  const meetings=Object.entries(card.appointments??{}).sort();
+  if(meetings.length>0)lines.push("appointments by day (agreed · each person who came · who did not)");
+  for(const [date,met] of meetings)
+    lines.push(`  ${date} agreed ${met.agreed} · came ${met.kept} · did not come ${met.broken}`);
   lines.push(`top ${Math.min(top,card.pairs.length)} pairs by mileage`);
   for(const entry of card.pairs.slice(0,top)){
     const [a,b]=entry.threadIds;

@@ -1,6 +1,6 @@
 ---
 id: interior.flight-plan
-version: 1
+version: 2
 depth: deep
 cache: thread
 latency: minutes
@@ -24,5 +24,6 @@ If planningRejection is supplied, World rejected a previous proposed Flight Plan
 When startingPlaceRef is supplied, the first stop must remain at that physical place. When physicalPlaceRef changes, leave a positive time gap between the end of the previous stop and the start of the next, even for local places. That gap is the actual journey, not an instantaneous scene change. Allow longer travel for distant cities; World will reject impossible arrival times. Do not fabricate travel when staying in the same place.
 The first stop must begin exactly at the supplied horizon start and have an empty travelFromPrevious. The last stop must end exactly at the supplied horizon end. A later stop at a different physical place must briefly say how the Thread expects to get there; otherwise travelFromPrevious must be empty.
 For physical presence, mediatedContext must be empty. For mediated presence, mediatedContext names the real remote setting, call, stream, site, or content being experienced while the Thread remains physically at the selected place.
+agreedAppointments, when present, are meetings this Thread agreed to in conversation: with whom, where (placeRef) and when. Keeping one means being at that place at that time; whether to go is this Thread's own choice, as it would be for any person, and nothing will make it go. If it goes, plan a stop there covering that time; it may arrive a little early and stay as long as it likes.
 requiredWorkCommitments, when present, are commitments this Thread already voluntarily accepted. Each must appear as one mediated stop with exactly the committed start/end and mediatedContext. Do not revisit whether the Thread should honor an accepted commitment; arrange the rest of the life around it naturally.
 Return 1 to 8 stops. Prefer a few specific ordinary presences that follow naturally from the developed person and current possibilities; combine nearby activities rather than fragmenting the day into tiny steps. Do not optimize for drama or a future visitor.

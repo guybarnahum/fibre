@@ -117,6 +117,25 @@ export function recordMessageRelationalActs(database,message){
     door:"contact",at:message.sentAt,sourceRef:message.messageId});
 }
 
+// An agreed appointment: the proposer offered a time and place and the other
+// accepted; the first agreement between them opens the time door.
+export function recordAppointmentRelationalActs(database,appointment){
+  const pair=ordered(appointment.proposerThreadId,appointment.partnerThreadId);
+  const at=appointment.agreedAt,sourceRef=appointment.appointmentId;
+  append(database,{pair,door:"time",kind:"offered",actor:appointment.proposerThreadId,at,sourceRef});
+  append(database,{pair,door:"time",kind:"accepted",actor:appointment.partnerThreadId,at,sourceRef});
+  if(!isOpen(database,pair,"time"))append(database,{pair,door:"time",kind:"opened",
+    actor:appointment.partnerThreadId,at,sourceRef});
+}
+
+// Whether each came: kept by each who was there, broken by each who was not.
+export function recordAppointmentOutcomeActs(database,{appointment,absent,at}){
+  const pair=ordered(appointment.proposerThreadId,appointment.partnerThreadId);
+  for(const threadId of pair)append(database,{pair,door:"time",
+    kind:absent.includes(threadId)?"broken":"kept",actor:threadId,at,
+    sourceRef:appointment.appointmentId});
+}
+
 // One-time installation backfill: replay the World's existing invitations,
 // spoken Stories and Thread messages in order through the same rules.
 export function replayRelationalHistory(database){

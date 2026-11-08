@@ -69,14 +69,18 @@ function socialLiveInput({
 // marker; speech streams live as soon as "SAY:" and the first words arrive.
 // "INTRODUCE:" is speech in which the Thread chooses to tell its own name;
 // World still admits only the part of the name actually spoken.
+// "PROPOSE:" is speech proposing to meet again at a place and time; "AGREE:"
+// is speech agreeing to the other's proposal. Both are ordinary speech.
 const TURN_MARKERS=Object.freeze([
   ["SAY:","speak"],
   ["INTRODUCE:","introduce"],
+  ["PROPOSE:","propose"],
+  ["AGREE:","agree"],
   ["ACT:","act"],
   ["SILENT","silent"],
 ]);
 const SILENCE=Object.freeze({decision:"silent"});
-const SPEECH=new Set(["speak","introduce"]);
+const SPEECH=new Set(["speak","introduce","propose","agree"]);
 const MARKER_LENGTH=Math.max(...TURN_MARKERS.map(([marker])=>marker.length));
 
 // Models sometimes dress the marker as markdown ("**SAY:** ..."); that styling
@@ -188,5 +192,7 @@ export async function takeLiveSocialTurn({
     },
   });
   if(expression.text==="")return SILENCE;
-  return Object.freeze({decision:"speak",expression,introducesSelf:turn.decision==="introduce"});
+  return Object.freeze({decision:"speak",expression,introducesSelf:turn.decision==="introduce",
+    ...(turn.decision==="propose"?{proposesMeeting:true}:{}),
+    ...(turn.decision==="agree"?{agreesToMeet:true}:{})});
 }

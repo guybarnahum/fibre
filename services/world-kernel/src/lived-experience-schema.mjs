@@ -319,6 +319,32 @@ export function createLivedExperienceTables(database) {
     CREATE INDEX IF NOT EXISTS thread_social_moments_by_thread
       ON thread_social_moments(thread_id,as_of);
 
+    -- Appointments two Threads agreed in conversation: where and when, who
+    -- proposed, and the Story in which it was agreed. Its outcome is a
+    -- separate, once-only World fact read from where both actually were.
+    CREATE TABLE IF NOT EXISTS thread_appointments (
+      appointment_id TEXT PRIMARY KEY,
+      proposer_thread_id TEXT NOT NULL,
+      partner_thread_id TEXT NOT NULL CHECK (partner_thread_id<>proposer_thread_id),
+      place_ref TEXT NOT NULL,
+      venue_ref TEXT NOT NULL,
+      place_name TEXT NOT NULL,
+      starts_at TEXT NOT NULL,
+      agreed_at TEXT NOT NULL,
+      encounter_ref TEXT NOT NULL UNIQUE,
+      FOREIGN KEY (proposer_thread_id) REFERENCES threads(thread_id),
+      FOREIGN KEY (partner_thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS thread_appointments_by_start
+      ON thread_appointments(starts_at);
+    CREATE TABLE IF NOT EXISTS thread_appointment_outcomes (
+      appointment_id TEXT PRIMARY KEY,
+      outcome TEXT NOT NULL CHECK (outcome IN ('kept','broken')),
+      absent_json TEXT NOT NULL CHECK (json_valid(absent_json)),
+      settled_at TEXT NOT NULL,
+      FOREIGN KEY (appointment_id) REFERENCES thread_appointments(appointment_id)
+    ) STRICT;
+
     CREATE TABLE IF NOT EXISTS thread_experience_consolidation_stages (
       consolidation_id TEXT NOT NULL,
       stage TEXT NOT NULL CHECK (stage IN ('decision','complete')),

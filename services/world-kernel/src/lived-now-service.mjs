@@ -6,6 +6,7 @@ import {
   canonicalJson,
 } from "./persistence-common.mjs";
 import { formPersonalLivedPlan } from "./lived-plan-cognition.mjs";
+import { appointmentsForPlanning } from "./appointments.mjs";
 import { WORLD_LIFE_CONTINUITY_POLICY } from "./world-life-continuity-policy.mjs";
 import {
   livedInteroceptionForLivedHistory,
@@ -226,7 +227,8 @@ function knownPlaceRefsAt(livedNowStore, episodes, threadId, at) {
     .map(placeEpisodeRevisionRef);
   const shared = livedNowStore.ensureWorldPlaces(threadId).map((place) => place.ref);
   const discovered=livedNowStore.listKnownPlaces?.(threadId).map(place=>place.ref)??[];
-  return [...new Set([...situated,...shared,...discovered])];
+  const told=livedNowStore.listKnownPublicPlaces?.(threadId).map(place=>place.ref)??[];
+  return [...new Set([...situated,...shared,...discovered,...told])];
 }
 
 // A Thread can discover real local destinations from its own situated city.
@@ -455,8 +457,13 @@ async function formPlan({
   // Today's curated World venues are offered only to future planning.
   const guidePlaces=materializedAt===null
     ?planningPublicDiscoveries(livedNowStore,currentLocation,startAt):[];
+  // Appointments this Thread agreed to in this horizon, and where they are.
+  const agreedAppointments=materializedAt===null&&experienceStore
+    ?appointmentsForPlanning({experienceStore,livedNowStore,situatedLifeStore,
+      worldReader:worldStore,threadId,from:startAt,to:endAt}):[];
   const placeRefs=[...new Set([
     ...ordinaryPlaceRefs,startingPlace,...guidePlaces.map(place=>place.ref),
+    ...agreedAppointments.map(item=>item.placeRef),
   ])];
   if (placeRefs.length === 0) {
     throw new LivedNowCoverageError("Dormant catch-up has no grounded place available at the lived time");
@@ -491,6 +498,7 @@ async function formPlan({
       horizonEnd:endAt,
       availablePlaceRefs:placeRefs,
       cityGuidePlaces:guidePlaces,
+      agreedAppointments,
       sourceReferences:[sourceEventRef],
       sourceStores:{
         worldStore,identityStore,semanticStateStore,memoryStore,

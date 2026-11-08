@@ -427,6 +427,7 @@ function threadObservatory(runtime, threadId) {
       ),
       interests:structuredClone(experience.inspectThreadInterests(threadId,{limit:24})),
       socialMoments:structuredClone(experience.listSocialMoments(threadId,{limit:24})),
+      appointments:structuredClone(experience.listAppointments(threadId,{limit:24})),
       contactOutreach:structuredClone(
         contact.inspectThreadContact(threadId,{limit:12}),
       ),

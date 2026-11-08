@@ -4,7 +4,7 @@ Each file is the fixed system prompt of one cognitive job, named `<domain>.<job>
 
 | Domain | What the jobs are |
 |---|---|
-| `social` | speaking in a live conversation; choosing whom to be near |
+| `social` | speaking in a live conversation; understanding one's own proposal to meet; choosing whom to be near |
 | `interior` | Thread-owned judgment over its own developed self: social initiation and response, the Flight Plan, Commons, paid work. Each `interior.*` prompt `extends: interior.base` |
 | `encounter` | noticing, experiencing and, later, journaling or remembering an encounter |
 | `experience` | delayed reflection over a cluster of experiences (journal, memory, afterthoughts, stances) |
