@@ -179,10 +179,12 @@ async function main() {
     const invented = Object.fromEntries(readers.map((judge) => [judge.model, tally((row) => [row.results[judge.model]?.invented])]));
     const decided = answered.filter((item) => item.perturbedOutput !== undefined);
     const invariant = [decided.filter((item) => decision(options.prompt, item.output) === decision(options.prompt, item.perturbedOutput)).length, decided.length];
-    const agreeing = compared.filter((pair) => pair.votes.length > 0 && pair.votes.every((vote) => vote === pair.votes[0]));
+    const voted = compared.filter((pair) => pair.votes.length > 0);
+    const agreeing = voted.filter((pair) => pair.votes.every((vote) => vote === pair.votes[0]));
     const readable = { candidate: agreeing.filter((p) => p.votes[0] === "candidate").length,
       reference: agreeing.filter((p) => p.votes[0] === "reference").length,
-      same: agreeing.filter((p) => p.votes[0] === "same").length, judgesDisagreed: compared.length - agreeing.length };
+      same: agreeing.filter((p) => p.votes[0] === "same").length, judgesDisagreed: voted.length - agreeing.length,
+      unjudged: compared.length - voted.length };
     const nothing = [answered.filter((item) => job.nothing(item.output)).length, answered.length];
     const result = {
       model, answered: answered.length, failed, costPerCall: mean(answered.map((item) => item.cost)),
@@ -201,7 +203,7 @@ async function main() {
     for (const judge of readers) console.log(`  attributable (${judge.model}): ${share(attributed[judge.model])} · without the answer ${share(unaided[judge.model])} · chance ${percent(chance)}`);
     console.log(`  invariant: ${share(invariant)} · "nothing" chosen ${share(nothing)}`);
     console.log(`  day alarms: ${result.alarms.length ? result.alarms.join("; ") : "none"}`);
-    if (result.readableAgainst) console.log(`  readable vs ${reference}: better ${readable.candidate} · worse ${readable.reference} · same ${readable.same} · judges disagreed ${readable.judgesDisagreed}`);
+    if (result.readableAgainst) console.log(`  readable vs ${reference}: better ${readable.candidate} · worse ${readable.reference} · same ${readable.same} · judges disagreed ${readable.judgesDisagreed}${readable.unjudged ? ` · not judged ${readable.unjudged}` : ""}`);
     result.judged = judged.map((row) => ({ key: row.key, scope: scopeOf(options.prompt, row.request.input), text: row.text, results: row.results }));
     result.compared = compared.map(({ input, ...pair }) => pair);
   }

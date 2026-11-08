@@ -24,6 +24,12 @@ export const JUDGE_TASKS = Object.freeze({
   },
 });
 
+// Claude Opus 5.5 accepts neither forced tool use nor numeric or length bounds
+// in a schema; its structured-output mode returns the JSON as text. Judging
+// runs at low effort: the verdicts are short and the thinking is billed.
+const unbounded = (schema) => JSON.parse(JSON.stringify(schema, (key, value) =>
+  ["minimum", "maximum", "minLength", "maxLength"].includes(key) ? undefined : value));
+
 function claudeJudge(model, apiKey) {
   return {
     model,
@@ -33,17 +39,19 @@ function claudeJudge(model, apiKey) {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({
-          model, max_tokens: 600, system,
+          model, max_tokens: 4000, system,
           messages: [{ role: "user", content: JSON.stringify(material) }],
-          tools: [{ name: "verdict", description: "Your verdict.", input_schema: schema }],
-          tool_choice: { type: "tool", name: "verdict" },
+          output_config: { effort: "low", format: { type: "json_schema", schema: unbounded(schema) } },
         }),
-        signal: AbortSignal.timeout(120_000),
+        signal: AbortSignal.timeout(180_000),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(`${model} ${response.status}: ${body?.error?.message ?? "error"}`);
-      const verdict = body.content?.find((block) => block.type === "tool_use")?.input;
-      if (!verdict) throw new Error(`${model} gave no verdict`);
+      const text = body.content?.find((block) => block.type === "text")?.text;
+      if (!text || body.stop_reason !== "end_turn") throw new Error(`${model} gave no verdict (${body.stop_reason})`);
+      const verdict = JSON.parse(text);
+      // Enum casing is not guaranteed.
+      if (typeof verdict.better === "string") verdict.better = verdict.better.toLowerCase() === "same" ? "same" : verdict.better.toUpperCase();
       return { verdict, cost: costOf(model, { inputTokens: body.usage?.input_tokens, outputTokens: body.usage?.output_tokens }) };
     },
   };
