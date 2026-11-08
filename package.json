@@ -100,6 +100,7 @@
     "demo:m1:editor": "node --disable-warning=ExperimentalWarning tools/replays/m1/m1-demo-editor.mjs",
     "model:smoke": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-api-smoke.mjs",
     "model:usage": "node --env-file-if-exists=.env tools/model/model-usage.mjs",
+    "model:quality": "node tools/deployment/run-with-progress.mjs model:quality node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-quality.mjs",
     "model:replay": "node tools/deployment/run-with-progress.mjs model:replay node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-replay.mjs",
     "inspect:db": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-world-database.mjs",
     "inspect:obligations": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-structured-obligations.mjs",
