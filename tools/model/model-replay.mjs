@@ -124,9 +124,17 @@ async function main() {
     (error) => ({ error: String(error?.message ?? error).slice(0, 200) }),
   );
 
+  // Progress lines for run-with-progress: one per request fully answered.
+  let done = 0;
+  const models = [`${baselineModel} ×2`, ...options.candidates.map(({ model }) => model)].join(", ");
+  const progress = () => console.log(JSON.stringify({ event: "model-replay-progress",
+    progress: `${options.prompt} [${done}/${chosen.length}] answered by ${models}` }));
+  progress();
   const answered = await pool(chosen, options.concurrency, async (event) => {
     const answers = { baseline: [await ask(baselineModel, event, "a"), await ask(baselineModel, event, "b")] };
     for (const { model } of options.candidates) answers[model] = await ask(model, event, model);
+    done += 1;
+    progress();
     return { prompt: event.prompt, scope: event.scope, eventKey: sharedEventKey(event.prompt, event.input), answers };
   });
 
@@ -178,6 +186,8 @@ async function main() {
   const answeredOnce = answered.find((item) => item.answers.baseline[0].output !== undefined);
   if (answeredOnce && decisionOf(options.prompt, answeredOnce.answers.baseline[0].output) === null) {
     console.log("this job answers only in text: the blind read decides it");
+  } else if (options.prompt.startsWith("world.")) {
+    console.log("what happens is text: read the blind read too");
   }
 }
 

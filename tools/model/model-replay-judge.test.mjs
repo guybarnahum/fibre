@@ -30,3 +30,12 @@ test("a candidate that makes every Thread notice the same way fails", () => {
   assert.ok(verdict.failures.some((failure) => /different Threads/u.test(failure)),
     "the lost two-Thread difference was not named");
 });
+
+test("whether a World event happens at all is judged as a decision", () => {
+  const quiet = { outcome: "no_change", occurrenceText: null };
+  const busy = { outcome: "changed", occurrenceText: "A cart rolls past." };
+  const verdict = judgeReplay(Array.from({ length: 8 }, () => ({
+    prompt: "world.happening@1", scope: "world", eventKey: null, baseline: [quiet, quiet], candidate: busy,
+  })));
+  assert.equal(verdict.verdict, "fails", "a candidate that made a quiet World busy passed");
+});

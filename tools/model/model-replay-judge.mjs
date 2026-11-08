@@ -9,12 +9,13 @@ const RATE_SLACK = 0.03;
 const DIFFERENTIAL_SLACK = 0.03;
 const MIN_SHARED_EVENTS = 5;
 
-// The decision an answer makes, for jobs whose answer is a choice. Jobs whose
-// answer is only text are judged by a blind read instead.
+// The decision an answer makes, for jobs whose answer is a choice. Text is
+// judged by a blind read instead (a World event has both).
 export function decisionOf(prompt, output) {
   const id = String(prompt).split("@")[0];
   if (output === null || typeof output !== "object") return null;
-  if (id === "encounter.attention") return output.outcome ?? null;
+  // Whether anything happens at all is a decision; what happens is text.
+  if (id === "encounter.attention" || id.startsWith("world.")) return output.outcome ?? null;
   if (id === "contact.decision") return `${output.decision}:${output.recipientPartyId ?? ""}`;
   if (id === "body.interoception") {
     return (output.states ?? []).map((state) => `${state.domain}:${state.dimension}`).sort().join(",") || "none";
