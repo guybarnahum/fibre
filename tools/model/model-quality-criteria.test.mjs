@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dayAlarms, jobOf, lineup, perturbed, scopeOf } from "./model-quality-criteria.mjs";
+import { dayAlarms, goodEnough, jobOf, lineup, perturbed, scopeOf } from "./model-quality-criteria.mjs";
 
 const ATTENTION = "encounter.attention@1";
 const thread = (id, name, activity) => ({
@@ -64,4 +64,14 @@ test("a meaningless change reorders evidence and nothing else", () => {
   assert.deepEqual(changed.semanticStates, [...input.semanticStates].reverse(), "the evidence order did not change");
   assert.deepEqual(changed.encounterStory, input.encounterStory, "the event itself changed");
   assert.deepEqual(input.semanticStates[0].dimension, "interest", "the recorded request was modified");
+});
+
+test("good enough is an absolute bar: clear passes pass, clear failures fail, and too few cases decide nothing", () => {
+  const strong = { defects: [0, 400], invented: [2, 400], gains: Array(400).fill(0.3), correct: [0, 0], chance: 0.25,
+    invariant: [380, 400], alarms: [], acceptable: [390, 400] };
+  assert.equal(goodEnough(ATTENTION, strong).overall, "pass", "a model clearly above every bar did not pass");
+  assert.equal(goodEnough(ATTENTION, { ...strong, invented: [60, 400] }).overall, "fail", "a model that often invents facts passed");
+  assert.equal(goodEnough(ATTENTION, { ...strong, alarms: ["noticed nothing"] }).overall, "fail", "a dead day passed");
+  const few = { ...strong, defects: [0, 7], invented: [0, 7], gains: Array(7).fill(0.3), invariant: [7, 7], acceptable: [7, 7] };
+  assert.equal(goodEnough(ATTENTION, few).overall, "undecided", "seven cases decided whether a model is good enough");
 });

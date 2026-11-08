@@ -16,10 +16,10 @@ import { selectReasoningIntegration } from "../../infra/deployments/integration-
 import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
 import { judgesFor } from "./model-judges.mjs";
-import { dayAlarms, decision, interval, jobOf, lineup, perturbed, scopeOf } from "./model-quality-criteria.mjs";
+import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, scopeOf } from "./model-quality-criteria.mjs";
 
 const MIN_CASES = 30;
-const BLIND_PAIRS = 20;
+const BLIND_ANSWERS = 30;
 
 function args(argv) {
   const options = { prompt: null, models: ["openai:gpt-5.6-sol"], judges: ["claude-opus-5-5", "gpt-5.6-sol"],
@@ -101,7 +101,7 @@ async function main() {
     }));
   }
 
-  // 2. Judges read: fidelity, attribution among four sources, pairwise reading.
+  // 2. Judges read: fidelity, acceptability, attribution among its possible sources.
   const sourcePool = requests.map((event) => ({ scope: scopeOf(options.prompt, event.input), source: job.source?.(event.input) }))
     .filter((entry) => entry.source);
   const judgeErrors = new Map();
@@ -113,7 +113,6 @@ async function main() {
   };
   const report = { prompt: options.prompt, requests: requests.length, judges: judges.map((j) => j.model), models: [] };
   let judgeCost = 0;
-  const reference = options.models[0].model;
 
   for (const { model } of options.models) {
     const answered = answers.get(model).filter((item) => !item.error);
@@ -131,6 +130,8 @@ async function main() {
         // A gist answers to its own memory; other answers to everything the job was given.
         const evidence = entry.siblings ? { thread: entry.request.input.thread, memory: entry.source } : entry.request.input;
         const fidelity = await verdict(judge, "fidelity", { whatCounts: job.faithful, evidence, answer: entry.text });
+        const acceptable = await verdict(judge, "acceptable", { criteria: job.readable, whatCountsAsInvented: job.faithful,
+          evidence, answer: entry.text });
         const lineupMaterial = (answer) => ({ whatEachSourceIs: job.lineupOf, faced: round.faced, answer,
           sources: Object.fromEntries(round.sources.map((source, index) => [index + 1, source])) });
         const attribution = round === null ? null : await verdict(judge, "attribute", lineupMaterial(round.answer));
@@ -138,36 +139,15 @@ async function main() {
         // points to the source. Shared by every model, so judged once.
         const control = round === null ? null : await verdict(judge, "attribute",
           lineupMaterial("(not shown: choose the most likely source from what was faced alone)"));
-        judgeCost += (fidelity.cost ?? 0) + (attribution?.cost ?? 0) + (control?.cost ?? 0);
+        judgeCost += (fidelity.cost ?? 0) + (acceptable.cost ?? 0) + (attribution?.cost ?? 0) + (control?.cost ?? 0);
         const right = (result) => result?.verdict ? result.verdict.choice - 1 === round.truth : null;
         results[judge.model] = { invented: fidelity.verdict?.invented ?? null, example: fidelity.verdict?.example ?? null,
+          acceptable: acceptable.verdict?.acceptable ?? null, why: acceptable.verdict?.reason ?? null,
           correct: right(attribution), withoutAnswer: right(control), choices: round?.sources.length ?? null };
       }
       progress(`judges reading ${model} ${++read}/${items.length}`);
-      return { key: entry.key, request: entry.request, text: entry.text, results };
-    });
-
-    // Readable: this model against the first-named model, request by request.
-    const pairs = model === reference ? [] : answered.flatMap((item) => {
-      const other = answers.get(reference).find((candidate) => candidate.event === item.event && !candidate.error);
-      if (!other) return [];
-      const mine = job.items(item.input, item.output), theirs = job.items(other.input, other.output);
-      return mine.map((entry) => ({ entry, against: theirs.find((candidate) => candidate.key === entry.key) }))
-        .filter(({ entry, against }) => entry.text && against?.text && entry.text !== against.text)
-        .map(({ entry, against }) => ({ input: item.input, key: entry.key, mine: entry.text, theirs: against.text }));
-    });
-    const compared = await pool(pairs, options.concurrency, async (pair) => {
-      const candidateFirst = digest([pair.input, pair.key, model]).charCodeAt(0) % 2 === 0;
-      const [a, b] = candidateFirst ? [pair.mine, pair.theirs] : [pair.theirs, pair.mine];
-      const votes = [];
-      for (const judge of judges.filter((judge) => judge.model !== model && judge.model !== reference)) {
-        const result = await verdict(judge, "compare", { criteria: job.readable, request: pair.input, A: a, B: b });
-        judgeCost += result.cost ?? 0;
-        const better = result.verdict?.better;
-        if (!better) continue;
-        votes.push(better === "same" ? "same" : (better === "A") === candidateFirst ? "candidate" : "reference");
-      }
-      return { ...pair, candidateFirst, votes };
+      return { key: entry.key, request: entry.request, text: entry.text, results,
+        context: entry.siblings ? entry.source.rememberedContent ?? entry.source : entry.faced };
     });
 
     // Scores, with intervals; "too few" below MIN_CASES.
@@ -179,21 +159,26 @@ async function main() {
     const invented = Object.fromEntries(readers.map((judge) => [judge.model, tally((row) => [row.results[judge.model]?.invented])]));
     const decided = answered.filter((item) => item.perturbedOutput !== undefined);
     const invariant = [decided.filter((item) => decision(options.prompt, item.output) === decision(options.prompt, item.perturbedOutput)).length, decided.length];
-    const voted = compared.filter((pair) => pair.votes.length > 0);
-    const agreeing = voted.filter((pair) => pair.votes.every((vote) => vote === pair.votes[0]));
-    const readable = { candidate: agreeing.filter((p) => p.votes[0] === "candidate").length,
-      reference: agreeing.filter((p) => p.votes[0] === "reference").length,
-      same: agreeing.filter((p) => p.votes[0] === "same").length, judgesDisagreed: voted.length - agreeing.length,
-      unjudged: compared.length - voted.length };
+    // Per answer: invented or acceptable only when every judge that read it says so.
+    const every = (field, value) => { const rows = judged.map((row) => Object.values(row.results)
+      .map((result) => result[field]).filter((v) => v !== null && v !== undefined)).filter((votes) => votes.length > 0);
+      return [rows.filter((votes) => votes.every((vote) => vote === value)).length, rows.length]; };
+    const gains = judged.flatMap((row) => {
+      const both = Object.values(row.results).filter((r) => r.correct !== null && r.withoutAnswer !== null);
+      return both.length === 0 ? [] : [mean(both.map((r) => Number(r.correct))) - mean(both.map((r) => Number(r.withoutAnswer)))];
+    });
     const nothing = [answered.filter((item) => job.nothing(item.output)).length, answered.length];
     const result = {
       model, answered: answered.length, failed, costPerCall: mean(answered.map((item) => item.cost)),
       defects: [defects.filter((list) => list.length > 0).length, answered.length],
       defectExamples: [...new Set(defects.flat())].slice(0, 5),
       invented, attributed, unaided, chance, invariant, nothingRate: nothing, alarms: dayAlarms(options.prompt, answered),
-      readableAgainst: model === reference ? null : { reference, ...readable },
+      acceptable: every("acceptable", true),
       tooFew: answered.length < MIN_CASES,
     };
+    result.goodEnough = goodEnough(options.prompt, { defects: result.defects, invented: every("invented", true), gains,
+      correct: Object.values(attributed).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]), chance,
+      invariant: decided.length === 0 ? null : invariant, alarms: result.alarms, acceptable: result.acceptable });
     report.models.push(result);
 
     console.log(`\n${model}${result.tooFew ? " — too few cases to decide" : ""}`);
@@ -203,12 +188,19 @@ async function main() {
     for (const judge of readers) console.log(`  attributable (${judge.model}): ${share(attributed[judge.model])} · without the answer ${share(unaided[judge.model])} · chance ${percent(chance)}`);
     console.log(`  invariant: ${share(invariant)} · "nothing" chosen ${share(nothing)}`);
     console.log(`  day alarms: ${result.alarms.length ? result.alarms.join("; ") : "none"}`);
-    if (result.readableAgainst) console.log(`  readable vs ${reference}: better ${readable.candidate} · worse ${readable.reference} · same ${readable.same} · judges disagreed ${readable.judgesDisagreed}${readable.unjudged ? ` · not judged ${readable.unjudged}` : ""}`);
-    result.judged = judged.map((row) => ({ key: row.key, scope: scopeOf(options.prompt, row.request.input), text: row.text, results: row.results }));
-    result.compared = compared.map(({ input, ...pair }) => pair);
+    console.log(`  acceptable (every judge that read it): ${share(result.acceptable)}`);
+    console.log(`  GOOD ENOUGH FOR FIBRE: ${result.goodEnough.overall.toUpperCase()}`);
+    for (const test of result.goodEnough.tests) {
+      const value = test.value === null ? "" : ` ${test.test.startsWith("attributable: the answer") ? `${test.value >= 0 ? "+" : ""}${Math.round(test.value * 100)} points` : percent(test.value)}`;
+      const bar = test.bar === null ? "" : ` (bar ${test.test.startsWith("valid") ? "≤" : "≥"} ${test.test.startsWith("attributable: the answer") ? `+${Math.round(test.bar * 100)} points` : percent(test.bar)})`;
+      console.log(`    ${test.verdict.padEnd(9)} ${test.test}${value}${bar}${test.detail ? ` — ${test.detail}` : ""}`);
+    }
+    result.judged = judged.map((row) => ({ key: row.key, scope: scopeOf(options.prompt, row.request.input), text: row.text,
+      context: row.context, results: row.results }));
   }
 
-  // Guy's blind reads: the morning, in time order, for each model; and pairs.
+  // Guy's blind reads: the morning, in time order, for each model; and single
+  // answers to accept or reject, which also check the judges.
   const stamp = new Date().toISOString().replaceAll(":", "-");
   const letters = options.models.map((_, index) => `Model ${String.fromCharCode(80 + index)}`)
     .sort(() => Math.random() - 0.5);
@@ -226,18 +218,33 @@ async function main() {
   await writeFile(join(out, `morning-${options.prompt}-${stamp}.md`),
     `# A recorded morning — ${options.prompt}\n\nSame requests, different models, names hidden. Which reads most like a life?\n\n${morning.map((m) => `## ${m.label}\n\n${m.lines.join("\n")}\n`).join("\n")}`);
   await writeFile(join(out, `morning-key-${options.prompt}-${stamp}.json`), JSON.stringify(labels, null, 2));
-  const pairsForGuy = report.models.flatMap((m) => (m.compared ?? []).map((pair) => ({ model: m.model, ...pair }))).slice(0, BLIND_PAIRS);
-  await writeFile(join(out, `pairs-${options.prompt}-${stamp}.md`), `# Blind pairs — ${options.prompt}\n\nCriteria: ${job.readable}\n\nFor each pair note A, B or same.\n\n` +
-    pairsForGuy.map((pair, index) => `## Pair ${index + 1}\n\n**A:** ${pair.candidateFirst ? pair.mine : pair.theirs}\n\n**B:** ${pair.candidateFirst ? pair.theirs : pair.mine}\n`).join("\n"));
-  await writeFile(join(out, `pairs-key-${options.prompt}-${stamp}.json`), JSON.stringify(pairsForGuy.map((pair, index) =>
-    ({ pair: index + 1, candidate: pair.model, candidateIs: pair.candidateFirst ? "A" : "B" })), null, 2));
+  const sample = report.models.flatMap((m) => (m.judged ?? []).slice(0, Math.ceil(BLIND_ANSWERS / options.models.length))
+    .map((row) => ({ model: m.model, ...row })))
+    .sort((a, b) => digest([a.key, a.text]).localeCompare(digest([b.key, b.text]))).slice(0, BLIND_ANSWERS);
+  // What was faced, as a reader would want it: the scene's words, not records.
+  const shown = (context) => {
+    if (typeof context === "string") return context;
+    const lines = [];
+    const now = context?.currentSituation;
+    if (now) lines.push(`Doing: ${now.activity ?? now.outwardActivity ?? ""}${now.place?.name ? ` at ${now.place.name}` : ""}`);
+    for (const beat of context?.encounterStory?.story?.beats ?? []) lines.push(`${beat.self ? "(me) " : ""}${beat.text}`);
+    for (const item of context?.afterReflection ?? []) lines.push(`After reflecting (${item.kind}): ${item.text}`);
+    if (context?.reachable?.length) lines.push(`Can reach: ${context.reachable.join(", ")}`);
+    return lines.length > 0 ? lines.join("\n") : JSON.stringify(context ?? {}, null, 1).slice(0, 1200);
+  };
+  await writeFile(join(out, `accept-${options.prompt}-${stamp}.md`), `# Accept or reject — ${options.prompt}\n\nCriteria: ${job.readable}\n\nFor each answer note **accept** or **reject**, and why if rejected. Models are hidden.\n\n` +
+    sample.map((row, index) => `## ${index + 1}\n\nFaced:\n\n\`\`\`\n${shown(row.context)}\n\`\`\`\n\n**Answer:** ${row.text}\n`).join("\n"));
+  await writeFile(join(out, `accept-key-${options.prompt}-${stamp}.json`), JSON.stringify(sample.map((row, index) => ({
+    item: index + 1, model: row.model,
+    judges: Object.fromEntries(Object.entries(row.results).map(([judge, r]) => [judge, { acceptable: r.acceptable, why: r.why }])),
+  })), null, 2));
   report.judgeCost = judgeCost;
   for (const [model, errors] of judgeErrors) {
     console.log(`judge ${model}: ${errors.length} verdicts failed, e.g. ${errors[0]}`);
   }
   await writeFile(join(out, `quality-${options.prompt}-${stamp}.json`), JSON.stringify(report, null, 2));
   console.log(`\njudges spent ≈ $${judgeCost.toFixed(2)} this run (cached verdicts are free)`);
-  console.log("evidence: .fibre/model-quality/ (scorecard, the morning and pairs for a blind read; keys kept separately)");
+  console.log("evidence: .fibre/model-quality/ (scorecard; the morning and answers to accept or reject, blind; keys kept separately)");
 }
 
 main().catch((error) => {

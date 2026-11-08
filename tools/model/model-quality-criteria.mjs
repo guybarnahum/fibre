@@ -251,3 +251,66 @@ export function dayAlarms(prompt, answered) {
   }
   return alarms;
 }
+
+// Good enough for Fibre (accepted by Guy, November 8, 2026): absolute bars,
+// the same for every model, the current one included. A bar passes only when
+// the one-sided 95% bound is on the right side of it, fails when it is
+// clearly on the wrong side, and is otherwise undecided — more cases needed.
+// Starting values, to be recalibrated against Guy's blind accept/reject reads.
+export const BARS = Object.freeze({
+  defects: 0.01, // hard-rule defects, at most
+  invented: 0.05, // facts invented, where every judge that read it agrees, at most
+  gain: 0.10, // attribution with the answer minus without it, at least
+  chanceMultiple: 3, // attribution of a gist to its own memory, at least 3× chance
+  invariant: 0.85, // the same decision when only evidence order changes, at least
+  acceptable: 0.90, // judged acceptable for this job by every judge that read it, at least
+});
+
+const Z = 1.645;
+function bounds(k, n) {
+  if (n === 0) return null;
+  const p = k / n, d = 1 + Z * Z / n;
+  const centre = (p + Z * Z / (2 * n)) / d;
+  const half = Z * Math.sqrt(p * (1 - p) / n + Z * Z / (4 * n * n)) / d;
+  return [Math.max(0, centre - half), Math.min(1, centre + half)];
+}
+const atMost = (test, [k, n], bar) => {
+  const range = bounds(k, n);
+  if (range === null) return { test, verdict: "n/a", value: null, bar };
+  return { test, value: k / n, n, bar, verdict: range[1] <= bar ? "pass" : range[0] > bar ? "fail" : "undecided" };
+};
+const atLeast = (test, [k, n], bar) => {
+  const range = bounds(k, n);
+  if (range === null) return { test, verdict: "n/a", value: null, bar };
+  return { test, value: k / n, n, bar, verdict: range[0] >= bar ? "pass" : range[1] < bar ? "fail" : "undecided" };
+};
+
+// Mean paired gain (with the answer − without it, each averaged over judges).
+function gainAtLeast(test, gains, bar) {
+  if (gains.length === 0) return { test, verdict: "n/a", value: null, bar };
+  const n = gains.length, m = gains.reduce((a, b) => a + b, 0) / n;
+  const sd = Math.sqrt(gains.reduce((a, b) => a + (b - m) ** 2, 0) / Math.max(1, n - 1));
+  const half = Z * sd / Math.sqrt(n);
+  return { test, value: m, n, bar, verdict: m - half >= bar ? "pass" : m + half < bar ? "fail" : "undecided" };
+}
+
+// measures: defects [k,n]; invented [k,n]; gains [number]; correct [k,n];
+// chance; invariant [k,n] or null; alarms [string]; acceptable [k,n].
+export function goodEnough(prompt, measures, bars = BARS) {
+  const gist = String(prompt).startsWith("experience.memory-gist");
+  const tests = [
+    atMost("valid: no broken rules", measures.defects, bars.defects),
+    atMost("valid: nothing invented", measures.invented, bars.invented),
+    gist
+      ? atLeast("attributable to its own memory", measures.correct, Math.min(1, bars.chanceMultiple * (measures.chance ?? 0.1)))
+      : gainAtLeast("attributable: the answer shows who (or where)", measures.gains, bars.gain),
+    measures.invariant === null ? { test: "invariant", verdict: "n/a", value: null, bar: bars.invariant }
+      : atLeast("invariant", measures.invariant, bars.invariant),
+    { test: "credible day", verdict: measures.alarms.length > 0 ? "fail" : "pass", value: null, bar: null,
+      detail: measures.alarms.join("; ") || "no alarms (Guy's reference range not yet set)" },
+    atLeast("acceptable", measures.acceptable, bars.acceptable),
+  ];
+  const verdicts = tests.map((item) => item.verdict).filter((verdict) => verdict !== "n/a");
+  const overall = verdicts.includes("fail") ? "fail" : verdicts.every((verdict) => verdict === "pass") ? "pass" : "undecided";
+  return { overall, tests };
+}

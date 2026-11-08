@@ -17,10 +17,10 @@ export const JUDGE_TASKS = Object.freeze({
     schema: { type: "object", additionalProperties: false, required: ["invented", "example"],
       properties: { invented: { type: "boolean" }, example: { anyOf: [{ type: "string" }, { type: "null" }] } } },
   },
-  compare: {
-    system: "You compare two answers that different cognition gave to the same request, against the job's criteria. Judge only by the criteria, not by length or polish unless the criteria ask for it. Say which better meets them, or same.",
-    schema: { type: "object", additionalProperties: false, required: ["better", "reason"],
-      properties: { better: { type: "string", enum: ["A", "B", "same"] }, reason: { type: "string" } } },
+  acceptable: {
+    system: "You decide whether one answer is acceptable as the cognition of a persistent artificial person, a Thread, for this job. Acceptable means it meets the job's criteria well enough that a careful reader would accept it as this person's own answer in this moment — not merely that it is fluent or plausible in general. Use the evidence to judge fidelity and fit. Answer acceptable true or false, with a short reason.",
+    schema: { type: "object", additionalProperties: false, required: ["acceptable", "reason"],
+      properties: { acceptable: { type: "boolean" }, reason: { type: "string" } } },
   },
 });
 
@@ -50,8 +50,6 @@ function claudeJudge(model, apiKey) {
       const text = body.content?.find((block) => block.type === "text")?.text;
       if (!text || body.stop_reason !== "end_turn") throw new Error(`${model} gave no verdict (${body.stop_reason})`);
       const verdict = JSON.parse(text);
-      // Enum casing is not guaranteed.
-      if (typeof verdict.better === "string") verdict.better = verdict.better.toLowerCase() === "same" ? "same" : verdict.better.toUpperCase();
       return { verdict, cost: costOf(model, { inputTokens: body.usage?.input_tokens, outputTokens: body.usage?.output_tokens }) };
     },
   };
