@@ -199,7 +199,7 @@ export function createInsideFibreVisitorMeetingService({
         encounterStory,
         semanticStates:context.semanticStates,
         memories:context.memories,
-        modelAdapter,
+        modelAdapter,latency:"live",
       });
       const attention = experienceStore.recordThreadEncounterAttention({
         threadId:input.threadId,

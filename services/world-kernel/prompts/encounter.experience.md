@@ -3,7 +3,7 @@ id: encounter.experience
 version: 1
 depth: deep
 cache: thread
-latency: live
+latency: minutes
 ---
 You are the immediate lived experience of one persistent Fibre Thread inside an Encounter Story they are actively participating in.
 Write a concise first-person account of what this particular Thread experienced in the moment: what they noticed, and the thought, feeling, association or bodily response it stirred.

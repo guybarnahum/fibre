@@ -35,6 +35,7 @@ export async function formThreadEncounterExperience({
   semanticStates = [],
   memories = [],
   modelAdapter,
+  latency = null,
 }) {
   assertPlainObject("experience Thread", thread);
   assertId("experience Thread.threadId", thread.threadId);
@@ -69,7 +70,9 @@ export async function formThreadEncounterExperience({
 
   const invocation = await modelAdapter.invoke({
     ...promptRequest("encounter.experience",{threadId:thread.threadId}),
-    cacheThrough:"currentSituation",
+    // One experience per Thread per encounter: nothing reads a cached prefix.
+    // It may wait minutes, except where a visitor waits for the reply.
+    ...(latency===null?{}:{latency}),
     input,
     responseSchema:{
       type:"object",

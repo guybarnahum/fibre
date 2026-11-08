@@ -172,7 +172,7 @@ export function createLivedEncounterWriteApi({
           encounterStory,
           semanticStates:livedContext.semanticStates,
           memories:livedContext.memories,
-          modelAdapter,
+          modelAdapter,latency:"live",
         });
         const attention=experienceStore.recordThreadEncounterAttention({
           threadId:body.threadId,

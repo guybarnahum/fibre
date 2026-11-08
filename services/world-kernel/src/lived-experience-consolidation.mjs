@@ -2,7 +2,7 @@ import {EXPERIENCE_CONSOLIDATION_DELAY_MS} from "./lived-experience-consolidatio
 import {promptRequest} from "./cognition-prompts.mjs";
 import {observablePerson} from "./world-observable-person.mjs";
 import {assertDescriptiveSemanticState} from "./semantic-state.mjs";
-import {writeMissingGists} from "./memory-gists.mjs";
+import {GIST_SCHEMA,keptGist,writeMissingGists} from "./memory-gists.mjs";
 import {reviewMemoryAvailability} from "./memory-availability.mjs";
 import {
   INTEREST_CHANGE_LIMIT,INTEREST_CHANGE_SCHEMA,admitInterestChanges,
@@ -133,8 +133,8 @@ function normalizeDecision(output){
     });
   }
   // A gist is optional (decisions recorded before gists have none); one too
-  // slight to carry the memory is not kept, and the memory is held in full.
-  const gist=typeof memory.gist==="string"&&memory.gist.trim().length>=12?memory.gist.trim():null;
+  // slight to carry the memory, or cut off, is not kept, and the memory is held in full.
+  const gist=keptGist(memory.gist);
   assertNonEmpty("experience consolidation rememberedContent",memory.rememberedContent);
   if(memory.rememberedMeaning!==null)assertNonEmpty(
     "experience consolidation rememberedMeaning",
@@ -260,7 +260,7 @@ async function formDecision({
             outcome:{type:"string",enum:["not_remembered","retained"]},
             rememberedContent:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
             rememberedMeaning:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
-            gist:{anyOf:[{type:"string",minLength:12,maxLength:280},{type:"null"}]},
+            gist:{anyOf:[GIST_SCHEMA,{type:"null"}]},
             confidence:{anyOf:[{type:"number",minimum:0,maximum:1},{type:"null"}]},
             salience:{anyOf:[{type:"number",minimum:0,maximum:1},{type:"null"}]},
             uncertainty:{type:"array",items:{type:"string",minLength:1}},

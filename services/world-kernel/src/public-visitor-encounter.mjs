@@ -191,7 +191,7 @@ export function createPublicVisitorEncounterService({
             encounterStory:spokenStory,
             semanticStates:context.semanticStates,
             memories:context.memories,
-            modelAdapter,
+            modelAdapter,latency:"live",
           });
           attention=experienceStore.recordThreadEncounterAttention({
             threadId:input.threadId,

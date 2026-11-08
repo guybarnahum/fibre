@@ -8,6 +8,16 @@ import {assertPlainObject,canonicalJson,sha256} from "./persistence-common.mjs";
 // whose recollection, meaning, evidence and accessibility stay as they were.
 const GIST_BATCH=10;
 
+// One or two sentences. The bound only stops runaway output; a model held to
+// it is cut off mid-sentence, so a gist that reaches it is not kept and the
+// memory stays held in full.
+export const GIST_LIMIT=400;
+export const GIST_SCHEMA=Object.freeze({type:"string",minLength:12,maxLength:GIST_LIMIT});
+export function keptGist(text){
+  const gist=typeof text==="string"?text.trim():"";
+  return gist.length>=12&&gist.length<GIST_LIMIT?gist:null;
+}
+
 function gistless(memory){
   return memory.recordFormat===AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2
     &&memory.gist===undefined&&memory.status==="current";
@@ -31,7 +41,7 @@ export async function writeMissingGists({thread,memoryStore,modelAdapter,now}){
       properties:{gists:{type:"array",maxItems:GIST_BATCH,items:{type:"object",
         additionalProperties:false,required:["memoryId","gist"],
         properties:{memoryId:{type:"string",minLength:1},
-          gist:{type:"string",minLength:12,maxLength:280}}}}}},
+          gist:GIST_SCHEMA}}}}},
     clientRequestId:`memory-gist_${sha256(canonicalJson(input)).slice(0,32)}`,
   });
   assertPlainObject("memory gist output",invocation.output);
@@ -39,8 +49,8 @@ export async function writeMissingGists({thread,memoryStore,modelAdapter,now}){
   const written=[];
   for(const item of invocation.output.gists??[]){
     const memory=byId.get(item?.memoryId);
-    const gist=typeof item?.gist==="string"?item.gist.trim():"";
-    if(memory===undefined||gist.length<12||gist.length>280)continue;
+    const gist=keptGist(item?.gist);
+    if(memory===undefined||gist===null)continue;
     byId.delete(memory.memoryId);
     written.push(memoryStore.recordMemory({
       ...structuredClone(memory),gist,
