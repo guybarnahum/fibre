@@ -2440,6 +2440,46 @@ export class LivedExperienceStore {
     });
   }
 
+  // A moment, once per reflection and position: a retried reflection adds nothing.
+  recordSocialMoment({momentId,threadId,kind,personThreadId,interestId,moment,evidenceRefs,sourceRef,asOf}){
+    assertId("moment id",momentId);
+    assertId("moment threadId",threadId);
+    assertId("moment person",personThreadId);
+    if(interestId!==null)assertId("moment interestId",interestId);
+    assertId("moment sourceRef",sourceRef);
+    assertIsoTimestamp("moment asOf",asOf);
+    if(!["useful","learning"].includes(kind))throw new TypeError("moment kind is invalid");
+    if(!Array.isArray(evidenceRefs)||evidenceRefs.length===0)
+      throw new TypeError("a moment rests on at least one experience");
+    const inserted=this.#database.prepare(`
+      INSERT INTO thread_social_moments(moment_id,thread_id,kind,person_thread_id,interest_id,
+        moment_json,evidence_refs_json,source_ref,as_of)
+      VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(moment_id) DO NOTHING
+    `).run(momentId,threadId,kind,personThreadId,interestId,canonicalJson(moment),
+      canonicalJson(evidenceRefs),sourceRef,asOf).changes===1;
+    return Object.freeze({momentId,inserted});
+  }
+
+  // A Thread's newest moments, optionally only those with some people.
+  listSocialMoments(threadId,{limit=6,personIds=null}={}){
+    assertId("moments threadId",threadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>48)throw new TypeError("moments must be bounded");
+    const people=personIds===null?null:[...personIds];
+    if(people!==null&&people.length===0)return [];
+    const rows=this.#database.prepare(`
+      SELECT moment_id,kind,person_thread_id,interest_id,moment_json,evidence_refs_json,source_ref,as_of
+      FROM thread_social_moments WHERE thread_id=?
+        ${people===null?"":`AND person_thread_id IN (${people.map(()=>"?").join(",")})`}
+      ORDER BY as_of DESC,moment_id LIMIT ?
+    `).all(threadId,...(people??[]),limit);
+    return rows.map(row=>Object.freeze({
+      momentId:row.moment_id,kind:row.kind,personThreadId:row.person_thread_id,
+      interestId:row.interest_id,...JSON.parse(row.moment_json),
+      evidenceRefs:Object.freeze(JSON.parse(row.evidence_refs_json)),
+      sourceRef:row.source_ref,asOf:row.as_of,
+    }));
+  }
+
   inspectThreadInterests(threadId,{limit=24}={}){
     assertId("interests threadId",threadId);
     return this.#database.prepare(`

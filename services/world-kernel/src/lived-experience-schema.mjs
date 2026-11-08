@@ -301,6 +301,24 @@ export function createLivedExperienceTables(database) {
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;
 
+    -- Moments a Thread recognised in its own reflection: it was useful to
+    -- someone, or learned from someone. Append-only; the meaning is the
+    -- Thread's own words in moment_json.
+    CREATE TABLE IF NOT EXISTS thread_social_moments (
+      moment_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      kind TEXT NOT NULL CHECK (kind IN ('useful','learning')),
+      person_thread_id TEXT NOT NULL,
+      interest_id TEXT,
+      moment_json TEXT NOT NULL CHECK (json_valid(moment_json)),
+      evidence_refs_json TEXT NOT NULL CHECK (json_valid(evidence_refs_json)),
+      source_ref TEXT NOT NULL,
+      as_of TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS thread_social_moments_by_thread
+      ON thread_social_moments(thread_id,as_of);
+
     CREATE TABLE IF NOT EXISTS thread_experience_consolidation_stages (
       consolidation_id TEXT NOT NULL,
       stage TEXT NOT NULL CHECK (stage IN ('decision','complete')),

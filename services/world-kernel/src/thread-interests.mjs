@@ -18,6 +18,9 @@ const INTEREST_FIELDS=Object.freeze({
   draw:{type:"string",minLength:1,maxLength:400},
   selfImage:{type:"string",minLength:1,maxLength:300},
   openQuestions:{type:"array",maxItems:3,items:{type:"string",minLength:1,maxLength:200}},
+  // Its own felt standing in the subject among the people around it: who comes
+  // to it, who it learns from. There is no expertise level.
+  standing:{anyOf:[{type:"string",minLength:1,maxLength:300},{type:"null"}]},
 });
 
 export const INTEREST_CHANGE_SCHEMA=Object.freeze({
@@ -42,7 +45,8 @@ export function normalizeInterest(item){
   const openQuestions=Array.isArray(item.openQuestions)
     ?item.openQuestions.map(question=>text(question,200)).filter(Boolean).slice(0,3):[];
   if(subject===null||subject.length<3||draw===null||selfImage===null)return null;
-  return Object.freeze({subject,draw,selfImage,openQuestions:Object.freeze(openQuestions)});
+  return Object.freeze({subject,draw,selfImage,openQuestions:Object.freeze(openQuestions),
+    standing:text(item.standing,300)});
 }
 
 export function interestId({threadId,sourceRef,subject}){
@@ -53,13 +57,15 @@ export function interestId({threadId,sourceRef,subject}){
 export function interestText(interest){
   const asking=interest.openQuestions.length===0?""
     :" Still asking: "+interest.openQuestions.join(" ");
-  return `Interest — ${interest.subject}: ${interest.draw} How I see myself in it: ${interest.selfImage}${asking}`;
+  const standing=interest.standing?" Where I stand in it among the people around me: "+interest.standing:"";
+  return `Interest — ${interest.subject}: ${interest.draw} How I see myself in it: ${interest.selfImage}${standing}${asking}`;
 }
 
 // What the Thread's reflection sees of its interests.
 export function interestsInReflection(interests){
   return interests.map(interest=>({interestRef:interest.interestId,subject:interest.subject,
-    draw:interest.draw,selfImage:interest.selfImage,openQuestions:[...interest.openQuestions]}));
+    draw:interest.draw,selfImage:interest.selfImage,openQuestions:[...interest.openQuestions],
+    standing:interest.standing??null}));
 }
 
 // A Thread that has never held an interest forms its first ones once, from its

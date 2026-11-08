@@ -8,6 +8,7 @@ import {
   INTEREST_CHANGE_LIMIT,INTEREST_CHANGE_SCHEMA,admitInterestChanges,
   formFormativeInterests,interestsInReflection,
 } from "./thread-interests.mjs";
+import {MOMENT_SCHEMA,admitMoments,momentsInReflection,normalizeMoments} from "./felt-expertise.mjs";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
@@ -103,7 +104,9 @@ function normalizeDecision(output){
       &&(item.interestRef===null||typeof item.interestRef==="string"))
     .map(item=>Object.freeze({change:item.change,interestRef:item.interestRef,
       subject:item.subject,draw:item.draw,selfImage:item.selfImage,
-      openQuestions:Object.freeze(Array.isArray(item.openQuestions)?[...item.openQuestions]:[])})));
+      openQuestions:Object.freeze(Array.isArray(item.openQuestions)?[...item.openQuestions]:[]),
+      standing:item.standing??null})));
+  const moments=normalizeMoments(output.moments);
 
   assertPlainObject("experience consolidation memory",output.memory);
   const memory=output.memory;
@@ -117,6 +120,7 @@ function normalizeDecision(output){
       afterthoughts:Object.freeze(afterthoughts),
       stances,
       interests,
+      moments,
       memory:Object.freeze({
         outcome:"not_remembered",
         rememberedContent:null,
@@ -146,6 +150,7 @@ function normalizeDecision(output){
     afterthoughts:Object.freeze(afterthoughts),
     stances,
     interests,
+    moments,
     memory:Object.freeze({
       outcome:"retained",
       rememberedContent:memory.rememberedContent,
@@ -172,6 +177,7 @@ async function formDecision({
   memories,
   people,
   interests,
+  moments,
   modelAdapter,
 }){
   const storyById=new Map(encounterStories.map((story)=>[story.encounterId,story]));
@@ -188,6 +194,7 @@ async function formDecision({
     },
     semanticStates:semanticContext(semanticStates),
     interests:interestsInReflection(interests),
+    recentMoments:moments,
     priorMemories:boundedMemories(memories),
     experiencedSituation:structuredClone(situation),
     experiences:experiences.map((experience)=>({
@@ -210,7 +217,7 @@ async function formDecision({
     responseSchema:{
       type:"object",
       additionalProperties:false,
-      required:["journalEntry","memory","afterthoughts","stances","interests"],
+      required:["journalEntry","memory","afterthoughts","stances","interests","moments"],
       properties:{
         journalEntry:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
         afterthoughts:{
@@ -227,6 +234,7 @@ async function formDecision({
           },
         },
         interests:INTEREST_CHANGE_SCHEMA,
+        moments:MOMENT_SCHEMA,
         stances:{
           type:"array",
           maxItems:STANCE_LIMIT,
@@ -498,6 +506,7 @@ export function createExperienceConsolidationProcess({
       "decision",
     );
     const interestsHeld=typeof experienceStore.listCurrentInterests==="function";
+    const momentsHeld=interestsHeld&&typeof experienceStore.recordSocialMoment==="function";
     if(decisionStage===null){
       // Memories formed before gists existed gain the Thread's own gist, a
       // few per reflection, until every memory can be held by one.
@@ -527,6 +536,7 @@ export function createExperienceConsolidationProcess({
         memories:memoriesInMind(),
         people,
         interests:interestsHeld?experienceStore.listCurrentInterests(consolidation.threadId):[],
+        moments:momentsHeld?momentsInReflection(experienceStore,consolidation.threadId):[],
         modelAdapter,
       });
       decisionStage=experienceStore.recordThreadExperienceConsolidationStage({
@@ -589,6 +599,13 @@ export function createExperienceConsolidationProcess({
       stances:decision.stances,people,asOf:consolidation.startedAt,
     });
 
+    // Moments are admitted against the interests held before this reflection's changes.
+    const moments=momentsHeld?admitMoments({
+      experienceStore,threadId:consolidation.threadId,moments:decision.moments,people,
+      interests:experienceStore.listCurrentInterests(consolidation.threadId),
+      sourceRef:consolidation.consolidationId,asOf:consolidation.startedAt,
+    }):{admitted:[],dropped:0};
+
     const interests=interestsHeld?admitInterestChanges({
       experienceStore,threadId:consolidation.threadId,changes:decision.interests,
       current:experienceStore.listCurrentInterests(consolidation.threadId),
@@ -607,6 +624,7 @@ export function createExperienceConsolidationProcess({
         afterthoughtCount:decision.afterthoughts.length,
         stanceRefs:stances.admitted,
         interestRefs:interests.admitted,
+        momentRefs:moments.admitted,
       },
     });
 
@@ -647,6 +665,8 @@ export function createExperienceConsolidationProcess({
       stancesDropped:stances.dropped,
       interestRefs:completion.payload.interestRefs??[],
       interestsDropped:interests.dropped,
+      momentRefs:completion.payload.momentRefs??[],
+      momentsDropped:moments.dropped,
     });
   }
 

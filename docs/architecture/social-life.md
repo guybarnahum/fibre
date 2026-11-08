@@ -112,11 +112,14 @@ Noticed Experiences queue for delayed consolidation (a ~30 s World wake; one clu
 - a Memory, or `not_remembered` — a retained Memory carries a **gist** in the Thread's own words, by which background cognition holds it; the full recollection stays authoritative ([memory meaning](genesis-memory-meaning-integration.md));
 - up to three private afterthoughts (`insight | question | intention`);
 - up to two **stances**: how this Thread now regards a person who acted in those experiences;
-- up to two changes to its **interests**: form, deepen, revise or let go.
+- up to two changes to its **interests**: form, deepen, revise or let go;
+- up to two **moments**: it was useful to someone, or learned from someone.
 
 A stance names one aspect — fondness, trust, respect, attachment, resentment, guardedness — with a first-person description that carries the meaning. It is admitted as the Thread's own restricted `relationship_attitude` state (policy `relationship_stance_formation`), cites the experiences in which that person acted, and supersedes the Thread's earlier regard in the same aspect. A stance about someone who did not act, or one that prescribes rather than describes, is dropped. Stances are private and asymmetric.
 
 An **interest** is a subject that fascinates this Thread, in its own words: what draws it, how it sees itself in that subject (perhaps romantically — as the one who knows, makes or teaches it, someone others could find useful) and the questions it is still asking. A Thread holds up to four, as append-only revisions in `thread_interests`, each citing the memories or experiences it rests on. A Thread that has never held one finds its first in its own formative past, once, in a separate reflection over its own memories and self-description, before its next consolidation; after that, consolidation revises them, including from how others took what it shared or showed ([concept](../concepts/interests-expertise-and-livelihood.md)). Interests enter its developed-self evidence right after its regard for the person it faces, so social choice, conversation, Flight Planning, Commons and paid-work judgement all carry them. Nothing matches Threads by interest.
+
+A **moment** is one the Thread itself recognised: it helped, informed, showed or made something for a person who acted in those experiences, and how that was taken — or it learned something from them — with its own reaction in its own words. Moments are append-only in `thread_social_moments`, tied to the person, to one of its interests or none, and to the experiences in which that person acted; one naming someone who did not act, or an interest it does not hold, is dropped. How something was taken (`valued | ignored | corrected | unclear`) is kept for operators only and never shown to the Thread. Each interest carries the Thread's own **felt standing** in it — whether others come to it to learn, or it still learns from them — revised in reflection from its recent moments as it weighs each by its own regard for the person it came from. There is no expertise level. When the Thread faces someone, its latest moments with that person follow its regard for them in its evidence, so a Thread may return to those who valued it or taught it something.
 
 Afterthoughts may surface as a private opportunity inside a later live conversation, or lead to **later contact**: a fresh, separate decision to keep it private or message one routable person, then a separate expression call. A delivered message is an exterior fact for its addressee alone; the recipient may notice it and form its own Experience. Delivery is never "read" or "answered".
 
@@ -141,7 +144,7 @@ The [relationships concept](../concepts/relationships-doors-and-trust.md) separa
 
 Operators measure; Threads never see the measures. Everything here is derived for inspection, never model-visible and never authoritative.
 
-- **Social Life Scorecard** — `npm run world-social:quality -- --env staging [--days N] [--top N]`, from `GET /internal/relationships`: open doors per pair, recent ledger acts, the stage of each pair (stranger → acknowledged → acquainted → conversed → in touch, the furthest contiguous open door), and per day: turns, questions, turns opening in agreement, turns pushing back, interruptions and how much each conversation's words overlap with other pairs' that day. Words never leave World. Agreement and pushback are English heuristics (`conversation-shape.mjs`).
+- **Social Life Scorecard** — `npm run world-social:quality -- --env staging [--days N] [--top N]`, from `GET /internal/relationships`: open doors per pair, recent ledger acts, the stage of each pair (stranger → acknowledged → acquainted → conversed → in touch, the furthest contiguous open door), and per day: turns, questions, turns opening in agreement, turns pushing back, interruptions, how much each conversation's words overlap with other pairs' that day, how many people and pairs talked, the share of conversations held by the one person in most of them, and which doors opened. Words never leave World. Agreement and pushback are English heuristics (`conversation-shape.mjs`).
 - **Conversation endings** — `live-social-encounter-ended` with how each ended; `npm run infra:measure` counts them beside per-call cost, cache and prompt-part sizes.
 - **Observatory social profile** — exposure, initiative, responsiveness, breadth, reciprocity, depth, continuity and consequence, as separate dimensions. There is no `sociability` score; a quiet week is not introversion and a refusal is not failure.
 - **Probes** — `world-social:probe` reports a Thread's opportunities and the chain Story → noticing → Experience → Memory → later choice as *sequence*, never as proof that the Memory caused the choice.
@@ -152,7 +155,6 @@ Each extends the flow above without a new pipeline or model call unless stated.
 
 | Concept | Attaches at | First consequence |
 |---|---|---|
-| **Felt expertise** | consolidation records useful and learning moments with their source person and the Thread's reaction | its own felt standing per interest, weighted by its regard for that person |
 | **Kindred minds** | nothing new: an emergent effect of stance (§6) leading cognition | measured by who Threads return to and stay in touch with |
 | **Showing and paid work** | an offer inside an encounter; paid work through the task marketplace's bids and contracts | a free taste rewarded socially; a price when the work costs real time and tokens |
 | **Judging one's own social life** | a periodic Thread-owned reflection over its people and its regard for them | feelings (belonging, loneliness, pride) that pull behaviour; operators may compute sentiment × social currency over breadth and depth, the Thread never receives the number |
@@ -170,6 +172,7 @@ Each extends the flow above without a new pipeline or model call unless stated.
 | Stance | Context-only: it leads cognition facing that person; no acceptance criterion yet requires it to change a judgement | a decline, a return or a message that cites it |
 | Doors and ledger | Notarial: no decision reads them | appointments kept or missed reaching a stance |
 | Interests | Context-only: they lead developed-self evidence in social choice, conversation and planning; later contact does not read them yet | conversations and plans that diverge by interest; a Thread seeking someone who rewarded it on one |
+| Useful and learning moments, felt standing | Context-only: reflection records them with their person and revises standing from them; they lead evidence facing that person | a Thread returning to, or seeking out, someone it was useful to or learned from |
 | `social_contact` life relation | Future-state causal: makes a person contactable | — |
 | Scorecard, endings, social profile | Operator inspection only, by design | — |
 

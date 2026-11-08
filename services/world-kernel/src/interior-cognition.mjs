@@ -1,5 +1,6 @@
 import { promptFor, promptRequest } from "./cognition-prompts.mjs";
 import { interestText } from "./thread-interests.mjs";
+import { momentText } from "./felt-expertise.mjs";
 import { recallMemories } from "./memory-availability.mjs";
 import {
   assertId,
@@ -117,6 +118,13 @@ function selectEvidence(threadId, sourceStores, policy, at, focus=null) {
     );
   };
   for(const item of states.filter(regardsFocus))candidates.push(stateCandidate(item));
+  // What it was to them, or they to it: the latest times it was useful to, or
+  // learned from, the people it faces.
+  for(const moment of sourceStores.experienceStore?.listSocialMoments?.(
+    threadId,{limit:2,personIds:[...focusIds]})??[]){
+    if(Date.parse(moment.asOf)<=Date.parse(at))
+      candidates.push(evidenceCandidate(moment.momentId,"moment",momentText(moment)));
+  }
   // Then what this Thread itself cares about: its own subjects and questions.
   for(const interest of sourceStores.experienceStore?.listCurrentInterests?.(threadId)??[]){
     candidates.push(evidenceCandidate(interest.interestId,"interest",interestText(interest)));

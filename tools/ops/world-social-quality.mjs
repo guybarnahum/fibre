@@ -132,6 +132,15 @@ export function renderScorecard(card,names,environment,{top=15}={}){
       +` · pushback in ${talks.filter(talk=>talk.pushbackTurns>0).length}`
       +(overlaps.length>0?` · topic overlap ${mean(overlaps).toFixed(2)}`:"")
       +` · interrupted ${talks.filter(talk=>talk.interrupted>0).length}`);
+    // Breadth and the hub: how many people talked, and the share of the
+    // day's conversations held by the one in most of them.
+    const [hub,held]=[...count(talks.flatMap(talk=>talk.threadIds),id=>id)].sort((a,b)=>b[1]-a[1])[0];
+    const opened=[...count(card.pairs.flatMap(entry=>entry.doors)
+      .filter(door=>door.openedAt.startsWith(date)),door=>door.door)];
+    lines.push(`    ${new Set(talks.flatMap(talk=>talk.threadIds)).size} people talked`
+      +` · ${new Set(talks.map(talk=>[...talk.threadIds].sort().join("|"))).size} pairs`
+      +` · ${first(hub)} in ${held} of ${talks.length}`
+      +` · doors opened: ${opened.length===0?"none":opened.map(([door,n])=>`${door} ${n}`).join(", ")}`);
   }
   lines.push(`top ${Math.min(top,card.pairs.length)} pairs by mileage`);
   for(const entry of card.pairs.slice(0,top)){

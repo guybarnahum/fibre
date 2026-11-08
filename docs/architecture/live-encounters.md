@@ -300,7 +300,7 @@ These are private cognitive residue only. They are not automatic speech, commitm
 
 A retained memory also carries a **gist** in the Thread's own words: the short form by which background cognition holds it, while the full recollection remains the memory (see [memory meaning](genesis-memory-meaning-integration.md)).
 
-Consolidation may also form up to two **stances**: how this Thread now regards a person who acted in the cluster, admitted through the semantic-state authority as the Thread's own `relationship_attitude` (see [social life §6](social-life.md#6-afterwards-reflection-memory-stance-and-interests)), and up to two changes to the Thread's own interests. No other semantic-state, relationship, door or life-relation mutation is part of this consolidation writer.
+Consolidation may also form up to two **stances**: how this Thread now regards a person who acted in the cluster, admitted through the semantic-state authority as the Thread's own `relationship_attitude` (see [social life §6](social-life.md#6-afterwards-reflection-memory-stance-and-interests)), up to two changes to the Thread's own interests, and up to two moments in which it was useful to, or learned from, someone who acted. No other semantic-state, relationship, door or life-relation mutation is part of this consolidation writer.
 
 ## Observatory causal projection
 
