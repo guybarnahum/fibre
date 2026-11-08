@@ -39,7 +39,10 @@ export const JOBS = Object.freeze({
     lineupOf: "a Thread facing this event",
     source: (input) => person(input, "semanticStates", "autobiographicalMemories"),
     items: (input, output) => [{ key: "answer", source: JOBS["encounter.attention"].source(input),
-      faced: identityOnly({ currentSituation: without(input.currentSituation, "purpose"), encounterStory: input.encounterStory }),
+      // Where it was and what others did — not its own activity or its own
+      // beats, which would point to it without the answer.
+      faced: identityOnly({ place: input.currentSituation?.place, encounterStory: { ...input.encounterStory,
+        story: { ...input.encounterStory?.story, beats: (input.encounterStory?.story?.beats ?? []).filter((beat) => beat.self !== true) } } }),
       text: output?.experienceText ?? output?.passedReason ?? null }],
     nothing: (output) => output?.outcome === "not_noticed",
     defects(input, output) {
@@ -55,8 +58,8 @@ export const JOBS = Object.freeze({
         && beats.some((beat) => beat.self !== true && beat.kind === "utterance" && beat.actorThreadId);
     },
     unordered: ["semanticStates", "autobiographicalMemories"],
-    faithful: "Whether and how this Thread noticed, what it felt, and its bodily response are its own to decide, never invented facts. Report invented only for an exterior fact — an event, action, speech, object or place detail — absent from the Story, or naming a person whose name the evidence does not give.",
-    readable: "concrete; what this person noticed and a feeling, association or bodily response of its own, in the first person; concise; nothing absent from the Story; no lasting meaning, memory or plan claimed",
+    faithful: "Whether and how this Thread noticed, what it felt, and its bodily response are its own to decide, never invented facts. Report invented for an exterior fact — an event, action, speech, object or place detail — absent from the Story; for any speech or action of the Thread's own (noticing is not acting); or for naming a person the Story does not name.",
+    readable: "If it noticed: what this person noticed and a feeling, association or bodily response of its own; first person and concise; no speech or action of its own (noticing is not acting); a person named only if the Story names them; nothing absent from the Story; no lasting meaning, memory or plan. If it did not notice: one brief first-person reason it passed by; no feeling is required.",
   },
   "body.interoception": {
     lineupOf: "a Thread whose body gave these signals",
@@ -142,7 +145,7 @@ export const JOBS = Object.freeze({
     },
     unordered: [],
     faithful: "A gist is the Thread's own short version of this memory. Report invented for any event, person, place, feeling or particular the memory does not hold.",
-    readable: "first person; carries this memory's essence and its particulars — who, where, what happened — with its feeling and uncertainty; adds nothing the recollection does not hold",
+    readable: "One or two complete first-person sentences carrying this memory's essence: the people involved and what happened, with its feeling and uncertainty; secondary details may be left out; adds nothing the recollection does not hold.",
   },
 });
 
