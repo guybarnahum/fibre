@@ -250,6 +250,7 @@ export function createWorldEnvironmentEvolution({
                 experienceStore,
                 modelAdapter,
                 onExperienceQueued,
+                worldReader,
               });
               if(attention.outcome==="noticed")noticed+=1;
             }

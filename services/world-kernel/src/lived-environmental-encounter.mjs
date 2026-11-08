@@ -319,6 +319,8 @@ export function createEnvironmentalEncounterService({
           experienceStore,
           modelAdapter,
           onExperienceQueued,
+          worldReader,
+          situatedLifeStore,
         });
         if(observer.thread.threadId===input.threadId)attention=received;
         observed.push({threadId:observer.thread.threadId,outcome:received.outcome});

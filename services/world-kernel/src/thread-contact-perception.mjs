@@ -94,7 +94,7 @@ export function createThreadContactPerception({
               ?memoryStore.listCurrentMemories(message.recipientThreadId,{inMind:"background",
                 limit:6,newestFirst:true,
               }):[],
-            experienceStore,modelAdapter,onExperienceQueued,
+            experienceStore,modelAdapter,onExperienceQueued,worldReader,
           });
           if(attention.outcome==="noticed")noticed++;
           contactStore.settleContactReception({

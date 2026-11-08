@@ -386,6 +386,38 @@ test("objective arrivals redact full and partial names from public portrait and 
   }finally{ctx.close();}
 });
 
+test("a witness sees someone it has met by name, a stranger stays described, and the World Story names no one",async()=>{
+  const ctx=setup();
+  try{
+    const {ids,threads,store,work,livedNowStore}=ctx;
+    threads.get(ids[0]).identity.name="Kadir Hundessa";
+    // Only the reader has met the arriver before.
+    const experienceStore=new Proxy(store,{get:(target,key)=>key==="hasMetEncounter"
+      ?(observer,other)=>observer===ids[1]&&other===ids[0]
+      :typeof target[key]==="function"?target[key].bind(target):target[key]});
+    store.enqueueArrivalPerception(work);
+    const seen={};
+    const process=createWorldArrivalPerception({
+      experienceStore,livedNowStore,
+      worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
+      semanticStateStore:{listCurrentState:()=>[]},
+      memoryStore:{listCurrentMemories:()=>[]},
+      modelAdapter:{async invoke({input}){
+        seen[input.thread.threadId]=input.encounterStory.story.beats.find(beat=>beat.actorThreadId===ids[0]);
+        return {output:{outcome:"not_noticed",experienceText:null,passedReason:"I was reading."},
+          provenance:{provider:"fixture",modelId:"attention"}};
+      }},
+      now:()=>AT,
+    });
+    assert.equal((await process.runOnce()).failed,0,"arrival attention did not settle");
+    assert.equal(seen[ids[1]].knownAs,"Kadir Hundessa","a witness did not recognize someone it has met");
+    assert.equal(seen[ids[2]].knownAs,undefined,"a stranger was recognized without having met");
+    assert.equal(seen[ids[0]].knownAs,undefined,"the arriver was shown its own name as a recognition");
+    assert.ok(store.listEncounterStories(ids[0])[0].story.beats.every(beat=>!("knownAs" in beat)),
+      "one observer's recognition entered the objective World Story");
+  }finally{ctx.close();}
+});
+
 test("late inspection retains arrival truth without inventing old psychology",async()=>{
   const ctx=setup();
   try{

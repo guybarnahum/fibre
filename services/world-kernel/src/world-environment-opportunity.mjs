@@ -286,7 +286,7 @@ export function createWorldEnvironmentOpportunity({
                   ?memoryStore.listCurrentMemories(presence.threadId,{inMind:"background",
                     limit:6,newestFirst:true,
                   }):[],
-                experienceStore,modelAdapter,onExperienceQueued,
+                experienceStore,modelAdapter,onExperienceQueued,worldReader,
               });
               if(attention.outcome==="noticed")noticed+=1;
             }

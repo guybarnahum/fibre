@@ -113,7 +113,7 @@ export function createWorldArrivalPerception({
                     ?memoryStore.listCurrentMemories(situation.threadId,{inMind:"background",
                       limit:6,newestFirst:true,
                     }).filter(m=>Date.parse(m.asOf)<=Date.parse(obligation.dueAt)):[],
-                  experienceStore,modelAdapter,onExperienceQueued,
+                  experienceStore,modelAdapter,onExperienceQueued,worldReader,
                 });
                 if(attention.outcome==="noticed"){
                   noticed++;
@@ -148,7 +148,7 @@ export function createWorldArrivalPerception({
                     ?memoryStore.listCurrentMemories(arrival.threadId,{inMind:"background",
                       limit:6,newestFirst:true,
                     }).filter(m=>Date.parse(m.asOf)<=Date.parse(obligation.dueAt)):[],
-                  experienceStore,modelAdapter,onExperienceQueued,
+                  experienceStore,modelAdapter,onExperienceQueued,worldReader,
                 });
                 if(attention.outcome==="noticed")noticed++;
               }

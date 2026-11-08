@@ -75,6 +75,14 @@ function observerNameKnowledge({
   )??false,heard:null};
 }
 
+// The name an observer knows another Thread by: the full name through a life
+// relation or an earlier meeting, the name it heard in an introduction, or none.
+export function knownPersonName({name,...options}={}){
+  if(typeof name!=="string"||name.trim()==="")return null;
+  const knowledge=observerNameKnowledge(options);
+  return knowledge.full?name:knowledge.heard;
+}
+
 export function personKnownToObserver(options={}){
   const knowledge=observerNameKnowledge(options);
   return knowledge.full||knowledge.heard!==null;

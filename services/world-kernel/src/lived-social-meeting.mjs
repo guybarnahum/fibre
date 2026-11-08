@@ -5,7 +5,7 @@ import {
 } from "./lived-meeting-cognition.mjs";
 import { runThreadLiveSocialEncounter } from "./lived-social-live-encounter.mjs";
 import { assertExpressionModelAdapter } from "./guardian-model-adapter.mjs";
-import { appraiseEncounterAttention,admitEncounterAttention } from "./lived-encounter-attention.mjs";
+import { appraiseEncounterAttention,admitEncounterAttention,recognitionFor } from "./lived-encounter-attention.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import { formThreadEncounterExperience } from "./lived-thread-experience-cognition.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
@@ -506,7 +506,7 @@ export function createSocialMeetingService({
       thread:currentRight.thread,situation:currentRight.situation,encounterStory,
       semanticStates:currentRight.semanticStates,
       memories:currentRight.memories,
-      experienceStore,modelAdapter,onExperienceQueued,
+      experienceStore,modelAdapter,onExperienceQueued,worldReader,situatedLifeStore,
     });
     if(attention.outcome==="noticed"&&venue!==null){
       const since=sharedVisitSince(currentLeft,currentRight,venue,at);
@@ -738,6 +738,8 @@ export function createSocialMeetingService({
         encounterStory,
         semanticStates:context.semanticStates,
         memories:context.memories,
+        knownAs:recognitionFor({thread:context.thread,worldReader,situatedLifeStore,experienceStore,
+          at:encounterStory.occurredAt}),
         modelAdapter,
       });
       const attention = experienceStore.recordThreadEncounterAttention({

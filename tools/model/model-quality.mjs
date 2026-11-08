@@ -205,7 +205,7 @@ async function main() {
     }
     result.judged = judged.map((row) => ({ key: row.key, request: digest(row.request.input).slice(0, 16),
       scope: scopeOf(options.prompt, row.request.input), text: row.text,
-      context: row.context, results: row.results }));
+      context: row.context, scene: scene(row.request.input, row.context), results: row.results }));
   }
 
   // The owner's blind read of a whole morning, in time order, for each model.
@@ -233,17 +233,6 @@ async function main() {
     .map((row) => ({ id: digest([m.model, row.request, row.key, row.text]).slice(0, 12), model: m.model, ...row }))
     .sort((a, b) => a.id.localeCompare(b.id)).slice(0, perModel))
     .sort((a, b) => a.id.localeCompare(b.id));
-  // What was faced, as a reader would want it: the scene's words, not records.
-  const shown = (context) => {
-    if (typeof context === "string") return context;
-    const lines = [];
-    const now = context?.currentSituation;
-    if (now) lines.push(`Doing: ${now.activity ?? now.outwardActivity ?? ""}${now.place?.name ? ` at ${now.place.name}` : ""}`);
-    for (const beat of context?.encounterStory?.story?.beats ?? []) lines.push(`${beat.self ? "(me) " : ""}${beat.text}`);
-    for (const item of context?.afterReflection ?? []) lines.push(`After reflecting (${item.kind}): ${item.text}`);
-    if (context?.reachable?.length) lines.push(`Can reach: ${context.reachable.join(", ")}`);
-    return lines.length > 0 ? lines.join("\n") : JSON.stringify(context ?? {}, null, 1).slice(0, 1200);
-  };
   const reviewId = `${options.prompt}-${stamp}`;
   await writeFile(join(out, `review-${reviewId}.json`), JSON.stringify({
     kind: REVIEW_KIND, id: reviewId, prompt: options.prompt, promptVersion: prompt.version, createdAt: new Date().toISOString(),
@@ -251,7 +240,7 @@ async function main() {
     scorecard: report.models.map((m) => ({ model: m.model, answered: m.answered, failed: m.failed, costPerCall: m.costPerCall,
       acceptable: m.acceptable, alarms: m.alarms, goodEnough: m.goodEnough })),
     items: sample.map((row) => ({ id: row.id, model: row.model,
-      faced: shown(row.context), answer: row.text,
+      faced: row.scene, answer: row.text,
       judges: Object.fromEntries(Object.entries(row.results).map(([judge, r]) =>
         [judge, { acceptable: r.acceptable, why: r.why, invented: r.invented, example: r.example }])) })),
   }, null, 2));
@@ -262,6 +251,22 @@ async function main() {
   await writeFile(join(out, `quality-${options.prompt}-${stamp}.json`), JSON.stringify(report, null, 2));
   console.log(`\njudges spent ≈ $${judgeCost.toFixed(2)} this run (cached verdicts are free)`);
   console.log(`evidence: .fibre/model-quality/ — open review-${reviewId}.json in Admin › Model Quality to review blind`);
+}
+
+// What was faced, as a reader would want it: the whole scene in its own words,
+// with this Thread's own part marked and anyone it knows shown by name.
+function scene(input, context) {
+  if (typeof context === "string") return context;
+  const lines = [];
+  if (input?.thread?.name) lines.push(`Me: ${input.thread.name}`);
+  const now = input?.currentSituation ?? context?.currentSituation;
+  if (now) lines.push(`Doing: ${now.activity ?? now.outwardActivity ?? ""}${now.place?.name ? ` at ${now.place.name}` : ""}`);
+  for (const beat of input?.encounterStory?.story?.beats ?? context?.encounterStory?.story?.beats ?? []) {
+    lines.push(`${beat.self ? "(me) " : ""}${beat.knownAs ? `[${beat.knownAs}] ` : ""}${beat.text}`);
+  }
+  for (const item of context?.afterReflection ?? []) lines.push(`After reflecting (${item.kind}): ${item.text}`);
+  if (context?.reachable?.length) lines.push(`Can reach: ${context.reachable.join(", ")}`);
+  return lines.length > 1 ? lines.join("\n") : JSON.stringify(context ?? {}, null, 1).slice(0, 1200);
 }
 
 // The owner's verdicts against the judges, for every review of this job he has read.

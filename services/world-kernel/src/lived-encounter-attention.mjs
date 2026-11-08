@@ -2,6 +2,7 @@ import { situationInMind } from "./situation-in-mind.mjs";
 import { memoryInMind } from "./memory-in-mind.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
+import { knownPersonName } from "./world-observable-person.mjs";
 import {
   assertExactKeys,
   assertId,
@@ -37,6 +38,7 @@ export async function appraiseEncounterAttention({
   memories = [],
   selfRole=null,
   venueName=null,
+  knownAs=()=>null,
   modelAdapter,
 }) {
   assertPlainObject("attention Thread", thread);
@@ -72,8 +74,9 @@ export async function appraiseEncounterAttention({
         // Observer-relative cognition only; never alter World Story evidence.
         beats:encounterStory.story.beats.map(beat=>{
           const self=beat.actorThreadId===thread.threadId;
+          const known=self||!beat.actorThreadId?null:knownAs(beat.actorThreadId);
           return {
-            ...structuredClone(beat),self,
+            ...structuredClone(beat),self,...(known?{knownAs:known}:{}),
             ...(self&&selfRole==="arriver"&&beat.kind==="action"
               ?{text:venueName?`You arrive at ${venueName}.`:"You arrive here."}
               :self&&selfRole==="witness"&&beat.kind==="occurrence"
@@ -133,6 +136,15 @@ export async function appraiseEncounterAttention({
   });
 }
 
+// Whom an observer recognizes in a Story is the World's record of a meeting,
+// an introduction or a life relation; the objective Story names no one.
+export function recognitionFor({thread,worldReader,situatedLifeStore=null,experienceStore,at}){
+  if(!worldReader)return ()=>null;
+  return threadId=>knownPersonName({observerThreadId:thread.threadId,threadId,at,
+    name:worldReader.getThread(threadId,{required:false})?.identity?.name??null,
+    situatedLifeStore,experienceStore});
+}
+
 /** Admit one observer's attention to an already-admitted objective World story. */
 export async function admitEncounterAttention({
   thread,
@@ -145,6 +157,8 @@ export async function admitEncounterAttention({
   onExperienceQueued=null,
   selfRole=null,
   venueName=null,
+  worldReader=null,
+  situatedLifeStore=null,
 }){
   let attention=experienceStore.getThreadEncounterAttention(
     thread.threadId,encounterStory.encounterId,
@@ -152,6 +166,8 @@ export async function admitEncounterAttention({
   if(attention===null){
     const appraisal=await appraiseEncounterAttention({
       thread,situation,encounterStory,semanticStates,memories,modelAdapter,selfRole,venueName,
+      knownAs:recognitionFor({thread,worldReader,situatedLifeStore,experienceStore,
+        at:encounterStory.occurredAt}),
     });
     attention=experienceStore.recordThreadEncounterAttention({
       threadId:thread.threadId,

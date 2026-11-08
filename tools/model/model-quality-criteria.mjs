@@ -39,10 +39,11 @@ export const JOBS = Object.freeze({
     lineupOf: "a Thread facing this event",
     source: (input) => person(input, "semanticStates", "autobiographicalMemories"),
     items: (input, output) => [{ key: "answer", source: JOBS["encounter.attention"].source(input),
-      // Where it was and what others did — not its own activity or its own
-      // beats, which would point to it without the answer.
+      // Where it was and what others did — not its own activity, its own
+      // beats or whom it knows, which would point to it without the answer.
       faced: identityOnly({ place: input.currentSituation?.place, encounterStory: { ...input.encounterStory,
-        story: { ...input.encounterStory?.story, beats: (input.encounterStory?.story?.beats ?? []).filter((beat) => beat.self !== true) } } }),
+        story: { ...input.encounterStory?.story, beats: (input.encounterStory?.story?.beats ?? [])
+          .filter((beat) => beat.self !== true).map(({ knownAs, ...beat }) => beat) } } }),
       text: output?.experienceText ?? output?.passedReason ?? null }],
     nothing: (output) => output?.outcome === "not_noticed",
     defects(input, output) {
@@ -58,8 +59,8 @@ export const JOBS = Object.freeze({
         && beats.some((beat) => beat.self !== true && beat.kind === "utterance" && beat.actorThreadId);
     },
     unordered: ["semanticStates", "autobiographicalMemories"],
-    faithful: "Whether and how this Thread noticed, what it felt, and its bodily response are its own to decide, never invented facts. Report invented for an exterior fact — an event, action, speech, object or place detail — absent from the Story; for any speech or action of the Thread's own (noticing is not acting); or for naming a person the Story does not name.",
-    readable: "If it noticed: what this person noticed and a feeling, association or bodily response of its own; first person and concise; no speech or action of its own (noticing is not acting); a person named only if the Story names them; nothing absent from the Story; no lasting meaning, memory or plan. If it did not notice: one brief first-person reason it passed by; no feeling is required.",
+    faithful: "Whether and how this Thread noticed, what it felt, its bodily response and any brief reflex of attention (looking up, turning toward it, going back to what it was doing) are its own to decide, never invented facts. Recognizing someone is not invented when a beat's knownAs or the Thread's own memories name them. Report invented for an exterior fact — an event, action, speech, object or place detail — absent from the Story; for speech or a deliberate action of the Thread's own; or for naming a person neither knownAs nor its own memories name.",
+    readable: "If it noticed: what this person noticed and a feeling, association or bodily response of its own; first person and concise; a brief reflex of attention (looking up, turning toward it, going back to what it was doing) is part of noticing, but no speech, reply or deliberate action of its own; a person named only as the Story, a beat's knownAs or its own memories name them; nothing else absent from the Story; no lasting meaning, memory or plan. If it did not notice: one brief first-person reason it passed by; no feeling is required.",
   },
   "body.interoception": {
     lineupOf: "a Thread whose body gave these signals",
