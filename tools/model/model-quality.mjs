@@ -7,8 +7,12 @@
 //   npm run model:quality -- --prompt encounter.attention --models openai:gpt-5.6-sol,openai:gpt-5.6-terra
 //
 // Answers and verdicts are cached, so a re-run pays only for what is new.
-// Evidence (Thread-private; never committed) goes to .fibre/model-quality/.
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+// Evidence (Thread-private; never committed) goes to .fibre/model-quality/,
+// including review-<prompt>-<stamp>.json for the admin Model Quality page.
+// Verdicts saved from that page (verdicts-<review>.json, put back in the same
+// folder) are compared with the judges at the start of every run;
+// --agreement prints only that comparison.
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { loadDeploymentManifest, resolveServiceDeployment } from "../deployment/deployment-manifest.mjs";
@@ -17,15 +21,17 @@ import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs
 import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
 import { judgesFor } from "./model-judges.mjs";
 import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, scopeOf } from "./model-quality-criteria.mjs";
+import { agreement, readReview, readVerdicts, REVIEW_KIND, testReading } from "../../apps/admin-dashboard/model-quality-review.mjs";
 
 const MIN_CASES = 30;
-const BLIND_ANSWERS = 30;
+const REVIEW_ANSWERS = 30;
 
 function args(argv) {
   const options = { prompt: null, models: ["openai:gpt-5.6-sol"], judges: ["claude-opus-5-5", "gpt-5.6-sol"],
-    limit: 200, concurrency: 4, evidence: ".fibre/infra-measure" };
+    limit: 200, concurrency: 4, evidence: ".fibre/infra-measure", agreementOnly: false };
   for (let index = 0; index < argv.length; index += 1) {
     const [name, inline] = argv[index].split("=", 2);
+    if (name === "--agreement") { options.agreementOnly = true; continue; }
     const value = inline ?? argv[++index];
     if (name === "--prompt") options.prompt = value;
     else if (name === "--models") options.models = value.split(",");
@@ -47,6 +53,7 @@ function args(argv) {
 
 const digest = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const percent = (value) => value === null || value === undefined ? "—" : `${Math.round(value * 100)}%`;
+const fraction = ([k, n]) => `${k} of ${n}`;
 const share = ([k, n]) => n === 0 ? "—" : `${percent(k / n)} [${interval(k, n).map(percent).join("–")}] of ${n}`;
 
 async function main() {
@@ -63,6 +70,8 @@ async function main() {
     return value;
   };
   const progress = (text) => console.log(JSON.stringify({ event: "model-quality-progress", progress: `${options.prompt} · ${text}` }));
+  await printAgreement(out, options.prompt);
+  if (options.agreementOnly) return;
 
   const manifest = await loadDeploymentManifest(join(repoRoot, "infra/deployments/environments/cloudflare.yaml"));
   const base = resolveServiceDeployment(manifest, "world-kernel").integrations.encounter;
@@ -191,16 +200,15 @@ async function main() {
     console.log(`  acceptable (every judge that read it): ${share(result.acceptable)}`);
     console.log(`  GOOD ENOUGH FOR FIBRE: ${result.goodEnough.overall.toUpperCase()}`);
     for (const test of result.goodEnough.tests) {
-      const value = test.value === null ? "" : ` ${test.test.startsWith("attributable: the answer") ? `${test.value >= 0 ? "+" : ""}${Math.round(test.value * 100)} points` : percent(test.value)}`;
-      const bar = test.bar === null ? "" : ` (bar ${test.test.startsWith("valid") ? "≤" : "≥"} ${test.test.startsWith("attributable: the answer") ? `+${Math.round(test.bar * 100)} points` : percent(test.bar)})`;
-      console.log(`    ${test.verdict.padEnd(9)} ${test.test}${value}${bar}${test.detail ? ` — ${test.detail}` : ""}`);
+      const { value, bar } = testReading(test);
+      console.log(`    ${test.verdict.padEnd(9)} ${test.test}${value ? ` ${value}` : ""}${bar ? ` (bar ${bar})` : ""}${test.detail ? ` — ${test.detail}` : ""}`);
     }
-    result.judged = judged.map((row) => ({ key: row.key, scope: scopeOf(options.prompt, row.request.input), text: row.text,
+    result.judged = judged.map((row) => ({ key: row.key, request: digest(row.request.input).slice(0, 16),
+      scope: scopeOf(options.prompt, row.request.input), text: row.text,
       context: row.context, results: row.results }));
   }
 
-  // Guy's blind reads: the morning, in time order, for each model; and single
-  // answers to accept or reject, which also check the judges.
+  // The owner's blind read of a whole morning, in time order, for each model.
   const stamp = new Date().toISOString().replaceAll(":", "-");
   const letters = options.models.map((_, index) => `Model ${String.fromCharCode(80 + index)}`)
     .sort(() => Math.random() - 0.5);
@@ -218,9 +226,13 @@ async function main() {
   await writeFile(join(out, `morning-${options.prompt}-${stamp}.md`),
     `# A recorded morning — ${options.prompt}\n\nSame requests, different models, names hidden. Which reads most like a life?\n\n${morning.map((m) => `## ${m.label}\n\n${m.lines.join("\n")}\n`).join("\n")}`);
   await writeFile(join(out, `morning-key-${options.prompt}-${stamp}.json`), JSON.stringify(labels, null, 2));
-  const sample = report.models.flatMap((m) => (m.judged ?? []).slice(0, Math.ceil(BLIND_ANSWERS / options.models.length))
-    .map((row) => ({ model: m.model, ...row })))
-    .sort((a, b) => digest([a.key, a.text]).localeCompare(digest([b.key, b.text]))).slice(0, BLIND_ANSWERS);
+  // The owner's blind review: answers from every model, interleaved, each with
+  // what was faced and what the judges said (shown only after his verdict).
+  const perModel = Math.ceil(REVIEW_ANSWERS / options.models.length);
+  const sample = report.models.flatMap((m) => (m.judged ?? [])
+    .map((row) => ({ id: digest([m.model, row.request, row.key, row.text]).slice(0, 12), model: m.model, ...row }))
+    .sort((a, b) => a.id.localeCompare(b.id)).slice(0, perModel))
+    .sort((a, b) => a.id.localeCompare(b.id));
   // What was faced, as a reader would want it: the scene's words, not records.
   const shown = (context) => {
     if (typeof context === "string") return context;
@@ -232,19 +244,44 @@ async function main() {
     if (context?.reachable?.length) lines.push(`Can reach: ${context.reachable.join(", ")}`);
     return lines.length > 0 ? lines.join("\n") : JSON.stringify(context ?? {}, null, 1).slice(0, 1200);
   };
-  await writeFile(join(out, `accept-${options.prompt}-${stamp}.md`), `# Accept or reject — ${options.prompt}\n\nCriteria: ${job.readable}\n\nFor each answer note **accept** or **reject**, and why if rejected. Models are hidden.\n\n` +
-    sample.map((row, index) => `## ${index + 1}\n\nFaced:\n\n\`\`\`\n${shown(row.context)}\n\`\`\`\n\n**Answer:** ${row.text}\n`).join("\n"));
-  await writeFile(join(out, `accept-key-${options.prompt}-${stamp}.json`), JSON.stringify(sample.map((row, index) => ({
-    item: index + 1, model: row.model,
-    judges: Object.fromEntries(Object.entries(row.results).map(([judge, r]) => [judge, { acceptable: r.acceptable, why: r.why }])),
-  })), null, 2));
+  const reviewId = `${options.prompt}-${stamp}`;
+  await writeFile(join(out, `review-${reviewId}.json`), JSON.stringify({
+    kind: REVIEW_KIND, id: reviewId, prompt: options.prompt, promptVersion: prompt.version, createdAt: new Date().toISOString(),
+    criteria: job.readable, invented: job.faithful, judges: report.judges, requests: requests.length,
+    scorecard: report.models.map((m) => ({ model: m.model, answered: m.answered, failed: m.failed, costPerCall: m.costPerCall,
+      acceptable: m.acceptable, alarms: m.alarms, goodEnough: m.goodEnough })),
+    items: sample.map((row) => ({ id: row.id, model: row.model,
+      faced: shown(row.context), answer: row.text,
+      judges: Object.fromEntries(Object.entries(row.results).map(([judge, r]) =>
+        [judge, { acceptable: r.acceptable, why: r.why, invented: r.invented, example: r.example }])) })),
+  }, null, 2));
   report.judgeCost = judgeCost;
   for (const [model, errors] of judgeErrors) {
     console.log(`judge ${model}: ${errors.length} verdicts failed, e.g. ${errors[0]}`);
   }
   await writeFile(join(out, `quality-${options.prompt}-${stamp}.json`), JSON.stringify(report, null, 2));
   console.log(`\njudges spent ≈ $${judgeCost.toFixed(2)} this run (cached verdicts are free)`);
-  console.log("evidence: .fibre/model-quality/ (scorecard; the morning and answers to accept or reject, blind; keys kept separately)");
+  console.log(`evidence: .fibre/model-quality/ — open review-${reviewId}.json in Admin › Model Quality to review blind`);
+}
+
+// The owner's verdicts against the judges, for every review of this job he has read.
+async function printAgreement(out, promptId) {
+  const files = (await readdir(out).catch(() => [])).filter((name) => name.startsWith("verdicts-") && name.endsWith(".json"));
+  for (const name of files.sort()) {
+    try {
+      const saved = JSON.parse(await readFile(join(out, name), "utf8"));
+      if (saved.prompt !== promptId) continue;
+      const review = readReview(JSON.parse(await readFile(join(out, `review-${saved.review}.json`), "utf8")));
+      const result = agreement(review, readVerdicts(saved, review));
+      console.log(`your review ${saved.review}: ${result.reviewed} answers read`);
+      for (const [model, tally] of Object.entries(result.byModel)) console.log(`  you accepted ${model}: ${fraction(tally)}`);
+      for (const [judge, t] of Object.entries(result.byJudge)) {
+        console.log(`  ${judge} agrees with you on ${fraction([t.agreed, t.compared])} (stricter ${t.stricter}, laxer ${t.laxer})`);
+      }
+    } catch (error) {
+      console.log(`${name}: ${error.message}`);
+    }
+  }
 }
 
 main().catch((error) => {

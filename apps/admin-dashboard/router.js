@@ -15,6 +15,9 @@ if (threadMatch) {
 } else if (location.pathname.replace(/\/+$/u,"")==="/world-events") {
   document.title="Fibre Admin · World Events";
   import("/world-events-ui.js").then(({renderWorldEventsPage})=>renderWorldEventsPage());
+} else if (location.pathname.replace(/\/+$/u,"")==="/model-quality") {
+  document.title="Fibre Admin · Model Quality";
+  import("/model-quality-ui.js").then(({renderModelQualityPage})=>renderModelQualityPage());
 } else {
   import("/app.js").then(() => import("/thread-population-ui.js"));
 }
