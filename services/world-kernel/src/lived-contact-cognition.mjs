@@ -59,6 +59,7 @@ export async function decideLaterContact({
   semanticStates=[],
   memories=[],
   candidates,
+  body=[],
   modelAdapter,
 }={}){
   assertPlainObject("contact Thread",thread);
@@ -80,6 +81,8 @@ export async function decideLaterContact({
     autobiographicalMemories:boundedMemories(memories),
     routableKnownParties:routableCandidates,
     currentSituation:situationInMind(currentSituation),
+    // How this Body feels about company now, in words (ADR-0036).
+    ...(body.length===0?{}:{body:[...body]}),
     delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
   };
   const invocation=await modelAdapter.invoke({

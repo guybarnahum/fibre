@@ -1,7 +1,7 @@
 ---
 id: adr-0035-glance-and-books-at-places
 status: accepted
-last-reviewed: 2026-11-08
+last-reviewed: 2026-11-09
 canonical: true
 ---
 
@@ -20,9 +20,9 @@ canonical: true
 **The glance.**
 - On arrival, World lists up to five things the arriver could take in now: the people already present (as this Thread sees them, with `knownAs` for anyone it knows) and up to three books from the display.
 - The order is where the eye falls. It is fixed by the venue and the moment, so different visits find different books from the same kept shelf. It never depends on who is looking or on what they care about.
-- One call (`encounter.glance`, a gate job at the deferred tier) reads the list in order. It returns the item the Thread takes up, if any, its immediate experience of it, and one reason it passed what came before.
-- **Before the focus:** seen and passed. **The focus:** noticed. **After it:** never reached.
-- Toward the people present, the arriver's attention to the arrival Story is `noticed` when one of them is the focus. Otherwise it is `not_noticed`, with the Thread's reason when they came before its focus, and none when they were never reached.
+- One call (`encounter.glance`, a gate job at the deferred tier) looks over the whole list before anything holds the Thread (Guy, November 9: in 5 of 6 first glances, reading in order made the first item win). It returns the item the Thread takes up, if any, wherever it falls, its immediate experience of it, and one reason it passed the rest.
+- **The focus:** noticed. **Everything else:** seen and passed.
+- Toward the people present, the arriver's attention to the arrival Story is `noticed` when one of them is the focus. Otherwise it is `not_noticed`, with the Thread's reason.
 - Taking up a book is an observable act. World admits it as a one-beat Story whose action names the holding (`holdingRef`), and the Thread's experience of meeting the book belongs to that Story and is consolidated like any other.
 **Reading.**
 - Having taken a book down, the Thread opens it and reads. World supplies the actual pages it reaches: a passage of about 1,500 characters from where this Thread left off. The first reading starts at the book's first page, after the catalogue's header.

@@ -21,6 +21,7 @@ test("World-grounded lack of reciprocal contact changes inherited Body pressure 
   let interactions=[];
   let humanMeetings=[];
   let conversations=[];
+  let messages=[];
   const experienceStore={
     listSocialInteractions(threadId,{limit}){
       assert.equal(threadId,last.threadId);
@@ -36,6 +37,10 @@ test("World-grounded lack of reciprocal contact changes inherited Body pressure 
       assert.equal(threadId,last.threadId);
       assert.ok(since<=until&&limit<=8,"conversation history was not bounded");
       return conversations;
+    },
+    listSocialExposures(threadId,{since,until,limit}){
+      assert.ok(since<=until&&limit<=32,"social exposure history was not bounded");
+      return messages.filter(item=>item.at>=since&&item.at<=until);
     },
   };
   const assess=(baseline)=> {
@@ -115,6 +120,7 @@ test("inherited social need can change a later Thread-authored Flight Plan witho
     listSocialInteractions(){return [];},
     listAcceptedHumanMeetings(){return [];},
     listReciprocalConversations(){return [];},
+    listSocialExposures(){return [];},
   };
   const base={
     threadId,version:1,
@@ -203,6 +209,7 @@ test("social hunger and sustained sameness coexist in one inherited Body frame",
     listSocialInteractions(){return [];},
     listAcceptedHumanMeetings(){return humanMeetings;},
     listReciprocalConversations(){return [];},
+    listSocialExposures(){return [];},
   };
   const thread={
     threadId,genome:{runtimeBaselines:{

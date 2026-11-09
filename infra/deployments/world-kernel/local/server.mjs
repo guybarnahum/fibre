@@ -445,6 +445,7 @@ export async function startWorldKernelFromEnvironment(
     memoryStore:autobiographicalMemoryStore,
     experienceStore:livedExperienceStore,
     contactStore,
+    livedNowStore,
     modelAdapter:{
       async invoke(request){
         contactModelAdapter??=selectReasoningIntegration(

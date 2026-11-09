@@ -17,8 +17,9 @@ import {
 } from "./persistence-common.mjs";
 import { projectSituatedPercept } from "./situated-percept.mjs";
 import { evaluateSalience } from "./salience-gate.mjs";
-import { livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
-import { projectInteroception } from "./interoceptive-cognition.mjs";
+import { livedRegulationForLivedHistory, socialBodyInConversation } from "./lived-now-regulation.mjs";
+import { feltSocialBody, projectInteroception } from "./interoceptive-cognition.mjs";
+import { familiarityOf, socialEnergyEvidence } from "./social-body.mjs";
 import { observablePerson } from "./world-observable-person.mjs";
 import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
 import { lifeRelationId } from "./situated-life-domain.mjs";
@@ -589,8 +590,18 @@ export function createSocialMeetingService({
         noticedBefore:noticed.map(item=>({occurredAt:item.occurredAt,experiencedAs:item.experienceText})),
       });
     };
+    // The social Body in this talk: where the battery stood when it began,
+    // how known the other is, and each turn spoken or heard since.
+    const feltBodyFor=(self,other)=>{
+      const start=socialEnergyEvidence({threadId:self.thread.threadId,experienceStore,asOf:at});
+      const familiarity=familiarityOf({experienceStore,threadId:self.thread.threadId,
+        otherThreadId:other.thread.threadId,at});
+      return (story)=>feltSocialBody(socialBodyInConversation({thread:self.thread,start,familiarity,asOf:at,
+        turns:story.beats.filter(beat=>beat.kind==="utterance").length}));
+    };
     const speakerFacing=(self,other)=>Object.freeze({
       ...self,
+      feltBody:feltBodyFor(self,other),
       perspective:Object.freeze({
         developedSelfEvidence:selectDevelopedSelfEvidence({
           threadId:self.thread.threadId,at,focusPartyId:other.thread.threadId,

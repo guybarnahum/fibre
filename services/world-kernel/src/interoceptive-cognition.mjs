@@ -218,3 +218,47 @@ export async function interpretIntrinsicRegulation({
     interoception,
   };
 }
+
+// The social Body in words, for cognition that acts among people (a live
+// turn, a message): only what this Body feels, never numbers or genes. The
+// frame's pressures remain the evidence; these lines are how they are felt.
+const BATTERY=Object.freeze([
+  [0.3,"Talking has begun to tire you a little."],
+  [0.6,"Talking is tiring you; it takes effort now."],
+  [1.01,"You are worn out by talk."],
+]);
+const RESTORES=Object.freeze({
+  company:"Livelier company would revive you more than quiet would.",
+  quiet_company:"Being near others without having to talk would restore you.",
+  solitude:"Time alone would restore you.",
+  doing:"Something absorbing to do on your own would restore you.",
+});
+const HUNGER=Object.freeze([
+  [0.3,"You have had little real company lately."],
+  [0.6,"You miss company; it has been a while."],
+  [1.01,"You badly want company."],
+]);
+const SEEKS=Object.freeze({
+  ambient_company:"Just being among people would ease it.",
+  familiar_person:"It is someone familiar you want.",
+  conversation:"It is real conversation you want.",
+  closeness:"It is closeness you want.",
+});
+const band=(bands,pressure)=>bands.find(([upper])=>pressure<upper)[1];
+
+export function feltSocialBody(regulationFrame){
+  if(regulationFrame===null)return [];
+  const felt=(family)=>regulationFrame.drives.find(item=>item.family===family&&item.felt!==false&&item.pressure>0)??null;
+  const lines=[];
+  const battery=felt("social_energy");
+  if(battery!==null){
+    lines.push(band(BATTERY,battery.pressure));
+    if(RESTORES[battery.inheritedDirection])lines.push(RESTORES[battery.inheritedDirection]);
+  }
+  const hunger=felt("social_contact");
+  if(hunger!==null){
+    lines.push(band(HUNGER,hunger.pressure));
+    if(SEEKS[hunger.inheritedDirection])lines.push(SEEKS[hunger.inheritedDirection]);
+  }
+  return lines;
+}

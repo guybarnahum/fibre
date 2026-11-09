@@ -450,7 +450,7 @@ test("a library's display is filled once from attested works and kept; an unreac
   }finally{ctx.close();}
 });
 
-test("a glance is read in World's order: what follows the focus is never reached, and taking up a book is an act the Thread experiences",async()=>{
+test("a glance looks over everything before taking one thing up: the rest is seen and passed, and taking up a book is an act the Thread experiences",async()=>{
   const ctx=setup();
   try{
     const {ids,threads,store,work}=ctx;
@@ -470,7 +470,7 @@ test("a glance is read in World's order: what follows the focus is never reached
         // The arriver takes up the last book in the list.
         const focus=input.glance.items.findLastIndex(item=>item.kind==="book");
         return {output:{focus,experienceText:"The worn spine pulls me in; I take it down.",
-          passedReason:focus===0?null:"Nothing before it held me."},provenance:{provider:"fixture",modelId:"glance"}};
+          passedReason:"Nothing else held me."},provenance:{provider:"fixture",modelId:"glance"}};
       }},
       now:()=>AT,
     });
@@ -480,7 +480,6 @@ test("a glance is read in World's order: what follows the focus is never reached
       "the glance did not hold the books within reach and the person present");
     const glance=store.getThreadGlance(ids[0],work.situationId);
     const book=glance.items[glance.focus];
-    const after=glance.items.slice(glance.focus+1);
     const story=store.listEncounterStories(ids[0]).find(item=>item.encounterId===glance.focusEncounterRef);
     assert.equal(story.story.beats[0].holdingRef,book.ref,"taking up the book was not an admitted act on that book");
     assert.equal(store.getThreadEncounterAttention(ids[0],story.encounterId)?.experience?.experienceText,
@@ -488,8 +487,8 @@ test("a glance is read in World's order: what follows the focus is never reached
     const arrival=store.listEncounterStories(ids[1])[0];
     const towardPeople=store.getThreadEncounterAttention(ids[0],arrival.encounterId);
     assert.equal(towardPeople.outcome,"not_noticed","a person was noticed while attention was on a book");
-    assert.equal(towardPeople.passedReason===null,after.some(item=>item.kind==="person"),
-      "a person never reached was given a reason, or one passed by was given none");
+    assert.equal(towardPeople.passedReason,"Nothing else held me.",
+      "a person seen and passed was given no reason");
   }finally{ctx.close();}
 });
 

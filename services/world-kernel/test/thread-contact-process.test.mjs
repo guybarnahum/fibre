@@ -287,6 +287,7 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
     const process=createThreadContactProcess({
       worldReader:world,
       livedNow,
+      livedNowStore:{getPreviousSituation:()=>null},
       situatedLifeStore,
       semanticStateStore,
       memoryStore,
@@ -459,6 +460,7 @@ test("revoked Person route stops a persisted contact decision before expression"
     const process=createThreadContactProcess({
       worldReader:world,
       livedNow,
+      livedNowStore:{getPreviousSituation:()=>null},
       situatedLifeStore,
       semanticStateStore,
       memoryStore,
@@ -536,6 +538,7 @@ test("unroutable delayed residue drains without cognition or frontier starvation
     const process=createThreadContactProcess({
       worldReader:world,
       livedNow,
+      livedNowStore:{getPreviousSituation:()=>null},
       situatedLifeStore,
       semanticStateStore,
       memoryStore,

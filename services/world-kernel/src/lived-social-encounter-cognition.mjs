@@ -18,6 +18,7 @@ function socialLiveInput({
   story,
   liveEncounter,
   opportunity,
+  body=[],
 }){
   assertPlainObject("live social Thread",thread);
   assertId("live social Thread.threadId",thread.threadId);
@@ -64,6 +65,8 @@ function socialLiveInput({
       heardSoFar:liveEncounter.heardSoFar(thread.threadId),
       perceivedWorldEvents:liveEncounter.perceivedWorldEvents(thread.threadId),
       opportunity:structuredClone(opportunity),
+      // How this Body feels the talk now, in words (ADR-0036).
+      ...(body.length===0?{}:{body:[...body]}),
     },
   });
 }
@@ -74,12 +77,14 @@ function socialLiveInput({
 // World still admits only the part of the name actually spoken.
 // "PROPOSE:" is speech proposing to meet again at a place and time; "AGREE:"
 // is speech agreeing to the other's proposal. Both are ordinary speech.
+// "PAUSE:" is a non-verbal moment in the talk (a smile, a laugh, a nod).
 const TURN_MARKERS=Object.freeze([
   ["SAY:","speak"],
   ["INTRODUCE:","introduce"],
   ["PROPOSE:","propose"],
   ["AGREE:","agree"],
   ["ACT:","act"],
+  ["PAUSE:","pause"],
   ["SILENT","silent"],
 ]);
 const SILENCE=Object.freeze({decision:"silent"});
@@ -135,6 +140,7 @@ export async function takeLiveSocialTurn({
   liveEncounter,
   opportunity,
   modelAdapter,
+  feltBody=null,
   signal=null,
 }={}){
   const input=socialLiveInput({
@@ -144,6 +150,7 @@ export async function takeLiveSocialTurn({
     story,
     liveEncounter,
     opportunity,
+    body:feltBody===null?[]:feltBody(story),
   });
   const events=modelAdapter.streamExpression({
     ...promptRequest("social.live-turn",{threadId:thread.threadId}),
@@ -178,11 +185,11 @@ export async function takeLiveSocialTurn({
     await remainder(events);
     return SILENCE;
   }
-  if(turn.decision==="act"){
+  if(turn.decision==="act"||turn.decision==="pause"){
     const rest=await remainder(events);
     const actionText=(turn.rest+rest.text).trim();
     if(actionText==="")return unclearTurn(text);
-    return Object.freeze({decision:"act",actionText,provenance:rest.provenance});
+    return Object.freeze({decision:turn.decision,actionText,provenance:rest.provenance});
   }
 
   const expression=await relayExpressionIntoLiveEncounter({

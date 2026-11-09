@@ -46,9 +46,9 @@ Guy's direction: behaviour emerges from Body urges and is never coded, and the g
 - `exploration` (sameness within and across conversations; a pull toward the new).
 
 **Conversations.**
-- The live-encounter guard rises to 24 opportunities and continues in the next invocation, so it never ends a conversation.
+- The live-encounter guard rises to 24 opportunities. If conversations reach it, they will continue in the next invocation instead of ending.
 - A `PAUSE:` turn admits a non-verbal moment. Mutual pauses become a `lull`.
-- Endings are recorded as `closed`, `lull`, `scene_changed` or `bounded`.
+- Endings are recorded as `quiescent` (closed), `lull`, `scene_changed` or `bounded`.
 
 **Library v4** adds the two families, ten reviewed loci each, to v3. Births draw all 15, by the same per-family selection.
 
@@ -62,6 +62,17 @@ The six legacy Threads therefore gain all 15 families, and the two v3 Threads ga
 
 **How it runs.** The draw is `sha256("fibre-urge-expression:" + genomeDigest + ":" + family)` over the family's variants, from the Thread's birth genome (`lateExpressedUrges`). The operator runs `world-genome:express -- --env <env>` (`--dry-run` shows what each Thread would receive); retired Threads are left as they are. Replay recomputes the draw and refuses any event whose loci differ from it.
 
+## S2 as built (November 9)
+
+`social_energy` is enabled. What World does, mechanically and read-only, from records it already keeps (`services/world-kernel/src/social-body.mjs`):
+- **Familiarity** toward a person is how much this Thread has lived around them: Stories with both present that it noticed, and messages between them, each counting less as it ages (half-life 14 days). Four recent contacts make a person half-known.
+- **The battery.** Each turn of talk, spoken or heard, costs `0.03 × (unfamiliarity + 0.5)`; the 0.5 is the species' expected harm from anyone, until trust is lived (S3). A message costs half a turn. Depletion recovers with a 90-minute half-life. World computes it from the last half-day of conversations and messages; nothing new is stored.
+- **In a conversation**, each turn sees its battery where it stood when the talk began, drained by every turn since, through the Thread's own `social_energy` locus: gain sets how heavily it weighs, threshold how early it is felt, and the orientation is what the Body is pulled toward to restore it (company, quiet company, solitude or something to do), as every ADR-0030 orientation names the object of a pull. The live turn and the contact decision read it in words; plans and social initiation already read the Body frame.
+- **Messages ease hunger:** a message sent or received since the last talk leaves half of the gap built up before it.
+- **`PAUSE:`** turns and the `lull` ending; the guard is 24 appraisals.
+
+Simplifications, each to be reversed by evidence: recovery runs at the species rate wherever the Thread is, rather than faster in its inherited setting; familiarity does not yet count co-presence the Thread did not notice; a conversation that reaches the guard ends there rather than continuing in the next invocation, and how often that happens is measured first.
+
 ## Status of what this excludes
 
 | Capability | Status | Extension path |
@@ -71,6 +82,9 @@ The six legacy Threads therefore gain all 15 families, and the two v3 Threads ga
 | Real hazards for `safety_threat` | deferred | World hazards as evidence |
 | Whole-day fatigue beyond the social battery | deferred | the existing `rest` and `energy` families |
 | Recombination of the new families from legacy parents | deferred | the existing family-keyed rule once both parents carry v4 |
+| Faster recovery in the Body's inherited setting | deferred | the battery's recovery reads the setting from the Thread's own situations (private place, public venue, journey, reading) |
+| Familiarity from unnoticed co-presence | deferred | the same shared-contact query over situations at one venue |
+| A conversation continuing past the guard in the next invocation | deferred | the live encounter resumes from its recorded Story, if `bounded` endings appear |
 
 No permanent constraint.
 

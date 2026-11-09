@@ -10,6 +10,7 @@ import {
   projectInteroception,
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
+import { conversationDepletion, socialEnergyEvidence } from "./social-body.mjs";
 
 let organismPolicy=DEFAULT_ORGANISM_POLICY;
 export function configureWorldOrganismPolicy(value){
@@ -159,6 +160,7 @@ export function socialContactEvidenceForLivedHistory({
   requireMethod(experienceStore,"listSocialInteractions");
   requireMethod(experienceStore,"listAcceptedHumanMeetings");
   requireMethod(experienceStore,"listReciprocalConversations");
+  requireMethod(experienceStore,"listSocialExposures");
   const end=Date.parse(asOf);
   if(!Number.isFinite(end)||end<Date.parse(currentSituation.establishedAt))
     throw new TypeError("regulation asOf precedes the enacted present");
@@ -191,11 +193,18 @@ export function socialContactEvidenceForLivedHistory({
     &&Date.parse(item.occurredAt)<=end)
     .sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt))[0]??null;
   const since=contact===null?observedStart:Date.parse(contact.occurredAt);
+  // A message sent or received since then relieves the gap, more weakly than
+  // talk: half of what had built up before it remains.
+  const message=experienceStore.listSocialExposures(threadId,{...window,limit:8})
+    .find(item=>item.kind==="message"&&Date.parse(item.at)>since)??null;
+  const unmetMs=message===null?end-since
+    :(end-Date.parse(message.at))+(Date.parse(message.at)-since)/2;
   return Object.freeze({
-    observedUnmetHours:Math.min(96,Math.max(0,(end-since)/3600_000)),
+    observedUnmetHours:Math.min(96,Math.max(0,unmetMs/3600_000)),
     evidenceRefs:Object.freeze([...new Set([
       firstRef,currentSituation.situationId,
       ...(contact===null?[]:[contact.ref]),
+      ...(message===null?[]:[message.ref]),
     ])]),
   });
 }
@@ -224,17 +233,35 @@ export function livedRegulationForLivedHistory({
   const contact=experienceStore===null?null:socialContactEvidenceForLivedHistory({
     threadId:thread.threadId,currentSituation,livedNowStore,experienceStore,asOf,
   });
-  if(!continuity.grounded&&contact===null)return null;
+  const socialEnergy=experienceStore===null?null:socialEnergyEvidence({
+    threadId:thread.threadId,experienceStore,asOf,
+  });
+  if(!continuity.grounded&&contact===null&&socialEnergy===null)return null;
   return evaluateIntrinsicRegulation({
     perceptFrame:{
       asOf,
       evidenceRefs:[...new Set([
         ...(continuity.grounded?continuity.evidenceRefs:[]),
         ...(contact?.evidenceRefs??[]),
+        ...(socialEnergy?.evidenceRefs??[]),
       ])],
       ...(continuity.grounded?{exploration:{novelty:0}}:{}),
       ...(contact===null?{}:{contact}),
+      ...(socialEnergy===null?{}:{socialEnergy}),
     },
+    runtimeBaselines:thread.genome?.runtimeBaselines??{},
+    urgeProjection:thread.genome?.urgeProjection??null,
+    organismPolicy,
+  });
+}
+
+// The social Body during a live conversation: the battery where it stood
+// when the talk began, drained by each turn spoken or heard since.
+export function socialBodyInConversation({thread,start,familiarity,turns,asOf}){
+  const evidenceRefs=[...(start?.evidenceRefs??[]),`self:conversation-turns:${turns}`];
+  return evaluateIntrinsicRegulation({
+    perceptFrame:{asOf,evidenceRefs,
+      socialEnergy:{depletion:conversationDepletion({start,turns,familiarity}),evidenceRefs}},
     runtimeBaselines:thread.genome?.runtimeBaselines??{},
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
@@ -267,6 +294,9 @@ function frameForSituation({ thread, situation, livedNowStore, experienceStore }
       ...(experienceStore===null?{}:{
         contact:socialContactEvidenceForLivedHistory({
           threadId:thread.threadId,currentSituation:situation,livedNowStore,experienceStore,
+        })??undefined,
+        socialEnergy:socialEnergyEvidence({
+          threadId:thread.threadId,experienceStore,asOf:situation.establishedAt,
         })??undefined,
       }),
     },

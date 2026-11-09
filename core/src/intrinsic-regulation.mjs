@@ -233,6 +233,17 @@ function normalizeContact(value) {
   };
 }
 
+// How spent the Body is by social exposure, as World measured it from lived
+// talk and messages (0 rested, 1 exhausted). Unknown is not exhaustion.
+function normalizeSocialEnergy(value) {
+  if (value === undefined) return null;
+  plainObject("perceptFrame.socialEnergy", value);
+  return {
+    depletion:unit("perceptFrame.socialEnergy.depletion", value.depletion),
+    evidenceRefs:normalizeRefs("perceptFrame.socialEnergy.evidenceRefs", value.evidenceRefs),
+  };
+}
+
 function normalizeSocialCue(value, index) {
   const name = `perceptFrame.social[${index}]`;
   plainObject(name, value);
@@ -259,6 +270,7 @@ export function normalizePerceptFrame(value) {
     environment: normalizeEnvironment(value.environment ?? {}),
     exploration: normalizeExploration(value.exploration ?? {}),
     contact: normalizeContact(value.contact),
+    socialEnergy: normalizeSocialEnergy(value.socialEnergy),
     urgeAvailability:normalizeUrgeAvailability(value.urgeAvailability??{}),
     urgeTriggers:normalizeUrgeTriggers(value.urgeTriggers??[]),
     social: social.map(normalizeSocialCue),
@@ -443,6 +455,20 @@ function basalDrives(percept, profile) {
       pressure:contactPressure,
       urgency:contactPressure,
       evidenceRefs:[...new Set([...evidenceRefs,...percept.contact.evidenceRefs])],
+    }));
+  }
+
+  // The social battery: depletion is a Body signal from lived exposure, never
+  // itself a feeling or a decision to stop talking.
+  if (percept.socialEnergy !== null) {
+    const depletion = percept.socialEnergy.depletion;
+    drives.push(drive({
+      family:"social_energy",
+      targetRef:"self:social-energy",
+      orientation:"maintain",
+      pressure:depletion,
+      urgency:depletion,
+      evidenceRefs:[...new Set([...evidenceRefs,...percept.socialEnergy.evidenceRefs])],
     }));
   }
 

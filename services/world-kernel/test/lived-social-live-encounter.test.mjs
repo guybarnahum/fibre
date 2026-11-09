@@ -324,3 +324,27 @@ test("an unclear turn is silence for that opportunity and the conversation conti
     console.warn=warn;
   }
 });
+
+test("when both let a pause stand the talk falls quiet as a lull; one pause answered by speech goes on",async()=>{
+  const [mina,noor]=pair("thr_pause");
+  const lull=await encounter(mina,noor,liveModel(async function*({name,count}){
+    if(name==="Noor"&&count===1){yield "SAY: It was a long day.";return;}
+    if(name==="Mina"&&count===1){yield "PAUSE: Mina smiles and nods.";return;}
+    if(name==="Noor"&&count===2){yield "PAUSE: Noor smiles back.";return;}
+    yield "SAY: So, anyway, about that book.";
+  }),{text:"How was your day?"});
+  assert.equal(lull.live.endedBy,"lull","a mutual pause did not end the talk");
+  assert.deepEqual(lull.story.beats.filter(beat=>beat.pause).map(beat=>beat.actorThreadId),
+    [mina.thread.threadId,noor.thread.threadId],"the pauses were not each person's own moment");
+  assert.ok(!lull.story.beats.some(beat=>beat.text.includes("anyway")),"talk went on after the lull");
+
+  const [mina2,noor2]=pair("thr_pause_on");
+  const on=await encounter(mina2,noor2,liveModel(async function*({name,count}){
+    if(name==="Noor"&&count===1){yield "SAY: It was a long day.";return;}
+    if(name==="Mina"&&count===1){yield "PAUSE: Mina nods slowly.";return;}
+    if(name==="Noor"&&count===2){yield "SAY: Mostly meetings, honestly.";return;}
+    yield "SILENT";
+  }),{text:"How was your day?"});
+  assert.notEqual(on.live.endedBy,"lull","a single pause ended the talk");
+  assert.equal(on.story.beats.at(-1).kind,"utterance","speech after a pause was lost");
+});

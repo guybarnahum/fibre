@@ -1,7 +1,7 @@
 ---
 id: architecture-social-life
 status: accepted
-last-reviewed: 2026-11-07
+last-reviewed: 2026-11-09
 canonical: true
 ---
 
@@ -102,7 +102,7 @@ An accepted invitation, or a chosen continuation, opens a [Live Encounter](live-
 - `ACT:` — one observable action;
 - `SILENT` — nothing.
 
-Each live turn sees the Thread's own developed self, its current place, the other person as it perceives them, and its regard for that person first. Speech cut off by the other is admitted only up to what was audible. A conversation ends `quiescent`, `bounded` (eight appraisals in one autonomous invocation — a compute guard, not a length target) or by a changed scene; World logs how it ended. Ending is the Threads' own: each turn sees how many turns have been spoken and what it came to do, and either person may close the conversation with a natural goodbye and fall silent, instead of keeping it alive with another question. The guard is never shown to them; on November 8 all four conversations ran into it.
+Each live turn sees the Thread's own developed self, its current place, the other person as it perceives them, and its regard for that person first. Speech cut off by the other is admitted only up to what was audible. A conversation ends `quiescent` (both fall silent, usually after a goodbye), `lull` (each let a pause stand), by a changed scene, or `bounded` (24 appraisals in one autonomous invocation — a compute guard, not a length target, raised from eight on November 9); World logs how it ended. Ending is the Threads' own: each turn sees how many turns have been spoken, what it came to do, and **how its own body feels the talk** ([ADR-0036](../decisions/ADR-0036-social-body.md)): every turn spoken or heard drains its social battery, more with a stranger than with someone familiar, and the turn reads that in words ("Talking is tiring you…", "Time alone would restore you."), never as numbers. A turn may also be `PAUSE:` — a smile, a nod, a doubtful look — admitted as an action beat marked `pause`. Either person may close the conversation with a natural goodbye and fall silent, instead of keeping it alive with another question. The guard is never shown to them.
 
 The whole conversation becomes one Story, one Experience per participant and one consolidation entry each. An accepted invited conversation founds a factual `social_contact` life relation in each direction (place, date, count, last meeting), revised by later meetings ([ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md)); a continued exchange does not, so strangers learn names only by introducing themselves.
 
@@ -123,7 +123,7 @@ An **interest** is a subject that fascinates this Thread, in its own words: what
 
 A **moment** is one the Thread itself recognised: it helped, informed, showed or made something for a person who acted in those experiences, and how that was taken — or it learned something from them — with its own reaction in its own words. Moments are append-only in `thread_social_moments`, tied to the person, to one of its interests or none, and to the experiences in which that person acted; one naming someone who did not act, or an interest it does not hold, is dropped. How something was taken (`valued | ignored | corrected | unclear`) is kept for operators only and never shown to the Thread. Each interest carries the Thread's own **felt standing** in it — whether others come to it to learn, or it still learns from them — revised in reflection from its recent moments as it weighs each by its own regard for the person it came from. There is no expertise level. When the Thread faces someone, its latest moments with that person follow its regard for them in its evidence, so a Thread may return to those who valued it or taught it something.
 
-Afterthoughts may surface as a private opportunity inside a later live conversation, or lead to **later contact**: a fresh, separate decision to keep it private or message one routable person, then a separate expression call. A delivered message is an exterior fact for its addressee alone; the recipient may notice it and form its own Experience. Delivery is never "read" or "answered".
+Afterthoughts may surface as a private opportunity inside a later live conversation, or lead to **later contact**: a fresh, separate decision to keep it private or message one routable person, then a separate expression call. A delivered message is an exterior fact for its addressee alone; the recipient may notice it and form its own Experience. Delivery is never "read" or "answered". Messages are lived social exposure too: each one sent or received eases the want of company (half of the gap built up before it remains) and costs the social battery half a turn of talk, and the contact decision reads how the body feels about company now (`body`, ADR-0036). Whether to write is still the Thread's own.
 
 ## 7. Relationships: doors, ledger and stance
 

@@ -225,6 +225,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         memoryStore,
         experienceStore:openLivedExperienceStore(runtime.worldStorage),
         contactStore:openContactStore(runtime.worldStorage),
+        livedNowStore,
         modelAdapter:this.reasoningFor("encounter"),
       });
       runtime.reconciliationProcess.setContactOutreachProcess(

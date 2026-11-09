@@ -59,7 +59,7 @@ other triggers. The species-standard orientation of triggered families is
 | verification_itch | triggered | unresolved_claim, untested_assumption, conflicting_evidence | Uncertainty recorded in an earlier Thread-owned decision |
 | standing_flare | triggered | public_correction, refusal_by_close_person, exclusion | Directed admitted act; public requires audience, close requires actual relation |
 | mastery_itch | directional | technique, unfinished_work, repeated_practice, interrupted_learning | Supported interrupted/repeated activity with continuing investment |
-| social_energy | directional | company, quiet_company, solitude, doing | Social exposure and its recovery (ADR-0036; not yet enabled) |
+| social_energy | directional | company, quiet_company, solitude, doing | Talk and messages in the last half-day, weighted by how unknown the other is (ADR-0036; enabled) |
 | trust | directional | reliability, warmth, reciprocity, familiarity | Exposure to a person and its outcome (ADR-0036; not yet enabled) |
 
 The 130 immutable authored variants, 10 per family, form the v2 historical

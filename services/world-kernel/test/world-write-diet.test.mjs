@@ -329,7 +329,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     const realLivedNow=createLivedNowService({livedNowStore:lived});
     const ensureCurrent=input=>realLivedNow.ensure(input);
     const outreach=createThreadContactProcess({
-      worldReader:world,livedNow:{ensure:ensureCurrent},situatedLifeStore:situated,
+      worldReader:world,livedNow:{ensure:ensureCurrent},livedNowStore:lived,situatedLifeStore:situated,
       semanticStateStore:semantic,memoryStore:memory,experienceStore:experience,
       contactStore:contact,now:()=>at("17:05"),batchLimit:1,
       modelAdapter:{async invoke(call){
@@ -439,7 +439,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       }).runOnce());
     assert.equal(quietReflection.completed,1,"quiet contact source lost its afterthought");
     const quietOutreach=createThreadContactProcess({
-      worldReader:world,livedNow:{ensure:ensureCurrent},situatedLifeStore:situated,
+      worldReader:world,livedNow:{ensure:ensureCurrent},livedNowStore:lived,situatedLifeStore:situated,
       semanticStateStore:semantic,memoryStore:memory,experienceStore:experience,
       contactStore:contact,now:()=>at("17:36"),batchLimit:1,
       modelAdapter:{async invoke(call){

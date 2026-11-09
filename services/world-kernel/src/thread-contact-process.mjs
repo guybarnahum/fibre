@@ -7,6 +7,8 @@ import {
   decideLaterContact,
   expressLaterContact,
 } from "./lived-contact-cognition.mjs";
+import { feltSocialBody } from "./interoceptive-cognition.mjs";
+import { livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
 
 const CONTACTABLE_RELATION_KINDS=new Set([
   "biological_parent",
@@ -104,12 +106,14 @@ export function createThreadContactProcess({
   memoryStore,
   experienceStore,
   contactStore,
+  livedNowStore,
   modelAdapter,
   now=()=>new Date().toISOString(),
   batchLimit=4,
 }={}){
   requireMethod("contact worldReader",worldReader,"getThread");
   requireMethod("contact livedNow",livedNow,"ensure");
+  requireMethod("contact livedNowStore",livedNowStore,"getPreviousSituation");
   requireMethod("contact situatedLifeStore",situatedLifeStore,"listCurrentLifeRelations");
   requireMethod("contact semanticStateStore",semanticStateStore,"listCurrentState");
   requireMethod("contact memoryStore",memoryStore,"listCurrentMemories");
@@ -187,6 +191,11 @@ export function createThreadContactProcess({
         limit:8,
         newestFirst:true,
       });
+      // The social Body at the moment of choosing: how spent by talk and
+      // messages, and how much it wants company.
+      const body=feltSocialBody(livedRegulationForLivedHistory({
+        thread,livedNowStore,currentSituation,experienceStore,asOf:contactAt,
+      }));
       const decision=await decideLaterContact({
         thread,
         afterthoughts,
@@ -194,6 +203,7 @@ export function createThreadContactProcess({
         semanticStates,
         memories,
         candidates,
+        body,
         modelAdapter,
       });
       decisionStage=contactStore.recordStage({

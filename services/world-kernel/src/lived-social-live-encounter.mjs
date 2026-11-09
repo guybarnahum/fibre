@@ -7,7 +7,9 @@ import {
   assertPlainObject,
 } from "./persistence-common.mjs";
 
-const DEFAULT_OPPORTUNITY_BUDGET=8;
+// A compute guard, not an ending: conversations end by the participants'
+// own choices (closing, a lull, a changed scene). Reaching it is recorded.
+const DEFAULT_OPPORTUNITY_BUDGET=24;
 
 function contextMap(initiator,counterparty){
   const values=[initiator,counterparty];
@@ -147,6 +149,7 @@ export async function runThreadLiveSocialEncounter({
         liveEncounter,
         opportunity,
         modelAdapter,
+        feltBody:context.feltBody??null,
         signal:controller.signal,
       });
       if(turn.decision==="silent")return;
@@ -159,12 +162,24 @@ export async function runThreadLiveSocialEncounter({
         if(spoken&&turn.proposesMeeting)spoken.proposesMeeting=true;
         if(spoken&&turn.agreesToMeet)spoken.agreesToMeet=true;
       }
-      if(turn.decision==="act"){
+      if(turn.decision==="act"||turn.decision==="pause"){
         if(stopped)return;
         liveEncounter.pushAction({
           actorId:participantId,
           text:turn.actionText,
         });
+      }
+      if(turn.decision==="pause"){
+        const moment=story.beats.findLast(beat=>
+          beat.actorThreadId===participantId&&beat.kind==="action");
+        if(moment)moment.pause=true;
+        // Each has let a pause stand without speaking into it: a lull.
+        const [before,last]=story.beats.slice(-2);
+        if(before?.pause&&last?.pause&&before.actorThreadId!==last.actorThreadId){
+          contributionCount+=1;
+          stop("lull");
+          return true;
+        }
       }
       contributionCount+=1;
       return true;

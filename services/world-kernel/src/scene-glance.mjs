@@ -1,9 +1,9 @@
 // A glance: what a Thread takes in on entering a place. World lists a few
 // things it could take in now (people present, books within reach) in the
-// order its eye falls on them; the Thread reads them in order and may take
-// up one. Things before it were seen and passed; things after it were never
-// reached. World orders the list by the scene and the moment, never by what
-// this Thread cares about.
+// order its eye falls on them; the Thread looks over them all and may take
+// up one, wherever it falls. Everything else was seen and passed. World
+// orders the list by the scene and the moment, never by what this Thread
+// cares about.
 import { situationInMind } from "./situation-in-mind.mjs";
 import { memoryInMind } from "./memory-in-mind.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
@@ -93,14 +93,13 @@ export async function appraiseGlance({thread,situation,venueName,items,semanticS
   const focus=Number.isSafeInteger(output.focus)&&output.focus>=0&&output.focus<items.length
     &&typeof output.experienceText==="string"&&output.experienceText.trim()?output.focus:null;
   const passedReason=typeof output.passedReason==="string"&&output.passedReason.trim()
-    &&focus!==0?output.passedReason.trim().slice(0,300):null;
+    &&!(focus!==null&&items.length===1)?output.passedReason.trim().slice(0,300):null;
   return Object.freeze({focus,experienceText:focus===null?null:output.experienceText.trim(),passedReason});
 }
 
 // What a glance leaves behind. Toward the people present (the arrival Story):
-// noticed when one of them is the focus; otherwise not noticed, with the
-// Thread's reason when they came before its focus and none when they were
-// never reached. Taking up a book is itself an observable act: World admits
+// noticed when one of them is the focus; otherwise seen and passed, with the
+// Thread's reason. Taking up a book is itself an observable act: World admits
 // it as a Story, and the Thread's experience of meeting the book belongs to it.
 export async function admitGlance({thread,situation,arrivalStory=null,items,appraisal,
   describeSelf,experienceStore,onExperienceQueued=null}){
@@ -119,8 +118,7 @@ export async function admitGlance({thread,situation,arrivalStory=null,items,appr
       await remember(arrivalStory.encounterId,appraisal.experienceText);
       focusEncounterRef=arrivalStory.encounterId;
     }else{
-      const firstPerson=items.findIndex(item=>item.kind==="person");
-      const passed=firstPerson>=0&&(appraisal.focus===null||firstPerson<appraisal.focus);
+      const passed=items.some(item=>item.kind==="person");
       experienceStore.recordThreadEncounterAttention({threadId:thread.threadId,
         encounterRef:arrivalStory.encounterId,situationId:situation.situationId,occurredAt:at,
         outcome:"not_noticed",experienceText:null,passedReason:passed?appraisal.passedReason:null});
