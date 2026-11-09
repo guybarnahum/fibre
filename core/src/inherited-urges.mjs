@@ -1,8 +1,9 @@
 import {createHash} from "node:crypto";
 
-// V2 remains immutable birth authority for admitted Threads. New births use
-// v3; variant selection is unchanged, and only exploration_01 text differs.
-export const URGE_LIBRARY_VERSION="3";
+// Every published library stays immutable birth authority for the Threads
+// born from it. v3 changed only exploration_01's text; v4 adds the social
+// Body's two families (ADR-0036). Births draw from the current version.
+export const URGE_LIBRARY_VERSION="4";
 export const URGE_LIBRARY_V2_FAMILIES=Object.freeze([
   Object.freeze({
     family:"social_contact",kind:"directional",
@@ -213,20 +214,58 @@ export const URGE_LIBRARY_V2_FAMILIES=Object.freeze([
     ]),
   }),
 ]);
-export const URGE_FAMILIES=Object.freeze(URGE_LIBRARY_V2_FAMILIES.map(family=>
+const URGE_LIBRARY_V3_FAMILIES=Object.freeze(URGE_LIBRARY_V2_FAMILIES.map(family=>
   family.family!=="exploration"?family:Object.freeze({
     ...family,variants:Object.freeze(family.variants.map(variant=>
       variant.variantId!=="exploration_01"?variant:Object.freeze({
         ...variant,text:"Familiar paths begin to feel narrow, and attention stretches beyond the usual streets toward an unfamiliar turn.",
       }))),
   })));
+// The social Body (ADR-0036): what social exposure costs this Body and where
+// it recovers, and what it counts as evidence that a person is safe.
+const SOCIAL_BODY_FAMILIES=Object.freeze([
+  Object.freeze({
+    family:"social_energy",kind:"directional",
+    orientations:Object.freeze(["company","quiet_company","solitude","doing"]),
+    variants:Object.freeze([
+      Object.freeze({variantId:"social_energy_01",orientation:"company",text:"After long talk with others, the body still hums with their voices and seems to gather strength from the next exchange rather than from quiet.",positions:Object.freeze({gain:-0.88,feltThreshold:-0.35,persistence:0.21})}),
+      Object.freeze({variantId:"social_energy_02",orientation:"company",text:"Being among animated people lifts the body's pace, and a long silence afterward feels like a reserve left to run down.",positions:Object.freeze({gain:0.4,feltThreshold:-0.22,persistence:0.15})}),
+      Object.freeze({variantId:"social_energy_03",orientation:"company",text:"Even when tired, the presence of lively company seems to restore what an afternoon alone would not.",positions:Object.freeze({gain:0.3,feltThreshold:0.12,persistence:-0.91})}),
+      Object.freeze({variantId:"social_energy_04",orientation:"quiet_company",text:"After much talk, the body seeks to stay near others while the words stop, settling into a shared silence.",positions:Object.freeze({gain:0.91,feltThreshold:-0.9,persistence:0.55})}),
+      Object.freeze({variantId:"social_energy_05",orientation:"quiet_company",text:"Talk wears the body down sooner than presence does, and rest comes from sitting near people without having to answer them.",positions:Object.freeze({gain:0.4,feltThreshold:-0.22,persistence:0.15})}),
+      Object.freeze({variantId:"social_energy_06",orientation:"quiet_company",text:"A room of others quietly at work steadies the body more than either an empty room or a conversation.",positions:Object.freeze({gain:-0.62,feltThreshold:0.47,persistence:-0.4})}),
+      Object.freeze({variantId:"social_energy_07",orientation:"solitude",text:"Each exchange draws a little from a reserve that only time alone refills, and the reserve is felt well before it empties.",positions:Object.freeze({gain:0.62,feltThreshold:0.88,persistence:0.93})}),
+      Object.freeze({variantId:"social_energy_08",orientation:"solitude",text:"After company, even pleasant company, the body leans toward a closed door and an unoccupied space.",positions:Object.freeze({gain:-0.45,feltThreshold:-0.6,persistence:-0.3})}),
+      Object.freeze({variantId:"social_energy_09",orientation:"doing",text:"When talk has gone on long enough, the hands and eyes reach for a task, and absorption in it restores what speaking used.",positions:Object.freeze({gain:-0.71,feltThreshold:0.71,persistence:-0.66})}),
+      Object.freeze({variantId:"social_energy_10",orientation:"doing",text:"Recovery from company comes through a book, a walk or some absorbing work rather than through stillness.",positions:Object.freeze({gain:0.55,feltThreshold:0.05,persistence:0.33})}),
+    ]),
+  }),
+  Object.freeze({
+    family:"trust",kind:"directional",
+    orientations:Object.freeze(["reliability","warmth","reciprocity","familiarity"]),
+    variants:Object.freeze([
+      Object.freeze({variantId:"trust_01",orientation:"reliability",text:"Ease with another person settles in only after they have done what they said they would, and it loosens quickly when they do not.",positions:Object.freeze({gain:0.92,feltThreshold:0.3,persistence:-0.88})}),
+      Object.freeze({variantId:"trust_02",orientation:"reliability",text:"A promise kept by someone relaxes the guard against them more than any kindness of manner.",positions:Object.freeze({gain:-0.3,feltThreshold:0.18,persistence:0.27})}),
+      Object.freeze({variantId:"trust_03",orientation:"reliability",text:"The body keeps a quiet tally of who arrives when they said they would, and calm gathers around those who do.",positions:Object.freeze({gain:-0.55,feltThreshold:-0.87,persistence:0.61})}),
+      Object.freeze({variantId:"trust_04",orientation:"warmth",text:"When someone could have answered coldly and did not, the guard against them lowers a little.",positions:Object.freeze({gain:-0.86,feltThreshold:0.64,persistence:-0.35})}),
+      Object.freeze({variantId:"trust_05",orientation:"warmth",text:"Gentleness offered at a vulnerable moment registers as safety long after the words themselves are forgotten.",positions:Object.freeze({gain:-0.3,feltThreshold:0.18,persistence:0.27})}),
+      Object.freeze({variantId:"trust_06",orientation:"warmth",text:"A sharp or dismissive reply leaves a lasting wariness, while patience with a mistake opens the body toward the person.",positions:Object.freeze({gain:0.71,feltThreshold:-0.45,persistence:0.94})}),
+      Object.freeze({variantId:"trust_07",orientation:"reciprocity",text:"Safety with someone grows as giving and receiving between them come out roughly even.",positions:Object.freeze({gain:0.44,feltThreshold:0.9,persistence:-0.15})}),
+      Object.freeze({variantId:"trust_08",orientation:"reciprocity",text:"Being answered, helped or listened to in return eases the body, while one-sided exchanges leave it braced.",positions:Object.freeze({gain:-0.2,feltThreshold:-0.12,persistence:0.05})}),
+      Object.freeze({variantId:"trust_09",orientation:"familiarity",text:"A person seen often without incident soon stops registering as a possible threat, even before any word is exchanged.",positions:Object.freeze({gain:0.58,feltThreshold:-0.7,persistence:-0.52})}),
+      Object.freeze({variantId:"trust_10",orientation:"familiarity",text:"Ease comes slowly with repeated presence, and an unknown face keeps the body alert however friendly it seems.",positions:Object.freeze({gain:-0.4,feltThreshold:-0.08,persistence:-0.2})}),
+    ]),
+  }),
+]);
+export const URGE_FAMILIES=Object.freeze([...URGE_LIBRARY_V3_FAMILIES,...SOCIAL_BODY_FAMILIES]);
 const libraryDigest=families=>"sha256:"+createHash("sha256")
   .update(JSON.stringify(families)).digest("hex");
 export const URGE_LIBRARY_V2_DIGEST=libraryDigest(URGE_LIBRARY_V2_FAMILIES);
 export const URGE_LIBRARY_DIGEST=libraryDigest(URGE_FAMILIES);
 export const URGE_LIBRARIES=Object.freeze({
   "2":Object.freeze({families:URGE_LIBRARY_V2_FAMILIES,digest:URGE_LIBRARY_V2_DIGEST}),
-  "3":Object.freeze({families:URGE_FAMILIES,digest:URGE_LIBRARY_DIGEST}),
+  "3":Object.freeze({families:URGE_LIBRARY_V3_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V3_FAMILIES)}),
+  "4":Object.freeze({families:URGE_FAMILIES,digest:URGE_LIBRARY_DIGEST}),
 });
 export const URGE_FAMILY_BY_NAME=new Map(URGE_FAMILIES.map(family=>[family.family,family]));
 export const SPECIES_STANDARD_ORIENTATION=Object.freeze(Object.fromEntries(
@@ -265,5 +304,24 @@ export function urgeVariantsFromGenome(genome){
     if(!variant||genome.loci[index].value!==variant.text)
       throw new TypeError("urge locus does not match frozen library");
     return Object.freeze({family:family.family,kind:family.kind,orientation:variant.orientation,positions:variant.positions});
+  }));
+}
+
+// Late expression (ADR-0036): when the World begins to use a family that a
+// Thread's Body has never expressed, the locus is drawn once from the
+// Thread's own genome digest, never from its character or behaviour. A
+// species default is not a gene, so a family already expressed is never
+// redrawn, and a Thread with no urge loci expresses every family.
+export function lateExpressedUrges({urgeProjection=null,genomeDigest,libraryVersion=URGE_LIBRARY_VERSION}){
+  if(typeof genomeDigest!=="string"||!/^sha256:[0-9a-f]{64}$/u.test(genomeDigest))
+    throw new TypeError("late expression needs the Thread's genome digest");
+  const library=Object.hasOwn(URGE_LIBRARIES,libraryVersion)?URGE_LIBRARIES[libraryVersion]:null;
+  if(library===null)throw new TypeError("unknown urge library");
+  const expressed=new Set((urgeProjection??[]).map(item=>item.family));
+  return Object.freeze(library.families.filter(family=>!expressed.has(family.family)).map(family=>{
+    const hash=createHash("sha256").update(`fibre-urge-expression:${genomeDigest}:${family.family}`).digest("hex");
+    const variant=family.variants[Number.parseInt(hash.slice(0,12),16)%family.variants.length];
+    return Object.freeze({family:family.family,kind:family.kind,variantId:variant.variantId,
+      text:variant.text,orientation:variant.orientation,positions:variant.positions});
   }));
 }

@@ -1,7 +1,7 @@
 ---
 id: fibre-current-state
 status: accepted
-last-reviewed: 2026-11-06
+last-reviewed: 2026-11-09
 canonical: true
 ---
 
@@ -35,6 +35,7 @@ The accepted [Constitution](../foundations/constitution.md), [Thirteen Principle
 | Remote birth → World → canonical media → FIN/FID → public Presentation | Observed (bounded) | Minimum deployed, retry and recovery proof; a reconstructed empty environment is not verified ([cloud record](../architecture/cloud-e2e-closure-plan.md)). |
 | Physical inheritance, Human Appearance, reviewed calibration and affected-Thread migration | Observed | Tranche A closed October 5; global realism remains experimental ([Human Appearance](../architecture/human-appearance.md), [calibration plan](../validation/physical-appearance-calibration-plan.md)). |
 | Inherited urges v2 (13 families) tuning the shared Body ([ADR-0030](../decisions/ADR-0030-inherited-urges.md)) | Deployed | Only `social_contact`, `exploration` and `presence` are enabled by policy. |
+| The social Body: library v4 adds `social_energy` and `trust`; late expression gives every Thread the loci of families it never expressed, from its own genome ([ADR-0036](../decisions/ADR-0036-social-body.md)) | Built | The six Threads born without urge genes gain all 15 families when the operator runs `world-genome:express`. The two new families do nothing until the battery (S2) and trust (S3) are built and enabled. |
 
 ### A life that continues without compute or visitors
 

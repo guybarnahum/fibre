@@ -5,7 +5,7 @@ const REST_ROUTE="/internal/thread-life/rest";
 const WAKE_ROUTE="/internal/thread-life/wake";
 const TOKEN_ENCODER=new TextEncoder();
 
-function constantTimeEqual(left,right){
+export function constantTimeEqual(left,right){
   if(typeof left!=="string"||typeof right!=="string")return false;
   const a=TOKEN_ENCODER.encode(left),b=TOKEN_ENCODER.encode(right);
   let difference=a.length^b.length;
@@ -15,7 +15,7 @@ function constantTimeEqual(left,right){
   return difference===0;
 }
 
-function json(value,status=200){
+export function json(value,status=200){
   return Response.json(value,{status,headers:{"cache-control":"no-store"}});
 }
 

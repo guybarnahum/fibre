@@ -142,16 +142,18 @@ test("World accepts an admitted historical v2 urge library without rewriting it"
   const requestId="v2-provisional-canonical-round-trip";
   const current=selectedUrgesForBirth(requestId);
   const historical=URGE_LIBRARIES["2"];
+  const variantIds=current.originMaterial.variantIds.slice(0,historical.families.length);
   const variants=historical.families.map((family,index)=>family.variants.find(
-    v=>v.variantId===current.originMaterial.variantIds[index]));
+    v=>v.variantId===variantIds[index]));
   const values=variants.map(v=>v.text);
-  assert.deepEqual(values,current.values,"historical v2 test selected the corrected locus");
+  assert.deepEqual(values,current.values.slice(0,values.length),"historical v2 test selected the corrected locus");
   const originMaterial={
     ...current.originMaterial,libraryVersion:"2",libraryDigest:historical.digest,
     selectionDigest:"sha256:"+createHash("sha256").update(JSON.stringify({
       requestId,libraryId:"fibre_urge_loci",libraryVersion:"2",
-      libraryDigest:historical.digest,variantIds:current.originMaterial.variantIds,values,
+      libraryDigest:historical.digest,variantIds,values,
     })).digest("hex"),
+    variantIds,
   };
   const genome=buildDeNovoSymbolicGenome({
     threadId:"thr_historical_v2_urge",genesisId:"genesis_historical_v2_urge",

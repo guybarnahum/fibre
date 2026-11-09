@@ -1,5 +1,6 @@
 import { normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
 import { PHYSICAL_GENOME_VERSION, phenotypeFromPhysicalGenome } from "#core/src/human-appearance/index.mjs";
+import { URGE_LIBRARIES, URGE_LIBRARY_VERSION, lateExpressedUrges } from "#core/src/inherited-urges.mjs";
 import {
   MAX_COMMAND_PAYLOAD_BYTES,
   EVENT_TYPES,
@@ -435,6 +436,43 @@ function applyThreadIdentityUpdate(thread, event) {
   return replayed;
 }
 
+// Late expression of urge loci (ADR-0036): the payload a Thread's expression
+// event records, and the Thread it leaves, from its genome's digest alone.
+// Null when every family of the library is already expressed.
+export const GENOME_EXPRESSION_PROVENANCE=Object.freeze({
+  source:"late_genome_expression",migrationId:"urge_library_v4",notThreadLifeEvent:true,
+});
+export function genomeLociExpression(thread,{genomeId,genomeDigest,libraryVersion=URGE_LIBRARY_VERSION}){
+  assertId("expressed genome",genomeId);
+  const expressed=lateExpressedUrges({urgeProjection:thread.genome.urgeProjection,genomeDigest,libraryVersion});
+  if(expressed.length===0)return null;
+  const payload={genomeId,genomeDigest,libraryVersion,libraryDigest:URGE_LIBRARIES[libraryVersion].digest,
+    expressed:expressed.map(({family,variantId})=>({family,variantId}))};
+  const urgeProjection=[...(thread.genome.urgeProjection??[]),
+    ...expressed.map(({family,kind,orientation,positions})=>({family,kind,orientation,positions:{...positions}}))];
+  return {payload,genome:{...thread.genome,urgeProjection}};
+}
+
+function applyGenomeLociExpression(thread,event){
+  const label=`genome expression event ${event.eventId}`;
+  if(thread===null)throw new IntegrityError(`${label} appears before a seed event`);
+  if(event.commandId!==null||event.commandDigest!==null)throw new IntegrityError(`${label} must not carry command metadata`);
+  if(event.threadId!==thread.threadId)throw new IntegrityError(`${label} belongs to another Thread`);
+  if(thread.version!==event.expectedVersion)throw new IntegrityError(`${label} expected version ${event.expectedVersion}, replay has ${thread.version}`);
+  if(canonicalJson(event.provenance)!==canonicalJson(GENOME_EXPRESSION_PROVENANCE))throw new IntegrityError(`${label} lacks late-expression provenance`);
+  let expression;
+  try{expression=genomeLociExpression(thread,event.payload);}
+  catch(error){throw new IntegrityError(`${label} is invalid: ${error.message}`);}
+  if(expression===null||canonicalJson(expression.payload)!==canonicalJson(event.payload)){
+    throw new IntegrityError(`${label} does not match the draw from its genome digest`);
+  }
+  const replayed={...thread,version:thread.version+1,genome:expression.genome,
+    provenance:{...thread.provenance,lastEventId:event.eventId}};
+  validateStoredThread(event.threadId,replayed);
+  if(replayed.version!==event.resultingVersion)throw new IntegrityError(`${label} has an invalid resulting version`);
+  return replayed;
+}
+
 export function applyEventToThread(thread, event) {
   if (event.eventType === "THREAD_SEEDED") {
     const snapshot = event.payload.snapshot;
@@ -456,6 +494,9 @@ export function applyEventToThread(thread, event) {
   }
   if (event.eventType === "THREAD_PHYSICAL_GENOME_MIGRATED") {
     return applyPhysicalGenomeMigration(thread,event);
+  }
+  if (event.eventType === "THREAD_GENOME_LOCI_EXPRESSED") {
+    return applyGenomeLociExpression(thread,event);
   }
   if (event.eventType === "SELF_MODEL_UPDATED") {
     if (thread === null) throw new IntegrityError(`event ${event.eventId} appears before a seed event`);

@@ -15,25 +15,32 @@ const frame=(availability={})=>({
 });
 const social=reg=>reg.drives.find(d=>d.family==="social_contact");
 
-test("current authored urge library binds 13 family kinds, origin provenance and stable replay",()=>{
-  assert.equal(URGE_FAMILIES.length,13);
+test("current authored urge library binds 15 family kinds, origin provenance and stable replay",()=>{
+  assert.equal(URGE_FAMILIES.length,15);
   assert.ok(URGE_FAMILIES.every(f=>f.variants.length===10));
   const a=selectedUrgesForBirth("newborn-inherited-urges");
   assert.deepEqual(a,selectedUrgesForBirth("newborn-inherited-urges"),"birth must replay");
-  assert.equal(a.values.length,13);
+  assert.equal(a.values.length,15);
   const genome=buildDeNovoSymbolicGenome({
     threadId:"thr_inherited_urges_test",genesisId:"genesis_inherited_urges_test",
     values:a.values,originMaterial:a.originMaterial,createdAt:"2026-10-28T12:00:00Z",
   });
-  assert.equal(urgeVariantsFromGenome(genome).length,13,"origin must bind all families");
+  assert.equal(urgeVariantsFromGenome(genome).length,15,"origin must bind all families");
   assert.ok(!JSON.stringify(genome).includes("orientationUnrelated"));
   const tampered=structuredClone(genome);
   tampered.loci[0].value="unrelated bodily urge";
   assert.throws(()=>urgeVariantsFromGenome(tampered),/frozen library/,"origin must bind the actual textual loci");
 });
 
-test("v2 stays frozen while every selectable v3 locus is atomic",()=>{
-  assert.equal(URGE_LIBRARY_VERSION,"3");
+test("published libraries stay frozen; v4 only adds the social Body, and every locus is atomic",()=>{
+  assert.equal(URGE_LIBRARY_VERSION,"4");
+  assert.equal(URGE_LIBRARIES["3"].digest,
+    "sha256:7073678b3123757d8526e5ad01c31d5506c6fe7b66e41cfcc3ac50b7e2ef5cab","historical v3 library changed");
+  assert.deepEqual(URGE_LIBRARIES["4"].families.slice(0,13),URGE_LIBRARIES["3"].families,"v4 changed a v3 family");
+  assert.deepEqual(URGE_LIBRARIES["4"].families.slice(13).map(f=>f.family),["social_energy","trust"]);
+  for(const variant of URGE_LIBRARIES["4"].families.slice(13).flatMap(f=>f.variants)){
+    assert.doesNotThrow(()=>assertAtomicGenomeLocus(variant.text),`${variant.variantId} is not an atomic locus`);
+  }
   assert.equal(URGE_LIBRARY_V2_DIGEST,
     "sha256:3f1c2692580b305ee3c3f234a3e02cec820b0b9b33c731077b9864e56cb6e13e",
     "historical v2 library changed");

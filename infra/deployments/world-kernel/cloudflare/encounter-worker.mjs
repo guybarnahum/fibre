@@ -66,6 +66,8 @@ import { openSituatedLifeStore } from "#services/world-kernel/src/situated-life-
 import { openEmbodimentStore } from "#services/world-kernel/src/embodiment-store.mjs";
 import { openThreadLifeRestStore } from "#services/world-kernel/src/thread-life-rest-store.mjs";
 import { createThreadLifeRestWriteApi } from "#services/world-kernel/src/thread-life-rest-write-api.mjs";
+import { GENOME_EXPRESSION_ROUTE, createThreadGenomeExpressionApi } from "#services/world-kernel/src/thread-genome-expression-api.mjs";
+import { ThreadGenomeExpressionStore } from "#services/world-kernel/src/thread-genome-expression-store.mjs";
 import { createRelationshipInspectionApi,openRelationshipInspectionStore } from "#services/world-kernel/src/relationship-inspection.mjs";
 import { createThreadPresentationPublisher } from "../service-boundaries.mjs";
 
@@ -118,6 +120,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.threadJournalApi = null;
     this.worldVenueApi = null;
     this.threadLifeApi = null;
+    this.genomeExpressionApi = null;
     this.relationshipsApi = null;
     this.threadJournalBook = null;
     this.experienceConsolidationProcess = null;
@@ -877,6 +880,14 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     return this.threadLifeApi;
   }
 
+  genomeExpressionApiForRequest(){
+    this.genomeExpressionApi??=createThreadGenomeExpressionApi({
+      expressionStore:new ThreadGenomeExpressionStore(this.runtimeForRequest().worldStorage),
+      privateToken:this.env.FIBRE_PRIVATE_TOKEN,
+    });
+    return this.genomeExpressionApi;
+  }
+
   relationshipsApiForRequest(){
     if(this.relationshipsApi===null){
       this.relationshipsApi=createRelationshipInspectionApi({
@@ -920,6 +931,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
       && url.pathname !== PERSON_CONTACT_REVOKE_ROUTE
       && url.pathname !== PERSON_CONTACT_INBOX_ROUTE
       && !THREAD_LIFE_ROUTES.has(url.pathname)
+      && url.pathname !== GENOME_EXPRESSION_ROUTE
       && url.pathname !== RELATIONSHIPS_ROUTE
       && !THREAD_JOURNAL_ROUTE.test(url.pathname)) {
       return super.fetch(request);
@@ -937,6 +949,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         ? this.livedNowApiForRequest().fetch(request)
         : THREAD_LIFE_ROUTES.has(url.pathname)
         ? this.threadLifeApiForRequest().fetch(request)
+        : url.pathname === GENOME_EXPRESSION_ROUTE
+        ? this.genomeExpressionApiForRequest().fetch(request)
         : url.pathname === RELATIONSHIPS_ROUTE
         ? this.relationshipsApiForRequest().fetch(request)
         : url.pathname === LIVED_ENCOUNTER_ROUTE

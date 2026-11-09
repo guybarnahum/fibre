@@ -1,7 +1,7 @@
 ---
 id: architecture-inherited-urges
 status: accepted
-last-reviewed: 2026-10-28
+last-reviewed: 2026-11-09
 canonical: true
 ---
 
@@ -59,6 +59,8 @@ other triggers. The species-standard orientation of triggered families is
 | verification_itch | triggered | unresolved_claim, untested_assumption, conflicting_evidence | Uncertainty recorded in an earlier Thread-owned decision |
 | standing_flare | triggered | public_correction, refusal_by_close_person, exclusion | Directed admitted act; public requires audience, close requires actual relation |
 | mastery_itch | directional | technique, unfinished_work, repeated_practice, interrupted_learning | Supported interrupted/repeated activity with continuing investment |
+| social_energy | directional | company, quiet_company, solitude, doing | Social exposure and its recovery (ADR-0036; not yet enabled) |
+| trust | directional | reliability, warmth, reciprocity, familiarity | Exposure to a person and its outcome (ADR-0036; not yet enabled) |
 
 The 130 immutable authored variants, 10 per family, form the v2 historical
 catalogue and v3 current birth catalogue in `core/src/inherited-urges.mjs`.
@@ -77,6 +79,12 @@ persistence; each orientation has mixed-sign gain and a modest mean; the only
 repeated triple per family is one deliberately matched cross-orientation
 comparison. The measured values and effective thresholds appear in
 `docs/validation/inherited-urges-library-review.md`.
+**Library v4** ([ADR-0036](../decisions/ADR-0036-social-body.md)) is v3 plus
+`social_energy` and `trust`, ten reviewed loci each
+([review](../validation/social-body-urges-library-review.md)). New births draw
+all 15 families; v3 stays frozen (digest
+`sha256:7073678b3123757d8526e5ad01c31d5506c6fe7b66e41cfcc3ac50b7e2ef5cab`), and
+a v4 birth's first 13 loci are the ones v3 would have drawn.
 Textual nuances beyond the orientation/positions remain meaning-bearing source
 but **are not claimed as additional operational differences**. Frozen parameters
 are author-reviewed, not inferred by a model at runtime. No sex, ancestry,
@@ -142,7 +150,19 @@ of S2/S3, not silently implemented by S1.
 All Threads inhabit the same Fibre species Body. Historical genomic material
 is immutable; no v1 cognitive-style locus is reinterpreted as an urge and none
 is exposed to ordinary cognition. No historical genome or digest is rewritten.
-A missing family uses species defaults, not invented birth material.
+A missing family uses species defaults, not invented birth material, until the
+World begins to use it.
+
+**Late expression** ([ADR-0036](../decisions/ADR-0036-social-body.md)). A family
+never expressed for a Thread may receive its locus once, drawn from the
+Thread's birth genome digest (`lateExpressedUrges`), never chosen or inferred
+from character. It is recorded as a `THREAD_GENOME_LOCI_EXPRESSED` event that
+appends to the Body's urge projection; the genome, its digest and earlier
+history are untouched, a locus already expressed is never redrawn, and replay
+refuses any locus that differs from the draw. A legacy Body that expresses its
+urge genes takes them in place of its runtime-baseline sensitivities, like
+every Thread born with them. Spread zero reverts expressed loci exactly as it
+reverts inherited ones.
 
 For legacy inherited sensitivity `s` the effective gain under a spread `a`
 is `1 + (s - 1) × a`. With spread zero, **all** v1 and v2 inherited

@@ -84,6 +84,7 @@
     "editor": "node tools/editor/serve-thread-editor.mjs",
     "infra:measure": "node tools/ops/infra-measure.mjs",
     "world:integrity-audit": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-integrity-audit.mjs",
+    "world-genome:express": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-genome-express.mjs",
     "world-life:rest": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-life-rest.mjs rest",
     "world-life:wake": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-life-rest.mjs wake",
     "world-life:wave": "node tools/deployment/run-with-progress.mjs world-life:wave node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-life-wave.mjs",

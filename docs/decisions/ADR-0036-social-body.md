@@ -1,13 +1,13 @@
 ---
 id: adr-0036-social-body
-status: proposed
+status: accepted
 last-reviewed: 2026-11-09
 canonical: true
 ---
 
 # ADR-0036 — The social Body: hunger, battery, familiarity and trust
 
-**Accepted in principle by Guy, November 9, 2026. Proposed until he approves the drafted loci** ([review](../validation/social-body-urges-library-review.md)). Plan: S0–S6.
+**Accepted by Guy, November 9, 2026**, with the twenty loci in the [review](../validation/social-body-urges-library-review.md). Built in slices S1–S6; S1 (library v4 and late expression) is built, the rest are designed.
 
 ## Why
 
@@ -58,7 +58,9 @@ Guy's direction: behaviour emerges from Body urges and is never coded, and the g
 3. **Once per family.** A locus already expressed is never redrawn or replaced.
 4. **The same library and review** as births. `inheritedSpread = 0` still reverts every inherited and expressed locus to the species default.
 
-The six legacy Threads therefore gain all 15 families, and the two v3 Threads gain the two new ones. This changes their behaviour from the event onward, by design.
+The six legacy Threads therefore gain all 15 families, and the two v3 Threads gain the two new ones. This changes their behaviour from the event onward, by design: a legacy Body's regulator sensitivity, derived from its runtime baselines, gives way to its expressed loci, as for every Thread born with urge genes. Its legacy loci stay stored and inert.
+
+**How it runs.** The draw is `sha256("fibre-urge-expression:" + genomeDigest + ":" + family)` over the family's variants, from the Thread's birth genome (`lateExpressedUrges`). The operator runs `world-genome:express -- --env <env>` (`--dry-run` shows what each Thread would receive); retired Threads are left as they are. Replay recomputes the draw and refuses any event whose loci differ from it.
 
 ## Status of what this excludes
 

@@ -1,12 +1,12 @@
 ---
 id: validation-social-body-urges-library-review
-status: proposed
+status: accepted
 last-reviewed: 2026-11-09
 ---
 
 # Social Body urges — draft loci for review (library v4)
 
-**Status: proposed, for Guy's review** before library v4 is built ([ADR-0036](../decisions/ADR-0036-social-body.md)). These are the two new directional families that v4 adds to the 13 in [the v2/v3 review](inherited-urges-library-review.md).
+**Status: accepted** by Guy on November 9, 2026, and published as library v4 ([ADR-0036](../decisions/ADR-0036-social-body.md)); `core/test/inherited-urges.test.mjs` checks the rules below on every family. These are the two new directional families that v4 adds to the 13 in [the v2/v3 review](inherited-urges-library-review.md).
 
 The texts describe what a Body inherits, never an instruction or a trait. Each is one proposition and one sentence, with no semicolon (`assertAtomicGenomeLocus`).
 

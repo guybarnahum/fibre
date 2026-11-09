@@ -230,7 +230,7 @@ function rebuildCurrentHeadProjections(database) {
 
 function needsEventSchemaUpgrade(database) {
   const row = database.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'").get();
-  return row !== undefined && (!row.sql.includes("THREAD_IDENTITY_UPDATED") || !row.sql.includes("THREAD_PHYSICAL_GENOME_MIGRATED"));
+  return row !== undefined && !row.sql.includes("THREAD_GENOME_LOCI_EXPRESSED");
 }
 
 function rebuildEventTables(database) {
