@@ -19,8 +19,12 @@ export function createThreadGenomeExpressionApi({expressionStore,privateToken,no
       if(request.method==="GET")return json({contract:"fibre-genome-expression-v1",threads:plan});
       if(request.method!=="POST")return json({error:"method_not_allowed"},405);
       const at=now();
-      return json({contract:"fibre-genome-expression-v1",threads:plan.map(entry=>entry.genome==="none"
-        ?{...entry,eventId:null}:{...entry,...expressionStore.express(entry.threadId,{at})})});
+      // Each entry keeps what the Body had before; receives is what it was given now.
+      return json({contract:"fibre-genome-expression-v1",threads:plan.map(entry=>{
+        if(entry.genome==="none")return {...entry,eventId:null};
+        const {eventId,expressed}=expressionStore.express(entry.threadId,{at});
+        return {...entry,eventId,receives:expressed};
+      })});
     },
   });
 }

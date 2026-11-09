@@ -12,7 +12,7 @@ const shortThread=(id)=>id.replace(/^(thr_[0-9a-f]{7})[0-9a-f]+$/u,"$1");
 function expressionReport(threads,{env,dryRun}){
   const receiving=threads.filter(entry=>entry.receives.length>0);
   const line=(entry)=>`${entry.name??shortThread(entry.threadId)} (${shortThread(entry.threadId)}): `
-    +`${entry.expressed.length} expressed, ${dryRun?"would receive":"received"} ${entry.receives.length}`
+    +`had ${entry.expressed.length}, ${dryRun?"would receive":"received"} ${entry.receives.length}`
     +(entry.receives.length>0?` — ${entry.receives.map(item=>item.variantId).join(" ")}`:"");
   return [
     `${env} · ${threads.length} Threads · ${dryRun?"dry run":"expressed"} · ${receiving.length} ${dryRun?"would receive":"received"} loci`,
