@@ -58,6 +58,9 @@ function socialLiveInput({
     counterparties:structuredClone(perspective.counterparts),
     story:structuredClone(story),
     liveInteraction:{
+      // How long they have been talking, in turns spoken, so a person can
+      // feel a conversation running its course.
+      spokenSoFar:story.beats.filter(beat=>beat.kind==="utterance").length,
       heardSoFar:liveEncounter.heardSoFar(thread.threadId),
       perceivedWorldEvents:liveEncounter.perceivedWorldEvents(thread.threadId),
       opportunity:structuredClone(opportunity),

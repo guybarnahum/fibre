@@ -11,7 +11,7 @@ import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs"
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import {evaluateSalience} from "../src/salience-gate.mjs";
 import {embodimentSpecificationDigest} from "../src/embodiment-domain.mjs";
-import {displayHoldings,glanceItems} from "../src/scene-glance.mjs";
+import {displayHoldings,glanceItems,readHolding} from "../src/scene-glance.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -444,7 +444,8 @@ test("a library's display is filled once from attested works and kept; an unreac
     assert.equal(fetched,1,"a kept shelf was filled again");
     assert.ok(first.every(item=>item.work.evidenceRef.startsWith("https://")),"a holding has no catalogue attestation");
     const offline={async listWorks(){throw new Error("catalogue unreachable");}};
-    assert.deepEqual(await displayHoldings({venueRef:"venue_other",catalogue:offline,experienceStore:ctx.store,at:AT}),[],
+    assert.deepEqual(await displayHoldings({venueRef:"venue_other",catalogue:offline,experienceStore:ctx.store,at:AT,
+      warn:()=>{}}),[],
       "books were invented when the catalogue could not be reached");
   }finally{ctx.close();}
 });
@@ -489,6 +490,30 @@ test("a glance is read in World's order: what follows the focus is never reached
     assert.equal(towardPeople.outcome,"not_noticed","a person was noticed while attention was on a book");
     assert.equal(towardPeople.passedReason===null,after.some(item=>item.kind==="person"),
       "a person never reached was given a reason, or one passed by was given none");
+  }finally{ctx.close();}
+});
+
+test("a Thread reads the actual pages from where it stopped, and its place in the book is kept",async()=>{
+  const ctx=setup();
+  try{
+    const [holding]=await displayHoldings({venueRef:"venue_verified_cafe",
+      catalogue:{async listWorks(){return WORKS;}},experienceStore:ctx.store,at:AT});
+    const pages={null:{text:"When I wrote the following pages, I lived alone, in the woods.",nextByte:900},
+      900:{text:"I went to the woods because I wished to live deliberately.",nextByte:1800}};
+    const asked=[],seen=[];
+    const read=(at)=>readHolding({thread:ctx.threads.get(ctx.ids[0]),
+      situation:{...ctx.situations[0],establishedAt:at},holdingRef:holding.holdingRef,describeSelf:"A person",
+      catalogue:{async readPassage({fromByte}){asked.push(fromByte);return pages[fromByte];}},
+      experienceStore:ctx.store,
+      modelAdapter:{async invoke({input}){seen.push(input.reading);
+        return {output:{experienceText:"The plainness of it holds me.",keepReading:true}};}}});
+    const first=await read(AT);
+    const second=await read("2026-10-19T10:00:00.000Z");
+    assert.deepEqual(asked,[null,900],"a second reading did not continue where the first stopped");
+    assert.equal(seen[0].passage,pages.null.text,"the book's actual pages did not reach the reader");
+    assert.equal(seen[1].where,"where you left off","a returning reader was told it was starting over");
+    assert.deepEqual([first.nextByte,second.nextByte,second.status],[900,1800,"reading"],
+      "the reader's place in the book was not kept");
   }finally{ctx.close();}
 });
 

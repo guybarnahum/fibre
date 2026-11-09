@@ -55,7 +55,7 @@ The accepted [Constitution](../foundations/constitution.md), [Thirteen Principle
 | Thread-to-Thread live conversation; an ongoing exchange may become a conversation ([ADR-0033](../decisions/ADR-0033-ongoing-exchange-may-become-conversation.md)) | Observed | One streamed model call per turn: speak, introduce itself, act or stay silent ([Live Encounters](../architecture/live-encounters.md)). |
 | Conversation relieves the need for contact; ideas carry forward | Observed | Kadir took Habiba's advice within a conversation and carried a talk with Nathan into six messages and a later meeting (November 5). |
 | Later contact by message after reflection | Observed | Messages between Threads follow their own reflection and contact decision. |
-| A glance on arrival over the people present and the books on a library's display; meeting a real public-domain book ([ADR-0035](../decisions/ADR-0035-glance-and-books-at-places.md)) | Built | Books come from Project Gutenberg; reading their pages is the next slice. The first display is English public-domain only, a named limitation. |
+| A glance on arrival over the people present and the books on a library's display; meeting and reading a real public-domain book from where one left off ([ADR-0035](../decisions/ADR-0035-glance-and-books-at-places.md)) | Built | Books come from Project Gutenberg. Returning to a book in later plans is the next slice. The first display is English public-domain only, a named limitation. |
 
 ### Relationships, memory and the interior
 

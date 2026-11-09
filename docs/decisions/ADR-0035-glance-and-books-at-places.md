@@ -24,6 +24,13 @@ canonical: true
 - **Before the focus:** seen and passed. **The focus:** noticed. **After it:** never reached.
 - Toward the people present, the arriver's attention to the arrival Story is `noticed` when one of them is the focus. Otherwise it is `not_noticed`, with the Thread's reason when they came before its focus, and none when they were never reached.
 - Taking up a book is an observable act. World admits it as a one-beat Story whose action names the holding (`holdingRef`), and the Thread's experience of meeting the book belongs to that Story and is consolidated like any other.
+**Reading.**
+- Having taken a book down, the Thread opens it and reads. World supplies the actual pages it reaches: a passage of about 1,500 characters from where this Thread left off. The first reading starts at the book's first page, after the catalogue's header.
+- Only the bytes needed are fetched, through `integrations/books/gutenberg-text.mjs`.
+- One deferred call (`encounter.reading`) gives the Thread's own experience of the pages. It is admitted on a one-beat Story ("reads from …", naming the holding) and consolidated like any other experience. The call also says whether the Thread means to go on with the book.
+- `thread_readings` keeps its place in each book (`reading`, `set_aside` or `finished`).
+- If the pages cannot be fetched, nothing is read and nothing is invented.
+
 - `thread_glances` keeps each list in World's order with its focus, so a person or book missed while absorbed elsewhere is inspectable, not silently absent. The Observatory shows glances with book titles.
 
 **What does not change.**
@@ -35,7 +42,7 @@ canonical: true
 
 | Capability | Status | Extension path |
 |---|---|---|
-| Reading a book's pages, keeping one's place, a book in hand seen by others | deferred (next slice) | `textUrl` on each holding; a reading encounter starting from the Thread's own position |
+| Returning to a book: a plan that continues it; a conversation that sees what the other is reading; a book in hand seen by others | deferred (next slice) | `thread_readings` is the Thread's own record of where it is and whether it means to go on; its consumer is the Flight Plan |
 | Glances when a focus ends, and beyond arrival | deferred | the same list and record, earned by putting a book down |
 | Sections other than the display; bookshops; other things at places (exhibits, art, goods) | deferred | `venue_holdings.section`; other catalogues behind their own ports |
 | In-copyright works | deferred | metadata-only holdings, with no text supplied and none invented |
@@ -50,5 +57,7 @@ No permanent constraint.
   - a display is filled once from attested works and kept, and an unreachable catalogue invents nothing;
   - a glance is read in World's order, nothing after the focus is noticed, and taking up a book is an admitted act on that holding that the Thread experiences;
   - different visits find different books from the same kept shelf.
+- A Thread reads the actual pages from where it stopped, and its place in the book is kept (same file).
 - `integrations/books/gutendex.test.mjs`: only works the catalogue attests as public domain, with their text, become works.
+- `integrations/books/gutenberg-text.test.mjs`: a reader starts on the book's first page, and each reading continues exactly where the last stopped, to the end, without the licence.
 - On staging: the glances in each Observatory; topic diversity across conversations; people missed while absorbed against the earlier noticing rate; whether two Threads given the same list take up different things.

@@ -185,6 +185,11 @@ function environmentOpportunityTable(kind){
   throw new TypeError("World opportunity kind must be arrival or stay");
 }
 
+function readingFromRow(row){
+  return Object.freeze({threadId:row.thread_id,workRef:row.work_ref,holdingRef:row.holding_ref,title:row.title,
+    nextByte:row.next_byte,status:row.status,lastReadAt:row.last_read_at});
+}
+
 function glanceFromRow(row){
   return Object.freeze({glanceId:row.glance_id,threadId:row.thread_id,situationId:row.situation_id,
     occurredAt:row.occurred_at,items:Object.freeze(JSON.parse(row.items_json)),focus:row.focus,
@@ -2553,6 +2558,36 @@ export class LivedExperienceStore {
     const row=this.#database.prepare("SELECT * FROM venue_holdings WHERE holding_ref=?").get(holdingRef);
     return row===undefined?null:Object.freeze({holdingRef:row.holding_ref,venueRef:row.venue_ref,
       section:row.section,position:row.position,work:Object.freeze(JSON.parse(row.work_json))});
+  }
+
+  getThreadReading(threadId,workRef){
+    assertId("reading threadId",threadId);
+    assertNonEmpty("reading work",workRef);
+    const row=this.#database.prepare("SELECT * FROM thread_readings WHERE thread_id=? AND work_ref=?")
+      .get(threadId,workRef);
+    return row===undefined?null:readingFromRow(row);
+  }
+
+  recordThreadReading({threadId,workRef,holdingRef,title,nextByte,status,at}){
+    assertId("reading threadId",threadId);
+    assertNonEmpty("reading work",workRef);
+    assertId("reading holding",holdingRef);
+    assertNonEmpty("reading title",title);
+    if(nextByte!==null&&(!Number.isSafeInteger(nextByte)||nextByte<0))throw new TypeError("a reading position is a byte offset");
+    if(!["reading","set_aside","finished"].includes(status))throw new TypeError("reading status is invalid");
+    assertIsoTimestamp("reading at",at);
+    this.#database.prepare(`INSERT INTO thread_readings(thread_id,work_ref,holding_ref,title,next_byte,status,last_read_at)
+      VALUES (?,?,?,?,?,?,?) ON CONFLICT(thread_id,work_ref) DO UPDATE SET holding_ref=excluded.holding_ref,
+      next_byte=excluded.next_byte,status=excluded.status,last_read_at=excluded.last_read_at`)
+      .run(threadId,workRef,holdingRef,title.trim(),nextByte,status,at);
+    return this.getThreadReading(threadId,workRef);
+  }
+
+  listThreadReadings(threadId,{limit=12}={}){
+    assertId("readings threadId",threadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>48)throw new TypeError("readings must be bounded");
+    return Object.freeze(this.#database.prepare(`SELECT * FROM thread_readings WHERE thread_id=?
+      ORDER BY last_read_at DESC,work_ref LIMIT ?`).all(threadId,limit).map(readingFromRow));
   }
 
   // One glance per entered scene; a retried arrival keeps the first.

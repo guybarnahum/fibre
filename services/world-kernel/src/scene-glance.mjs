@@ -25,14 +25,14 @@ export function holdsBooks(place){
 // catalogue and then kept. Which catalogue page a venue shows is World's,
 // fixed by the venue. If the catalogue cannot be reached, the shelf stays
 // unfilled and nothing is invented; a later visitor fills it.
-export async function displayHoldings({venueRef,catalogue,experienceStore,at}){
+export async function displayHoldings({venueRef,catalogue,experienceStore,at,warn=console.warn}){
   const held=experienceStore.listVenueHoldings(venueRef,DISPLAY);
   if(held.length>0||catalogue===null)return held;
   const page=1+Number.parseInt(sha256(venueRef).slice(0,8),16)%CATALOGUE_PAGES;
   let works;
   try{works=await catalogue.listWorks({page,language:"en"});}
   catch(error){
-    console.warn(JSON.stringify({event:"venue-holdings-unavailable",venueRef,
+    warn(JSON.stringify({event:"venue-holdings-unavailable",venueRef,
       message:String(error?.message??error).slice(0,160)}));
     return held;
   }
@@ -141,4 +141,66 @@ export async function admitGlance({thread,situation,arrivalStory=null,items,appr
   }
   return experienceStore.recordThreadGlance({threadId:thread.threadId,situationId:situation.situationId,
     occurredAt:at,items:items.map(({kind,ref})=>({kind,ref})),focus:appraisal.focus,focusEncounterRef});
+}
+
+const PASSAGE_CHARACTERS=1500;
+const workRefOf=(work)=>`${work.source}:${work.sourceId}`;
+
+// Reading a book one has taken up: World supplies the actual pages it reaches,
+// from where this Thread left off; what it makes of them is its own. Its place
+// in the book is kept, with whether it means to go on. If the pages cannot be
+// fetched, nothing is read and nothing is invented.
+export async function readHolding({thread,situation,holdingRef,describeSelf,catalogue,experienceStore,
+  semanticStates=[],memories=[],modelAdapter,onExperienceQueued=null}){
+  const holding=experienceStore.getVenueHolding(holdingRef);
+  if(holding===null||typeof catalogue?.readPassage!=="function")return null;
+  const workRef=workRefOf(holding.work);
+  const prior=experienceStore.getThreadReading(thread.threadId,workRef);
+  const fromByte=prior?.status==="finished"?null:prior?.nextByte??null;
+  let passage;
+  try{passage=await catalogue.readPassage({textUrl:holding.work.textUrl,fromByte,maxChars:PASSAGE_CHARACTERS});}
+  catch(error){
+    console.warn(JSON.stringify({event:"book-pages-unavailable",holdingRef,
+      message:String(error?.message??error).slice(0,160)}));
+    return null;
+  }
+  if(!passage?.text)return null;
+  const book=bookItem(holding);
+  const input={
+    thread:{threadId:thread.threadId,name:thread.identity?.name??null,
+      selfDescription:thread.identity?.selfDescription??"",selfModel:thread.currentState?.selfModel??"",
+      stableTendencies:structuredClone(thread.genome?.textualTraits??{})},
+    semanticStates:semanticStates.map(state=>({domain:state.domain,dimension:state.dimension,
+      target:state.target??null,state:state.state})),
+    autobiographicalMemories:[...memories].slice(0,6).map(memory=>({memoryId:memory.memoryId,...memoryInMind(memory)})),
+    currentSituation:situationInMind(situation),
+    book:{title:book.title,by:book.by,about:book.about},
+    reading:{where:fromByte===null?"the first pages":"where you left off",passage:passage.text},
+  };
+  const invocation=await modelAdapter.invoke({
+    ...promptRequest("encounter.reading",{threadId:thread.threadId}),
+    input,
+    responseSchema:{type:"object",additionalProperties:false,required:["experienceText","keepReading"],
+      properties:{experienceText:{type:"string",minLength:1,maxLength:1200},keepReading:{type:"boolean"}}},
+    clientRequestId:`encounter-reading_${sha256(canonicalJson(input)).slice(0,40)}`,
+  });
+  const output=invocation.output;
+  assertPlainObject("reading output",output);
+  if(typeof output.experienceText!=="string"||!output.experienceText.trim())throw new TypeError("a reading needs its experience");
+  const at=situation.establishedAt;
+  const story={storyVersion:"encounter-story-v0.1",beats:[{actorThreadId:thread.threadId,kind:"action",
+    text:`${describeSelf} reads from "${book.title}".`,holdingRef}]};
+  const encounter=experienceStore.recordEncounterStory({occurredAt:at,
+    threadPresence:[{threadId:thread.threadId,situationId:situation.situationId}],
+    story,visualization:createEncounterVisualization({occurredAt:at,story,scene:"Reading at a library table.",
+      sourceReferences:[situation.situationId,holdingRef],depictedThreadRefs:[]})});
+  if(experienceStore.getThreadEncounterAttention(thread.threadId,encounter.encounterId)===null){
+    const attention=experienceStore.recordThreadEncounterAttention({threadId:thread.threadId,
+      encounterRef:encounter.encounterId,situationId:situation.situationId,occurredAt:at,
+      outcome:"noticed",experienceText:output.experienceText.trim()});
+    await queueThreadExperienceConsolidation({experienceStore,experienceRecord:attention.experience,
+      queuedAt:at,onQueued:onExperienceQueued});
+  }
+  return experienceStore.recordThreadReading({threadId:thread.threadId,workRef,holdingRef,title:book.title,
+    nextByte:passage.nextByte,status:passage.nextByte===null?"finished":output.keepReading===true?"reading":"set_aside",at});
 }

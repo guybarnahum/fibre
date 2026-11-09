@@ -29,6 +29,7 @@ import { createLivedNowService } from "#services/world-kernel/src/lived-now-serv
 import { worldAlarmNeedsRevival } from "#services/world-kernel/src/world-reconciliation-process.mjs";
 import { resolveGeoNamesLocality } from "#integrations/geography/geonames.mjs";
 import { listPublicDomainWorks } from "#integrations/books/gutendex.mjs";
+import { readGutenbergPassage } from "#integrations/books/gutenberg-text.mjs";
 import { holdsBooks } from "#services/world-kernel/src/scene-glance.mjs";
 import {
   nextLivedBoundary,
@@ -305,7 +306,8 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
           ...shared,embodimentStore:openEmbodimentStore(runtime.worldStorage),
           // A library's display is filled from the public-domain catalogue
           // the first time someone arrives in front of it.
-          catalogue:{listWorks:(query)=>listPublicDomainWorks(query)},
+          catalogue:{listWorks:(query)=>listPublicDomainWorks(query),
+            readPassage:(query)=>readGutenbergPassage(query)},
         }),
       );
       runtime.reconciliationProcess.setEnvironmentEvolutionProcess(

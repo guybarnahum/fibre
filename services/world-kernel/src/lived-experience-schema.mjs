@@ -362,6 +362,19 @@ export function createLivedExperienceTables(database) {
     ) STRICT;
     CREATE INDEX IF NOT EXISTS thread_glances_by_thread
       ON thread_glances(thread_id,occurred_at);
+    -- Where a Thread is in a book it has read from: its own place, kept so it
+    -- can come back, and whether it means to.
+    CREATE TABLE IF NOT EXISTS thread_readings (
+      thread_id TEXT NOT NULL,
+      work_ref TEXT NOT NULL,
+      holding_ref TEXT NOT NULL,
+      title TEXT NOT NULL,
+      next_byte INTEGER CHECK (next_byte IS NULL OR next_byte>=0),
+      status TEXT NOT NULL CHECK (status IN ('reading','set_aside','finished')),
+      last_read_at TEXT NOT NULL,
+      PRIMARY KEY (thread_id,work_ref),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
     CREATE TABLE IF NOT EXISTS thread_appointment_outcomes (
       appointment_id TEXT PRIMARY KEY,
       outcome TEXT NOT NULL CHECK (outcome IN ('kept','broken')),

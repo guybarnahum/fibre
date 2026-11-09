@@ -1,5 +1,5 @@
 import {admitEncounterAttention,recognitionFor} from "./lived-encounter-attention.mjs";
-import {admitGlance,appraiseGlance,displayHoldings,glanceItems,holdsBooks} from "./scene-glance.mjs";
+import {admitGlance,appraiseGlance,displayHoldings,glanceItems,holdsBooks,readHolding} from "./scene-glance.mjs";
 import {createEncounterVisualization} from "./lived-encounter-visualization.mjs";
 import {assertIsoTimestamp} from "./persistence-common.mjs";
 import {observablePerson} from "./world-observable-person.mjs";
@@ -155,14 +155,19 @@ export function createWorldArrivalPerception({
                 return {kind:"person",ref:situation.threadId,text:presence(situation),
                   ...(known?{knownAs:known}:{})};
               })});
+            const semanticStates=semanticStateStore.listCurrentState(arrival.threadId);
+            const memories=memoryStore.listCurrentMemories(arrival.threadId,{inMind:"background",
+              limit:6,newestFirst:true,
+            }).filter(m=>Date.parse(m.asOf)<=Date.parse(obligation.dueAt));
             const appraisal=await appraiseGlance({thread:arrivingThread,situation:arrival,venueName,items,
-              semanticStates:semanticStateStore.listCurrentState(arrival.threadId),
-              memories:memoryStore.listCurrentMemories(arrival.threadId,{inMind:"background",
-                limit:6,newestFirst:true,
-              }).filter(m=>Date.parse(m.asOf)<=Date.parse(obligation.dueAt)),
-              modelAdapter});
+              semanticStates,memories,modelAdapter});
             await admitGlance({thread:arrivingThread,situation:arrival,arrivalStory:encounter,items,appraisal,
               describeSelf:describe(arrival),experienceStore,onExperienceQueued});
+            // Having taken a book down, it opens it and reads.
+            const taken=appraisal.focus===null?null:items[appraisal.focus];
+            if(taken?.kind==="book")await readHolding({thread:arrivingThread,situation:arrival,holdingRef:taken.ref,
+              describeSelf:describe(arrival),catalogue,experienceStore,semanticStates,memories,modelAdapter,
+              onExperienceQueued});
             glanced=true;
             if(appraisal.focus!==null)noticed++;
           }

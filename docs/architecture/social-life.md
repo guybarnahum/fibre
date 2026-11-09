@@ -102,7 +102,7 @@ An accepted invitation, or a chosen continuation, opens a [Live Encounter](live-
 - `ACT:` — one observable action;
 - `SILENT` — nothing.
 
-Each live turn sees the Thread's own developed self, its current place, the other person as it perceives them, and its regard for that person first. Speech cut off by the other is admitted only up to what was audible. A conversation ends `quiescent`, `bounded` (eight appraisals in one autonomous invocation — a compute guard, not a length target) or by a changed scene; World logs how it ended.
+Each live turn sees the Thread's own developed self, its current place, the other person as it perceives them, and its regard for that person first. Speech cut off by the other is admitted only up to what was audible. A conversation ends `quiescent`, `bounded` (eight appraisals in one autonomous invocation — a compute guard, not a length target) or by a changed scene; World logs how it ended. Ending is the Threads' own: each turn sees how many turns have been spoken and what it came to do, and either person may close the conversation with a natural goodbye and fall silent, instead of keeping it alive with another question. The guard is never shown to them; on November 8 all four conversations ran into it.
 
 The whole conversation becomes one Story, one Experience per participant and one consolidation entry each. An accepted invited conversation founds a factual `social_contact` life relation in each direction (place, date, count, last meeting), revised by later meetings ([ADR-0029](../decisions/ADR-0029-recognition-and-acquaintance.md)); a continued exchange does not, so strangers learn names only by introducing themselves.
 
