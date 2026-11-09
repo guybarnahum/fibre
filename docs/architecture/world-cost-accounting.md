@@ -1,7 +1,7 @@
 ---
 id: architecture-world-cost-accounting
 status: proposed
-last-reviewed: 2026-10-08
+last-reviewed: 2026-11-09
 canonical: true
 ---
 
@@ -16,6 +16,7 @@ This is **operational cost reflection**, not a new Thread economic decision auth
 ## Existing evidence and unknowns
 
 - The Cloudflare World Kernel currently has one provider-neutral World reconciliation alarm, indexed next-life and environmental due work, and per-operation `world-state-cost` counters for SQL queries/rows read/rows written.
+- `npm run infra:state-usage [-- --date YYYY-MM-DD]` shows a UTC day's account-wide Durable Object rows read and written by hour, against the free-tier daily limits (5,000,000 read, 100,000 written). An hour that stands out is then traced in that hour's `world-state-cost` logs, which name the request path and the store that did the reading. On November 9, 2026, almost 16 million rows were read in the 17:00 UTC hour, the same hour as the deploy that rebuilt the Thread event table, and the World stopped until the 00:00 UTC reset.
 - The OpenAI reasoning adapter already reports `usage.inputTokens`, `usage.outputTokens`, request attempts and model provenance. These fields are useful inputs, **not yet an end-to-end cost report**.
 - Exact provider bills, token mix by World operation, average model latency, billed Durable Object duration, cache/failed-call charges, and wake frequency have **not** been established from a real sustained population run.
 - Previous discussion used a *scenario*, not observed spending: roughly **$3–$15 per active Thread-month**, with a central modeled **$5–$8** routine inference budget. The illustrative $7.56/Thread-month case assumed four daily planning calls (including possible redundant renewal), four environmental considerations, two regulation interpretations and half an attention+consolidation episode; it excludes births, media, visitor conversations and significant external activity. Price assumptions must be refreshed at measurement time. Do **not** treat these values as deployed cost evidence or a pricing commitment.

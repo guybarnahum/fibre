@@ -83,6 +83,7 @@
     "ready": "npm run git-check && npm run check",
     "editor": "node tools/editor/serve-thread-editor.mjs",
     "infra:measure": "node tools/ops/infra-measure.mjs",
+    "infra:state-usage": "node --env-file-if-exists=.env tools/ops/infra-state-usage.mjs",
     "world:integrity-audit": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-integrity-audit.mjs",
     "world-genome:express": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-genome-express.mjs",
     "world-life:rest": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-life-rest.mjs rest",
