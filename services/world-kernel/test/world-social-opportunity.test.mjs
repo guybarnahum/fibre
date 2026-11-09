@@ -2085,7 +2085,11 @@ test("unrelated life debt and Genesis cannot consume another venue's arrival or 
       &&!beat.text.includes("Currently:")
       &&!beat.text.includes("expecting conversation")),
     "private intent entered the objective Story");
-    for(const [observer,role] of [[ids[2],"arriver"],[ids[3],"witness"]]){
+    // The arriver takes the scene in at a glance: the person present, as World describes them.
+    const glance=attentionInputs.find(item=>item.thread.threadId===ids[2])?.glance;
+    assert.deepEqual(glance?.items.map(item=>item.text),[freeStory.story.beats[1].text],
+      "the arriver's glance rewrote or lost the person present");
+    for(const [observer,role] of [[ids[3],"witness"]]){
       const input=attentionInputs.find(item=>item.thread.threadId===observer);
       assert.ok(input,role+" never received the objective Story");
       const own=input.encounterStory.story.beats.find(beat=>beat.actorThreadId===observer);

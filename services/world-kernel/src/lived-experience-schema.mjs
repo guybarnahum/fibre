@@ -337,6 +337,31 @@ export function createLivedExperienceTables(database) {
     ) STRICT;
     CREATE INDEX IF NOT EXISTS thread_appointments_by_start
       ON thread_appointments(starts_at);
+    -- A real work at a real venue, attested by a public catalogue. A shelf is
+    -- filled once, when someone is first in front of it, then kept.
+    CREATE TABLE IF NOT EXISTS venue_holdings (
+      holding_ref TEXT PRIMARY KEY,
+      venue_ref TEXT NOT NULL,
+      section TEXT NOT NULL,
+      position INTEGER NOT NULL CHECK (position>=0),
+      work_json TEXT NOT NULL CHECK (json_valid(work_json)),
+      recorded_at TEXT NOT NULL,
+      UNIQUE (venue_ref,section,position)
+    ) STRICT;
+    -- What a Thread took in on entering a scene: the list in World's order,
+    -- and the one item it took up, if any. Items after it were not reached.
+    CREATE TABLE IF NOT EXISTS thread_glances (
+      glance_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      situation_id TEXT NOT NULL,
+      occurred_at TEXT NOT NULL,
+      items_json TEXT NOT NULL CHECK (json_valid(items_json)),
+      focus INTEGER CHECK (focus IS NULL OR focus>=0),
+      focus_encounter_ref TEXT,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS thread_glances_by_thread
+      ON thread_glances(thread_id,occurred_at);
     CREATE TABLE IF NOT EXISTS thread_appointment_outcomes (
       appointment_id TEXT PRIMARY KEY,
       outcome TEXT NOT NULL CHECK (outcome IN ('kept','broken')),

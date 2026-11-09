@@ -428,6 +428,9 @@ function threadObservatory(runtime, threadId) {
       interests:structuredClone(experience.inspectThreadInterests(threadId,{limit:24})),
       socialMoments:structuredClone(experience.listSocialMoments(threadId,{limit:24})),
       appointments:structuredClone(experience.listAppointments(threadId,{limit:24})),
+      glances:experience.listThreadGlances(threadId,{limit:24}).map(glance=>({...glance,
+        items:glance.items.map(item=>item.kind==="book"
+          ?{...item,title:experience.getVenueHolding(item.ref)?.work.title??null}:item)})),
       contactOutreach:structuredClone(
         contact.inspectThreadContact(threadId,{limit:12}),
       ),

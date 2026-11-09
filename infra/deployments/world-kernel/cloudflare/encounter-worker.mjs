@@ -28,6 +28,8 @@ import { createLivedNowPublicationService } from "#services/world-kernel/src/liv
 import { createLivedNowService } from "#services/world-kernel/src/lived-now-service.mjs";
 import { worldAlarmNeedsRevival } from "#services/world-kernel/src/world-reconciliation-process.mjs";
 import { resolveGeoNamesLocality } from "#integrations/geography/geonames.mjs";
+import { listPublicDomainWorks } from "#integrations/books/gutendex.mjs";
+import { holdsBooks } from "#services/world-kernel/src/scene-glance.mjs";
 import {
   nextLivedBoundary,
   createLivedBoundaryProcess,
@@ -301,6 +303,9 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         createWorldEnvironmentEvolution(shared),
         createWorldArrivalPerception({
           ...shared,embodimentStore:openEmbodimentStore(runtime.worldStorage),
+          // A library's display is filled from the public-domain catalogue
+          // the first time someone arrives in front of it.
+          catalogue:{listWorks:(query)=>listPublicDomainWorks(query)},
         }),
       );
       runtime.reconciliationProcess.setEnvironmentEvolutionProcess(
@@ -836,12 +841,13 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     if(venue!==null&&occurrence?.kind==="arrival"){
       const witnesses=coPresentAtActorArrival(lived,occurrence,venue).slice(0,2)
         .map(item=>({threadId:item.threadId,situationId:item.situationId}));
-      if(witnesses.length===0)return; // Empty venues do not manufacture company.
+      // Empty venues do not manufacture company, but a library still has books.
+      if(witnesses.length===0&&!holdsBooks(place))return;
       const perception=store.enqueueArrivalPerception({
         situationId:situation.situationId,venueRef:venue,
         dueAt:situation.establishedAt,witnesses,
       });
-      const social=store.enqueueSocialOpportunity({
+      const social=witnesses.length===0?{inserted:false}:store.enqueueSocialOpportunity({
         threadId:situation.threadId,situationId:situation.situationId,
         dueAt:situation.establishedAt,
       });

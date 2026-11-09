@@ -52,6 +52,7 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
   const threadPresentation = walkTests(join(root, "services/thread-presentation/test"));
   const worldKernel = walkTests(join(root, "services/world-kernel/test"));
   const tools = walkTests(join(root, "tools"));
+  const integrations = walkTests(join(root, "integrations"));
   const all = [
     ...domain,
     ...infra,
@@ -62,6 +63,7 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
     ...threadPresentation,
     ...worldKernel,
     ...tools,
+    ...integrations,
   ].sort();
   const allRelative = new Set(all.map((path) => normalized(relative(root, path))));
   const missingReplayTests = REPLAY_TOOL_TEST_PATHS.filter((path) => !allRelative.has(path));

@@ -155,6 +155,12 @@ function normalizeStory(candidate, participantIds) {
       const meeting=["proposesMeeting","agreesToMeet"].filter(key=>beat[key]===true);
       if(meeting.length>1||(meeting.length===1&&beat.kind!=="utterance"))
         throw new TypeError("proposing or agreeing to meet requires one spoken beat");
+      // Taking up a thing at a place names the World holding it was.
+      const holdingRef=beat.holdingRef??null;
+      if(holdingRef!==null){
+        if(beat.kind!=="action")throw new TypeError("only an action can take up a holding");
+        assertId("encounter story beat.holdingRef",holdingRef);
+      }
       return {
         actorThreadId:beat.actorThreadId ?? null,
         kind:beat.kind,
@@ -165,6 +171,7 @@ function normalizeStory(candidate, participantIds) {
           ?{disclosedName:beat.disclosedName}:{}),
         ...(completion===null?{}:{completion}),
         ...(meeting.length===0?{}:{[meeting[0]]:true}),
+        ...(holdingRef===null?{}:{holdingRef}),
       };
     }),
   };
@@ -176,6 +183,12 @@ function environmentOpportunityTable(kind){
   if(kind==="stay")return "world_environment_stay_opportunities";
   if(kind==="scene")return "world_ambient_scene_frontier";
   throw new TypeError("World opportunity kind must be arrival or stay");
+}
+
+function glanceFromRow(row){
+  return Object.freeze({glanceId:row.glance_id,threadId:row.thread_id,situationId:row.situation_id,
+    occurredAt:row.occurred_at,items:Object.freeze(JSON.parse(row.items_json)),focus:row.focus,
+    focusEncounterRef:row.focus_encounter_ref});
 }
 
 function appointmentFromRow(row){
@@ -219,8 +232,10 @@ export class LivedExperienceStore {
     assertId("arrival situation",situationId);
     assertId("arrival venue",venueRef);
     assertIsoTimestamp("arrival occurrence time",dueAt);
-    if(!Array.isArray(witnesses)||witnesses.length<1||witnesses.length>2){
-      throw new TypeError("arrival needs one or two grounded observers");
+    // The arriver always perceives its arrival (an empty library still has
+    // books); at most two others already present may witness it.
+    if(!Array.isArray(witnesses)||witnesses.length>2){
+      throw new TypeError("arrival has at most two grounded observers");
     }
     const seen=new Set();
     for(const person of witnesses){
@@ -2500,6 +2515,76 @@ export class LivedExperienceStore {
   }
 
   // An appointment agreed in a Story, once; agreeing opens the time door.
+  // A shelf is filled once, from attested works, and then kept: a second
+  // filling of the same section keeps the first.
+  recordVenueHoldings({venueRef,section,works,at}){
+    assertId("holdings venue",venueRef);
+    assertNonEmpty("holdings section",section);
+    assertIsoTimestamp("holdings recordedAt",at);
+    if(!Array.isArray(works)||works.length<1||works.length>64)throw new TypeError("a shelf holds a bounded set of works");
+    for(const work of works){
+      if(typeof work?.source!=="string"||typeof work?.sourceId!=="string"||typeof work?.evidenceRef!=="string"){
+        throw new TypeError("a holding must be a catalogue-attested work");
+      }
+    }
+    this.#database.transaction(()=>{
+      if(this.#database.prepare("SELECT 1 FROM venue_holdings WHERE venue_ref=? AND section=? LIMIT 1")
+        .get(venueRef,section)!==undefined)return;
+      const insert=this.#database.prepare(`INSERT INTO venue_holdings(holding_ref,venue_ref,section,position,work_json,recorded_at)
+        VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING`);
+      works.forEach((work,position)=>insert.run(
+        `hld_${sha256(canonicalJson([venueRef,section,work.source,work.sourceId])).slice(0,40)}`,
+        venueRef,section,position,canonicalJson(work),at));
+    });
+    return this.listVenueHoldings(venueRef,section);
+  }
+
+  listVenueHoldings(venueRef,section){
+    assertId("holdings venue",venueRef);
+    assertNonEmpty("holdings section",section);
+    return Object.freeze(this.#database.prepare(`SELECT * FROM venue_holdings
+      WHERE venue_ref=? AND section=? ORDER BY position`).all(venueRef,section)
+      .map(row=>Object.freeze({holdingRef:row.holding_ref,venueRef:row.venue_ref,section:row.section,
+        position:row.position,work:Object.freeze(JSON.parse(row.work_json))})));
+  }
+
+  getVenueHolding(holdingRef){
+    assertId("holding",holdingRef);
+    const row=this.#database.prepare("SELECT * FROM venue_holdings WHERE holding_ref=?").get(holdingRef);
+    return row===undefined?null:Object.freeze({holdingRef:row.holding_ref,venueRef:row.venue_ref,
+      section:row.section,position:row.position,work:Object.freeze(JSON.parse(row.work_json))});
+  }
+
+  // One glance per entered scene; a retried arrival keeps the first.
+  recordThreadGlance({threadId,situationId,occurredAt,items,focus,focusEncounterRef=null}){
+    assertId("glance threadId",threadId);
+    assertId("glance situationId",situationId);
+    assertIsoTimestamp("glance occurredAt",occurredAt);
+    if(!Array.isArray(items)||items.length<1||items.length>8)throw new TypeError("a glance is a short list");
+    if(focus!==null&&(!Number.isSafeInteger(focus)||focus<0||focus>=items.length))throw new TypeError("a glance focus is one of its items");
+    if(focusEncounterRef!==null)assertId("glance focus encounter",focusEncounterRef);
+    const glanceId=`glance_${sha256(canonicalJson({threadId,situationId})).slice(0,40)}`;
+    this.#database.prepare(`INSERT INTO thread_glances(glance_id,thread_id,situation_id,occurred_at,items_json,focus,focus_encounter_ref)
+      VALUES (?,?,?,?,?,?,?) ON CONFLICT DO NOTHING`)
+      .run(glanceId,threadId,situationId,occurredAt,canonicalJson(items),focus,focusEncounterRef);
+    return this.getThreadGlance(threadId,situationId);
+  }
+
+  getThreadGlance(threadId,situationId){
+    assertId("glance threadId",threadId);
+    assertId("glance situationId",situationId);
+    const row=this.#database.prepare("SELECT * FROM thread_glances WHERE thread_id=? AND situation_id=?")
+      .get(threadId,situationId);
+    return row===undefined?null:glanceFromRow(row);
+  }
+
+  listThreadGlances(threadId,{limit=12}={}){
+    assertId("glances threadId",threadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>48)throw new TypeError("glances must be bounded");
+    return Object.freeze(this.#database.prepare(`SELECT * FROM thread_glances WHERE thread_id=?
+      ORDER BY occurred_at DESC,glance_id LIMIT ?`).all(threadId,limit).map(glanceFromRow));
+  }
+
   recordAppointment({appointmentId,proposerThreadId,partnerThreadId,placeRef,venueRef,placeName,
     startsAt,agreedAt,encounterRef}){
     assertId("appointment id",appointmentId);

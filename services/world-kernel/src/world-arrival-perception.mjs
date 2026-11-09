@@ -1,4 +1,5 @@
-import {admitEncounterAttention} from "./lived-encounter-attention.mjs";
+import {admitEncounterAttention,recognitionFor} from "./lived-encounter-attention.mjs";
+import {admitGlance,appraiseGlance,displayHoldings,glanceItems,holdsBooks} from "./scene-glance.mjs";
 import {createEncounterVisualization} from "./lived-encounter-visualization.mjs";
 import {assertIsoTimestamp} from "./persistence-common.mjs";
 import {observablePerson} from "./world-observable-person.mjs";
@@ -12,7 +13,7 @@ const FRESH_ATTENTION_MS=60*60_000;
 export function createWorldArrivalPerception({
   experienceStore,livedNowStore,worldReader,semanticStateStore,memoryStore,
   modelAdapter,onExperienceQueued=null,now=()=>new Date().toISOString(),
-  embodimentStore=null,
+  embodimentStore=null,catalogue=null,
 }={}){
   return Object.freeze({
     async runOnce(){
@@ -50,37 +51,46 @@ export function createWorldArrivalPerception({
             return witnessPlace?.physicalVenue?.ref===obligation.venueRef
               ?[situation]:[];
           }):[];
-          let encounterRef=null;
+          let encounterRef=null,glanced=false;
+          const venueName=!eligible?null:typeof place.physicalVenue.displayName==="string"
+            &&place.physicalVenue.displayName.trim()
+            ?place.physicalVenue.displayName.trim()
+            :place.displayName?.trim()??null;
+          if(eligible&&!venueName)throw new TypeError("admitted arrival venue has no name");
+          // A delayed process must not author retroactive psychological
+          // attention using present-day private state. Its objective World
+          // story remains inspectable, with attention not_appraised.
+          const fresh=Date.parse(at)-Date.parse(obligation.dueAt)<=FRESH_ATTENTION_MS;
+          // Books on the display table are there whether or not anyone else is.
+          const holdings=eligible&&fresh&&holdsBooks(place)
+            ?await displayHoldings({venueRef:obligation.venueRef,catalogue,experienceStore,at}):[];
+          const describe=situation=>{
+            const identity=worldReader.getThread(situation.threadId,{
+              required:false,
+            })?.identity;
+            const words=observablePerson({
+              threadId:situation.threadId,situation,embodimentStore,
+              name:identity?.name??null,birthDate:identity?.birthDate??null,
+              sex:identity?.sex??null,
+              at:obligation.dueAt,
+            }).observableDescription;
+            return words[0].toUpperCase()+words.slice(1);
+          };
+          const presence=situation=>situation.outwardActivity
+            ?`${describe(situation)} is ${situation.outwardActivity}.`
+            :`${describe(situation)} is present at the venue.`;
+          let encounter=null;
           if(witnesses.length>0){
-            const venueName=typeof place.physicalVenue.displayName==="string"
-              &&place.physicalVenue.displayName.trim()
-              ?place.physicalVenue.displayName.trim()
-              :place.displayName?.trim()??null;
-            if(!venueName)throw new TypeError("admitted arrival venue has no name");
-            const describe=situation=>{
-              const identity=worldReader.getThread(situation.threadId,{
-                required:false,
-              })?.identity;
-              const words=observablePerson({
-                threadId:situation.threadId,situation,embodimentStore,
-                name:identity?.name??null,birthDate:identity?.birthDate??null,
-                sex:identity?.sex??null,
-                at:obligation.dueAt,
-              }).observableDescription;
-              return words[0].toUpperCase()+words.slice(1);
-            };
             const story={storyVersion:"encounter-story-v0.1",
               beats:[
                 {actorThreadId:arrival.threadId,kind:"action",
                   text:`${describe(arrival)} arrives at ${venueName}.`},
                 ...witnesses.map(situation=>({
                   actorThreadId:situation.threadId,kind:"occurrence",
-                  text:situation.outwardActivity
-                    ?`${describe(situation)} is ${situation.outwardActivity}.`
-                    :`${describe(situation)} is present at the venue.`,
+                  text:presence(situation),
                 })),
               ]};
-            const encounter=experienceStore.recordEncounterStory({
+            encounter=experienceStore.recordEncounterStory({
               occurredAt:obligation.dueAt,
               threadPresence:[
                 {threadId:arrival.threadId,situationId:arrival.situationId},
@@ -95,10 +105,7 @@ export function createWorldArrivalPerception({
               }),
             });
             encounterRef=encounter.encounterId;
-            // A delayed process must not author retroactive psychological
-            // attention using present-day private state. Its objective World
-            // story remains inspectable, with attention not_appraised.
-            if(Date.parse(at)-Date.parse(obligation.dueAt)<=FRESH_ATTENTION_MS){
+            if(fresh){
               for(const situation of witnesses){
                 const thread=worldReader.getThread(situation.threadId,{required:false});
                 if(thread===null||thread.status==="retired")continue;
@@ -131,34 +138,39 @@ export function createWorldArrivalPerception({
                   }
                 }
               }
-              // The arriver may also notice the people already present.
-              // The *same* objective encounter and existing attention model
-              // permit a personal Experience without authoring any new event.
-              const arrivingThread=worldReader.getThread(arrival.threadId,{required:false});
-              if(arrivingThread!==null&&arrivingThread.status!=="retired"
-                &&!livedNowStore.threadLifeRests(arrival.threadId)){
-                const prior=experienceStore.getThreadEncounterAttention(
-                  arrival.threadId,encounter.encounterId,
-                );
-                const attention=await admitEncounterAttention({
-                  thread:arrivingThread,situation:arrival,encounterStory:encounter,
-                  selfRole:"arriver",venueName,semanticStates:prior===null
-                    ?semanticStateStore.listCurrentState(arrival.threadId):[],
-                  memories:prior===null
-                    ?memoryStore.listCurrentMemories(arrival.threadId,{inMind:"background",
-                      limit:6,newestFirst:true,
-                    }).filter(m=>Date.parse(m.asOf)<=Date.parse(obligation.dueAt)):[],
-                  experienceStore,modelAdapter,onExperienceQueued,worldReader,
-                });
-                if(attention.outcome==="noticed")noticed++;
-              }
             }
+          }
+          // The arriver takes in the place in one glance: the people present
+          // and the books within reach, in the order its eye falls on them.
+          const arrivingThread=fresh&&(witnesses.length>0||holdings.length>0)
+            ?worldReader.getThread(arrival.threadId,{required:false}):null;
+          if(arrivingThread!==null&&arrivingThread.status!=="retired"
+            &&!livedNowStore.threadLifeRests(arrival.threadId)
+            &&experienceStore.getThreadGlance(arrival.threadId,arrival.situationId)===null){
+            const knownAs=recognitionFor({thread:arrivingThread,worldReader,experienceStore,
+              at:obligation.dueAt});
+            const items=glanceItems({venueRef:obligation.venueRef,at:obligation.dueAt,holdings,
+              people:witnesses.map(situation=>{
+                const known=knownAs(situation.threadId);
+                return {kind:"person",ref:situation.threadId,text:presence(situation),
+                  ...(known?{knownAs:known}:{})};
+              })});
+            const appraisal=await appraiseGlance({thread:arrivingThread,situation:arrival,venueName,items,
+              semanticStates:semanticStateStore.listCurrentState(arrival.threadId),
+              memories:memoryStore.listCurrentMemories(arrival.threadId,{inMind:"background",
+                limit:6,newestFirst:true,
+              }).filter(m=>Date.parse(m.asOf)<=Date.parse(obligation.dueAt)),
+              modelAdapter});
+            await admitGlance({thread:arrivingThread,situation:arrival,arrivalStory:encounter,items,appraisal,
+              describeSelf:describe(arrival),experienceStore,onExperienceQueued});
+            glanced=true;
+            if(appraisal.focus!==null)noticed++;
           }
           experienceStore.completeArrivalPerception({
             situationId:obligation.situationId,encounterRef,at,
           });
           results.push({situationId:obligation.situationId,
-            outcome:encounterRef===null?"not_observable":"recorded",
+            outcome:encounterRef!==null?"recorded":glanced?"glanced":"not_observable",
             encounterId:encounterRef});
         }catch(error){
           failed++;

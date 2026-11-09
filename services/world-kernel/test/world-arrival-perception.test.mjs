@@ -11,6 +11,7 @@ import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs"
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import {evaluateSalience} from "../src/salience-gate.mjs";
 import {embodimentSpecificationDigest} from "../src/embodiment-domain.mjs";
+import {displayHoldings,glanceItems} from "../src/scene-glance.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -119,6 +120,8 @@ test("one enacted arrival permits distinct noticing and missed attention with re
       modelAdapter:{async invoke({input}){
         calls++;
         attentionInputs.push(structuredClone(input));
+        if(input.glance)return {output:{focus:null,experienceText:null,
+          passedReason:"I went straight to a free seat."},provenance:{provider:"fixture",modelId:"glance"}};
         assert.equal(input.encounterStory.occurredAt,AT,"World changed event time");
         assert.equal(input.encounterStory.story.beats[0].actorThreadId,ids[0],
           "actor was misattributed");
@@ -152,9 +155,10 @@ test("one enacted arrival permits distinct noticing and missed attention with re
     assert.ok(story.story.beats[0].text.endsWith(" arrives at "+admittedVenue+"."),
       "objective arrival did not name its admitted venue");
     const arrivingInput=attentionInputs.find(input=>input.thread.threadId===ids[0]);
-    assert.equal(arrivingInput?.encounterStory.story.beats[0].text,
-      "You arrive at "+admittedVenue+".",
-      "arriver's own attention used a different venue");
+    assert.equal(arrivingInput?.glance.arrivedAt,admittedVenue,
+      "arriver's glance was at a different venue");
+    assert.deepEqual(arrivingInput.glance.items.map(item=>item.kind),["person","person"],
+      "the arriver's glance did not hold the people already present");
     assert.deepEqual(story.threadPresence.map(x=>x.threadId).sort(),[...ids].sort(),
       "independently situated witnesses were lost");
     assert.deepEqual(story.visualization.visualizationSourceReferences,
@@ -289,6 +293,10 @@ test("an arriver's own noticed company changes later social salience",async()=>{
         semanticStateStore:{listCurrentState:()=>[]},
         memoryStore:{listCurrentMemories:()=>[]},
         modelAdapter:{async invoke({input}){
+          if(input.glance)return {output:noticed
+            ?{focus:0,experienceText:"I notice someone reading by the window.",passedReason:null}
+            :{focus:null,experienceText:null,passedReason:"I was focused on my own thoughts."},
+            provenance:{provider:"fixture",modelId:"arrival-glance"}};
           return {
             output:input.thread.threadId===ids[0]&&noticed
               ?{outcome:"noticed",experienceText:"I became aware of a reader.",passedReason:null}
@@ -403,8 +411,9 @@ test("a witness sees someone it has met by name, a stranger stays described, and
       semanticStateStore:{listCurrentState:()=>[]},
       memoryStore:{listCurrentMemories:()=>[]},
       modelAdapter:{async invoke({input}){
-        seen[input.thread.threadId]=input.encounterStory.story.beats.find(beat=>beat.actorThreadId===ids[0]);
-        return {output:{outcome:"not_noticed",experienceText:null,passedReason:"I was reading."},
+        seen[input.thread.threadId]=input.glance??input.encounterStory.story.beats.find(beat=>beat.actorThreadId===ids[0]);
+        return {output:input.glance?{focus:null,experienceText:null,passedReason:"I was looking for a seat."}
+          :{outcome:"not_noticed",experienceText:null,passedReason:"I was reading."},
           provenance:{provider:"fixture",modelId:"attention"}};
       }},
       now:()=>AT,
@@ -412,10 +421,85 @@ test("a witness sees someone it has met by name, a stranger stays described, and
     assert.equal((await process.runOnce()).failed,0,"arrival attention did not settle");
     assert.equal(seen[ids[1]].knownAs,"Kadir Hundessa","a witness did not recognize someone it has met");
     assert.equal(seen[ids[2]].knownAs,undefined,"a stranger was recognized without having met");
-    assert.equal(seen[ids[0]].knownAs,undefined,"the arriver was shown its own name as a recognition");
+    assert.ok(seen[ids[0]].items.every(item=>item.kind==="person"&&item.knownAs===undefined),
+      "the arriver recognized people it has never met");
     assert.ok(store.listEncounterStories(ids[0])[0].story.beats.every(beat=>!("knownAs" in beat)),
       "one observer's recognition entered the objective World Story");
   }finally{ctx.close();}
+});
+
+const WORKS=["Walden","The Souls of Black Folk","Meditations","The Prince","Leaves of Grass"].map((title,i)=>({
+  source:"gutenberg",sourceId:String(100+i),title,authors:[{name:`Author ${i}`,birthYear:null,deathYear:null}],
+  languages:["en"],subjects:[`Subject ${i}`],textUrl:`https://example.org/${i}.txt`,
+  evidenceRef:`https://www.gutenberg.org/ebooks/${100+i}`}));
+
+test("a library's display is filled once from attested works and kept; an unreachable catalogue invents nothing",async()=>{
+  const ctx=setup();
+  try{
+    let fetched=0;
+    const catalogue={async listWorks(){fetched++;return WORKS;}};
+    const first=await displayHoldings({venueRef:"venue_verified_cafe",catalogue,experienceStore:ctx.store,at:AT});
+    const again=await displayHoldings({venueRef:"venue_verified_cafe",catalogue,experienceStore:ctx.store,at:AT});
+    assert.deepEqual(again.map(item=>item.holdingRef),first.map(item=>item.holdingRef),"the same shelf held different books");
+    assert.equal(fetched,1,"a kept shelf was filled again");
+    assert.ok(first.every(item=>item.work.evidenceRef.startsWith("https://")),"a holding has no catalogue attestation");
+    const offline={async listWorks(){throw new Error("catalogue unreachable");}};
+    assert.deepEqual(await displayHoldings({venueRef:"venue_other",catalogue:offline,experienceStore:ctx.store,at:AT}),[],
+      "books were invented when the catalogue could not be reached");
+  }finally{ctx.close();}
+});
+
+test("a glance is read in World's order: what follows the focus is never reached, and taking up a book is an act the Thread experiences",async()=>{
+  const ctx=setup();
+  try{
+    const {ids,threads,store,work}=ctx;
+    const livedNowStore={...ctx.livedNowStore,getWorldPlace:()=>({affordances:["Reading"],
+      physicalVenue:{ref:"venue_verified_cafe",displayName:"An attested library"}})};
+    store.enqueueArrivalPerception({...work,witnesses:work.witnesses.slice(0,1)});
+    const glances=[];
+    const process=createWorldArrivalPerception({
+      experienceStore:store,livedNowStore,catalogue:{async listWorks(){return WORKS;}},
+      worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
+      semanticStateStore:{listCurrentState:()=>[]},
+      memoryStore:{listCurrentMemories:()=>[]},
+      modelAdapter:{async invoke({input}){
+        if(!input.glance)return {output:{outcome:"not_noticed",experienceText:null,passedReason:"Reading."},
+          provenance:{provider:"fixture",modelId:"attention"}};
+        glances.push(input.glance);
+        // The arriver takes up the last book in the list.
+        const focus=input.glance.items.findLastIndex(item=>item.kind==="book");
+        return {output:{focus,experienceText:"The worn spine pulls me in; I take it down.",
+          passedReason:focus===0?null:"Nothing before it held me."},provenance:{provider:"fixture",modelId:"glance"}};
+      }},
+      now:()=>AT,
+    });
+    assert.equal((await process.runOnce()).failed,0,"the arrival glance did not settle");
+    const [seen]=glances;
+    assert.deepEqual(seen.items.map(item=>item.kind).sort(),["book","book","book","person"],
+      "the glance did not hold the books within reach and the person present");
+    const glance=store.getThreadGlance(ids[0],work.situationId);
+    const book=glance.items[glance.focus];
+    const after=glance.items.slice(glance.focus+1);
+    const story=store.listEncounterStories(ids[0]).find(item=>item.encounterId===glance.focusEncounterRef);
+    assert.equal(story.story.beats[0].holdingRef,book.ref,"taking up the book was not an admitted act on that book");
+    assert.equal(store.getThreadEncounterAttention(ids[0],story.encounterId)?.experience?.experienceText,
+      "The worn spine pulls me in; I take it down.","meeting the book did not become the Thread's experience");
+    const arrival=store.listEncounterStories(ids[1])[0];
+    const towardPeople=store.getThreadEncounterAttention(ids[0],arrival.encounterId);
+    assert.equal(towardPeople.outcome,"not_noticed","a person was noticed while attention was on a book");
+    assert.equal(towardPeople.passedReason===null,after.some(item=>item.kind==="person"),
+      "a person never reached was given a reason, or one passed by was given none");
+  }finally{ctx.close();}
+});
+
+test("different visits find different books from the same kept shelf, and a glance stays short",()=>{
+  const holdings=WORKS.map((work,position)=>({holdingRef:`hld_${position}`,work}));
+  const people=[{kind:"person",ref:"thr_a",text:"A woman is reading."},{kind:"person",ref:"thr_b",text:"A man is writing."}];
+  const visits=["2026-10-18T14:00:00.000Z","2026-10-19T09:00:00.000Z","2026-10-20T11:30:00.000Z"]
+    .map(at=>glanceItems({people,holdings,venueRef:"venue_library",at}));
+  assert.ok(visits.every(items=>items.length<=5),"a glance was longer than a glance");
+  assert.ok(new Set(visits.map(items=>items.filter(item=>item.kind==="book").map(item=>item.ref).sort().join())).size>1,
+    "every visit found the same books on the table");
 });
 
 test("late inspection retains arrival truth without inventing old psychology",async()=>{
