@@ -5,9 +5,19 @@ const START_MARKER = /\*\*\*\s*START OF (?:THE|THIS) PROJECT GUTENBERG E(?:BOOK|
 const END_MARKER = /\*\*\*\s*END OF (?:THE|THIS) PROJECT GUTENBERG E(?:BOOK|TEXT)/iu;
 const FIRST_LOOK_BYTES = 48_000;
 
-async function readBytes(textUrl, from, length, fetchImpl) {
-  const response = await fetchImpl(textUrl, { headers: { Range: `bytes=${from}-${from + length - 1}` },
-    redirect: "follow", signal: AbortSignal.timeout(20_000) });
+// Gutenberg's current home for a book's plain text. Older catalogue links
+// (for example /files/…) can be gone; this one is tried first, then the
+// catalogue's own link.
+const canonicalText = (sourceId) => /^\d+$/u.test(String(sourceId ?? ""))
+  ? `https://www.gutenberg.org/cache/epub/${sourceId}/pg${sourceId}.txt` : null;
+
+async function readBytes(textUrls, from, length, fetchImpl) {
+  let response = null;
+  for (const url of textUrls) {
+    response = await fetchImpl(url, { headers: { Range: `bytes=${from}-${from + length - 1}` },
+      redirect: "follow", signal: AbortSignal.timeout(20_000) });
+    if (response.ok || response.status !== 404) break;
+  }
   if (!response.ok) throw new Error(`book text ${response.status}`);
   // A server that ignores Range returns the whole book from its first byte.
   let skip = response.status === 206 ? 0 : from;
@@ -36,13 +46,15 @@ async function readBytes(textUrl, from, length, fetchImpl) {
 // Gutenberg header), ending at a paragraph, else a sentence, else a word,
 // near maxChars. nextByte is where this reader stops and will start next
 // time; null when the book is finished.
-export async function readGutenbergPassage({ textUrl, fromByte = null, maxChars = 1500, fetchImpl = globalThis.fetch } = {}) {
+export async function readGutenbergPassage({ sourceId = null, textUrl, fromByte = null, maxChars = 1500,
+  fetchImpl = globalThis.fetch } = {}) {
   if (typeof textUrl !== "string" || !textUrl.startsWith("https://")) throw new TypeError("book text must be an https link");
+  const textUrls = [...new Set([canonicalText(sourceId), textUrl].filter(Boolean))];
   if (fromByte !== null && (!Number.isSafeInteger(fromByte) || fromByte < 0)) throw new TypeError("reading position must be a byte offset");
   const encoder = new TextEncoder();
   const from = fromByte ?? 0;
   const raw = new TextDecoder("utf-8").decode(
-    await readBytes(textUrl, from, fromByte === null ? FIRST_LOOK_BYTES : maxChars * 4, fetchImpl));
+    await readBytes(textUrls, from, fromByte === null ? FIRST_LOOK_BYTES : maxChars * 4, fetchImpl));
   let offset = 0;
   if (fromByte === null) {
     const marker = START_MARKER.exec(raw);

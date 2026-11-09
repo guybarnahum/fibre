@@ -19,6 +19,8 @@ const COST_EVENTS = new Set(["world-state-cost", "d1-cost"]);
 const LIVED_NOW_FAILURE = "lived-now-reconciliation-failed";
 const MODEL_CALL = "model-call";
 const CONVERSATION_ENDED = "live-social-encounter-ended";
+// World warnings worth keeping as evidence: things the World could not reach.
+const WORLD_WARNINGS = new Set(["venue-holdings-unavailable", "book-pages-unavailable", "book-reading-failed"]);
 
 function parseArgs(argv) {
   const options = {
@@ -133,7 +135,7 @@ export function summarizeCosts(events) {
       continue;
     }
     // Replay captures are kept in the evidence file, not summarised here.
-    if (event.event === "model-capture") continue;
+    if (event.event === "model-capture" || WORLD_WARNINGS.has(event.event)) continue;
     if (event.event === LIVED_NOW_FAILURE) {
       reconciliationFailures.push({
         phase:event.phase,source:event.source,threadId:event.threadId,
@@ -190,7 +192,7 @@ function findCostEvents(value, sink) {
   }
   if (typeof value !== "object") return;
   if (COST_EVENTS.has(value.event) || value.event === MODEL_CALL || value.event === CONVERSATION_ENDED
-    || value.event === "model-capture") sink(value);
+    || value.event === "model-capture" || WORLD_WARNINGS.has(value.event)) sink(value);
   if (value.event === LIVED_NOW_FAILURE) sink({
     event:LIVED_NOW_FAILURE,
     threadId:value.threadId??null,

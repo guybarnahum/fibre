@@ -24,3 +24,14 @@ test("a reader starts on the book's first page and each reading continues exactl
   assert.equal(read.match(/Paragraph \d+/gu).length, 40, "a reading skipped or repeated part of the book");
   assert.ok(!read.includes("License"), "the catalogue's licence was read as the book");
 });
+
+test("a catalogue link that is gone does not keep a reader from the book", async () => {
+  const asked = [];
+  const moved = async (url, init) => {
+    asked.push(String(url));
+    return String(url).includes("/cache/epub/205/") ? ranged(url, init) : new Response("", { status: 404 });
+  };
+  const passage = await readGutenbergPassage({ sourceId: "205", textUrl: "https://www.gutenberg.org/files/205/205.txt",
+    maxChars: 600, fetchImpl: moved });
+  assert.ok(passage.text.startsWith("Paragraph 0"), "the book could not be read once its old link was gone");
+});

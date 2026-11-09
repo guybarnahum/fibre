@@ -165,9 +165,12 @@ export function createWorldArrivalPerception({
               describeSelf:describe(arrival),experienceStore,onExperienceQueued});
             // Having taken a book down, it opens it and reads.
             const taken=appraisal.focus===null?null:items[appraisal.focus];
+            // A reading that fails is lost, never retried as a different
+            // moment; the arrival itself still completes.
             if(taken?.kind==="book")await readHolding({thread:arrivingThread,situation:arrival,holdingRef:taken.ref,
               describeSelf:describe(arrival),catalogue,experienceStore,semanticStates,memories,modelAdapter,
-              onExperienceQueued});
+              onExperienceQueued}).catch(error=>console.warn(JSON.stringify({event:"book-reading-failed",
+                holdingRef:taken.ref,message:String(error?.message??error).slice(0,160)})));
             glanced=true;
             if(appraisal.focus!==null)noticed++;
           }

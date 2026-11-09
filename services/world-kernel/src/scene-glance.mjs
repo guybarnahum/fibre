@@ -158,7 +158,8 @@ export async function readHolding({thread,situation,holdingRef,describeSelf,cata
   const prior=experienceStore.getThreadReading(thread.threadId,workRef);
   const fromByte=prior?.status==="finished"?null:prior?.nextByte??null;
   let passage;
-  try{passage=await catalogue.readPassage({textUrl:holding.work.textUrl,fromByte,maxChars:PASSAGE_CHARACTERS});}
+  try{passage=await catalogue.readPassage({sourceId:holding.work.sourceId,textUrl:holding.work.textUrl,
+    fromByte,maxChars:PASSAGE_CHARACTERS});}
   catch(error){
     console.warn(JSON.stringify({event:"book-pages-unavailable",holdingRef,
       message:String(error?.message??error).slice(0,160)}));
