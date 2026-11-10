@@ -1,7 +1,7 @@
 ---
 id: architecture-storage-model
 status: accepted
-last-reviewed: 2026-09-21
+last-reviewed: 2026-11-09
 canonical: true
 ---
 
@@ -231,6 +231,12 @@ Projection repair may reconstruct current state from authoritative events; it ma
 ## Deployment schema boundary
 
 Cloudflare Durable Object schema creation, indexing, and migration are explicit deployment operations. Normal World wakeups and read-only inspection operate on the installed schema; they must never repair tables or scan the SQLite catalog merely to confirm the deployed contract. Local development may initialize a fresh fixture database.
+
+**Installs must cost what they touch, not more.** The Durable Object free tier stops the World for the rest of the UTC day once 5,000,000 rows are read or 100,000 written, account-wide. On November 9, 2026, adding one kind of Thread event rebuilt `thread_events` (about 2,400 events) and read 15.9 million rows: dropping and re-inserting the events made SQLite scan `commands`, which refers to events by an unindexed column, once per event. Three rules follow:
+
+- **Kinds of Thread event are data.** `thread_event_types` lists every kind and whether a command authors it, guarded on insert by `thread_events_known_kind`; the list is `THREAD_EVENT_TYPES` in `thread-event-schema.mjs`. A new kind is one row at install; the event table is never rebuilt for it. Kinds are never removed or changed.
+- **Every column that refers to a Thread event is indexed** (`indexThreadEventReferences`, at install and before any rebuild), so a rebuild, should one be needed, costs about what it copies.
+- **The deploy samples both budgets before upload** (`tools/deployment/do-headroom.mjs`) and refuses below 10% of either. `npm run infra:state-usage` shows a day's reads and writes by hour; the hour that stands out is traced in that hour's `world-state-cost` logs.
 
 The deployment SQL path must not load Thread cognition, model adapters, prompts, or reasoning modules. In particular, Guardian cognition tables come from the pure `guardian-cognition-schema.mjs` definition and civil identity tables from `civil-registry-schema.mjs`, not from their operational services. Identity-context policy is independently defined without loading prompt assets. The focused schema-isolation test follows local module dependencies to catch accidental prompt initialization in the deployment installer.
 

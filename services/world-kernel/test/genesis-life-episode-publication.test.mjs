@@ -346,10 +346,10 @@ test("opening an older world restores Genesis lived-history publication", () =>
     migrated.close();
 
     let database = new DatabaseSync(databasePath);
-    const schema = database.prepare(
-      "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'",
-    ).get().sql;
-    assert.match(schema, /THREAD_LIFE_EPISODE_RECORDED/, "world cannot store Genesis life episodes");
+    const kind = database.prepare(
+      "SELECT commanded FROM thread_event_types WHERE event_type='THREAD_LIFE_EPISODE_RECORDED'",
+    ).get();
+    assert.equal(kind?.commanded, 0, "world cannot store Genesis life episodes");
     database.close();
 
     const publishedEpisodes = [episodes()[0]];

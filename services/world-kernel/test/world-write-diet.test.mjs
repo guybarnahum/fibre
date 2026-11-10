@@ -269,8 +269,9 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     reportTestEvidence("FIBRE-WORLD-WRITE-BUDGET",report);
     // Storage-only upper bound for the seven-Thread day; semantic heads add
     // writes only when a new semantic record is admitted. The day's one spoken
-    // social act also appends one relational-ledger offer.
-    const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??291/7);
+    // social act also appends one relational-ledger offer. Each commanded
+    // event's command also writes the index that keeps event rebuilds linear.
+    const budget=Number(process.env.FIBRE_WORLD_WRITE_BUDGET??293/7);
     assert.ok(report.rowsPerThreadDay<=budget,
       "World write budget exceeded "+report.total+"/7: "+JSON.stringify(report.byStore));
     // New alarm activities are measured after the original day budget, so
@@ -809,7 +810,7 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
     const activityCeilings={
       plan:21,"lived-boundary":126,"social-act":15,
       "noticed-experience":10,"consolidation-queue":8,
-      "social-opportunity":30,"ambient-scene":9,consolidation:72,
+      "social-opportunity":30,"ambient-scene":9,consolidation:74,
       "contact-source":28,"contact-afterthought":17,
       "contact-outreach":22,"contact-reception":3,"contact-noticing":21,
       "social-observed-setup":5,"social-observed":10,
@@ -821,6 +822,8 @@ test("seven Tucson Threads one waking day has a measured World write budget",asy
       // The continued path must also prove audible post-seeding speech.
       // November 5: + one relational-ledger row per act and one row per door
       // opened (social act and outreach +1, remarks +3, continuation +7).
+      // November 9: each memory's command also writes the event-reference
+      // index that keeps event-table rebuilds linear (consolidation +2).
     };
     const activities=Object.fromEntries(Object.entries(mapReport.activities)
       .concat(Object.keys(activityCeilings).filter(name=>!(name in mapReport.activities))

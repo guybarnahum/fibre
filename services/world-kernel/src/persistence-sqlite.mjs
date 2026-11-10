@@ -28,7 +28,7 @@ import { createContactTables } from "./contact-schema.mjs";
 import { createThreadLifeRestTables } from "./thread-life-rest-schema.mjs";
 import { createRelationshipTables } from "./relationship-schema.mjs";
 import {worldStateInitialization,recoverInterruptedEventTable} from "./world-state-storage.mjs";
-import {THREAD_EVENT_COLUMNS,createThreadEventsTable,installThreadEventGuards} from "./thread-event-schema.mjs";
+import {THREAD_EVENT_COLUMNS,createThreadEventsTable,indexThreadEventReferences,installThreadEventGuards,threadEventTableListsKinds} from "./thread-event-schema.mjs";
 
 export function translateStorageError(error) {
   if (/database is locked|database is busy/i.test(error?.message ?? "")) return new StorageBusyError(error.message);
@@ -167,6 +167,7 @@ function createSchema(database) {
   createContactTables(database);
   createThreadLifeRestTables(database);
   createRelationshipTables(database);
+  indexThreadEventReferences(database);
 }
 
 function createAndRepairSchema(database) {
@@ -230,10 +231,11 @@ function rebuildCurrentHeadProjections(database) {
 
 function needsEventSchemaUpgrade(database) {
   const row = database.prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'").get();
-  return row !== undefined && !row.sql.includes("THREAD_GENOME_LOCI_EXPRESSED");
+  return row !== undefined && threadEventTableListsKinds(row.sql);
 }
 
 function rebuildEventTables(database) {
+  indexThreadEventReferences(database);
   dropThreadEventDependentTriggers(database);
   database.exec(`
     DROP TRIGGER IF EXISTS thread_events_no_update;

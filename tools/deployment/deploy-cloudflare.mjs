@@ -1,7 +1,7 @@
 import { readFile,writeFile } from "node:fs/promises";
 import { shortSha } from "../shared/repo-root.mjs";
 import {runLocalBirthPreflight} from "./birth-preflight.mjs";
-import {checkDoWriteHeadroom} from "./do-write-headroom.mjs";
+import {checkDoHeadroom as sampleDoHeadroom} from "./do-headroom.mjs";
 import {readWorldSchemaDigest} from "./world-schema-digest.mjs";
 import { resolve } from "node:path";
 import { spawn } from "node:child_process";
@@ -369,7 +369,7 @@ export async function deployCloudflareStack({
   birthPreflight = null,
   localBirthPreflight = runLocalBirthPreflight,
   bootstrapPreflight = false,
-  checkDoHeadroom = checkDoWriteHeadroom,
+  checkDoHeadroom = sampleDoHeadroom,
   getWorldSchemaDigest = readWorldSchemaDigest,
 } = {}) {
   const env = normalizeCloudflareEnvironment(environment);

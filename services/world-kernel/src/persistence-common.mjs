@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { THREAD_EVENT_TYPES } from "./thread-event-schema.mjs";
 
 export const WORLD_STORE_SCHEMA_VERSION = 9;
 export const MAX_COMMAND_PAYLOAD_BYTES = 64 * 1024;
@@ -13,26 +14,10 @@ export const THREAD_STATUSES = new Set([
 ]);
 export const UPDATE_SELF_MODEL_STATUSES = new Set(["frozen", "dormant"]);
 export const COMMAND_TYPES = new Set(["UPDATE_SELF_MODEL"]);
-export const EVENT_TYPES = new Set([
-  "THREAD_SEEDED",
-  "THREAD_LIFE_EPISODE_RECORDED",
-  "SELF_MODEL_UPDATED",
-  "THREAD_FROZEN",
-  "COMPELLED_EPISODE_INTERRUPTED",
-  "AUTOBIOGRAPHICAL_MEMORY_RECORDED",
-  "GENESIS_SEX_MIGRATED",
-  "THREAD_IDENTITY_UPDATED",
-  "THREAD_PHYSICAL_GENOME_MIGRATED",
-  "THREAD_GENOME_LOCI_EXPRESSED",
-]);
-export const UNCOMMANDED_EVENT_TYPES = new Set([
-  "THREAD_SEEDED",
-  "THREAD_LIFE_EPISODE_RECORDED",
-  "GENESIS_SEX_MIGRATED",
-  "THREAD_IDENTITY_UPDATED",
-  "THREAD_PHYSICAL_GENOME_MIGRATED",
-  "THREAD_GENOME_LOCI_EXPRESSED",
-]);
+export const EVENT_TYPES = new Set(Object.keys(THREAD_EVENT_TYPES));
+export const UNCOMMANDED_EVENT_TYPES = new Set(
+  Object.entries(THREAD_EVENT_TYPES).filter(([, commanded]) => !commanded).map(([kind]) => kind),
+);
 export const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 
 export class ThreadNotFoundError extends Error {}

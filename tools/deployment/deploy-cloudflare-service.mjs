@@ -17,7 +17,7 @@ import {
 } from "./cloudflare-operator.mjs";
 import { relocateWranglerMain } from "./wrangler-config-paths.mjs";
 import {runBirthPreflight,runLocalBirthPreflight} from "./birth-preflight.mjs";
-import {checkDoWriteHeadroom} from "./do-write-headroom.mjs";
+import {checkDoHeadroom as sampleDoHeadroom} from "./do-headroom.mjs";
 import {readWorldSchemaDigest} from "./world-schema-digest.mjs";
 import {
   d1BindingsFromConfig,
@@ -150,7 +150,7 @@ export async function deployCloudflareService({
   localBirthPreflight = runLocalBirthPreflight,
   bootstrapPreflight = false,
   createDeploymentClient = createWranglerDeploymentClient,
-  checkDoHeadroom = checkDoWriteHeadroom,
+  checkDoHeadroom = sampleDoHeadroom,
   getWorldSchemaDigest = readWorldSchemaDigest,
   wait,
   print = console.log,

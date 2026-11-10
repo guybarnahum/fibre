@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { DatabaseSync } from "node:sqlite";
-import {THREAD_EVENT_COLUMNS} from "../src/thread-event-schema.mjs";
+import {THREAD_EVENT_COLUMNS,THREAD_EVENT_TYPES} from "../src/thread-event-schema.mjs";
 
 import {
   IdempotencyConflictError,
@@ -155,15 +155,15 @@ test("applies a validated self-model command atomically and preserves lifecycle 
     store.close();
   }));
 
-test("event schema upgrade preserves command-linked history with foreign keys enforced",()=>
+test("event schema upgrade from inline kinds preserves command-linked history, and new kinds need no rebuild",()=>
   withDatabase(databasePath=>{
     const store=openWorldStore(localWorldStateStorage(databasePath));
     normalizedSeed(store);
     const command=store.applyCommand(updateSelfModelCommand());
     store.close();
 
-    // Recreate the prior event-type constraint without changing referential
-    // semantics. The next World open must perform the real schema upgrade.
+    // Recreate the prior table, whose kinds were listed inline, without
+    // changing referential semantics. The next World open must upgrade it.
     const database=rawDatabase(databasePath);
     let beforeEvents,beforeCommands;
     try{
@@ -179,13 +179,14 @@ test("event schema upgrade preserves command-linked history with foreign keys en
       const current=database.prepare(
         "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_events'",
       ).get().sql;
-      const legacy=current.replaceAll(",'THREAD_PHYSICAL_GENOME_MIGRATED'","");
+      const kinds=Object.keys(THREAD_EVENT_TYPES).map(kind=>`'${kind}'`).join(",");
+      const legacy=current.replace("event_type TEXT NOT NULL,",`event_type TEXT NOT NULL CHECK (event_type IN (${kinds})),`);
       assert.notEqual(legacy,current,"fixture did not create an older event constraint");
       const holding=legacy.replace('"thread_events"','"thread_events_legacy_fixture"');
       database.exec("BEGIN IMMEDIATE");
       try{
         database.exec("PRAGMA defer_foreign_keys=ON");
-        database.exec("DROP TRIGGER thread_events_no_update; DROP TRIGGER thread_events_no_delete");
+        database.exec("DROP TRIGGER thread_events_no_update; DROP TRIGGER thread_events_no_delete; DROP TRIGGER thread_events_known_kind");
         database.exec(holding);
         database.exec(`
           INSERT INTO thread_events_legacy_fixture (${THREAD_EVENT_COLUMNS})
@@ -216,7 +217,37 @@ test("event schema upgrade preserves command-linked history with foreign keys en
         ).all(),beforeCommands,"event upgrade lost accepted commands");
         assert.deepEqual(checked.prepare("PRAGMA foreign_key_check").all(),[],
           "event upgrade broke command references");
+        assert.ok(!checked.prepare("SELECT sql FROM sqlite_master WHERE name='thread_events'").get().sql
+          .includes("event_type IN ("),"the upgraded table still lists its kinds inline");
+        const insert=(kind,commandId)=>checked.prepare(`INSERT INTO thread_events (${THREAD_EVENT_COLUMNS})
+          VALUES (?,?,99,98,99,?,?,?,'{}','{}','2026-11-10T00:00:00Z','sha256:x',NULL,'c','c',1,'{}')`)
+          .run(`evt_kind_${kind}`,fixture.threadId,kind,commandId,commandId===null?null:"sha256:d");
+        assert.throws(()=>insert("THREAD_INVENTED",null),/event kind/,"an unknown kind entered Thread history");
+        assert.throws(()=>insert("THREAD_SEEDED","cmd_forged"),/event kind/,"an uncommanded kind carried a command");
+        assert.throws(()=>insert("SELF_MODEL_UPDATED",null),/event kind/,"a commanded kind lost its command");
+        // A kind admitted later is one row, not a rebuild of history.
+        checked.prepare("INSERT INTO thread_event_types(event_type,commanded) VALUES ('THREAD_LATER_KIND',0)").run();
+        assert.doesNotThrow(()=>insert("THREAD_LATER_KIND",null),"a newly admitted kind was refused");
     }finally{checked.close();}
+  }));
+
+test("every reference to a Thread event is indexed, so rebuilding history costs what it copies",()=>
+  withDatabase(databasePath=>{
+    openWorldStore(localWorldStateStorage(databasePath)).close();
+    const database=rawDatabase(databasePath);
+    try{
+      const referring=database.prepare(`SELECT name FROM sqlite_master WHERE type='table'
+        AND name<>'thread_events' AND instr(lower(sql),'thread_events')>0`).all().map(row=>row.name);
+      assert.ok(referring.includes("commands"),"fixture lacks the commands that refer to events");
+      for(const table of referring){
+        for(const key of database.prepare(`PRAGMA foreign_key_list("${table}")`).all()
+          .filter(item=>item.table==="thread_events")){
+          const plan=database.prepare(`EXPLAIN QUERY PLAN SELECT 1 FROM "${table}" WHERE "${key.from}"=?`)
+            .all("evt").map(row=>row.detail).join(" ");
+          assert.match(plan,/USING (COVERING )?INDEX/u,`${table}.${key.from} would be scanned per event`);
+        }
+      }
+    }finally{database.close();}
   }));
 
 test("UPDATE_SELF_MODEL permits dormant Threads without waking them", () =>

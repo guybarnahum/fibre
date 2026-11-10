@@ -2,7 +2,7 @@
 // and written, by hour, against the free-tier daily limits. Shows when a day's
 // quota went, so its cause can be found in that hour's world-state-cost logs.
 import { pathToFileURL } from "node:url";
-import { RESOURCE_HEALTH_DEFAULT_LIMITS } from "../../infra/providers/cloudflare/resource-health.mjs";
+import { RESOURCE_HEALTH_DEFAULT_LIMITS } from "#infra/providers/cloudflare";
 
 const USAGE="usage: infra:state-usage [-- --date YYYY-MM-DD]";
 const QUERY=`query FibreStateUsage($accountTag:String!,$date:Date!){viewer{accounts(filter:{accountTag:$accountTag}){
