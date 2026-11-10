@@ -1524,29 +1524,41 @@ export class LivedExperienceStore {
     `).all(a,b,before,limit).map(row=>Object.freeze({...row})));
   }
 
-  // When this Thread has lived around another, newest first: Stories with
-  // both present that it noticed, and messages between them.
-  listSharedContactTimes(threadId,otherThreadId,{before,limit=24}={}){
-    assertId("familiarity Thread",threadId);
-    assertId("familiarity person",otherThreadId);
-    assertIsoTimestamp("familiarity before",before);
-    if(!Number.isSafeInteger(limit)||limit<1||limit>48)throw new TypeError("familiarity history must be bounded");
-    const noticed=this.#database.prepare(`
-      SELECT t.occurred_at AS at FROM thread_encounter_story_timeline t
+  // What this Thread has lived with another, newest first, for the social
+  // Body: Stories with both present that it noticed or in which both spoke
+  // (a conversation, with its turns), and messages between them. The most
+  // recent are enough: past sixty-odd contacts a person is fully known.
+  listSharedContact(threadId,otherThreadId,{before,limit=64}={}){
+    assertId("shared contact Thread",threadId);
+    assertId("shared contact person",otherThreadId);
+    assertIsoTimestamp("shared contact before",before);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>96)throw new TypeError("shared contact must be bounded");
+    const stories=this.#database.prepare(`
+      SELECT t.occurred_at AS at,
+        (SELECT COUNT(*) FROM json_each(e.story_json,'$.beats') beat WHERE json_extract(beat.value,'$.kind')='utterance'
+          AND json_extract(beat.value,'$.actorThreadId')=t.thread_id) AS mine,
+        (SELECT COUNT(*) FROM json_each(e.story_json,'$.beats') beat WHERE json_extract(beat.value,'$.kind')='utterance'
+          AND json_extract(beat.value,'$.actorThreadId')=other.thread_id) AS theirs
+      FROM thread_encounter_story_timeline t
       JOIN encounter_story_thread_presence other
         ON other.encounter_ref=t.encounter_ref AND other.thread_id=?
-      JOIN thread_encounter_attention a
-        ON a.encounter_ref=t.encounter_ref AND a.thread_id=t.thread_id AND a.outcome='noticed'
+      JOIN encounter_story_records e ON e.encounter_id=t.encounter_ref
+      LEFT JOIN thread_encounter_attention a
+        ON a.encounter_ref=t.encounter_ref AND a.thread_id=t.thread_id
       WHERE t.thread_id=? AND t.occurred_at<?
+        AND (a.outcome='noticed' OR (mine>0 AND theirs>0))
       ORDER BY t.occurred_at DESC LIMIT ?
-    `).all(otherThreadId,threadId,before,limit).map(row=>row.at);
+    `).all(otherThreadId,threadId,before,limit)
+      .map(row=>row.mine>0&&row.theirs>0
+        ?{at:row.at,kind:"conversation",turns:row.mine+row.theirs}:{at:row.at,kind:"noticed",turns:0});
     const messages=!worldTableExists(this.#database,"thread_contact_messages")?[]:this.#database.prepare(`
       SELECT sent_at AS at FROM thread_contact_messages
       WHERE ((sender_thread_id=? AND recipient_party_id=?) OR (sender_thread_id=? AND recipient_party_id=?))
         AND sent_at<?
       ORDER BY sent_at DESC LIMIT ?
-    `).all(threadId,otherThreadId,otherThreadId,threadId,before,limit).map(row=>row.at);
-    return Object.freeze([...noticed,...messages].sort((a,b)=>b.localeCompare(a)).slice(0,limit));
+    `).all(threadId,otherThreadId,otherThreadId,threadId,before,limit).map(row=>({at:row.at,kind:"message",turns:1}));
+    return Object.freeze([...stories,...messages].sort((a,b)=>b.at.localeCompare(a.at)).slice(0,limit)
+      .map(item=>Object.freeze(item)));
   }
 
   listAcceptedHumanMeetings(threadId,{since,until,limit=8}={}){

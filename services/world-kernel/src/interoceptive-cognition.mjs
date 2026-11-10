@@ -249,6 +249,10 @@ const CURIOSITY=Object.freeze([
   [0.6,"They are still new to you; you would like to know who they are."],
   [1.01,"They are still new to you, and you are drawn to find out who they are."],
 ]);
+const CATCHING_UP=Object.freeze([
+  [0.3,"It has been a while since you were with them; you wonder how they are."],
+  [1.01,"It has been a long time since you were with them; you want to hear what has happened in their life."],
+]);
 const band=(bands,pressure)=>bands.find(([upper])=>pressure<upper)[1];
 
 const WARINESS=Object.freeze([
@@ -256,10 +260,17 @@ const WARINESS=Object.freeze([
   [0.6,"You are a little guarded with them."],
   [1.01,"You are wary of them."],
 ]);
+const HURT=Object.freeze([
+  [0.25,"Something they did still smarts a little."],
+  [0.6,"What they did still hurts."],
+  [1.01,"What they did still hurts deeply."],
+]);
+const REVIVED="This brings back the last time they hurt you.";
 
 // How this Body takes each person it perceives, in words: how far it is at
-// ease with them, and curiosity toward someone still new to it (only a Body
-// inherited to seek new people is drawn toward the person).
+// ease with them and what still hurts, and curiosity toward someone still new
+// to it or long unseen (only a Body inherited to seek people is drawn toward
+// the person).
 export function feltTowardPeople(regulationFrame){
   const felt=new Map();
   const add=(item,line)=>{
@@ -268,8 +279,13 @@ export function feltTowardPeople(regulationFrame){
   };
   for(const item of regulationFrame?.drives??[]){
     if(!item.targetRef?.startsWith("person:")||item.felt===false||item.pressure<=0)continue;
-    if(item.family==="trust")add(item,band(WARINESS,item.pressure));
-    if(item.family==="exploration"&&item.inheritedDirection==="people")add(item,band(CURIOSITY,item.pressure));
+    if(item.family==="trust"){
+      add(item,band(WARINESS,item.pressure));
+      if(item.hurt>0)add(item,band(HURT,item.hurt));
+      if(item.revived)add(item,REVIVED);
+    }
+    if(item.family==="exploration"&&item.inheritedDirection==="people")
+      add(item,band(item.catchingUp?CATCHING_UP:CURIOSITY,item.pressure));
   }
   return felt;
 }

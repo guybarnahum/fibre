@@ -209,30 +209,35 @@ export function socialContactEvidenceForLivedHistory({
   });
 }
 
-// What this Body inherited as evidence of safety (its trust locus), unless
-// inherited differences are switched off.
-function trustOrientation(thread){
+// What this Body inherited about trust (its trust locus): what counts as
+// evidence of safety, and how fast it forgives, unless inherited differences
+// are switched off.
+function trustLocus(thread){
   if(organismPolicy.inheritedSpread===0)return null;
-  return (thread.genome?.urgeProjection??[]).find(item=>item.family==="trust")?.orientation??null;
+  const gene=(thread.genome?.urgeProjection??[]).find(item=>item.family==="trust")??null;
+  return gene===null?null:{orientation:gene.orientation,
+    persistence:(gene.positions?.persistence??0)*organismPolicy.inheritedSpread};
 }
 
 // How this Thread's Body takes the people it perceives now, each citing the
-// World record of their presence: how far it trusts each one, and curiosity
-// toward anyone it hardly knows (less than half-known).
-const UNFAMILIAR_BELOW=0.5;
+// World record of their presence: how far it trusts each one and what they
+// did to it, and curiosity toward anyone it hardly knows or has lost touch
+// with (more than half unknown, now).
+const UNKNOWN_NOW_ABOVE=0.5;
+const unknownNow=(regard)=>(1-regard.knowing)+0.5*regard.staleness;
 const rounded=(value)=>Math.round(value*1e6)/1e6;
 function peoplePercept({thread,people=[],experienceStore,at,known=null}){
   const regards=people.slice(0,4).filter(person=>person.threadId!==thread.threadId).map(person=>({person,
     regard:known??regardOf({experienceStore,threadId:thread.threadId,otherThreadId:person.threadId,at,
-      trustOrientation:trustOrientation(thread)})}));
+      trustLocus:trustLocus(thread)})}));
   if(regards.length===0)return null;
-  const unfamiliarPeople=regards.filter(({regard})=>regard.familiarity<UNFAMILIAR_BELOW)
-    .map(({person,regard})=>({personRef:person.threadId,unfamiliarity:rounded(1-regard.familiarity),
-      evidenceRefs:[person.evidenceRef]}));
+  const unfamiliarPeople=regards.filter(({regard})=>unknownNow(regard)>UNKNOWN_NOW_ABOVE)
+    .map(({person,regard})=>({personRef:person.threadId,unfamiliarity:rounded(1-regard.knowing),
+      staleness:regard.staleness,evidenceRefs:[person.evidenceRef]}));
   return {
     evidenceRefs:[...new Set(regards.map(({person})=>person.evidenceRef))],
-    trust:regards.map(({person,regard})=>({personRef:person.threadId,trust:rounded(regard.trust),
-      evidenceRefs:[person.evidenceRef]})),
+    trust:regards.map(({person,regard})=>({personRef:person.threadId,trust:regard.trust,
+      hurt:regard.hurt,revived:regard.revived,evidenceRefs:[person.evidenceRef]})),
     ...(unfamiliarPeople.length===0?{}:{
       exploration:{unfamiliarPeople},
       urgeAvailability:{exploration:{people:{state:"available",
@@ -266,7 +271,7 @@ export function livedRegulationForLivedHistory({
     threadId:thread.threadId,currentSituation,livedNowStore,experienceStore,asOf,
   });
   const socialEnergy=experienceStore===null?null:socialEnergyEvidence({
-    threadId:thread.threadId,experienceStore,asOf,trustOrientation:trustOrientation(thread),
+    threadId:thread.threadId,experienceStore,asOf,trustLocus:trustLocus(thread),
   });
   const people=experienceStore===null||perceivedPeople.length===0?null:peoplePercept({
     thread,people:perceivedPeople,experienceStore,at:asOf,
@@ -317,9 +322,9 @@ export function socialBodyInConversation({thread,start,regard,turns,asOf,other})
 // is, for this Thread's Body.
 export function socialBodyBeforeTalk({thread,otherThreadId,experienceStore,asOf}){
   return {
-    start:socialEnergyEvidence({threadId:thread.threadId,experienceStore,asOf,trustOrientation:trustOrientation(thread)}),
+    start:socialEnergyEvidence({threadId:thread.threadId,experienceStore,asOf,trustLocus:trustLocus(thread)}),
     regard:regardOf({experienceStore,threadId:thread.threadId,otherThreadId,at:asOf,
-      trustOrientation:trustOrientation(thread)}),
+      trustLocus:trustLocus(thread)}),
   };
 }
 
@@ -365,7 +370,7 @@ function frameForSituation({ thread, situation, livedNowStore, experienceStore }
         })??undefined,
         socialEnergy:socialEnergyEvidence({
           threadId:thread.threadId,experienceStore,asOf:situation.establishedAt,
-          trustOrientation:trustOrientation(thread),
+          trustLocus:trustLocus(thread),
         })??undefined,
       }),
     },

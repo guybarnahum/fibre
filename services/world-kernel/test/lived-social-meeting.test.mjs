@@ -699,7 +699,7 @@ function fixture({
       listAcceptedHumanMeetings(){return [];},
       listReciprocalConversations(){return [];},
       listSocialExposures(){return [];},
-      listSharedContactTimes(){return [];},
+      listSharedContact(){return [];},
       listPairActs(){return [];},
       listSocialInteractions(threadId, { withThreadId = null, limit = 8, newestFirst = true } = {}) {
         let records = socialInteractions.filter((record) =>

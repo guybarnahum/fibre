@@ -152,13 +152,15 @@ function normalizeExploration(value = {}) {
   }
   return {
     novelty: optionalUnit("perceptFrame.exploration.novelty", value.novelty),
-    // People present whom this Thread hardly knows, as World measured it.
+    // People present whom this Thread hardly knows, or knew and is now out
+    // of date with, as World measured it.
     unfamiliarPeople: people.map((person, index) => {
       const name = `perceptFrame.exploration.unfamiliarPeople[${index}]`;
       plainObject(name, person);
       return {
         personRef: nonEmpty(`${name}.personRef`, person.personRef),
         unfamiliarity: unit(`${name}.unfamiliarity`, person.unfamiliarity),
+        staleness: optionalUnit(`${name}.staleness`, person.staleness) ?? 0,
         evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, person.evidenceRefs),
       };
     }),
@@ -259,7 +261,9 @@ function normalizeSocialEnergy(value) {
 }
 
 // How far this Thread trusts each person it is with or perceives, as World
-// measured it from their lived contact and relational acts (0 a stranger).
+// measured it from their lived contact and relational acts (0 a stranger);
+// how much of that is held down by what they did to it (hurt), and whether a
+// new harm has just brought an older one back (revived).
 function normalizeTrust(value) {
   if (value === undefined) return [];
   if (!Array.isArray(value) || value.length > 4) throw new TypeError("perceptFrame.trust must list at most four people");
@@ -269,6 +273,8 @@ function normalizeTrust(value) {
     return {
       personRef: nonEmpty(`${name}.personRef`, person.personRef),
       trust: unit(`${name}.trust`, person.trust),
+      hurt: optionalUnit(`${name}.hurt`, person.hurt) ?? 0,
+      revived: person.revived === true,
       evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, person.evidenceRefs),
     };
   });
@@ -475,34 +481,37 @@ function basalDrives(percept, profile) {
   }
 
   // Someone new is interesting in their own right: their ways are not yet
-  // known. The pull is a Body signal; whether it draws this Thread toward
-  // that person, or toward new places, ideas or making, is its inherited
-  // orientation, and whether it acts on it is its own.
+  // known. So, less, is someone known whose life has moved on since. The
+  // pull is a Body signal; whether it draws this Thread toward that person,
+  // or toward new places, ideas or making, is its inherited orientation, and
+  // whether it acts on it is its own.
   for (const person of exploration.unfamiliarPeople) {
-    const allure = 0.5 * person.unfamiliarity * profile.sensitivity.exploration;
-    drives.push(drive({
+    const unknown = Math.min(1, person.unfamiliarity + 0.5 * person.staleness);
+    const allure = 0.5 * unknown * profile.sensitivity.exploration;
+    drives.push({...drive({
       family:"exploration",
       targetRef:`person:${person.personRef}`,
       orientation:"approach",
       pressure:allure,
       urgency:allure,
       evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
-    }));
+    }), ...(0.5 * person.staleness > person.unfamiliarity ? {catchingUp:true} : {})});
   }
 
   // Wariness: the harm still expected of a person, sharper the less they
-  // are trusted. A stranger meets some guard, a trusted friend none. It is a
-  // Body signal, never a judgment of the person or a refusal.
+  // are trusted. A stranger meets some guard, a trusted friend none, and one
+  // who hurt it is guarded again, as long as the hurt lasts. It is a Body
+  // signal, never a judgment of the person or a refusal.
   for (const person of percept.trust) {
     const wariness = 0.5 * (1 - person.trust) ** 2;
-    drives.push(drive({
+    drives.push({...drive({
       family:"trust",
       targetRef:`person:${person.personRef}`,
       orientation:"avoid",
       pressure:wariness,
       urgency:wariness,
       evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
-    }));
+    }), ...(person.hurt > 0 ? {hurt:person.hurt} : {}), ...(person.revived ? {revived:true} : {})});
   }
 
   // Time-supported lack of observed reciprocal contact is a Body signal,

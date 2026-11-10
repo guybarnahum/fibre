@@ -206,6 +206,12 @@ test("E0 persists one Encounter Story with separate Thread Experiences", () => {
         "bounded inspection lost the Thread's distinct experience");
       assert.equal(recent[0].story.beats[0].completion,"interrupted",
         "recent inspection rewrote an interrupted encounter");
+      assert.deepEqual(
+        store.listSharedContact("thr_e0_mina","thr_e0_noor",{before:"2026-09-21T19:00:00.000Z"})
+          .map(item=>[item.kind,item.turns]),
+        [["noticed",0],["conversation",2]],
+        "what Mina lived with Noor lost its depth, or counted a moment she neither noticed nor talked in",
+      );
 
       const receipt=store.recordPublicEncounterReceipt({
         requestId:"req_e0_public_retry",

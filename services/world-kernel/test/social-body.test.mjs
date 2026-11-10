@@ -17,7 +17,8 @@ const locus = (variantId) => {
 };
 const bodyOf = (...variantIds) => ({ threadId:"thr_body", genome:{ runtimeBaselines:{}, urgeProjection:variantIds.map(locus) } });
 const battery = (frame) => frame.drives.find((item) => item.family === "social_energy");
-const stranger = { familiarity:0, trust:0 };
+const stranger = { knowing:0, staleness:0, trust:0 };
+const talks = (daysAgo) => daysAgo.map((n) => ({ at:minutesBefore(60 * 24 * n), kind:"conversation", turns:10 }));
 const other = { threadId:"thr_other", evidenceRef:"sit_other_here" };
 
 test("the same talk tires two inherited Bodies differently, each pulled toward its own kind of rest", () => {
@@ -44,7 +45,7 @@ test("talk with a familiar person drains less than with a stranger, and time apa
   const store = (familiar) => ({
     listSocialExposures:() => [{ kind:"conversation", ref:"story_talk", at:minutesBefore(30), turns:16,
       otherThreadId:"thr_other" }],
-    listSharedContactTimes:() => familiar ? Array.from({ length:10 }, (_, day) => minutesBefore(60 * 24 * (day + 1))) : [],
+    listSharedContact:() => familiar ? talks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) : [],
     listPairActs:() => [],
   });
   const stranger = socialEnergyEvidence({ threadId:"thr_self", experienceStore:store(false), asOf:AT });
@@ -65,7 +66,7 @@ test("a run of messages tires the battery and eases hunger, and the Thread still
     [...situations].reverse().find((item) => item.establishedAt < before) ?? null };
   const store = (messages) => ({
     listSocialInteractions:() => [], listAcceptedHumanMeetings:() => [], listReciprocalConversations:() => [],
-    listSharedContactTimes:() => [], listPairActs:() => [],
+    listSharedContact:() => [], listPairActs:() => [],
     listSocialExposures:() => messages,
   });
   const run = Array.from({ length:8 }, (_, index) => ({ kind:"message", ref:`msg_${index}`,
@@ -103,7 +104,7 @@ test("each live turn feels the talk so far, so a long conversation can tire the 
     situation:{ situationId:`sit_${self.threadId}`, threadId:self.threadId, establishedAt:AT, activity:"Talking." },
     perspective:{ developedSelfEvidence:[], placeName:"the library",
       counterparts:[{ threadId:other.threadId, name:other.identity.name, appearance:"a reader", noticedBefore:[] }] },
-    feltBody:(story) => feltSocialBody(socialBodyInConversation({ thread:self, start:null, regard:{ familiarity:0.6, trust:0.8 },
+    feltBody:(story) => feltSocialBody(socialBodyInConversation({ thread:self, start:null, regard:{ knowing:0.6, staleness:0, trust:0.8 },
       other:{ threadId:other.threadId, evidenceRef:`sit_${other.threadId}` }, asOf:AT,
       turns:story.beats.filter((beat) => beat.kind === "utterance").length })) });
   const mina = thread("thr_talk_mina", "Mina"), noor = thread("thr_talk_noor", "Noor");
@@ -129,8 +130,8 @@ test("someone new draws a Body inherited to seek new people, not one oriented el
   const { bodyTowardPeople } = await import("../src/lived-now-regulation.mjs");
   const { feltTowardPeople } = await import("../src/interoceptive-cognition.mjs");
   const { evaluateSalience } = await import("../src/salience-gate.mjs");
-  const store = (known) => ({ listSharedContactTimes:() => known
-    ? Array.from({ length:10 }, (_, day) => minutesBefore(60 * 24 * (day + 1))) : [], listPairActs:() => [] });
+  const store = (known) => ({ listSharedContact:() => known ? talks([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) : [],
+    listPairActs:() => [] });
   const seeker = { ...bodyOf("exploration_07"), threadId:"thr_seeker" };
   const homebody = { ...bodyOf("exploration_01"), threadId:"thr_homebody" };
   const people = [{ threadId:"thr_stranger", evidenceRef:"sit_stranger_here" }];
@@ -155,15 +156,14 @@ test("someone new draws a Body inherited to seek new people, not one oriented el
   assert.equal(gate(frame(homebody)).outcome, "background", "a Body not drawn to people was made to consider one");
 });
 
-test("trust is reduced expected harm: kept faith makes talk drain less, broken faith more, and it fades unlived", async () => {
+test("trust is reduced expected harm: kept faith makes talk drain less, broken faith more", async () => {
   const { regardOf, exposureCost } = await import("../src/social-body.mjs");
-  const day = (n) => minutesBefore(60 * 24 * n);
-  const store = ({ contacts = 2, acts = [], age = 1 } = {}) => ({
-    listSharedContactTimes:() => Array.from({ length:contacts }, (_, i) => day(age + i)),
-    listPairActs:() => acts.map(([kind, by = "thr_other"]) => ({ kind, actorThreadId:by, occurredAt:day(age) })),
+  const store = ({ contacts = 2, acts = [] } = {}) => ({
+    listSharedContact:() => talks(Array.from({ length:contacts }, (_, i) => 2 + i)),
+    listPairActs:() => acts.map(([kind, by = "thr_other"]) => ({ kind, actorThreadId:by, occurredAt:minutesBefore(60 * 24) })),
   });
-  const regard = (value, trustOrientation = null) => regardOf({ experienceStore:value, threadId:"thr_self",
-    otherThreadId:"thr_other", at:AT, trustOrientation });
+  const regard = (value, orientation = null) => regardOf({ experienceStore:value, threadId:"thr_self",
+    otherThreadId:"thr_other", at:AT, trustLocus:orientation === null ? null : { orientation, persistence:0 } });
   const cost = (value) => exposureCost(regard(value));
   const plain = store(), kept = store({ acts:[["kept"]] }), broken = store({ acts:[["broken"]] });
   assert.ok(cost(kept) < cost(plain), "a kept appointment did not make the next talk drain less");
@@ -177,8 +177,6 @@ test("trust is reduced expected harm: kept faith makes talk drain less, broken f
     "a reliability Body did not move more on a kept appointment");
   assert.ok(regard(company, "warmth").trust > regard(company, "reliability").trust,
     "a warmth Body did not move more on time spent together");
-
-  assert.ok(regard(store({ age:60 })).trust < regard(plain).trust / 4, "trust did not fade without contact");
 });
 
 test("a stranger meets some guard, a trusted friend none, and one who let it down is guarded again", async () => {
@@ -187,10 +185,93 @@ test("a stranger meets some guard, a trusted friend none, and one who let it dow
   const day = (n) => minutesBefore(60 * 24 * n);
   const wariness = (contacts, acts = []) => bodyTowardPeople({ thread, asOf:AT,
     people:[{ threadId:"thr_other", evidenceRef:"sit_other" }],
-    experienceStore:{ listSharedContactTimes:() => Array.from({ length:contacts }, (_, i) => day(i + 1)),
+    experienceStore:{ listSharedContact:() => talks(Array.from({ length:contacts }, (_, i) => i + 1)),
       listPairActs:() => acts.map((kind) => ({ kind, actorThreadId:"thr_other", occurredAt:day(1) })) },
   }).drives.find((item) => item.family === "trust");
   assert.ok(wariness(0).felt, "a stranger was met with no guard at all");
   assert.equal(wariness(12, ["kept", "accepted"]).felt, false, "a trusted friend was still felt as a risk");
   assert.ok(wariness(12, ["broken", "broken", "declined"]).felt, "being let down left no wariness");
+});
+
+const regardWith = async ({ contacts, acts = [], persistence = 0 }) => {
+  const { regardOf } = await import("../src/social-body.mjs");
+  return regardOf({ threadId:"thr_self", otherThreadId:"thr_other", at:AT,
+    trustLocus:{ orientation:null, persistence },
+    experienceStore:{ listSharedContact:() => contacts,
+      listPairActs:() => acts.map(([kind, daysAgo]) => ({ kind, actorThreadId:"thr_other",
+        occurredAt:minutesBefore(60 * 24 * daysAgo) })) } });
+};
+const friendship = (from) => talks(Array.from({ length:12 }, (_, i) => from + 3 * i));
+
+test("an old friend after six months is still known and trusted, and only out of date with", async () => {
+  const { exposureCost } = await import("../src/social-body.mjs");
+  const recent = await regardWith({ contacts:friendship(1) });
+  const apart = await regardWith({ contacts:friendship(180) });
+  const stranger = await regardWith({ contacts:[] });
+  assert.ok(apart.knowing > 0.9, "a friend was forgotten in months");
+  assert.equal(apart.trust, recent.trust, "trust faded with absence");
+  assert.ok(apart.staleness > 0.9 && recent.staleness < 0.1, "time apart did not leave one out of date");
+  assert.ok(exposureCost(apart) < exposureCost(stranger) / 4, "an old friend cost nearly as much as a stranger");
+
+  const { bodyTowardPeople } = await import("../src/lived-now-regulation.mjs");
+  const seeker = { ...bodyOf("exploration_07"), threadId:"thr_self" };
+  const catchUp = (contacts) => bodyTowardPeople({ thread:seeker, asOf:AT,
+    people:[{ threadId:"thr_other", evidenceRef:"sit_other" }],
+    experienceStore:{ listSharedContact:() => contacts, listPairActs:() => [] },
+  }).drives.find((item) => item.family === "exploration");
+  assert.equal(catchUp(friendship(180))?.catchingUp, true, "a long-unseen friend drew no wish to catch up");
+  assert.equal(catchUp(friendship(1)), undefined, "a friend seen yesterday was felt as unknown");
+});
+
+test("time forgives a trivial harm, not a serious one, and a harm weighs more from a friend and when repeated", async () => {
+  const plain = await regardWith({ contacts:friendship(1) });
+  const declined = await regardWith({ contacts:friendship(1), acts:[["declined", 15]] });
+  const closed = await regardWith({ contacts:friendship(1), acts:[["closed", 700]] });
+  assert.ok(declined.trust > 0.98 * plain.trust, "a declined invitation was still held after two weeks");
+  assert.ok(closed.trust < 0.9 * plain.trust && closed.hurt > 0, "a closed door was forgotten by time alone");
+
+  const byStranger = await regardWith({ contacts:talks([3]), acts:[["broken", 2]] });
+  const byFriend = await regardWith({ contacts:friendship(3), acts:[["broken", 2]] });
+  assert.ok(byFriend.hurt > byStranger.hurt, "a friend's broken promise hurt no more than a stranger's");
+
+  const once = await regardWith({ contacts:friendship(1), acts:[["broken", 2]] });
+  const twice = await regardWith({ contacts:friendship(1), acts:[["broken", 100], ["broken", 2]] });
+  const afterOther = await regardWith({ contacts:friendship(1), acts:[["closed", 300], ["broken", 2]] });
+  assert.ok(twice.hurt > once.hurt, "a second broken promise weighed no more than the first");
+  assert.ok(twice.hurt > afterOther.hurt, "a repeated harm weighed no more than one after an old harm of another kind");
+  assert.equal(twice.revived, true, "the second broken promise did not bring back the first");
+});
+
+test("how fast a Body forgives is inherited, and later kept faith heals the healable part, never the scar", async () => {
+  const forgiving = await regardWith({ contacts:friendship(20), acts:[["broken", 10]], persistence:-0.9 });
+  const unforgiving = await regardWith({ contacts:friendship(20), acts:[["broken", 10]], persistence:0.9 });
+  assert.ok(forgiving.hurt < unforgiving.hurt / 2, "the inherited pace of forgiving made no difference");
+
+  const kept = [["kept", 15], ["kept", 10], ["kept", 5]];
+  const fresh = await regardWith({ contacts:friendship(30), acts:[["broken", 20]] });
+  const mended = await regardWith({ contacts:friendship(30), acts:[["broken", 20], ...kept] });
+  assert.ok(mended.hurt < fresh.hurt, "kept faith afterward healed nothing");
+  const scar = await regardWith({ contacts:friendship(1), acts:[["closed", 400]] });
+  const scarKept = await regardWith({ contacts:friendship(1), acts:[["closed", 400], ...kept] });
+  assert.ok(scarKept.hurt > 0 && Math.abs(scarKept.hurt - scar.hurt) < 0.001, "good conduct healed a scar");
+});
+
+test("a new harm brings back an old one of the same kind, and the Body feels it; a small one barely stirs an old wound", async () => {
+  const healed = await regardWith({ contacts:friendship(1), acts:[["broken", 100]] });
+  const again = await regardWith({ contacts:friendship(1), acts:[["broken", 100], ["broken", 1]] });
+  const trivial = await regardWith({ contacts:friendship(1), acts:[["closed", 300], ["declined", 1]] });
+  assert.ok(healed.hurt < 0.01, "a broken promise was not healed after months");
+  assert.equal(again.revived, true, "a second broken promise did not bring back the first");
+  assert.equal(trivial.revived, false, "a small slight was felt as bringing back an old wound");
+
+  const { bodyTowardPeople } = await import("../src/lived-now-regulation.mjs");
+  const { feltTowardPeople } = await import("../src/interoceptive-cognition.mjs");
+  const thread = { ...bodyOf(), threadId:"thr_self" };
+  const felt = (acts) => feltTowardPeople(bodyTowardPeople({ thread, asOf:AT,
+    people:[{ threadId:"thr_other", evidenceRef:"sit_other" }],
+    experienceStore:{ listSharedContact:() => friendship(1),
+      listPairActs:() => acts.map(([kind, daysAgo]) => ({ kind, actorThreadId:"thr_other",
+        occurredAt:minutesBefore(60 * 24 * daysAgo) })) } })).get("thr_other") ?? [];
+  assert.ok(felt([["broken", 100], ["broken", 1]]).length > felt([["broken", 1]]).length,
+    "the return of an old hurt did not reach the Body's words");
 });

@@ -65,7 +65,7 @@ The six legacy Threads therefore gain all 15 families, and the two v3 Threads ga
 ## S2 as built (November 9)
 
 `social_energy` is enabled. What World does, mechanically and read-only, from records it already keeps (`services/world-kernel/src/social-body.mjs`):
-- **Familiarity** toward a person is how much this Thread has lived around them: Stories with both present that it noticed, and messages between them, each counting less as it ages (half-life 14 days). Four recent contacts make a person half-known.
+- **Familiarity** toward a person is how much this Thread has lived around them: Stories with both present that it noticed, and messages between them, each counting less as it ages (half-life 14 days). Four recent contacts make a person half-known. *(Replaced by knowing and being current in R1, below.)*
 - **The battery.** Each turn of talk, spoken or heard, costs `0.03 × (unfamiliarity + 0.5)`; the 0.5 is the species' expected harm from anyone, until trust is lived (S3). A message costs half a turn. Depletion recovers with a 90-minute half-life. World computes it from the last half-day of conversations and messages; nothing new is stored.
 - **In a conversation**, each turn sees its battery where it stood when the talk began, drained by every turn since, through the Thread's own `social_energy` locus: gain sets how heavily it weighs, threshold how early it is felt, and the orientation is what the Body is pulled toward to restore it (company, quiet company, solitude or something to do), as every ADR-0030 orientation names the object of a pull. The live turn and the contact decision read it in words; plans and social initiation already read the Body frame.
 - **Messages ease hunger:** a message sent or received since the last talk leaves half of the gap built up before it.
@@ -87,12 +87,33 @@ Guy, November 10: "a stranger is inherently interesting and alluring as it prese
 `trust` is enabled. Trust toward a person is reduced expected harm, measured by World from its records (`regardOf` in `social-body.mjs`):
 - **Safe exposure raises it:** each lived contact (a noticed Story with both present, a message between them) and each act by the other that kept faith (accepted, kept, opened, repaired). Four recent ones make a person half-trusted.
 - **Harm lowers it:** each act by the other that broke faith (declined, broken, closed); each unit halves what was built. The Thread's own acts never count as harm done to it.
-- **It fades** with the same 14-day half-life as familiarity.
+- **It fades** with the same 14-day half-life as familiarity. *(Withdrawn in R1, below: trust does not fade with absence.)*
 - **Inherited:** the locus's orientation weights the kinds of evidence (reliability: kept appointments and accepted offers; warmth: time together, and declines sting more; reciprocity: accepted offers and opened doors; familiarity: repeated contact). Gain and threshold set how strongly and how soon wariness is felt. Spread zero counts every kind the species way.
 - **What it does:** expected harm in the battery becomes `0.5 × (1 − trust)`, so a trusted friend drains far less than a stranger. Wariness, `0.5 × (1 − trust)²`, is felt toward a stranger and toward someone who let this Thread down, and not toward a trusted friend: in live turns, the glance, choosing whom to approach, and toward each party a message could go to.
 - **Two layers:** felt trust is the Body's; the stance (what the person means) is still the Thread's own, authored in consolidation ([relationships concept](../concepts/relationships-doors-and-trust.md)).
 
 Deferred: subtle exposures from the Thread's own appraisal (a confidence kept, a disagreement handled with care), and felt trust in the consolidation that forms stances.
+
+## R1 as built (November 10): knowing, being current, and wounds
+
+Guy, November 10: "Why fade trust? Especially after no contact?" and "time may make us forgive trivial 'sins' but cardinal 'sins' are difficult to forgive." The design and its effect list are in the project's reunion-and-forgiveness proposal, accepted the same day. World computes everything below from its records (`regardOf` in `social-body.mjs`); nothing new is stored.
+
+**Familiarity becomes two facts about a person:**
+- **Knowing:** contact weighted by depth (a noticed Story with both present 0.25; one in which both spoke 1, plus 0.1 a turn up to 2; a message 0.5). Each contact's weight halves over two years, so an old friend is still known after years. `knowing = 1 − 2^(−depth/4)`: the first meetings teach the most. The 64 most recent contacts of each kind are read; past them a person is fully known.
+- **Being current:** `2^(−days since the last contact / 14)`. Staleness is `knowing × (1 − current)`: only someone known can be out of date.
+- **Uses:** each turn costs `0.03 × ((1 − knowing) + 0.25 × staleness + 0.5 × (1 − trust))`. Curiosity toward a person is `(1 − knowing) + 0.5 × staleness` when above one half, so a long-unseen friend draws a people-seeking Body to catch up, felt in words of its own ("It has been a long time since you were with them…").
+
+**Trust is built safety held down by wounds:**
+- **Built safety** comes from each contact (by its depth) and each act by the other that kept faith, weighted by the locus's orientation. It never expires.
+- **A wound** is what a harm by the other leaves. Severity is trivial (1, declined), moderate (2, broken) or serious (4, closed); grave harms (8) arrive with the confidence, care and commitment doors. Its weight is `severity × orientation weight × (1 + trust just before)/4`, times 1.5 for each earlier harm of the same kind by the same person within a year, times `1 + 0.5 ×` what earlier wounds from them still weigh.
+- **A scar** is the share nothing heals: 0, 0, 25%, 60%.
+- **Internal forgiveness** is unchosen. The rest of the wound halves every `3 days × severity²` (3, 12 and 48 days; 192 for grave), scaled by `2^(2 × persistence)` of the trust locus, so a forgiving Body heals a broken appointment in days and an unforgiving one in weeks. Each later contact or kept faith by the same person heals a share of what remains, `0.1 × its weight × (1 − the wound's remaining share)`, so kindness heals little while the wound is fresh, and never the scar.
+- **A new harm re-opens old ones:** each earlier wound from the same person regains `healed part × 0.5 × min(1, new severity / old severity)`, twice that for the same kind. A trivial slight barely stirs a serious old wound; a second broken appointment brings back much of the first.
+- **`trust = (1 − 2^(−built/4)) × 2^(−open wound weight)`.** It does not fade with absence.
+
+**Felt in words:** wariness as before; what still hurts ("What they did still hurts."), in bands of `1 − 2^(−open wound weight)`; and for a week after a harm that re-opened a quarter unit or more, "This brings back the last time they hurt you."
+
+Deferred: excused harm, apology and spoken forgiveness, and the Thread's own grievances (R3–R4 of the proposal); grave severities with their doors.
 
 ## Status of what this excludes
 
@@ -115,4 +136,5 @@ No permanent constraint.
 - S1: deterministic, recorded and idempotent expression; spread-0 ablation.
 - S2: the same conversation drains two Bodies differently; familiar strangers drain less; messages relieve hunger.
 - S3: a kept appointment makes the next talk drain less, a broken one more.
+- R1: an old friend after six months is still known and trusted; time forgives a declined invitation and not a closed door; a friend's harm and a repeated one weigh more; the inherited pace of forgiving; kept faith never heals a scar; a second broken appointment brings back the first.
 - On staging: endings by kind; length by familiarity and trust; messages per pair per day.
