@@ -105,7 +105,7 @@ function livedTrust({contacts,acts,at,weights,pace}){
     revived:revivedAt!==null&&days(revivedAt,at)<=REVIVED_FOR_DAYS};
 }
 
-const NO_ONE=Object.freeze({knowing:0,staleness:0,trust:0,hurt:0,revived:false});
+const NO_ONE=Object.freeze({knowing:0,staleness:0,trust:0,hurt:0,revived:false,apartDays:null,apartInPersonDays:null});
 const rounded=(value)=>Math.round(value*1e6)/1e6;
 
 // How this Thread's Body regards another person, from the lived contact and
@@ -120,12 +120,41 @@ export function regardOf({experienceStore,threadId,otherThreadId,at,trustLocus=n
   const acts=experienceStore.listPairActs(threadId,otherThreadId,{before:at})
     .filter(act=>act.actorThreadId===otherThreadId);
   const knowing=knowingOf(contacts,at);
-  const last=contacts.reduce((latest,contact)=>latest===null||contact.at>latest?contact.at:latest,null);
+  const latest=(items)=>items.reduce((when,contact)=>when===null||contact.at>when?contact.at:when,null);
+  const last=latest(contacts),lastInPerson=latest(contacts.filter(contact=>contact.kind!=="message"));
   const current=last===null?0:2**(-days(last,at)/CURRENT_HALF_LIFE_DAYS);
   const lived=livedTrust({contacts,acts,at,weights:TRUST_WEIGHTS[trustLocus?.orientation]??SPECIES_WEIGHTS,
     pace:2**(2*(trustLocus?.persistence??0))});
   return Object.freeze({knowing:rounded(knowing),staleness:rounded(knowing*(1-current)),
-    trust:rounded(lived.trust),hurt:rounded(lived.hurt),revived:lived.revived});
+    trust:rounded(lived.trust),hurt:rounded(lived.hurt),revived:lived.revived,
+    apartDays:last===null?null:rounded(days(last,at)),
+    apartInPersonDays:lastInPerson===null?null:rounded(days(lastInPerson,at))});
+}
+
+// The bond (ADR-0036 R2): how much a person has come to matter to this Body,
+// from how well it knows them, how far it trusts them, and the doors they
+// have opened to each other. Being able to talk counts a little; reaching
+// each other, meeting by arrangement and sharing places count more. A
+// stranger has none, so a stranger is never missed.
+const DOOR_BOND=Object.freeze({conversation:0.2,contact:0.3,time:0.3,place:0.2,
+  confidence:0.4,care:0.4,romance:0.4,commitment:0.4});
+export function bondOf({regard,doors}){
+  const opened=Math.min(1,doors.reduce((sum,door)=>sum+(DOOR_BOND[door]??0),0));
+  return rounded(regard.knowing*regard.trust*opened);
+}
+
+// Longing for a bonded person: barely there the next day, it grows over the
+// first week apart and then, for all but the deepest bond, settles into fond
+// memory, more slowly the more persistent this Body's attachment locus
+// (persistence already scaled by inherited spread). Apart means not in each
+// other's presence, except for a Body whose attachment is to the exchange
+// itself, which a message answers.
+export function longingOf({bond,regard,orientation=null,persistence=0}){
+  const apart=orientation==="reciprocal_contact"?regard.apartDays:regard.apartInPersonDays;
+  if(bond===0||apart===null)return 0;
+  const rise=(1-2**(-apart/3))**2;
+  const settle=2**(-Math.max(0,apart-7)*(1-bond)/(21*2**(2*persistence)));
+  return rounded(bond*rise*settle);
 }
 
 // What one turn of talk (or one message) with a person costs this Body.

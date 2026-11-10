@@ -275,3 +275,61 @@ test("a new harm brings back an old one of the same kind, and the Body feels it;
   assert.ok(felt([["broken", 100], ["broken", 1]]).length > felt([["broken", 1]]).length,
     "the return of an old hurt did not reach the Body's words");
 });
+
+const bondedStore = ({ contacts, acts = [], doors = ["contact", "conversation", "time"] }) => ({
+  listSharedContact:() => contacts, listOpenDoors:() => doors,
+  listPairActs:() => acts.map(([kind, daysAgo]) => ({ kind, actorThreadId:"thr_other",
+    occurredAt:minutesBefore(60 * 24 * daysAgo) })),
+});
+const missing = async (thread, store, present = true) => {
+  const { bodyTowardPeople } = await import("../src/lived-now-regulation.mjs");
+  return bodyTowardPeople({ thread, asOf:AT, experienceStore:store,
+    people:[{ threadId:"thr_other", evidenceRef:"sit_other", present }] });
+};
+const attachment = (frame) => frame.drives.find((item) => item.family === "attachment_proximity");
+
+test("seeing a bonded friend again is a joy in proportion to the missing, and a stranger is never missed", async () => {
+  const { feltTowardPeople } = await import("../src/interoceptive-cognition.mjs");
+  const { evaluateSalience } = await import("../src/salience-gate.mjs");
+  const thread = { ...bodyOf("attachment_proximity_01"), threadId:"thr_self" };
+  const week = await missing(thread, bondedStore({ contacts:friendship(7) }));
+  const yesterday = await missing(thread, bondedStore({ contacts:friendship(1) }));
+  assert.ok(attachment(week).attained && attachment(week).pressure > attachment(yesterday).pressure,
+    "a friend unseen for a week was no more welcome than one seen yesterday");
+  assert.ok(feltTowardPeople(week).get("thr_other").length > (feltTowardPeople(yesterday).get("thr_other") ?? []).length,
+    "the joy of seeing a missed friend did not reach the Body's words");
+  const gate = evaluateSalience({ opportunity:{ kind:"actor_presence", subjectRefs:["thr_other"] },
+    situatedPercept:{ observerThreadId:"thr_self", setting:{ mode:"co_present", participantRefs:[] }, recentEvents:[], observed:[] },
+    regulationFrame:week });
+  assert.ok(gate.anchors.includes("reunion_with_missed_person"), "a missed friend was not worth considering");
+
+  assert.equal(attachment(await missing(thread, bondedStore({ contacts:[], doors:[] }))), undefined, "a stranger was missed");
+  assert.equal(attachment(await missing(thread, bondedStore({ contacts:talks([30]), doors:["conversation"] }))).pressure < 0.05, true,
+    "a passing acquaintance was missed like a friend");
+});
+
+test("apart, a friend is missed by what the Body longs for: a message answers longing for the exchange, not for presence", async () => {
+  const contacts = [...talks([8, 11, 14, 17, 20, 23]), { at:minutesBefore(60 * 24), kind:"message", turns:1 }];
+  const exchange = await missing({ ...bodyOf("attachment_proximity_03"), threadId:"thr_self" }, bondedStore({ contacts }), false);
+  const presence = await missing({ ...bodyOf("attachment_proximity_04"), threadId:"thr_self" }, bondedStore({ contacts }), false);
+  assert.equal(attachment(presence).attained, false, "an absent friend was felt as found");
+  assert.ok(attachment(exchange).pressure < attachment(presence).pressure / 2,
+    "yesterday's message eased longing for presence as much as longing for the exchange");
+});
+
+test("a friend who wronged one is missed and guarded at once", async () => {
+  const { feltTowardPeople } = await import("../src/interoceptive-cognition.mjs");
+  const thread = { ...bodyOf("attachment_proximity_01"), threadId:"thr_self" };
+  const wronged = await missing(thread, bondedStore({ contacts:friendship(7), acts:[["broken", 6]] }));
+  const trust = wronged.drives.find((item) => item.family === "trust");
+  assert.ok(attachment(wronged).attained && attachment(wronged).pressure > 0, "a friend who let one down was not missed at all");
+  assert.ok(trust.felt && trust.hurt > 0, "seeing them again washed out the hurt");
+  assert.ok(feltTowardPeople(wronged).get("thr_other").length >= 3, "the mixed feeling did not reach words");
+});
+
+test("longing for a light bond settles into fond memory over months, for a deep one it stays", async () => {
+  const { longingOf } = await import("../src/social-body.mjs");
+  const after = (bond, days) => longingOf({ bond, regard:{ apartDays:days, apartInPersonDays:days } }) / bond;
+  assert.ok(after(0.3, 90) < after(0.3, 10) / 3, "a light bond was missed as much after months as after days");
+  assert.ok(after(0.95, 90) > after(0.95, 10) * 0.8, "a deep bond faded into memory like a light one");
+});

@@ -1524,6 +1524,19 @@ export class LivedExperienceStore {
     `).all(a,b,before,limit).map(row=>Object.freeze({...row})));
   }
 
+  // The doors two Threads have open to each other at a time: facts, for the
+  // social Body's bond (ADR-0036 R2).
+  listOpenDoors(threadId,otherThreadId,{before}={}){
+    assertId("open doors Thread",threadId);
+    assertId("open doors person",otherThreadId);
+    assertIsoTimestamp("open doors before",before);
+    if(threadId===otherThreadId||!worldTableExists(this.#database,"relationship_doors"))return Object.freeze([]);
+    const [a,b]=threadId<otherThreadId?[threadId,otherThreadId]:[otherThreadId,threadId];
+    return Object.freeze(this.#database.prepare(`
+      SELECT door FROM relationship_doors WHERE thread_a=? AND thread_b=? AND opened_at<? ORDER BY door
+    `).all(a,b,before).map(row=>row.door));
+  }
+
   // What this Thread has lived with another, newest first, for the social
   // Body: Stories with both present that it noticed or in which both spoke
   // (a conversation, with its turns), and messages between them. The most
@@ -2596,6 +2609,42 @@ export class LivedExperienceStore {
     `).run(momentId,threadId,kind,personThreadId,interestId,canonicalJson(moment),
       canonicalJson(evidenceRefs),sourceRef,asOf).changes===1;
     return Object.freeze({momentId,inserted});
+  }
+
+  // Perceived regard, once per reflection and position: a retried reflection
+  // adds nothing.
+  recordPerceivedRegard({regardId,threadId,personThreadId,act,actorThreadId,account,evidenceRefs,sourceRef,asOf}){
+    assertId("regard id",regardId);
+    assertId("regard threadId",threadId);
+    assertId("regard person",personThreadId);
+    assertId("regard sourceRef",sourceRef);
+    assertIsoTimestamp("regard asOf",asOf);
+    assertNonEmpty("regard account",account);
+    if(!Array.isArray(evidenceRefs)||evidenceRefs.length===0)
+      throw new TypeError("perceived regard rests on at least one experience");
+    const inserted=this.#database.prepare(`
+      INSERT INTO thread_perceived_regard(regard_id,thread_id,person_thread_id,act,actor_thread_id,
+        account,evidence_refs_json,source_ref,as_of)
+      VALUES (?,?,?,?,?,?,?,?,?) ON CONFLICT(regard_id) DO NOTHING
+    `).run(regardId,threadId,personThreadId,act,actorThreadId,account,
+      canonicalJson(evidenceRefs),sourceRef,asOf).changes===1;
+    return Object.freeze({regardId,inserted});
+  }
+
+  // The regard this Thread perceived with one person before a time, newest first.
+  listPerceivedRegard(threadId,personThreadId,{before,limit=48}={}){
+    assertId("regard threadId",threadId);
+    assertId("regard person",personThreadId);
+    assertIsoTimestamp("regard before",before);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>96)throw new TypeError("perceived regard must be bounded");
+    return Object.freeze(this.#database.prepare(`
+      SELECT regard_id,act,actor_thread_id,account,evidence_refs_json,source_ref,as_of
+      FROM thread_perceived_regard WHERE thread_id=? AND person_thread_id=? AND as_of<?
+      ORDER BY as_of DESC,regard_id LIMIT ?
+    `).all(threadId,personThreadId,before,limit).map(row=>Object.freeze({
+      regardId:row.regard_id,act:row.act,actorThreadId:row.actor_thread_id,account:row.account,
+      evidenceRefs:Object.freeze(JSON.parse(row.evidence_refs_json)),sourceRef:row.source_ref,asOf:row.as_of,
+    })));
   }
 
   // A Thread's newest moments, optionally only those with some people.

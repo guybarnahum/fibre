@@ -197,10 +197,12 @@ export function createThreadContactProcess({
       const body=feltSocialBody(livedRegulationForLivedHistory({
         thread,livedNowStore,currentSituation,experienceStore,asOf:contactAt,
       }));
-      // How the Body takes each Thread it could write to: at ease or guarded.
+      // How the Body takes each Thread it could write to, none of them here:
+      // at ease or guarded, and missing them or not.
       const toward=feltTowardPeople(bodyTowardPeople({thread,experienceStore,asOf:contactAt,
         people:candidates.filter(candidate=>candidate.recipientKind==="thread")
-          .map(candidate=>({threadId:candidate.partyId,evidenceRef:candidate.relationRef??candidate.partyId}))}));
+          .map(candidate=>({threadId:candidate.partyId,evidenceRef:candidate.relationRef??candidate.partyId,
+            present:false}))}));
       const decision=await decideLaterContact({
         thread,
         afterthoughts,

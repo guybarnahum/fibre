@@ -319,6 +319,25 @@ export function createLivedExperienceTables(database) {
     CREATE INDEX IF NOT EXISTS thread_social_moments_by_thread
       ON thread_social_moments(thread_id,as_of);
 
+    -- Regard a Thread perceived between itself and one person, in its own
+    -- reflection (ADR-0037): who did what to whom, as it saw it. Append-only;
+    -- its perception, never a fact about the other.
+    CREATE TABLE IF NOT EXISTS thread_perceived_regard (
+      regard_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      person_thread_id TEXT NOT NULL,
+      act TEXT NOT NULL CHECK (act IN ('credited','overlooked','asked_advice','corrected',
+        'corrected_publicly','talked_over','gave_way','held_ground','left_out')),
+      actor_thread_id TEXT NOT NULL CHECK (actor_thread_id IN (thread_id,person_thread_id)),
+      account TEXT NOT NULL,
+      evidence_refs_json TEXT NOT NULL CHECK (json_valid(evidence_refs_json)),
+      source_ref TEXT NOT NULL,
+      as_of TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS thread_perceived_regard_by_pair
+      ON thread_perceived_regard(thread_id,person_thread_id,as_of);
+
     -- Appointments two Threads agreed in conversation: where and when, who
     -- proposed, and the Story in which it was agreed. Its outcome is a
     -- separate, once-only World fact read from where both actually were.

@@ -9,6 +9,7 @@ import {
   formFormativeInterests,interestsInReflection,
 } from "./thread-interests.mjs";
 import {MOMENT_SCHEMA,admitMoments,momentsInReflection,normalizeMoments} from "./felt-expertise.mjs";
+import {REGARD_SCHEMA,admitRegard,normalizeRegard} from "./perceived-regard.mjs";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
@@ -107,6 +108,7 @@ function normalizeDecision(output){
       openQuestions:Object.freeze(Array.isArray(item.openQuestions)?[...item.openQuestions]:[]),
       standing:item.standing??null})));
   const moments=normalizeMoments(output.moments);
+  const regard=normalizeRegard(output.regard);
 
   assertPlainObject("experience consolidation memory",output.memory);
   const memory=output.memory;
@@ -121,6 +123,7 @@ function normalizeDecision(output){
       stances,
       interests,
       moments,
+      regard,
       memory:Object.freeze({
         outcome:"not_remembered",
         rememberedContent:null,
@@ -151,6 +154,7 @@ function normalizeDecision(output){
     stances,
     interests,
     moments,
+    regard,
     memory:Object.freeze({
       outcome:"retained",
       rememberedContent:memory.rememberedContent,
@@ -217,7 +221,7 @@ async function formDecision({
     responseSchema:{
       type:"object",
       additionalProperties:false,
-      required:["journalEntry","memory","afterthoughts","stances","interests","moments"],
+      required:["journalEntry","memory","afterthoughts","stances","interests","moments","regard"],
       properties:{
         journalEntry:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
         afterthoughts:{
@@ -235,6 +239,7 @@ async function formDecision({
         },
         interests:INTEREST_CHANGE_SCHEMA,
         moments:MOMENT_SCHEMA,
+        regard:REGARD_SCHEMA,
         stances:{
           type:"array",
           maxItems:STANCE_LIMIT,
@@ -606,6 +611,12 @@ export function createExperienceConsolidationProcess({
       sourceRef:consolidation.consolidationId,asOf:consolidation.startedAt,
     }):{admitted:[],dropped:0};
 
+    // Regard as this Thread perceived it, for its Body's felt status (ADR-0037).
+    const regard=typeof experienceStore.recordPerceivedRegard==="function"?admitRegard({
+      experienceStore,threadId:consolidation.threadId,regard:decision.regard,people,
+      sourceRef:consolidation.consolidationId,asOf:consolidation.startedAt,
+    }):{admitted:[],dropped:0};
+
     const interests=interestsHeld?admitInterestChanges({
       experienceStore,threadId:consolidation.threadId,changes:decision.interests,
       current:experienceStore.listCurrentInterests(consolidation.threadId),
@@ -625,6 +636,7 @@ export function createExperienceConsolidationProcess({
         stanceRefs:stances.admitted,
         interestRefs:interests.admitted,
         momentRefs:moments.admitted,
+        regardRefs:regard.admitted,
       },
     });
 
@@ -667,6 +679,8 @@ export function createExperienceConsolidationProcess({
       interestsDropped:interests.dropped,
       momentRefs:completion.payload.momentRefs??[],
       momentsDropped:moments.dropped,
+      regardRefs:completion.payload.regardRefs??[],
+      regardDropped:regard.dropped,
     });
   }
 

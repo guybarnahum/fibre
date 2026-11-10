@@ -115,6 +115,17 @@ Guy, November 10: "Why fade trust? Especially after no contact?" and "time may m
 
 Deferred: excused harm, apology and spoken forgiveness, and the Thread's own grievances (R3–R4 of the proposal); grave severities with their doors.
 
+## R2 as built (November 10): bond, longing and reunion
+
+`attachment_proximity` is enabled. World computes it from its records (`bondOf` and `longingOf` in `social-body.mjs`); nothing new is stored.
+- **Bond** toward a person is `knowing × trust × doors`, where the open doors between them add: conversation 0.2 (being able to talk counts a little, so a daily companion is missed a little), contact 0.3, time 0.3, place 0.2, and, when they exist, confidence, care, romance and commitment 0.4 each, up to 1. A stranger has no bond and is never missed; a wound lowers the bond through trust.
+- **Longing** while apart is `bond × (1 − 2^(−days/3))²`: barely there the next day, growing over the first week. Past a week it settles toward fond memory, halving every `21 days × 2^(2 × persistence) / (1 − bond)`, so a light bond fades over months and a deep one stays. Apart means not in each other's presence. For a Body whose locus is `reciprocal_contact`, a message ends the apartness too; for `shared_presence` it does not.
+- **Reunion:** when a bonded person is present (the glance, choosing whom to approach, a conversation), the drive is attained, felt in proportion to the longing it relieves ("It is good to see them again; you have missed them."). A salience anchor, `reunion_with_missed_person`, makes them worth considering, never an obligation.
+- **Apart:** the contact decision feels, toward each party it could write to, whether it misses them ("You miss them." "You miss hearing from them.").
+- **Bittersweet:** a friend who wronged the Thread is missed and guarded at once; what the Thread does with both is its own.
+
+Deferred: longing toward an absent person in planning (seeking out where they are), and a silence felt as shared presence between bonded people.
+
 ## Status of what this excludes
 
 | Capability | Status | Extension path |
@@ -136,5 +147,6 @@ No permanent constraint.
 - S1: deterministic, recorded and idempotent expression; spread-0 ablation.
 - S2: the same conversation drains two Bodies differently; familiar strangers drain less; messages relieve hunger.
 - S3: a kept appointment makes the next talk drain less, a broken one more.
+- R2: seeing a bonded friend again after a week is a joy, after a day hardly anything; a stranger is never missed; a message answers longing for the exchange but not for presence; a light bond settles into memory and a deep one stays; a friend who wronged one is missed and guarded at once.
 - R1: an old friend after six months is still known and trusted; time forgives a declined invitation and not a closed door; a friend's harm and a repeated one weigh more; the inherited pace of forgiving; kept faith never heals a scar; a second broken appointment brings back the first.
 - On staging: endings by kind; length by familiarity and trust; messages per pair per day.

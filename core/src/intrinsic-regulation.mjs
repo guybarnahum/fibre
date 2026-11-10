@@ -280,6 +280,26 @@ function normalizeTrust(value) {
   });
 }
 
+// People this Thread is bonded to, as World measured it from knowing, trust
+// and the doors open between them: how much each matters (bond), how much
+// they are missed (longing), and whether they are here now.
+function normalizeBonds(value) {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 4) throw new TypeError("perceptFrame.bonds must list at most four people");
+  return value.map((person, index) => {
+    const name = `perceptFrame.bonds[${index}]`;
+    plainObject(name, person);
+    if (typeof person.present !== "boolean") throw new TypeError(`${name}.present must be boolean`);
+    return {
+      personRef: nonEmpty(`${name}.personRef`, person.personRef),
+      bond: unit(`${name}.bond`, person.bond),
+      longing: unit(`${name}.longing`, person.longing),
+      present: person.present,
+      evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, person.evidenceRefs),
+    };
+  });
+}
+
 function normalizeSocialCue(value, index) {
   const name = `perceptFrame.social[${index}]`;
   plainObject(name, value);
@@ -308,6 +328,7 @@ export function normalizePerceptFrame(value) {
     contact: normalizeContact(value.contact),
     socialEnergy: normalizeSocialEnergy(value.socialEnergy),
     trust: normalizeTrust(value.trust),
+    bonds: normalizeBonds(value.bonds),
     urgeAvailability:normalizeUrgeAvailability(value.urgeAvailability??{}),
     urgeTriggers:normalizeUrgeTriggers(value.urgeTriggers??[]),
     social: social.map(normalizeSocialCue),
@@ -512,6 +533,22 @@ function basalDrives(percept, profile) {
       urgency:wariness,
       evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
     }), ...(person.hurt > 0 ? {hurt:person.hurt} : {}), ...(person.revived ? {revived:true} : {})});
+  }
+
+  // Missing a person this Thread is bonded to: longing while apart, and its
+  // relief when they are here again (attained), in proportion to how much
+  // they were missed. A stranger is never missed.
+  for (const person of percept.bonds) {
+    const longing = person.longing * profile.sensitivity.social;
+    drives.push(drive({
+      family:"attachment_proximity",
+      targetRef:`person:${person.personRef}`,
+      orientation:"approach",
+      pressure:longing,
+      urgency:longing,
+      attained:person.present && person.longing > 0,
+      evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
+    }));
   }
 
   // Time-supported lack of observed reciprocal contact is a Body signal,

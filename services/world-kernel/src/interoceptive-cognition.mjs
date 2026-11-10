@@ -266,11 +266,29 @@ const HURT=Object.freeze([
   [1.01,"What they did still hurts deeply."],
 ]);
 const REVIVED="This brings back the last time they hurt you.";
+// Missing a bonded person while apart, by what this Body longs for; and the
+// relief of seeing them again, in proportion to how much they were missed.
+const LONGING=Object.freeze([
+  [0.15,"You have been missing them a little."],
+  [0.4,"You miss them."],
+  [1.01,"You miss them a great deal."],
+]);
+const LONGS_FOR=Object.freeze({
+  caregiver:"You miss the way they look after you.",
+  reciprocal_contact:"You miss hearing from them.",
+  shared_presence:"You miss simply being near them.",
+});
+const REUNION=Object.freeze([
+  [0.05,null],
+  [0.2,"It is good to see them again."],
+  [0.5,"It is good to see them again; you have missed them."],
+  [1.01,"Seeing them again is a joy; you have missed them a great deal."],
+]);
 
 // How this Body takes each person it perceives, in words: how far it is at
-// ease with them and what still hurts, and curiosity toward someone still new
-// to it or long unseen (only a Body inherited to seek people is drawn toward
-// the person).
+// ease with them and what still hurts, missing them or the joy of seeing them
+// again, and curiosity toward someone still new to it or long unseen (only a
+// Body inherited to seek people is drawn toward the person).
 export function feltTowardPeople(regulationFrame){
   const felt=new Map();
   const add=(item,line)=>{
@@ -283,6 +301,11 @@ export function feltTowardPeople(regulationFrame){
       add(item,band(WARINESS,item.pressure));
       if(item.hurt>0)add(item,band(HURT,item.hurt));
       if(item.revived)add(item,REVIVED);
+    }
+    if(item.family==="attachment_proximity"){
+      const line=band(item.attained?REUNION:LONGING,item.pressure);
+      if(line!==null)add(item,line);
+      if(!item.attained&&LONGS_FOR[item.inheritedDirection])add(item,LONGS_FOR[item.inheritedDirection]);
     }
     if(item.family==="exploration"&&item.inheritedDirection==="people")
       add(item,band(item.catchingUp?CATCHING_UP:CURIOSITY,item.pressure));

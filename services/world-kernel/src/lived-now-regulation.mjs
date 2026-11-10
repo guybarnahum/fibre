@@ -10,7 +10,7 @@ import {
   projectInteroception,
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
-import { conversationDepletion, regardOf, socialEnergyEvidence } from "./social-body.mjs";
+import { bondOf, conversationDepletion, longingOf, regardOf, socialEnergyEvidence } from "./social-body.mjs";
 
 let organismPolicy=DEFAULT_ORGANISM_POLICY;
 export function configureWorldOrganismPolicy(value){
@@ -209,28 +209,44 @@ export function socialContactEvidenceForLivedHistory({
   });
 }
 
-// What this Body inherited about trust (its trust locus): what counts as
-// evidence of safety, and how fast it forgives, unless inherited differences
-// are switched off.
-function trustLocus(thread){
+// What this Body inherited in one family (its locus): the orientation, and
+// the persistence that sets, for trust, how fast it forgives and, for
+// attachment, how long longing lasts; nothing when inherited differences are
+// switched off.
+function locusOf(thread,family){
   if(organismPolicy.inheritedSpread===0)return null;
-  const gene=(thread.genome?.urgeProjection??[]).find(item=>item.family==="trust")??null;
+  const gene=(thread.genome?.urgeProjection??[]).find(item=>item.family===family)??null;
   return gene===null?null:{orientation:gene.orientation,
     persistence:(gene.positions?.persistence??0)*organismPolicy.inheritedSpread};
+}
+const trustLocus=(thread)=>locusOf(thread,"trust");
+
+// The regard, and the doors open between them, that the Body's bond reads.
+function regardWithDoors({thread,otherThreadId,experienceStore,at}){
+  return {...regardOf({experienceStore,threadId:thread.threadId,otherThreadId,at,trustLocus:trustLocus(thread)}),
+    doors:experienceStore.listOpenDoors?.(thread.threadId,otherThreadId,{before:at})??[]};
 }
 
 // How this Thread's Body takes the people it perceives now, each citing the
 // World record of their presence: how far it trusts each one and what they
-// did to it, and curiosity toward anyone it hardly knows or has lost touch
-// with (more than half unknown, now).
+// did to it, curiosity toward anyone it hardly knows or has lost touch with
+// (more than half unknown, now), and, toward someone it is bonded to, longing
+// while apart and its relief on seeing them (a person is present unless
+// marked otherwise, as a party one might write to is not).
 const UNKNOWN_NOW_ABOVE=0.5;
 const unknownNow=(regard)=>(1-regard.knowing)+0.5*regard.staleness;
 const rounded=(value)=>Math.round(value*1e6)/1e6;
 function peoplePercept({thread,people=[],experienceStore,at,known=null}){
   const regards=people.slice(0,4).filter(person=>person.threadId!==thread.threadId).map(person=>({person,
-    regard:known??regardOf({experienceStore,threadId:thread.threadId,otherThreadId:person.threadId,at,
-      trustLocus:trustLocus(thread)})}));
+    regard:known??regardWithDoors({thread,otherThreadId:person.threadId,experienceStore,at})}));
   if(regards.length===0)return null;
+  const attachment=locusOf(thread,"attachment_proximity");
+  const bonds=regards.map(({person,regard})=>{
+    const bond=bondOf({regard,doors:regard.doors??[]});
+    return {personRef:person.threadId,bond,present:person.present!==false,
+      longing:longingOf({bond,regard,orientation:attachment?.orientation??null,persistence:attachment?.persistence??0}),
+      evidenceRefs:[person.evidenceRef]};
+  }).filter(item=>item.bond>0);
   const unfamiliarPeople=regards.filter(({regard})=>unknownNow(regard)>UNKNOWN_NOW_ABOVE)
     .map(({person,regard})=>({personRef:person.threadId,unfamiliarity:rounded(1-regard.knowing),
       staleness:regard.staleness,evidenceRefs:[person.evidenceRef]}));
@@ -238,6 +254,7 @@ function peoplePercept({thread,people=[],experienceStore,at,known=null}){
     evidenceRefs:[...new Set(regards.map(({person})=>person.evidenceRef))],
     trust:regards.map(({person,regard})=>({personRef:person.threadId,trust:regard.trust,
       hurt:regard.hurt,revived:regard.revived,evidenceRefs:[person.evidenceRef]})),
+    ...(bonds.length===0?{}:{bonds}),
     ...(unfamiliarPeople.length===0?{}:{
       exploration:{unfamiliarPeople},
       urgeAvailability:{exploration:{people:{state:"available",
@@ -292,6 +309,7 @@ export function livedRegulationForLivedHistory({
       },
       ...(people?.urgeAvailability===undefined?{}:{urgeAvailability:people.urgeAvailability}),
       ...(people===null?{}:{trust:people.trust}),
+      ...(people?.bonds===undefined?{}:{bonds:people.bonds}),
       ...(contact===null?{}:{contact}),
       ...(socialEnergy===null?{}:{socialEnergy}),
     },
@@ -323,8 +341,7 @@ export function socialBodyInConversation({thread,start,regard,turns,asOf,other})
 export function socialBodyBeforeTalk({thread,otherThreadId,experienceStore,asOf}){
   return {
     start:socialEnergyEvidence({threadId:thread.threadId,experienceStore,asOf,trustLocus:trustLocus(thread)}),
-    regard:regardOf({experienceStore,threadId:thread.threadId,otherThreadId,at:asOf,
-      trustLocus:trustLocus(thread)}),
+    regard:regardWithDoors({thread,otherThreadId,experienceStore,at:asOf}),
   };
 }
 

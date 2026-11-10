@@ -87,6 +87,12 @@ export function evaluateSalience({ opportunity, situatedPercept, regulationFrame
     &&drive.targetRef?.startsWith("person:")&&subjectRefs.has(drive.targetRef.slice("person:".length))
     &&drive.felt!==false&&drive.pressure>0&&drive.inheritedDirection==="people");
   if(curious!==undefined)anchors.push("curious_about_unfamiliar_person");
+  // Someone this Body has missed is here: worth considering, never an
+  // obligation to approach.
+  const missed=regulationFrame?.drives.find(drive=>drive.family==="attachment_proximity"
+    &&drive.targetRef?.startsWith("person:")&&subjectRefs.has(drive.targetRef.slice("person:".length))
+    &&drive.attained&&drive.pressure>=0.05);
+  if(missed!==undefined)anchors.push("reunion_with_missed_person");
   // Ordinary weak pressure is background, not a reason to spend social cognition.
   // Material Body interest earns consideration, never an obligation to approach.
   const socialContact = regulationFrame?.drives.find((drive) =>
