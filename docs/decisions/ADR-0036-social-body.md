@@ -120,7 +120,7 @@ Deferred: excused harm, apology and spoken forgiveness, and the Thread's own gri
 | Capability | Status | Extension path |
 |---|---|---|
 | Attraction, romance, couples | deferred | `attachment_proximity` and the accepted attraction concept on the same trust and familiarity |
-| Groups, belonging, standing within a group | deferred | groups and institutions; the same states toward many |
+| Groups, belonging, standing within a group | deferred | groups and institutions; the same states toward many; status toward each person and of oneself is proposed in [ADR-0037](ADR-0037-status-and-conflict.md) |
 | Real hazards for `safety_threat` | deferred | World hazards as evidence |
 | Whole-day fatigue beyond the social battery | deferred | the existing `rest` and `energy` families |
 | Recombination of the new families from legacy parents | deferred | the existing family-keyed rule once both parents carry v4 |
