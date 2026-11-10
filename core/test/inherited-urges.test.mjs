@@ -15,30 +15,34 @@ const frame=(availability={})=>({
 });
 const social=reg=>reg.drives.find(d=>d.family==="social_contact");
 
-test("current authored urge library binds 15 family kinds, origin provenance and stable replay",()=>{
-  assert.equal(URGE_FAMILIES.length,15);
+test("current authored urge library binds 18 family kinds, origin provenance and stable replay",()=>{
+  assert.equal(URGE_FAMILIES.length,18);
   assert.ok(URGE_FAMILIES.every(f=>f.variants.length===10));
   const a=selectedUrgesForBirth("newborn-inherited-urges");
   assert.deepEqual(a,selectedUrgesForBirth("newborn-inherited-urges"),"birth must replay");
-  assert.equal(a.values.length,15);
+  assert.equal(a.values.length,18);
   const genome=buildDeNovoSymbolicGenome({
     threadId:"thr_inherited_urges_test",genesisId:"genesis_inherited_urges_test",
     values:a.values,originMaterial:a.originMaterial,createdAt:"2026-10-28T12:00:00Z",
   });
-  assert.equal(urgeVariantsFromGenome(genome).length,15,"origin must bind all families");
+  assert.equal(urgeVariantsFromGenome(genome).length,18,"origin must bind all families");
   assert.ok(!JSON.stringify(genome).includes("orientationUnrelated"));
   const tampered=structuredClone(genome);
   tampered.loci[0].value="unrelated bodily urge";
   assert.throws(()=>urgeVariantsFromGenome(tampered),/frozen library/,"origin must bind the actual textual loci");
 });
 
-test("published libraries stay frozen; v4 only adds the social Body, and every locus is atomic",()=>{
-  assert.equal(URGE_LIBRARY_VERSION,"4");
+test("published libraries stay frozen; v4 only adds the social Body, v5 only status and conflict, and every locus is atomic",()=>{
+  assert.equal(URGE_LIBRARY_VERSION,"5");
   assert.equal(URGE_LIBRARIES["3"].digest,
     "sha256:7073678b3123757d8526e5ad01c31d5506c6fe7b66e41cfcc3ac50b7e2ef5cab","historical v3 library changed");
+  assert.equal(URGE_LIBRARIES["4"].digest,
+    "sha256:3295cb326cb6094b957fb0e90c7bdd60dfebb1ccb8d9da6349e976c1b20467c9","historical v4 library changed");
   assert.deepEqual(URGE_LIBRARIES["4"].families.slice(0,13),URGE_LIBRARIES["3"].families,"v4 changed a v3 family");
   assert.deepEqual(URGE_LIBRARIES["4"].families.slice(13).map(f=>f.family),["social_energy","trust"]);
-  for(const variant of URGE_LIBRARIES["4"].families.slice(13).flatMap(f=>f.variants)){
+  assert.deepEqual(URGE_LIBRARIES["5"].families.slice(0,15),URGE_LIBRARIES["4"].families,"v5 changed a v4 family");
+  assert.deepEqual(URGE_LIBRARIES["5"].families.slice(15).map(f=>f.family),["standing","provocation","remorse"]);
+  for(const variant of URGE_LIBRARIES["5"].families.slice(13).flatMap(f=>f.variants)){
     assert.doesNotThrow(()=>assertAtomicGenomeLocus(variant.text),`${variant.variantId} is not an atomic locus`);
   }
   assert.equal(URGE_LIBRARY_V2_DIGEST,
@@ -183,6 +187,15 @@ test("inherited positions span the species range without orientation or duplicat
     assert.equal(variants.flatMap((left,i)=>variants.slice(i+1)
       .filter(right=>keys.every(k=>left.positions[k]===-right.positions[k]))).length,0,
       `${family.family}: mirror triples`);
+    // An inherited lean in how a Body places itself, on standing only, and
+    // never more confident or insecure for one way of wanting standing.
+    if(variants.some(v=>"selfRegard" in v.positions)){
+      assert.equal(family.family,"standing",`${family.family}: selfRegard outside standing`);
+      const lean=variants.map(v=>v.positions.selfRegard);
+      assert.ok(Math.min(...lean)<=-0.85&&Math.max(...lean)>=0.85&&Math.abs(mean(lean))<=0.1+1e-9,"standing: selfRegard spread");
+      for(const group of Object.values(Object.groupBy(variants,v=>v.orientation)))
+        assert.ok(Math.abs(mean(group.map(v=>v.positions.selfRegard)))<=0.25+1e-9,"standing: selfRegard leans by orientation");
+    }
     const uniqueT=[...new Set(variants.map(v=>v.positions.feltThreshold))];
     const effectiveT=uniqueT.map(t=>Math.min(species.speciesFeltThresholdCeiling,
       species.speciesFeltThreshold*2**(-species.speciesFeltThresholdOctaves*t)));

@@ -85,6 +85,13 @@ comparison. The measured values and effective thresholds appear in
 all 15 families; v3 stays frozen (digest
 `sha256:7073678b3123757d8526e5ad01c31d5506c6fe7b66e41cfcc3ac50b7e2ef5cab`), and
 a v4 birth's first 13 loci are the ones v3 would have drawn.
+**Library v5** ([ADR-0037](../decisions/ADR-0037-status-and-conflict.md)) is v4
+plus `standing`, `provocation` and `remorse`, ten reviewed loci each
+([review](../validation/status-and-conflict-urges-library-review.md)). `standing`
+alone carries a fourth position, `selfRegard`: an inherited lean in how the Body
+places itself. New births draw all 18 families; v4 stays frozen (digest
+`sha256:3295cb326cb6094b957fb0e90c7bdd60dfebb1ccb8d9da6349e976c1b20467c9`), and
+late expression gives existing Threads the three new loci from their own genome.
 Textual nuances beyond the orientation/positions remain meaning-bearing source
 but **are not claimed as additional operational differences**. Frozen parameters
 are author-reviewed, not inferred by a model at runtime. No sex, ancestry,

@@ -1,13 +1,13 @@
 ---
 id: adr-0037-status-and-conflict
-status: proposed
+status: accepted
 last-reviewed: 2026-11-10
 canonical: true
 ---
 
 # ADR-0037 — Status, conflict and remorse in the social Body
 
-**Proposed, November 10, 2026.** Guy accepted the design and its slice plan on November 10, including perceived regard as Body evidence and `selfRegard` as an inherited position. This record becomes accepted when Guy has reviewed the thirty loci in the [draft review](../validation/status-and-conflict-urges-library-review.md). It builds on [ADR-0030](ADR-0030-inherited-urges.md) (inherited urges) and [ADR-0036](ADR-0036-social-body.md) (the social Body).
+**Accepted by Guy, November 10, 2026**, with the design, its slice plan (including perceived regard as Body evidence and `selfRegard` as an inherited position) and the thirty loci in the [review](../validation/status-and-conflict-urges-library-review.md). It builds on [ADR-0030](ADR-0030-inherited-urges.md) (inherited urges) and [ADR-0036](ADR-0036-social-body.md) (the social Body).
 
 ## Why
 
@@ -66,8 +66,8 @@ It ships first with nothing reading it, and one staging morning of records is re
 ## Slices
 
 1. C0: this record and the draft loci (docs).
-2. C1: library v5 and late expression (inert).
-3. C2: perceived regard (records only, shipped alongside ADR-0036's bond and reunion).
+2. C1: library v5 and late expression (inert). **Built November 10:** births draw all 18 families; `world-genome:express` gives every Thread the three new loci from its own genome; none of the three is enabled yet.
+3. C2: perceived regard (records only, shipped alongside ADR-0036's bond and reunion). **Deployed November 10.**
 4. C3: felt status, self-status, slights and recognition (`standing` and `standing_flare` enabled).
 5. C4: `provocation`.
 6. C5: `remorse`.
@@ -90,7 +90,8 @@ No permanent constraint.
 
 ## Evidence (as slices land)
 
-- Mechanical library balance: [draft review](../validation/status-and-conflict-urges-library-review.md).
+- Mechanical library balance: [review](../validation/status-and-conflict-urges-library-review.md), checked on every family by `core/test/inherited-urges.test.mjs`.
+- C1: the late-expression test gives a v3 Body exactly its five never-expressed families, rewriting nothing.
 - C2: one morning of perceived-regard records read before C3.
 - C3:
   - the same public correction stings from a person felt below, and not from one felt above;

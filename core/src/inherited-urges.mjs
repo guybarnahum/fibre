@@ -3,7 +3,7 @@ import {createHash} from "node:crypto";
 // Every published library stays immutable birth authority for the Threads
 // born from it. v3 changed only exploration_01's text; v4 adds the social
 // Body's two families (ADR-0036). Births draw from the current version.
-export const URGE_LIBRARY_VERSION="4";
+export const URGE_LIBRARY_VERSION="5";
 export const URGE_LIBRARY_V2_FAMILIES=Object.freeze([
   Object.freeze({
     family:"social_contact",kind:"directional",
@@ -257,7 +257,61 @@ const SOCIAL_BODY_FAMILIES=Object.freeze([
     ]),
   }),
 ]);
-export const URGE_FAMILIES=Object.freeze([...URGE_LIBRARY_V3_FAMILIES,...SOCIAL_BODY_FAMILIES]);
+const URGE_LIBRARY_V4_FAMILIES=Object.freeze([...URGE_LIBRARY_V3_FAMILIES,...SOCIAL_BODY_FAMILIES]);
+// Status and conflict (ADR-0037): a place among others (with an inherited
+// lean in how this Body places itself, selfRegard, on this family only), the
+// Body's answer to a threat, and the weight of having done harm.
+const STATUS_AND_CONFLICT_FAMILIES=Object.freeze([
+  Object.freeze({
+    family:"standing",kind:"directional",
+    orientations:Object.freeze(["recognition","deference","competence","belonging"]),
+    variants:Object.freeze([
+      Object.freeze({variantId:"standing_01",orientation:"recognition",text:"When something one has said or made is passed over in a group, attention stays on the moment it went unacknowledged.",positions:Object.freeze({gain:0.88,feltThreshold:-0.4,persistence:0.3,selfRegard:0.5})}),
+      Object.freeze({variantId:"standing_02",orientation:"recognition",text:"Hearing one's own name attached to an idea brings a warm settling, and hearing it credited to someone else brings a small jolt.",positions:Object.freeze({gain:-0.45,feltThreshold:0.22,persistence:-0.6,selfRegard:-0.3})}),
+      Object.freeze({variantId:"standing_03",orientation:"recognition",text:"In company, the body keeps track of whose words are taken up and whose are left lying.",positions:Object.freeze({gain:-0.2,feltThreshold:0.9,persistence:0.55,selfRegard:-0.88})}),
+      Object.freeze({variantId:"standing_04",orientation:"deference",text:"When others pause to hear one out, the body eases, and when they talk on regardless, it tightens.",positions:Object.freeze({gain:-0.86,feltThreshold:-0.7,persistence:0.88,selfRegard:0.15})}),
+      Object.freeze({variantId:"standing_05",orientation:"deference",text:"In a disagreement, the body registers who gives way first, and holding one's ground brings a steadying warmth.",positions:Object.freeze({gain:-0.45,feltThreshold:0.22,persistence:-0.6,selfRegard:-0.3})}),
+      Object.freeze({variantId:"standing_06",orientation:"deference",text:"Being followed in a small choice, such as where to sit or what to read next, settles the body more than being agreed with in words.",positions:Object.freeze({gain:0.95,feltThreshold:0.48,persistence:-0.25,selfRegard:0.88})}),
+      Object.freeze({variantId:"standing_07",orientation:"competence",text:"Being asked for help with something one knows well brings a quiet straightening of the body.",positions:Object.freeze({gain:0.6,feltThreshold:-0.92,persistence:-0.88,selfRegard:0.35})}),
+      Object.freeze({variantId:"standing_08",orientation:"competence",text:"Being corrected on a matter one knows lands harder in the body than being corrected on something new.",positions:Object.freeze({gain:-0.3,feltThreshold:0.65,persistence:0.1,selfRegard:-0.6})}),
+      Object.freeze({variantId:"standing_09",orientation:"belonging",text:"Being expected among a group, missed when absent and greeted on arrival, steadies the body like solid ground.",positions:Object.freeze({gain:-0.7,feltThreshold:-0.1,persistence:0.62,selfRegard:0.15})}),
+      Object.freeze({variantId:"standing_10",orientation:"belonging",text:"Standing at the edge of a group that has closed its circle draws the body's attention to the gap.",positions:Object.freeze({gain:0.45,feltThreshold:-0.33,persistence:-0.7,selfRegard:-0.1})}),
+    ]),
+  }),
+  Object.freeze({
+    family:"provocation",kind:"directional",
+    orientations:Object.freeze(["confront","withdraw","appease","deflect"]),
+    variants:Object.freeze([
+      Object.freeze({variantId:"provocation_01",orientation:"confront",text:"After a sting from someone, heat rises toward them and the body readies to answer in kind.",positions:Object.freeze({gain:0.92,feltThreshold:-0.85,persistence:0.4})}),
+      Object.freeze({variantId:"provocation_02",orientation:"confront",text:"When pushed, the body leans forward rather than back, and the words to push back come quickly.",positions:Object.freeze({gain:-0.35,feltThreshold:0.3,persistence:-0.55})}),
+      Object.freeze({variantId:"provocation_03",orientation:"confront",text:"A slight left unanswered keeps the body tense until it has been met.",positions:Object.freeze({gain:-0.4,feltThreshold:0.6,persistence:0.9})}),
+      Object.freeze({variantId:"provocation_04",orientation:"withdraw",text:"After a sharp word, the body wants distance first, and the room seems to narrow until it can leave.",positions:Object.freeze({gain:0.55,feltThreshold:0.15,persistence:-0.9})}),
+      Object.freeze({variantId:"provocation_05",orientation:"withdraw",text:"When someone turns hostile, warmth drains from the body and it goes still and cool toward them.",positions:Object.freeze({gain:-0.88,feltThreshold:-0.45,persistence:0.25})}),
+      Object.freeze({variantId:"provocation_06",orientation:"withdraw",text:"Provocation sends the body inward, toward silence, rather than toward the person who caused it.",positions:Object.freeze({gain:0.2,feltThreshold:0.88,persistence:-0.15})}),
+      Object.freeze({variantId:"provocation_07",orientation:"appease",text:"When tension rises between people, the body reaches to soften it before anything else.",positions:Object.freeze({gain:-0.35,feltThreshold:0.3,persistence:-0.55})}),
+      Object.freeze({variantId:"provocation_08",orientation:"appease",text:"After friction with someone, the body stays restless until the other seems at ease again.",positions:Object.freeze({gain:0.5,feltThreshold:-0.62,persistence:0.35})}),
+      Object.freeze({variantId:"provocation_09",orientation:"deflect",text:"In a tense moment, a lightness rises in the body and reaches for something to laugh at.",positions:Object.freeze({gain:-0.6,feltThreshold:-0.2,persistence:-0.7})}),
+      Object.freeze({variantId:"provocation_10",orientation:"deflect",text:"When a conversation turns sharp, attention slides sideways toward another subject.",positions:Object.freeze({gain:0.45,feltThreshold:-0.1,persistence:0.2})}),
+    ]),
+  }),
+  Object.freeze({
+    family:"remorse",kind:"triggered",
+    orientations:Object.freeze(["broken_faith","harshness","exclusion"]),
+    variants:Object.freeze([
+      Object.freeze({variantId:"remorse_01",orientation:"broken_faith",text:"After failing to do what one said one would, the body carries a weight that returns whenever the other person comes to mind.",positions:Object.freeze({gain:0.9,feltThreshold:0.35,persistence:-0.4})}),
+      Object.freeze({variantId:"remorse_02",orientation:"broken_faith",text:"A broken promise sits in the body as an unfinished act that pulls toward setting it right.",positions:Object.freeze({gain:-0.5,feltThreshold:-0.88,persistence:0.6})}),
+      Object.freeze({variantId:"remorse_03",orientation:"broken_faith",text:"Having let someone down, the body tends to turn away from meeting them.",positions:Object.freeze({gain:0.3,feltThreshold:0.15,persistence:0.92})}),
+      Object.freeze({variantId:"remorse_04",orientation:"broken_faith",text:"The memory of a missed meeting returns with a small sinking in the chest.",positions:Object.freeze({gain:-0.65,feltThreshold:0.55,persistence:-0.2})}),
+      Object.freeze({variantId:"remorse_05",orientation:"harshness",text:"After speaking sharply, the other person's face stays with the body long after the words.",positions:Object.freeze({gain:-0.25,feltThreshold:-0.3,persistence:-0.65})}),
+      Object.freeze({variantId:"remorse_06",orientation:"harshness",text:"A sharp word one has spoken echoes back as discomfort once the heat has passed.",positions:Object.freeze({gain:0.7,feltThreshold:0.9,persistence:0.1})}),
+      Object.freeze({variantId:"remorse_07",orientation:"harshness",text:"Seeing hurt in someone after one's own words brings a quick drop in the body's warmth.",positions:Object.freeze({gain:-0.86,feltThreshold:-0.15,persistence:0.45})}),
+      Object.freeze({variantId:"remorse_08",orientation:"exclusion",text:"Having left someone out, the body keeps returning to the place where they were not.",positions:Object.freeze({gain:-0.25,feltThreshold:-0.3,persistence:-0.65})}),
+      Object.freeze({variantId:"remorse_09",orientation:"exclusion",text:"Seeing someone at the edge of a group one belongs to brings an uneasy pull to make room.",positions:Object.freeze({gain:0.55,feltThreshold:-0.6,persistence:-0.88})}),
+      Object.freeze({variantId:"remorse_10",orientation:"exclusion",text:"Remembering a time one shut someone out brings a dull heaviness.",positions:Object.freeze({gain:0.1,feltThreshold:0.4,persistence:0.3})}),
+    ]),
+  }),
+]);
+export const URGE_FAMILIES=Object.freeze([...URGE_LIBRARY_V4_FAMILIES,...STATUS_AND_CONFLICT_FAMILIES]);
 const libraryDigest=families=>"sha256:"+createHash("sha256")
   .update(JSON.stringify(families)).digest("hex");
 export const URGE_LIBRARY_V2_DIGEST=libraryDigest(URGE_LIBRARY_V2_FAMILIES);
@@ -265,7 +319,8 @@ export const URGE_LIBRARY_DIGEST=libraryDigest(URGE_FAMILIES);
 export const URGE_LIBRARIES=Object.freeze({
   "2":Object.freeze({families:URGE_LIBRARY_V2_FAMILIES,digest:URGE_LIBRARY_V2_DIGEST}),
   "3":Object.freeze({families:URGE_LIBRARY_V3_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V3_FAMILIES)}),
-  "4":Object.freeze({families:URGE_FAMILIES,digest:URGE_LIBRARY_DIGEST}),
+  "4":Object.freeze({families:URGE_LIBRARY_V4_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V4_FAMILIES)}),
+  "5":Object.freeze({families:URGE_FAMILIES,digest:URGE_LIBRARY_DIGEST}),
 });
 export const URGE_FAMILY_BY_NAME=new Map(URGE_FAMILIES.map(family=>[family.family,family]));
 export const SPECIES_STANDARD_ORIENTATION=Object.freeze(Object.fromEntries(

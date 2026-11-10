@@ -1,12 +1,12 @@
 ---
 id: validation-status-and-conflict-urges-library-review
-status: proposed
+status: accepted
 last-reviewed: 2026-11-10
 ---
 
-# Status and conflict urges — draft loci for review (library v5)
+# Status and conflict urges — loci (library v5)
 
-**Status: proposed, for Guy's review.** These are the three new families that [ADR-0037](../decisions/ADR-0037-status-and-conflict.md) adds to the 15 in [library v4](social-body-urges-library-review.md). Once accepted, library v5 publishes them unchanged, and `core/test/inherited-urges.test.mjs` checks the rules below on every family.
+**Status: accepted** by Guy on November 10, 2026, and published as library v5 ([ADR-0037](../decisions/ADR-0037-status-and-conflict.md)). These are the three new families v5 adds to the 15 in [library v4](social-body-urges-library-review.md); `core/test/inherited-urges.test.mjs` checks the rules below on every family, and `selfRegard`'s on `standing`.
 
 The texts describe what a Body inherits, never an instruction or a trait. Each is one proposition and one sentence, with no semicolon (`assertAtomicGenomeLocus`).
 

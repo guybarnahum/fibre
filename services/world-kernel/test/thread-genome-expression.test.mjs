@@ -57,14 +57,14 @@ test("late expression gives each Thread its never-expressed families once, from 
     const v3Result = expression.express(v3.thread.threadId, { at });
     assert.deepEqual(legacyResult.expressed.map((item) => item.family), URGE_FAMILIES.map((family) => family.family),
       "a Body with no urge genes must express every family");
-    assert.deepEqual(v3Result.expressed.map((item) => item.family), ["social_energy", "trust"],
+    assert.deepEqual(v3Result.expressed.map((item) => item.family), ["social_energy", "trust", "standing", "provocation", "remorse"],
       "only families never expressed may be drawn");
     assert.deepEqual(planned.find((entry) => entry.threadId === v3.thread.threadId).receives, v3Result.expressed,
       "the draw is not determined by the genome alone");
 
     const body = world.getThread(v3.thread.threadId).genome.urgeProjection;
     assert.deepEqual(body.slice(0, 13), v3Projection, "an inherited locus was redrawn");
-    assert.equal(body.length, 15);
+    assert.equal(body.length, 18);
     assert.deepEqual(genomes.listThreadGenomes(v3.thread.threadId), genomeBefore, "the genome or its digest was edited");
     assert.deepEqual(world.listEvents(v3.thread.threadId).slice(0, historyBefore.length), historyBefore, "history was rewritten");
     assert.deepEqual(world.replayThread(v3.thread.threadId), world.getThread(v3.thread.threadId), "expression did not survive replay");

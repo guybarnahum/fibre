@@ -1,4 +1,4 @@
-import {selectedUrgesForBirth} from "../../../core/src/inherited-urges.mjs";
+import {URGE_FAMILIES,selectedUrgesForBirth} from "../../../core/src/inherited-urges.mjs";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -183,7 +183,7 @@ test("v2 modern Genesis admits immutable urges without exposing DNA to either me
     ...base,requestId,genomeValues:selected.values,
     originMaterial:selected.originMaterial,
   });
-  assert.equal(plan.genome.loci.length,15,"birth did not persist the full urge family set");
+  assert.equal(plan.genome.loci.length,URGE_FAMILIES.length,"birth did not persist the full urge family set");
   assert.deepEqual(plan.genome.header.originMaterial,selected.originMaterial);
   const episodes=plan.windows.map((window,index)=>({
     episodeId:`history-v2-${index+1}`,occurredAt:window.startAt,
