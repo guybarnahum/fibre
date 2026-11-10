@@ -1507,6 +1507,23 @@ export class LivedExperienceStore {
       .map(item=>Object.freeze(item)));
   }
 
+  // The relational acts World recorded between two Threads before a time,
+  // newest first: facts (offered, accepted, declined, kept, broken, …), each
+  // by the Thread that did it.
+  listPairActs(threadId,otherThreadId,{before,limit=48}={}){
+    assertId("relational acts Thread",threadId);
+    assertId("relational acts person",otherThreadId);
+    assertIsoTimestamp("relational acts before",before);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>96)throw new TypeError("relational acts must be bounded");
+    if(threadId===otherThreadId||!worldTableExists(this.#database,"relationship_ledger"))return Object.freeze([]);
+    const [a,b]=threadId<otherThreadId?[threadId,otherThreadId]:[otherThreadId,threadId];
+    return Object.freeze(this.#database.prepare(`
+      SELECT door,kind,actor_thread_id AS actorThreadId,occurred_at AS occurredAt FROM relationship_ledger
+      WHERE thread_a=? AND thread_b=? AND occurred_at<?
+      ORDER BY occurred_at DESC LIMIT ?
+    `).all(a,b,before,limit).map(row=>Object.freeze({...row})));
+  }
+
   // When this Thread has lived around another, newest first: Stories with
   // both present that it noticed, and messages between them.
   listSharedContactTimes(threadId,otherThreadId,{before,limit=24}={}){

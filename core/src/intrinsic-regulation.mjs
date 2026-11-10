@@ -146,8 +146,22 @@ function normalizeInternal(value = {}) {
 
 function normalizeExploration(value = {}) {
   plainObject("perceptFrame.exploration", value);
+  const people = value.unfamiliarPeople ?? [];
+  if (!Array.isArray(people) || people.length > 4) {
+    throw new TypeError("perceptFrame.exploration.unfamiliarPeople must list at most four people");
+  }
   return {
     novelty: optionalUnit("perceptFrame.exploration.novelty", value.novelty),
+    // People present whom this Thread hardly knows, as World measured it.
+    unfamiliarPeople: people.map((person, index) => {
+      const name = `perceptFrame.exploration.unfamiliarPeople[${index}]`;
+      plainObject(name, person);
+      return {
+        personRef: nonEmpty(`${name}.personRef`, person.personRef),
+        unfamiliarity: unit(`${name}.unfamiliarity`, person.unfamiliarity),
+        evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, person.evidenceRefs),
+      };
+    }),
   };
 }
 
@@ -244,6 +258,22 @@ function normalizeSocialEnergy(value) {
   };
 }
 
+// How far this Thread trusts each person it is with or perceives, as World
+// measured it from their lived contact and relational acts (0 a stranger).
+function normalizeTrust(value) {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 4) throw new TypeError("perceptFrame.trust must list at most four people");
+  return value.map((person, index) => {
+    const name = `perceptFrame.trust[${index}]`;
+    plainObject(name, person);
+    return {
+      personRef: nonEmpty(`${name}.personRef`, person.personRef),
+      trust: unit(`${name}.trust`, person.trust),
+      evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, person.evidenceRefs),
+    };
+  });
+}
+
 function normalizeSocialCue(value, index) {
   const name = `perceptFrame.social[${index}]`;
   plainObject(name, value);
@@ -271,6 +301,7 @@ export function normalizePerceptFrame(value) {
     exploration: normalizeExploration(value.exploration ?? {}),
     contact: normalizeContact(value.contact),
     socialEnergy: normalizeSocialEnergy(value.socialEnergy),
+    trust: normalizeTrust(value.trust),
     urgeAvailability:normalizeUrgeAvailability(value.urgeAvailability??{}),
     urgeTriggers:normalizeUrgeTriggers(value.urgeTriggers??[]),
     social: social.map(normalizeSocialCue),
@@ -440,6 +471,37 @@ function basalDrives(percept, profile) {
       pressure:explorationPressure,
       urgency:explorationPressure,
       evidenceRefs,
+    }));
+  }
+
+  // Someone new is interesting in their own right: their ways are not yet
+  // known. The pull is a Body signal; whether it draws this Thread toward
+  // that person, or toward new places, ideas or making, is its inherited
+  // orientation, and whether it acts on it is its own.
+  for (const person of exploration.unfamiliarPeople) {
+    const allure = 0.5 * person.unfamiliarity * profile.sensitivity.exploration;
+    drives.push(drive({
+      family:"exploration",
+      targetRef:`person:${person.personRef}`,
+      orientation:"approach",
+      pressure:allure,
+      urgency:allure,
+      evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
+    }));
+  }
+
+  // Wariness: the harm still expected of a person, sharper the less they
+  // are trusted. A stranger meets some guard, a trusted friend none. It is a
+  // Body signal, never a judgment of the person or a refusal.
+  for (const person of percept.trust) {
+    const wariness = 0.5 * (1 - person.trust) ** 2;
+    drives.push(drive({
+      family:"trust",
+      targetRef:`person:${person.personRef}`,
+      orientation:"avoid",
+      pressure:wariness,
+      urgency:wariness,
+      evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
     }));
   }
 

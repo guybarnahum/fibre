@@ -244,7 +244,35 @@ const SEEKS=Object.freeze({
   conversation:"It is real conversation you want.",
   closeness:"It is closeness you want.",
 });
+const CURIOSITY=Object.freeze([
+  [0.3,"They are still new to you, and you are a little curious about them."],
+  [0.6,"They are still new to you; you would like to know who they are."],
+  [1.01,"They are still new to you, and you are drawn to find out who they are."],
+]);
 const band=(bands,pressure)=>bands.find(([upper])=>pressure<upper)[1];
+
+const WARINESS=Object.freeze([
+  [0.25,"You are not quite at ease with them yet."],
+  [0.6,"You are a little guarded with them."],
+  [1.01,"You are wary of them."],
+]);
+
+// How this Body takes each person it perceives, in words: how far it is at
+// ease with them, and curiosity toward someone still new to it (only a Body
+// inherited to seek new people is drawn toward the person).
+export function feltTowardPeople(regulationFrame){
+  const felt=new Map();
+  const add=(item,line)=>{
+    const person=item.targetRef.slice("person:".length);
+    felt.set(person,[...(felt.get(person)??[]),line]);
+  };
+  for(const item of regulationFrame?.drives??[]){
+    if(!item.targetRef?.startsWith("person:")||item.felt===false||item.pressure<=0)continue;
+    if(item.family==="trust")add(item,band(WARINESS,item.pressure));
+    if(item.family==="exploration"&&item.inheritedDirection==="people")add(item,band(CURIOSITY,item.pressure));
+  }
+  return felt;
+}
 
 export function feltSocialBody(regulationFrame){
   if(regulationFrame===null)return [];
@@ -255,6 +283,7 @@ export function feltSocialBody(regulationFrame){
     lines.push(band(BATTERY,battery.pressure));
     if(RESTORES[battery.inheritedDirection])lines.push(RESTORES[battery.inheritedDirection]);
   }
+  lines.push(...[...feltTowardPeople(regulationFrame).values()].flat());
   const hunger=felt("social_contact");
   if(hunger!==null){
     lines.push(band(HUNGER,hunger.pressure));

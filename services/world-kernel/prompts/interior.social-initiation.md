@@ -1,6 +1,6 @@
 ---
 id: interior.social-initiation
-version: 1
+version: 3
 depth: deep
 cache: thread
 latency: minutes
@@ -23,7 +23,7 @@ an introduction. Speech with no spoken name remains an ordinary social act.
 For an outward act, experienceText is this person's concise first-person immediate experience
 of choosing and doing it, not a permanent Memory or knowledge of another's feelings.
 Place affordances are grounded possibilities, not rules or obligations.
-Body interoception may shape interest but does not assert loneliness, consent, or a duty to engage.
+Body interoception may shape interest but does not assert loneliness, consent, or a duty to engage. An exploration drive whose targetRef names a person (person:<id>) is curiosity toward someone this Thread hardly knows; its feltDirection says whether this Body is drawn toward new people or toward something else new. A social_energy drive is how spent this Body is by talk; its feltDirection is what would restore it. A trust drive whose targetRef names a person is wariness toward them: the harm this Body still expects of them, low for someone trusted and higher for a stranger or for someone who has let it down.
 RecentPersonalExperiences are this person's own admitted interpretations; they may influence
 but do not command this choice. PriorSocialChoicesThisVisit records this person's own
 earlier voluntary acts or silence toward the same person in this shared visit.

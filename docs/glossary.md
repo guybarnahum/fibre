@@ -45,7 +45,7 @@ canonical: true
 
 **Door** — A kind of access two Threads have opened to each other (attention, name, conversation, contact, time, place, confidence, care, romance, commitment). A door opens only when both consent and either may close it alone. See [relationships](concepts/relationships-doors-and-trust.md).
 
-**Relational ledger** — World's append-only record of observable relational acts between two Threads: offers, acceptances, refusals, kept and broken expectations, closings and repairs. Facts, never judgments; World never derives trust from it.
+**Relational ledger** — World's append-only record of observable relational acts between two Threads: offers, acceptances, refusals, kept and broken expectations, closings and repairs. Facts, never judgments; World derives no attitude from it, only the Body's felt trust (reduced expected harm, ADR-0036).
 
 **Relationship stance** — A Thread's private, self-authored attitude toward a specific person (trust, warmth, attraction, wariness), held as semantic state with evidence. Asymmetric and never a behavior-driving number.
 

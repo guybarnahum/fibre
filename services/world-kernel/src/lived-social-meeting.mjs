@@ -17,9 +17,8 @@ import {
 } from "./persistence-common.mjs";
 import { projectSituatedPercept } from "./situated-percept.mjs";
 import { evaluateSalience } from "./salience-gate.mjs";
-import { livedRegulationForLivedHistory, socialBodyInConversation } from "./lived-now-regulation.mjs";
+import { livedRegulationForLivedHistory, socialBodyBeforeTalk, socialBodyInConversation } from "./lived-now-regulation.mjs";
 import { feltSocialBody, projectInteroception } from "./interoceptive-cognition.mjs";
-import { familiarityOf, socialEnergyEvidence } from "./social-body.mjs";
 import { observablePerson } from "./world-observable-person.mjs";
 import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
 import { lifeRelationId } from "./situated-life-domain.mjs";
@@ -593,11 +592,11 @@ export function createSocialMeetingService({
     // The social Body in this talk: where the battery stood when it began,
     // how known the other is, and each turn spoken or heard since.
     const feltBodyFor=(self,other)=>{
-      const start=socialEnergyEvidence({threadId:self.thread.threadId,experienceStore,asOf:at});
-      const familiarity=familiarityOf({experienceStore,threadId:self.thread.threadId,
-        otherThreadId:other.thread.threadId,at});
-      return (story)=>feltSocialBody(socialBodyInConversation({thread:self.thread,start,familiarity,asOf:at,
-        turns:story.beats.filter(beat=>beat.kind==="utterance").length}));
+      const {start,regard}=socialBodyBeforeTalk({thread:self.thread,otherThreadId:other.thread.threadId,
+        experienceStore,asOf:at});
+      const person={threadId:other.thread.threadId,evidenceRef:other.situation.situationId};
+      return (story)=>feltSocialBody(socialBodyInConversation({thread:self.thread,start,regard,asOf:at,
+        other:person,turns:story.beats.filter(beat=>beat.kind==="utterance").length}));
     };
     const speakerFacing=(self,other)=>Object.freeze({
       ...self,
@@ -844,17 +843,22 @@ export function createSocialMeetingService({
       });
       const opportunities = perceived.opportunities.filter((opportunity) =>
         opportunity.kind === "actor_presence" && opportunity.actorKind === "thread");
+      const discoveredById = new Map(discovered.map((context) => [
+        context.thread.threadId,
+        context,
+      ]));
+      // The Body takes in who is here: anyone hardly known is a pull for a
+      // Body inherited to seek new people (ADR-0036, curiosity).
       const regulationFrame = livedRegulationForLivedHistory({
         thread:initiator.thread,
         livedNowStore,
         currentSituation:initiator.situation,
         experienceStore,asOf:boundedVenueDiscovery?input.at:initiator.situation.establishedAt,
+        perceivedPeople:opportunities.flatMap(opportunity=>{
+          const person=discoveredById.get(opportunity.actorRef);
+          return person===undefined?[]:[{threadId:person.thread.threadId,evidenceRef:person.situation.situationId}];
+        }),
       });
-
-      const discoveredById = new Map(discovered.map((context) => [
-        context.thread.threadId,
-        context,
-      ]));
       const attemptByActor = new Map();
       const accepted = [];
       // Facing a whole scene, the Thread considers the salient people

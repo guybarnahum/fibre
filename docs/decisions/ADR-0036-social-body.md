@@ -73,6 +73,27 @@ The six legacy Threads therefore gain all 15 families, and the two v3 Threads ga
 
 Simplifications, each to be reversed by evidence: recovery runs at the species rate wherever the Thread is, rather than faster in its inherited setting; familiarity does not yet count co-presence the Thread did not notice; a conversation that reaches the guard ends there rather than continuing in the next invocation, and how often that happens is measured first.
 
+## S5a as built (November 10): curiosity toward the unfamiliar
+
+Guy, November 10: "a stranger is inherently interesting and alluring as it presents new unpredictable behavior. The body urge should kick in and present this as something to be attracted to or avoid depending on the Thread's makeup." The genome already carried it: `exploration`'s `people` orientation ("After predictable company, attention widens toward strangers…").
+
+- **Evidence:** a person this Thread perceives and hardly knows (familiarity below one half) raises `exploration` toward that person by half their unfamiliarity, without a boring day first. It cites the World record of their presence. People it knows add nothing.
+- **Where it is felt:** in the glance (a person item may carry `felt`), in choosing whom to approach (the Body frame, and a salience anchor that makes a stranger worth considering), and in live turns with someone new.
+- **Whose pull:** only a Body whose `exploration` locus is oriented to `people` feels it as a pull toward the person; others feel novelty toward places, ideas or making, as their loci say. Gain and threshold set how strongly and how soon.
+- **The other side:** the same unfamiliarity makes talk cost the battery more, and with S3 a `familiarity`-oriented trust locus will keep an unknown face alerting. Whether a stranger is sought or avoided comes from the Thread's own loci; nothing is coded.
+
+## S3 as built (November 10): trust per person
+
+`trust` is enabled. Trust toward a person is reduced expected harm, measured by World from its records (`regardOf` in `social-body.mjs`):
+- **Safe exposure raises it:** each lived contact (a noticed Story with both present, a message between them) and each act by the other that kept faith (accepted, kept, opened, repaired). Four recent ones make a person half-trusted.
+- **Harm lowers it:** each act by the other that broke faith (declined, broken, closed); each unit halves what was built. The Thread's own acts never count as harm done to it.
+- **It fades** with the same 14-day half-life as familiarity.
+- **Inherited:** the locus's orientation weights the kinds of evidence (reliability: kept appointments and accepted offers; warmth: time together, and declines sting more; reciprocity: accepted offers and opened doors; familiarity: repeated contact). Gain and threshold set how strongly and how soon wariness is felt. Spread zero counts every kind the species way.
+- **What it does:** expected harm in the battery becomes `0.5 × (1 − trust)`, so a trusted friend drains far less than a stranger. Wariness, `0.5 × (1 − trust)²`, is felt toward a stranger and toward someone who let this Thread down, and not toward a trusted friend: in live turns, the glance, choosing whom to approach, and toward each party a message could go to.
+- **Two layers:** felt trust is the Body's; the stance (what the person means) is still the Thread's own, authored in consolidation ([relationships concept](../concepts/relationships-doors-and-trust.md)).
+
+Deferred: subtle exposures from the Thread's own appraisal (a confidence kept, a disagreement handled with care), and felt trust in the consolidation that forms stances.
+
 ## Status of what this excludes
 
 | Capability | Status | Extension path |

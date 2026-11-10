@@ -10,7 +10,7 @@ import {
   projectInteroception,
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
-import { conversationDepletion, socialEnergyEvidence } from "./social-body.mjs";
+import { conversationDepletion, regardOf, socialEnergyEvidence } from "./social-body.mjs";
 
 let organismPolicy=DEFAULT_ORGANISM_POLICY;
 export function configureWorldOrganismPolicy(value){
@@ -209,11 +209,43 @@ export function socialContactEvidenceForLivedHistory({
   });
 }
 
+// What this Body inherited as evidence of safety (its trust locus), unless
+// inherited differences are switched off.
+function trustOrientation(thread){
+  if(organismPolicy.inheritedSpread===0)return null;
+  return (thread.genome?.urgeProjection??[]).find(item=>item.family==="trust")?.orientation??null;
+}
+
+// How this Thread's Body takes the people it perceives now, each citing the
+// World record of their presence: how far it trusts each one, and curiosity
+// toward anyone it hardly knows (less than half-known).
+const UNFAMILIAR_BELOW=0.5;
+const rounded=(value)=>Math.round(value*1e6)/1e6;
+function peoplePercept({thread,people=[],experienceStore,at,known=null}){
+  const regards=people.slice(0,4).filter(person=>person.threadId!==thread.threadId).map(person=>({person,
+    regard:known??regardOf({experienceStore,threadId:thread.threadId,otherThreadId:person.threadId,at,
+      trustOrientation:trustOrientation(thread)})}));
+  if(regards.length===0)return null;
+  const unfamiliarPeople=regards.filter(({regard})=>regard.familiarity<UNFAMILIAR_BELOW)
+    .map(({person,regard})=>({personRef:person.threadId,unfamiliarity:rounded(1-regard.familiarity),
+      evidenceRefs:[person.evidenceRef]}));
+  return {
+    evidenceRefs:[...new Set(regards.map(({person})=>person.evidenceRef))],
+    trust:regards.map(({person,regard})=>({personRef:person.threadId,trust:rounded(regard.trust),
+      evidenceRefs:[person.evidenceRef]})),
+    ...(unfamiliarPeople.length===0?{}:{
+      exploration:{unfamiliarPeople},
+      urgeAvailability:{exploration:{people:{state:"available",
+        evidenceRefs:[...new Set(unfamiliarPeople.flatMap(person=>person.evidenceRefs))]}}},
+    }),
+  };
+}
+
 // One evidence-driven Body projection for planning and social attention.
 // No extra model call, time tick, or family-specific consumer path.
 export function livedRegulationForLivedHistory({
   thread,livedNowStore,currentSituation,experienceStore=null,
-  asOf=currentSituation?.establishedAt,
+  asOf=currentSituation?.establishedAt,perceivedPeople=[],
 }) {
   if(currentSituation===null)return null;
   if(thread?.threadId!==currentSituation.threadId){
@@ -234,9 +266,12 @@ export function livedRegulationForLivedHistory({
     threadId:thread.threadId,currentSituation,livedNowStore,experienceStore,asOf,
   });
   const socialEnergy=experienceStore===null?null:socialEnergyEvidence({
-    threadId:thread.threadId,experienceStore,asOf,
+    threadId:thread.threadId,experienceStore,asOf,trustOrientation:trustOrientation(thread),
   });
-  if(!continuity.grounded&&contact===null&&socialEnergy===null)return null;
+  const people=experienceStore===null||perceivedPeople.length===0?null:peoplePercept({
+    thread,people:perceivedPeople,experienceStore,at:asOf,
+  });
+  if(!continuity.grounded&&contact===null&&socialEnergy===null&&people===null)return null;
   return evaluateIntrinsicRegulation({
     perceptFrame:{
       asOf,
@@ -244,8 +279,14 @@ export function livedRegulationForLivedHistory({
         ...(continuity.grounded?continuity.evidenceRefs:[]),
         ...(contact?.evidenceRefs??[]),
         ...(socialEnergy?.evidenceRefs??[]),
+        ...(people?.evidenceRefs??[]),
       ])],
-      ...(continuity.grounded?{exploration:{novelty:0}}:{}),
+      exploration:{
+        ...(continuity.grounded?{novelty:0}:{}),
+        ...(people?.exploration??{}),
+      },
+      ...(people?.urgeAvailability===undefined?{}:{urgeAvailability:people.urgeAvailability}),
+      ...(people===null?{}:{trust:people.trust}),
       ...(contact===null?{}:{contact}),
       ...(socialEnergy===null?{}:{socialEnergy}),
     },
@@ -256,12 +297,39 @@ export function livedRegulationForLivedHistory({
 }
 
 // The social Body during a live conversation: the battery where it stood
-// when the talk began, drained by each turn spoken or heard since.
-export function socialBodyInConversation({thread,start,familiarity,turns,asOf}){
+// when the talk began, drained by each turn spoken or heard since, less as
+// the other is known and trusted. How far it trusts them is felt too, and
+// someone hardly known is a pull for a Body inherited to seek new people.
+export function socialBodyInConversation({thread,start,regard,turns,asOf,other}){
   const evidenceRefs=[...(start?.evidenceRefs??[]),`self:conversation-turns:${turns}`];
+  const people=peoplePercept({thread,people:[other],at:asOf,known:regard});
   return evaluateIntrinsicRegulation({
     perceptFrame:{asOf,evidenceRefs,
-      socialEnergy:{depletion:conversationDepletion({start,turns,familiarity}),evidenceRefs}},
+      socialEnergy:{depletion:conversationDepletion({start,turns,...regard}),evidenceRefs},
+      ...people},
+    runtimeBaselines:thread.genome?.runtimeBaselines??{},
+    urgeProjection:thread.genome?.urgeProjection??null,
+    organismPolicy,
+  });
+}
+
+// Where a conversation's battery starts, and how known and trusted the other
+// is, for this Thread's Body.
+export function socialBodyBeforeTalk({thread,otherThreadId,experienceStore,asOf}){
+  return {
+    start:socialEnergyEvidence({threadId:thread.threadId,experienceStore,asOf,trustOrientation:trustOrientation(thread)}),
+    regard:regardOf({experienceStore,threadId:thread.threadId,otherThreadId,at:asOf,
+      trustOrientation:trustOrientation(thread)}),
+  };
+}
+
+// How this Thread's Body takes the people it perceives now: how far it
+// trusts each, and curiosity toward anyone it hardly knows.
+export function bodyTowardPeople({thread,people,experienceStore,asOf}){
+  const percept=peoplePercept({thread,people,experienceStore,at:asOf});
+  if(percept===null)return null;
+  return evaluateIntrinsicRegulation({
+    perceptFrame:{asOf,...percept},
     runtimeBaselines:thread.genome?.runtimeBaselines??{},
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
@@ -297,6 +365,7 @@ function frameForSituation({ thread, situation, livedNowStore, experienceStore }
         })??undefined,
         socialEnergy:socialEnergyEvidence({
           threadId:thread.threadId,experienceStore,asOf:situation.establishedAt,
+          trustOrientation:trustOrientation(thread),
         })??undefined,
       }),
     },

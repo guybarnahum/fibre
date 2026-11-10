@@ -1,7 +1,7 @@
 ---
 id: concept-relationships-doors-trust
 status: accepted
-last-reviewed: 2026-11-05
+last-reviewed: 2026-11-10
 canonical: true
 ---
 
@@ -52,13 +52,17 @@ The stage is an operator view only. It is never model-visible, never authoritati
 
 ## Ledger (World-owned)
 
-An append-only record of observable relational acts: offers and their acceptance or refusal; expectations kept or broken (an appointment kept or missed, a confidence kept or disclosed, a message answered or ignored, help given or refused); doors closed and by whom; repair offered and accepted. These are facts, not judgments. World never derives trust, fondness or any attitude from the ledger; it supplies bounded, specific ledger evidence to each Thread's own cognition.
+An append-only record of observable relational acts: offers and their acceptance or refusal; expectations kept or broken (an appointment kept or missed, a confidence kept or disclosed, a message answered or ignored, help given or refused); doors closed and by whom; repair offered and accepted. These are facts, not judgments. World never derives fondness, a stance or any attitude from the ledger; it supplies bounded, specific ledger evidence to each Thread's own cognition. The one thing the Body learns from these facts is how much harm to expect of a person (below).
 
 ## Stance (Thread-owned)
 
 Each Thread privately authors its stance toward the other — trust, warmth, attraction, wariness — as `relationship_attitude` semantic state in its own words, citing ledger and experience evidence. Stances are asymmetric, change only through the Thread's own cognition after experience, and never become a number that drives behavior. Attraction is admitted only between adults; see [attraction and orientation](attraction-and-orientation.md).
 
 **Trust is the hinge.** Every new door is a small risk; whether a Thread offers or accepts one is its own judgment, informed by its trust. A broken expectation is a ledger fact, but what it costs is personal: one Thread forgives quickly, another stays guarded.
+
+**Two layers of trust** ([ADR-0036](../decisions/ADR-0036-social-body.md), accepted November 9; built November 10):
+- **Felt trust is the Body's.** Like social hunger, it is a Body signal, not an attitude: reduced expected harm ("they could have hurt me, and did not"). World measures it mechanically from lived contact without harm and from the ledger's acts by the other person (accepted, kept, opened and repaired raise it; declined, broken and closed lower it), fading with age. The Thread's inherited `trust` locus decides what counts most (reliability, warmth, reciprocity or familiarity) and how strongly wariness is felt. It makes talk with that person cost the social battery less, and it is felt in words ("You are a little guarded with them"), never shown as a number, and never decides anything.
+- **Stance is the Thread's.** What the person means to it, trust included, is still authored in its own words in delayed consolidation, and may disagree with what its Body feels.
 
 ## Movement in both directions
 

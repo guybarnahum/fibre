@@ -4,8 +4,9 @@ export const RELATIONSHIP_DOORS=Object.freeze([
   "attention","name","conversation","contact","time","place",
   "confidence","care","romance","commitment",
 ]);
-// Observable relational acts: facts, never judgments. World never derives
-// trust or attitude from them; a Thread's stance toward another is its own.
+// Observable relational acts: facts, never judgments. A Thread's Body learns
+// from them how much harm to expect of a person (felt trust, ADR-0036), but
+// World never derives an attitude: a Thread's stance toward another is its own.
 export const RELATIONAL_ACTS=Object.freeze([
   "offered","accepted","declined","opened","closed","kept","broken","repaired",
 ]);

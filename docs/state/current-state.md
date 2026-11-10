@@ -36,7 +36,9 @@ The accepted [Constitution](../foundations/constitution.md), [Thirteen Principle
 | Physical inheritance, Human Appearance, reviewed calibration and affected-Thread migration | Observed | Tranche A closed October 5; global realism remains experimental ([Human Appearance](../architecture/human-appearance.md), [calibration plan](../validation/physical-appearance-calibration-plan.md)). |
 | Inherited urges v2 (13 families) tuning the shared Body ([ADR-0030](../decisions/ADR-0030-inherited-urges.md)) | Deployed | `social_contact`, `exploration`, `presence` and (from S2) `social_energy` are enabled by policy. |
 | The social Body: library v4 adds `social_energy` and `trust`; late expression gives every Thread the loci of families it never expressed, from its own genome ([ADR-0036](../decisions/ADR-0036-social-body.md)) | Deployed | All 88 non-retired staging Threads expressed their missing loci on November 9. |
-| The social battery and familiarity in conversation and messages; `PAUSE:` and lulls; guard at 24 (ADR-0036 S2) | Built | Talk and messages drain the battery, less with familiar people; each live turn and contact decision feels it in words. Trust (S3) is still a species baseline. |
+| The social battery and familiarity in conversation and messages; `PAUSE:` and lulls; guard at 24 (ADR-0036 S2) | Observed | November 10: messages fell from 55 a day to one; contact decisions cite the felt body; conversations end on their own, often with a pause. Trust (S3) is still a species baseline. |
+| Trust per person, felt by the Body (ADR-0036 S3) | Built | Lived contact and kept faith raise it, broken faith lowers it; trusted friends drain the battery far less; wariness is felt toward strangers and toward anyone who let the Thread down. The stance remains the Thread's own. |
+| Curiosity toward the unfamiliar (ADR-0036 S5a) | Built | A hardly-known person draws a Body inherited to seek new people, in the glance, in choosing whom to approach and in talk. The eight living Threads know each other well, so it matters most for newcomers and visitors. |
 
 ### A life that continues without compute or visitors
 

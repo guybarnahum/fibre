@@ -48,6 +48,8 @@ function candidateContext(candidates){
       relationKind:candidate.relationKind,
       factualRoleRefs:[...(candidate.factualRoleRefs??[])],
       relationshipFacts:[...(candidate.relationshipFacts??[])],
+      // How this Thread's Body takes them now, in words (ADR-0036).
+      ...(typeof candidate.felt==="string"?{felt:candidate.felt}:{}),
     };
   });
 }

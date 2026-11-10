@@ -47,7 +47,7 @@ other triggers. The species-standard orientation of triggered families is
 | Family | Kind | Closed orientations | Required evidence/silence rule |
 |---|---|---|---|
 | social_contact | directional | ambient_company, familiar_person, conversation, closeness | Bounded admitted interval of social scarcity; orientation availability is independent |
-| exploration | directional | places, ideas, people, making | Repeated enacted sameness; no invented novelty |
+| exploration | directional | places, ideas, people, making | Repeated enacted sameness; a perceived person this Thread hardly knows (less than half-known, ADR-0036); no invented novelty |
 | presence | directional | places, people, mediated_connection, activities | Admitted plan/current or predicted presence mismatch |
 | rest | directional | stillness, sleep, solitude | Observed fatigue or recovery deficit |
 | energy | directional | nourishment, replenishment, conservation | Modeled energy deficit, not token cost |
@@ -60,7 +60,7 @@ other triggers. The species-standard orientation of triggered families is
 | standing_flare | triggered | public_correction, refusal_by_close_person, exclusion | Directed admitted act; public requires audience, close requires actual relation |
 | mastery_itch | directional | technique, unfinished_work, repeated_practice, interrupted_learning | Supported interrupted/repeated activity with continuing investment |
 | social_energy | directional | company, quiet_company, solitude, doing | Talk and messages in the last half-day, weighted by how unknown the other is (ADR-0036; enabled) |
-| trust | directional | reliability, warmth, reciprocity, familiarity | Exposure to a person and its outcome (ADR-0036; not yet enabled) |
+| trust | directional | reliability, warmth, reciprocity, familiarity | Lived contact with a person and the ledger's acts by them (ADR-0036; enabled) |
 
 The 130 immutable authored variants, 10 per family, form the v2 historical
 catalogue and v3 current birth catalogue in `core/src/inherited-urges.mjs`.

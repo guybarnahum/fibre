@@ -3,6 +3,8 @@ import {admitGlance,appraiseGlance,displayHoldings,glanceItems,holdsBooks,readHo
 import {createEncounterVisualization} from "./lived-encounter-visualization.mjs";
 import {assertIsoTimestamp} from "./persistence-common.mjs";
 import {observablePerson} from "./world-observable-person.mjs";
+import {bodyTowardPeople} from "./lived-now-regulation.mjs";
+import {feltTowardPeople} from "./interoceptive-cognition.mjs";
 
 const FRESH_ATTENTION_MS=60*60_000;
 
@@ -149,11 +151,17 @@ export function createWorldArrivalPerception({
             &&experienceStore.getThreadGlance(arrival.threadId,arrival.situationId)===null){
             const knownAs=recognitionFor({thread:arrivingThread,worldReader,experienceStore,
               at:obligation.dueAt});
+            // How its Body takes each person present: how far it is at ease
+            // with them, and curiosity toward anyone hardly known.
+            const curious=feltTowardPeople(bodyTowardPeople({thread:arrivingThread,experienceStore,
+              asOf:obligation.dueAt,people:witnesses.map(situation=>({threadId:situation.threadId,
+                evidenceRef:situation.situationId}))}));
             const items=glanceItems({venueRef:obligation.venueRef,at:obligation.dueAt,holdings,
               people:witnesses.map(situation=>{
                 const known=knownAs(situation.threadId);
+                const felt=curious.get(situation.threadId)?.join(" ");
                 return {kind:"person",ref:situation.threadId,text:presence(situation),
-                  ...(known?{knownAs:known}:{})};
+                  ...(known?{knownAs:known}:{}),...(felt?{felt}:{})};
               })});
             const semanticStates=semanticStateStore.listCurrentState(arrival.threadId);
             const memories=memoryStore.listCurrentMemories(arrival.threadId,{inMind:"background",

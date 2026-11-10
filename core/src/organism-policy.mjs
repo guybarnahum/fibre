@@ -3,7 +3,7 @@ import {URGE_FAMILIES,URGE_FAMILY_BY_NAME,SPECIES_STANDARD_ORIENTATION} from "./
 
 export const DEFAULT_ORGANISM_POLICY=Object.freeze({
   version:"1",inheritedSpread:1,plasticity:0,plasticityHalfLifeDays:30,
-  enabledFamilies:Object.freeze(["social_contact","exploration","presence","social_energy"]),
+  enabledFamilies:Object.freeze(["social_contact","exploration","presence","social_energy","trust"]),
   characterFormation:Object.freeze({enabled:true,minSalientResponses:2}),
 });
 

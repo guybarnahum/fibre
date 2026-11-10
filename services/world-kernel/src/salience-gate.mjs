@@ -81,6 +81,12 @@ export function evaluateSalience({ opportunity, situatedPercept, regulationFrame
   if(exploration!==undefined&&novelNoticedPerson){
     anchors.push("novel_person_under_exploration_pressure");
   }
+  // Someone hardly known whom this Body, by its inherited orientation, is
+  // curious about: worth considering, never an obligation to approach.
+  const curious=regulationFrame?.drives.find(drive=>drive.family==="exploration"
+    &&drive.targetRef?.startsWith("person:")&&subjectRefs.has(drive.targetRef.slice("person:".length))
+    &&drive.felt!==false&&drive.pressure>0&&drive.inheritedDirection==="people");
+  if(curious!==undefined)anchors.push("curious_about_unfamiliar_person");
   // Ordinary weak pressure is background, not a reason to spend social cognition.
   // Material Body interest earns consideration, never an obligation to approach.
   const socialContact = regulationFrame?.drives.find((drive) =>
@@ -93,6 +99,7 @@ export function evaluateSalience({ opportunity, situatedPercept, regulationFrame
   const regulationRefs = [
     ...(exploration?.evidenceRefs ?? []),
     ...(socialContact?.evidenceRefs ?? []),
+    ...(curious?.evidenceRefs ?? []),
   ];
   // Preserve the actual mechanical inputs even when cognition was skipped.
   // Null means unavailable; an empty drive list means no relevant drive was present.

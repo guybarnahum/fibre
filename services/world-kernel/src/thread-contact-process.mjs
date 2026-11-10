@@ -7,8 +7,8 @@ import {
   decideLaterContact,
   expressLaterContact,
 } from "./lived-contact-cognition.mjs";
-import { feltSocialBody } from "./interoceptive-cognition.mjs";
-import { livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
+import { feltSocialBody, feltTowardPeople } from "./interoceptive-cognition.mjs";
+import { bodyTowardPeople, livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
 
 const CONTACTABLE_RELATION_KINDS=new Set([
   "biological_parent",
@@ -51,6 +51,7 @@ function routeCandidates({
         factualRoleRefs:[...(relation.factualRoleRefs??[])],
         relationshipFacts:[...(relation.relationshipFacts??[])],
         capabilityRef:null,
+        relationRef:relation.relationId,
       };
       byKey.set(candidateKey(candidate),candidate);
       continue;
@@ -196,13 +197,18 @@ export function createThreadContactProcess({
       const body=feltSocialBody(livedRegulationForLivedHistory({
         thread,livedNowStore,currentSituation,experienceStore,asOf:contactAt,
       }));
+      // How the Body takes each Thread it could write to: at ease or guarded.
+      const toward=feltTowardPeople(bodyTowardPeople({thread,experienceStore,asOf:contactAt,
+        people:candidates.filter(candidate=>candidate.recipientKind==="thread")
+          .map(candidate=>({threadId:candidate.partyId,evidenceRef:candidate.relationRef??candidate.partyId}))}));
       const decision=await decideLaterContact({
         thread,
         afterthoughts,
         currentSituation,
         semanticStates,
         memories,
-        candidates,
+        candidates:candidates.map(candidate=>toward.has(candidate.partyId)
+          ?{...candidate,felt:toward.get(candidate.partyId).join(" ")}:candidate),
         body,
         modelAdapter,
       });
