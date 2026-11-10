@@ -44,10 +44,16 @@ function visibleTestOutput(message) {
   }).join("");
 }
 
+// A progress row is overwritten in place, so it must never wrap: a wrapped
+// row leaves its first part behind when the next one clears the line. The
+// width is read for every row (the window may be resized during a run), and
+// an unknown width is taken as a narrow terminal.
+const FALLBACK_COLUMNS = 80;
+
 function fitProgress(line, columns) {
-  // Leave room for terminal wrapping and the width of Unicode symbols.
-  if (!Number.isInteger(columns) || columns < 8) return line;
-  const max = columns - 4;
+  // Leave room for the width of Unicode symbols.
+  const width = Number.isInteger(columns) && columns >= 8 ? columns : FALLBACK_COLUMNS;
+  const max = width - 4;
   const chars = Array.from(line);
   return chars.length <= max ? line : chars.slice(0, max - 1).join("") + "…";
 }
@@ -76,7 +82,7 @@ export async function* fibreSpecReporter(
   {
     isTTY = process.stdout.isTTY === true,
     color = isTTY && process.env.NO_COLOR === undefined,
-    columns = process.stdout.columns,
+    columns = () => process.stdout.columns,
   } = {},
 ) {
   let summary = null;
@@ -97,7 +103,7 @@ export async function* fibreSpecReporter(
       } else if (data.todo !== undefined && data.todo !== false) {
         yield `${isTTY ? CLEAR_PROGRESS : ""}${prefix}${paint("﹣", YELLOW, color)} ${terminalName(data)}${duration(data)} # TODO\n`;
       } else if (isTTY) {
-        yield `${CLEAR_PROGRESS}${paint(fitProgress(`${prefix}✔ ${terminalName(data)}${duration(data)}`, columns), GREEN, color)}`;
+        yield `${CLEAR_PROGRESS}${paint(fitProgress(`${prefix}✔ ${terminalName(data)}${duration(data)}`, typeof columns === "function" ? columns() : columns), GREEN, color)}`;
       }
       continue;
     }

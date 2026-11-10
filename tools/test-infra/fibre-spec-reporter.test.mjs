@@ -95,3 +95,15 @@ test("spec reporter keeps captured output quiet and terminal progress on one row
     + "tests 1, suites 0, pass 1, fail 0, cancelled 0, skipped 0, todo 0, duration_ms 7\n",
     "captured logs should include diagnostics and one summary without per-test success noise");
 });
+
+test("a progress row never outgrows the terminal, even when the window narrows during a run or its width is unknown", async () => {
+  const name = "a passing test whose description is longer than a narrowed terminal window can hold";
+  const pass = { type:"test:pass", data:{ name, details:{ type:"test" } } };
+  const widths = [120, 40];
+  const rows = (await collect([pass, pass], { color:false, isTTY:true, columns:() => widths.shift() }))
+    .split("\r\u001b[2K").filter(Boolean);
+  assert.equal(rows[0], `✔ ${name}`);
+  assert.ok(Array.from(rows[1]).length <= 36, "a row was wider than the narrowed window");
+  const unknown = await collect([pass], { color:false, isTTY:true, columns:undefined });
+  assert.ok(Array.from(unknown.replace("\r\u001b[2K", "")).length <= 76, "an unknown width let a row wrap");
+});
