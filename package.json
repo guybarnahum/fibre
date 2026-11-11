@@ -129,6 +129,7 @@
     "thread-journey:probe": "node tools/deployment/run-with-progress.mjs thread-journey:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/thread-journey-probe.mjs",
     "world-social:probe": "node tools/deployment/run-with-progress.mjs world-social:probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/world-social-probe.mjs",
     "world-social:quality": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-social-quality.mjs",
+    "world-observatory": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-observatory.mjs",
     "world-social:candidates": "node tools/deployment/run-with-progress.mjs world-social:candidates node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/world-social-candidates.mjs",
     "world-place": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/world/world-place.mjs",
     "appearance:review": "node tools/appearance/visual-identity-review.mjs"

@@ -418,7 +418,9 @@ async function main(argv) {
       await sleep(1500);
     }
 
-    if (!options.skipAdmin) {
+    // Unattended (no terminal to answer), the Admin steps are skipped rather
+    // than waited on, so the measurement is still written.
+    if (!options.skipAdmin && process.stdin.isTTY === true) {
       terminal = createInterface({ input:process.stdin, output:process.stdout });
       process.stdout.write("\nUse one Admin tab for these measurements; leave other Admin tabs closed or idle.\n");
       phase = "threads";
