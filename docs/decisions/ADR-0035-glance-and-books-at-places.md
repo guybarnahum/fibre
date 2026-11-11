@@ -38,11 +38,18 @@ canonical: true
 - Anything addressed to a Thread keeps its own attention.
 - An empty venue still manufactures no company. An arrival at an empty library earns a glance at the books alone, and no social chance.
 
+## Returning to a book (built November 10)
+
+- **The glance:** a book this Thread has been reading here and meant to go on with (`thread_readings`, status `reading`) is among the books within reach, where it left it, marked as its own (`yours`). It is the Thread's own history, not a preference: it takes one of the three book places, and its position is still where the eye falls. Taking it up goes on from where it stopped.
+- **Plans:** the Flight Plan sees up to three books in progress, each with the known place whose venue keeps it (`booksToContinue`). Whether to go back is the Thread's own choice (`interior.flight-plan` v3).
+- **A book in hand is observable:** a Thread that is reading a book, at that venue and within three hours of taking it up, is seen reading it, by title and author, in the arrival Story, in another's glance and by the person it talks with. Its own live turns see the book it has in hand (`social.live-turn` v9, `encounter.glance` v5). What it has read stays in its own experience and memory.
+
 ## Status of what this excludes
 
 | Capability | Status | Extension path |
 |---|---|---|
-| Returning to a book: a plan that continues it; a conversation that sees what the other is reading; a book in hand seen by others | deferred (next slice) | `thread_readings` is the Thread's own record of where it is and whether it means to go on; its consumer is the Flight Plan |
+| Returning to a book | built November 10 (above) | — |
+| What was read reaching conversation directly, beyond the Thread's own experience and memory of it | deferred | the reading Experience is already consolidated; a live turn could see its most recent reading of the book in hand |
 | Glances when a focus ends, and beyond arrival | deferred | the same list and record, earned by putting a book down |
 | Sections other than the display; bookshops; other things at places (exhibits, art, goods) | deferred | `venue_holdings.section`; other catalogues behind their own ports |
 | In-copyright works | deferred | metadata-only holdings, with no text supplied and none invented |
@@ -58,6 +65,7 @@ No permanent constraint.
   - a glance is read in World's order, nothing after the focus is noticed, and taking up a book is an admitted act on that holding that the Thread experiences;
   - different visits find different books from the same kept shelf.
 - A Thread reads the actual pages from where it stopped, and its place in the book is kept (same file).
+- A book a Thread has been reading is in its glance where it left it, a person reading is seen with the book in hand, and a plan can find where a book in progress is kept (same file); a plan can go back to it, by its own choice (`lived-planning-books.test.mjs`).
 - `integrations/books/gutendex.test.mjs`: only works the catalogue attests as public domain, with their text, become works.
 - `integrations/books/gutenberg-text.test.mjs`: a reader starts on the book's first page, and each reading continues exactly where the last stopped, to the end, without the licence.
 - On staging: the glances in each Observatory; topic diversity across conversations; people missed while absorbed against the earlier noticing rate; whether two Threads given the same list take up different things.

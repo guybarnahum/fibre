@@ -24,6 +24,7 @@ import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
 import { lifeRelationId } from "./situated-life-domain.mjs";
 import { selectDevelopedSelfEvidence } from "./interior-cognition.mjs";
 import { admitMeetingProposal } from "./appointments.mjs";
+import { bookInHand } from "./scene-glance.mjs";
 
 const MEMORY_LIMIT = 6;
 // How many of the people present one social consideration can hold at once.
@@ -572,6 +573,15 @@ export function createSocialMeetingService({
       });
     }
 
+    // The book a participant has in hand here, which anyone can see.
+    const inHand=(participant)=>{
+      const place=participant.situation.location?.kind==="place"
+        ?livedNowStore.getWorldPlace?.(participant.thread.threadId,participant.situation.location.placeRef,
+          {required:false}):null;
+      const book=bookInHand({experienceStore,threadId:participant.thread.threadId,
+        venueRef:place?.physicalVenue?.ref??null,at});
+      return book===null?null:`"${book.title}" by ${book.by}`;
+    };
     // Each participant speaks from its own developed self, oriented toward the
     // person in front of it, and perceives that person only as it can.
     const personAsPerceivedBy=(observer,other)=>{
@@ -587,6 +597,7 @@ export function createSocialMeetingService({
         name:person.name,
         appearance:person.observableDescription,
         noticedBefore:noticed.map(item=>({occurredAt:item.occurredAt,experiencedAs:item.experienceText})),
+        ...(inHand(other)===null?{}:{reading:inHand(other)}),
       });
     };
     // The social Body in this talk: where the battery stood when it began,
@@ -613,6 +624,7 @@ export function createSocialMeetingService({
           ?livedNowStore.getWorldPlace?.(self.thread.threadId,self.situation.location.placeRef,
             {required:false})?.displayName??null:null,
         counterparts:Object.freeze([personAsPerceivedBy(self,other)]),
+        bookInHand:inHand(self),
       }),
     });
     const participantContexts = [

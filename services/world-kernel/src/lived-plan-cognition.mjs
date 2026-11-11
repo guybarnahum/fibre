@@ -449,6 +449,7 @@ export async function formPersonalLivedPlan({
   startingSituationId = null,
   cityGuidePlaces = [],
   agreedAppointments = [],
+  booksToContinue = [],
   resolveDestinationGeography = null,
   planningRejection = null,
   unobservedSince = null,
@@ -535,6 +536,13 @@ export async function formPersonalLivedPlan({
             with:item.with,placeRef:item.placeRef,placeName:item.placeName,
             ...(timeZone===null?{startsAt:item.startsAt}:{localStart:localCivilMoment(item.startsAt,timeZone)}),
             proposedBy:item.proposedBy,
+          })),
+        }),
+        // Books it has been reading and meant to go on with, where they are kept.
+        ...(booksToContinue.length === 0 ? {} : {
+          booksToContinue:booksToContinue.slice(0,3).map(item=>({
+            title:item.title,by:item.by,placeRef:item.placeRef,placeName:item.placeName,
+            ...(timeZone===null?{lastReadAt:item.lastReadAt}:{lastRead:localCivilMoment(item.lastReadAt,timeZone)}),
           })),
         }),
         ...(workCommitments.length === 0 ? {} : {

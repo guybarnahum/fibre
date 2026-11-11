@@ -1,5 +1,6 @@
 import {admitEncounterAttention,recognitionFor} from "./lived-encounter-attention.mjs";
-import {admitGlance,appraiseGlance,displayHoldings,glanceItems,holdsBooks,readHolding} from "./scene-glance.mjs";
+import {admitGlance,appraiseGlance,bookInHand,booksInProgress,displayHoldings,glanceItems,holdsBooks,readHolding}
+  from "./scene-glance.mjs";
 import {createEncounterVisualization} from "./lived-encounter-visualization.mjs";
 import {assertIsoTimestamp} from "./persistence-common.mjs";
 import {observablePerson} from "./world-observable-person.mjs";
@@ -78,9 +79,15 @@ export function createWorldArrivalPerception({
             }).observableDescription;
             return words[0].toUpperCase()+words.slice(1);
           };
-          const presence=situation=>situation.outwardActivity
-            ?`${describe(situation)} is ${situation.outwardActivity}.`
-            :`${describe(situation)} is present at the venue.`;
+          // What anyone can see of a person here: a book in hand, or what they
+          // are doing.
+          const presence=situation=>{
+            const book=bookInHand({experienceStore,threadId:situation.threadId,
+              venueRef:obligation.venueRef,at:obligation.dueAt});
+            return book!==null?`${describe(situation)} is reading "${book.title}" by ${book.by}.`
+              :situation.outwardActivity?`${describe(situation)} is ${situation.outwardActivity}.`
+              :`${describe(situation)} is present at the venue.`;
+          };
           let encounter=null;
           if(witnesses.length>0){
             const story={storyVersion:"encounter-story-v0.1",
@@ -157,6 +164,7 @@ export function createWorldArrivalPerception({
               asOf:obligation.dueAt,people:witnesses.map(situation=>({threadId:situation.threadId,
                 evidenceRef:situation.situationId}))}));
             const items=glanceItems({venueRef:obligation.venueRef,at:obligation.dueAt,holdings,
+              ownBooks:booksInProgress({experienceStore,threadId:arrival.threadId}).map(item=>item.holding),
               people:witnesses.map(situation=>{
                 const known=knownAs(situation.threadId);
                 const felt=curious.get(situation.threadId)?.join(" ");

@@ -223,6 +223,9 @@ export function createThreadContactProcess({
           recipientPartyId:decision.recipientPartyId,
           reason:decision.reason,
           provenance:decision.provenance,
+          // What the Body said at this choice, in the words the Thread read:
+          // for operators reading why it wrote or did not. Never read back.
+          felt:{body:[...body],toward:Object.fromEntries([...toward].map(([party,lines])=>[party,[...lines]]))},
         },
       });
     }

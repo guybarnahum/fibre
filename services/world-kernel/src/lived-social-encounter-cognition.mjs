@@ -55,6 +55,8 @@ function socialLiveInput({
       outwardActivity:situation.outwardActivity??null,
       purpose:situation.reason??null,
       wakefulness:situation.wakefulness??null,
+      // The book it has in hand here, if any (ADR-0035).
+      ...(perspective.bookInHand?{bookInHand:perspective.bookInHand}:{}),
     },
     counterparties:structuredClone(perspective.counterparts),
     story:structuredClone(story),

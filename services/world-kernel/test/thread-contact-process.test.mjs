@@ -318,6 +318,11 @@ test("delayed residue can contact a Person, contact a Thread, or remain private"
     assert.equal(ensured.length,decisions.length+expressions.length,
       "fresh contact cognition escaped canonical LivedNow");
 
+    for(const item of result.results){
+      const recorded=contactStore.getStage(item.contactAttemptId,"decision").payload.felt;
+      assert.ok(decisions.some(input=>JSON.stringify(input.body??[])===JSON.stringify(recorded?.body)),
+        "the decision record did not keep what the Body said at the choice");
+    }
     const guyExpression=expressions.find((input)=>input.recipient.partyId==="person_guy");
     assert.equal(guyExpression.autobiographicalMemories.length,0,
       "Person routing fabricated autobiographical recognition during expression");

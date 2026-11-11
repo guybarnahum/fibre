@@ -48,13 +48,53 @@ function bookItem(holding){
     title:holding.work.title,by:author(holding.work),about:holding.work.subjects.slice(0,3)};
 }
 
+// Books this Thread has been reading and means to go on with, newest first,
+// each with the holding where it is kept: its own history, so it can come
+// back to one.
+export function booksInProgress({experienceStore,threadId,limit=3}){
+  return (experienceStore.listThreadReadings?.(threadId,{limit:8})??[])
+    .filter(reading=>reading.status==="reading")
+    .map(reading=>({reading,holding:experienceStore.getVenueHolding?.(reading.holdingRef)??null}))
+    .filter(item=>item.holding!==null).slice(0,limit);
+}
+
+// The books in progress a plan can go back to: each at a place this Thread
+// knows whose venue keeps it.
+export function booksToContinueAt({experienceStore,livedNowStore,threadId,placeRefs}){
+  return booksInProgress({experienceStore,threadId}).flatMap(({reading,holding})=>{
+    const placeRef=placeRefs.find(ref=>livedNowStore.getWorldPlace?.(threadId,ref,{required:false})
+      ?.physicalVenue?.ref===holding.venueRef);
+    if(placeRef===undefined)return [];
+    const place=livedNowStore.getWorldPlace(threadId,placeRef,{required:false});
+    return [Object.freeze({title:holding.work.title,by:author(holding.work),placeRef,
+      placeName:place?.physicalVenue?.displayName??place?.displayName??null,lastReadAt:reading.lastReadAt})];
+  });
+}
+
+// The book a Thread has in hand: one it is reading, at this venue, taken up
+// within the last few hours and not put back. Observable, like any activity.
+const IN_HAND_MS=3*3_600_000;
+export function bookInHand({experienceStore,threadId,venueRef,at}){
+  if(typeof venueRef!=="string")return null;
+  const held=booksInProgress({experienceStore,threadId}).find(({reading,holding})=>
+    holding.venueRef===venueRef&&Date.parse(at)-Date.parse(reading.lastReadAt)<=IN_HAND_MS
+    &&Date.parse(reading.lastReadAt)<=Date.parse(at));
+  return held===undefined?null:Object.freeze({title:held.holding.work.title,by:author(held.holding.work)});
+}
+
 // World's list for one entered scene: up to three books within reach from the
 // display (which ones, by the scene and the moment) and the people present,
-// interleaved where the eye falls.
-export function glanceItems({people=[],holdings=[],venueRef,at}){
+// interleaved where the eye falls. A book this Thread has been reading here
+// is among them, where it left it: its own history, not a preference.
+export function glanceItems({people=[],holdings=[],venueRef,at,ownBooks=[]}){
   const seed=[venueRef,at];
-  const books=[...holdings].sort((a,b)=>order(seed,a.holdingRef).localeCompare(order(seed,b.holdingRef)))
-    .slice(0,BOOKS_IN_REACH).map(bookItem);
+  const own=ownBooks.filter(holding=>holding.venueRef===venueRef).slice(0,1);
+  const sampled=[...holdings].filter(holding=>!own.some(item=>item.holdingRef===holding.holdingRef))
+    .sort((a,b)=>order(seed,a.holdingRef).localeCompare(order(seed,b.holdingRef)))
+    .slice(0,BOOKS_IN_REACH-own.length);
+  const books=[...own.map(holding=>({...bookItem(holding),
+    yours:"You have been reading this and meant to go on; it is where you left it."})),
+  ...sampled.map(bookItem)];
   return [...people.slice(0,MAX_ITEMS-books.length),...books]
     .sort((a,b)=>order(seed,a.ref).localeCompare(order(seed,b.ref)));
 }

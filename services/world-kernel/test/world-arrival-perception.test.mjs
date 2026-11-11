@@ -11,7 +11,7 @@ import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs"
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import {evaluateSalience} from "../src/salience-gate.mjs";
 import {embodimentSpecificationDigest} from "../src/embodiment-domain.mjs";
-import {displayHoldings,glanceItems,readHolding} from "../src/scene-glance.mjs";
+import {booksToContinueAt,displayHoldings,glanceItems,readHolding} from "../src/scene-glance.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -513,6 +513,47 @@ test("a Thread reads the actual pages from where it stopped, and its place in th
     assert.equal(seen[1].where,"where you left off","a returning reader was told it was starting over");
     assert.deepEqual([first.nextByte,second.nextByte,second.status],[900,1800,"reading"],
       "the reader's place in the book was not kept");
+  }finally{ctx.close();}
+});
+
+test("a book a Thread has been reading is in its glance where it left it, and someone reading is seen with the book in hand",async()=>{
+  const ctx=setup();
+  try{
+    const {ids,threads,store,work}=ctx;
+    const livedNowStore={...ctx.livedNowStore,getWorldPlace:()=>({affordances:["Reading"],
+      physicalVenue:{ref:"venue_verified_cafe",displayName:"An attested library"}})};
+    const shelf=await displayHoldings({venueRef:"venue_verified_cafe",catalogue:{async listWorks(){return WORKS;}},
+      experienceStore:store,at:AT});
+    const [own,inHand]=[shelf.at(-1),shelf[0]];
+    const reading=(threadId,holding,at)=>store.recordThreadReading({threadId,workRef:`gutenberg:${holding.work.sourceId}`,
+      holdingRef:holding.holdingRef,title:holding.work.title,nextByte:900,status:"reading",at});
+    reading(ids[0],own,"2026-10-17T10:00:00.000Z");
+    reading(ids[1],inHand,"2026-10-18T13:30:00.000Z");
+    store.enqueueArrivalPerception({...work,witnesses:work.witnesses.slice(0,1)});
+    const glances=[];
+    const process=createWorldArrivalPerception({
+      experienceStore:store,livedNowStore,catalogue:{async listWorks(){return WORKS;}},
+      worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
+      semanticStateStore:{listCurrentState:()=>[]},memoryStore:{listCurrentMemories:()=>[]},
+      modelAdapter:{async invoke({input}){
+        if(!input.glance)return {output:{outcome:"not_noticed",experienceText:null,passedReason:"Reading."},
+          provenance:{provider:"fixture",modelId:"attention"}};
+        glances.push(input.glance);
+        return {output:{focus:null,experienceText:null,passedReason:"Not now."},provenance:{provider:"fixture",modelId:"glance"}};
+      }},
+      now:()=>AT,
+    });
+    assert.equal((await process.runOnce()).failed,0,"the arrival glance did not settle");
+    const items=glances[0].items;
+    assert.ok(items.some(item=>item.kind==="book"&&item.title===own.work.title&&item.yours),
+      "the book it had been reading was not where it left it");
+    assert.ok(items.find(item=>item.kind==="person").text.includes(inHand.work.title),
+      "a person reading was not seen with the book in hand");
+    assert.ok(store.listEncounterStories(ids[1])[0].story.beats.some(beat=>beat.text.includes(inHand.work.title)),
+      "the book in hand is not part of what World saw");
+    assert.deepEqual(booksToContinueAt({experienceStore:store,livedNowStore,threadId:ids[0],
+      placeRefs:["wpl_verified_cafe"]}).map(item=>[item.title,item.placeRef]),[[own.work.title,"wpl_verified_cafe"]],
+      "a plan could not find where the book it was reading is kept");
   }finally{ctx.close();}
 });
 

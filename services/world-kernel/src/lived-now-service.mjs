@@ -20,6 +20,7 @@ import {
 } from "./lived-now.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {authoredGenesisPlaceLocality,genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
+import { booksToContinueAt } from "./scene-glance.mjs";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FORWARD_PLAN_MS = 12 * 60 * 60 * 1000;
@@ -461,10 +462,15 @@ async function formPlan({
   const agreedAppointments=materializedAt===null&&experienceStore
     ?appointmentsForPlanning({experienceStore,livedNowStore,situatedLifeStore,
       worldReader:worldStore,threadId,from:startAt,to:endAt}):[];
-  const placeRefs=[...new Set([
+  const knownRefs=[...new Set([
     ...ordinaryPlaceRefs,startingPlace,...guidePlaces.map(place=>place.ref),
     ...agreedAppointments.map(item=>item.placeRef),
   ])];
+  // Books it has been reading and means to go on with, at the known places
+  // where they are kept: whether to go back to one is its own choice.
+  const booksToContinue=materializedAt===null&&experienceStore
+    ?booksToContinueAt({experienceStore,livedNowStore,threadId,placeRefs:knownRefs}):[];
+  const placeRefs=knownRefs;
   if (placeRefs.length === 0) {
     throw new LivedNowCoverageError("Dormant catch-up has no grounded place available at the lived time");
   }
@@ -499,6 +505,7 @@ async function formPlan({
       availablePlaceRefs:placeRefs,
       cityGuidePlaces:guidePlaces,
       agreedAppointments,
+      booksToContinue,
       sourceReferences:[sourceEventRef],
       sourceStores:{
         worldStore,identityStore,semanticStateStore,memoryStore,
