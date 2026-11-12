@@ -62,6 +62,7 @@ export async function decideLaterContact({
   memories=[],
   candidates,
   body=[],
+  sameGround=null,
   modelAdapter,
 }={}){
   assertPlainObject("contact Thread",thread);
@@ -86,6 +87,9 @@ export async function decideLaterContact({
     // How this Body feels about company now, in words (ADR-0036).
     ...(body.length===0?{}:{body:[...body]}),
     delayedPrivateResidue:afterthoughts.map((item)=>structuredClone(item)),
+    // A fact for its own judgment: whether this residue goes over ground it
+    // has covered with people lately (S5b).
+    ...(sameGround?{sameGround}:{}),
   };
   const invocation=await modelAdapter.invoke({
     ...promptRequest("contact.decision",{threadId:thread.threadId}),

@@ -338,6 +338,21 @@ export function createLivedExperienceTables(database) {
     CREATE INDEX IF NOT EXISTS thread_perceived_regard_by_pair
       ON thread_perceived_regard(thread_id,person_thread_id,as_of);
 
+    -- How an exchange held a Thread, in its own reading (S5b): absorbed,
+    -- engaged, going through the motions, or weary. Its perception, read by
+    -- its Body as the stuff boredom is made of. Append-only.
+    CREATE TABLE IF NOT EXISTS thread_engagement_readings (
+      reading_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      reading TEXT NOT NULL CHECK (reading IN ('absorbed','engaged','going_through_motions','weary')),
+      source_kind TEXT NOT NULL CHECK (source_kind IN ('turn','reflection')),
+      source_ref TEXT NOT NULL,
+      at TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS thread_engagement_readings_by_thread
+      ON thread_engagement_readings(thread_id,at);
+
     -- Appointments two Threads agreed in conversation: where and when, who
     -- proposed, and the Story in which it was agreed. Its outcome is a
     -- separate, once-only World fact read from where both actually were.

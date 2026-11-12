@@ -212,6 +212,14 @@ function appointmentFromRow(row){
   });
 }
 
+// One act of regard as this Thread perceived it, with how many others saw it.
+function regardFromRow(row){
+  return Object.freeze({regardId:row.regard_id,personThreadId:row.person_thread_id,act:row.act,
+    actorThreadId:row.actor_thread_id,account:row.account,
+    evidenceRefs:Object.freeze(JSON.parse(row.evidence_refs_json)),sourceRef:row.source_ref,asOf:row.as_of,
+    witnesses:Math.max(0,Number(row.present)-2)});
+}
+
 export class LivedExperienceStore {
   #database;
 
@@ -1551,7 +1559,12 @@ export class LivedExperienceStore {
         (SELECT COUNT(*) FROM json_each(e.story_json,'$.beats') beat WHERE json_extract(beat.value,'$.kind')='utterance'
           AND json_extract(beat.value,'$.actorThreadId')=t.thread_id) AS mine,
         (SELECT COUNT(*) FROM json_each(e.story_json,'$.beats') beat WHERE json_extract(beat.value,'$.kind')='utterance'
-          AND json_extract(beat.value,'$.actorThreadId')=other.thread_id) AS theirs
+          AND json_extract(beat.value,'$.actorThreadId')=other.thread_id) AS theirs,
+        (SELECT COUNT(*) FROM json_each(e.story_json,'$.beats') beat WHERE json_extract(beat.value,'$.completion')='interrupted'
+          AND json_extract(beat.value,'$.actorThreadId')=t.thread_id) AS mineCut,
+        (SELECT COUNT(*) FROM json_each(e.story_json,'$.beats') beat WHERE json_extract(beat.value,'$.completion')='interrupted'
+          AND json_extract(beat.value,'$.actorThreadId')=other.thread_id) AS theirsCut,
+        (SELECT COUNT(*) FROM encounter_story_thread_presence present WHERE present.encounter_ref=t.encounter_ref) AS present
       FROM thread_encounter_story_timeline t
       JOIN encounter_story_thread_presence other
         ON other.encounter_ref=t.encounter_ref AND other.thread_id=?
@@ -1563,7 +1576,9 @@ export class LivedExperienceStore {
       ORDER BY t.occurred_at DESC LIMIT ?
     `).all(otherThreadId,threadId,before,limit)
       .map(row=>row.mine>0&&row.theirs>0
-        ?{at:row.at,kind:"conversation",turns:row.mine+row.theirs}:{at:row.at,kind:"noticed",turns:0});
+        ?{at:row.at,kind:"conversation",turns:row.mine+row.theirs,
+          interrupted:{me:row.mineCut,them:row.theirsCut},witnesses:Math.max(0,row.present-2)}
+        :{at:row.at,kind:"noticed",turns:0});
     const messages=!worldTableExists(this.#database,"thread_contact_messages")?[]:this.#database.prepare(`
       SELECT sent_at AS at FROM thread_contact_messages
       WHERE ((sender_thread_id=? AND recipient_party_id=?) OR (sender_thread_id=? AND recipient_party_id=?))
@@ -2631,20 +2646,93 @@ export class LivedExperienceStore {
     return Object.freeze({regardId,inserted});
   }
 
-  // The regard this Thread perceived with one person before a time, newest first.
+  // The regard this Thread perceived with one person before a time, newest
+  // first, each with how many others witnessed it (others present in the
+  // Story its experience belongs to).
   listPerceivedRegard(threadId,personThreadId,{before,limit=48}={}){
     assertId("regard threadId",threadId);
     assertId("regard person",personThreadId);
     assertIsoTimestamp("regard before",before);
     if(!Number.isSafeInteger(limit)||limit<1||limit>96)throw new TypeError("perceived regard must be bounded");
     return Object.freeze(this.#database.prepare(`
-      SELECT regard_id,act,actor_thread_id,account,evidence_refs_json,source_ref,as_of
-      FROM thread_perceived_regard WHERE thread_id=? AND person_thread_id=? AND as_of<?
-      ORDER BY as_of DESC,regard_id LIMIT ?
-    `).all(threadId,personThreadId,before,limit).map(row=>Object.freeze({
-      regardId:row.regard_id,act:row.act,actorThreadId:row.actor_thread_id,account:row.account,
-      evidenceRefs:Object.freeze(JSON.parse(row.evidence_refs_json)),sourceRef:row.source_ref,asOf:row.as_of,
-    })));
+      SELECT r.regard_id,r.person_thread_id,r.act,r.actor_thread_id,r.account,r.evidence_refs_json,r.source_ref,r.as_of,
+        (SELECT COUNT(*) FROM thread_encounter_experiences e
+          JOIN encounter_story_thread_presence p ON p.encounter_ref=e.encounter_ref
+          WHERE e.experience_id=json_extract(r.evidence_refs_json,'$[0]')) AS present
+      FROM thread_perceived_regard r WHERE r.thread_id=? AND r.person_thread_id=? AND r.as_of<?
+      ORDER BY r.as_of DESC,r.regard_id LIMIT ?
+    `).all(threadId,personThreadId,before,limit).map(regardFromRow));
+  }
+
+  // The regard this Thread perceived with anyone, newest first: its own
+  // record of how it has been treated and has treated others.
+  listRecentPerceivedRegard(threadId,{before,limit=96}={}){
+    assertId("regard threadId",threadId);
+    assertIsoTimestamp("regard before",before);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>96)throw new TypeError("perceived regard must be bounded");
+    return Object.freeze(this.#database.prepare(`
+      SELECT r.regard_id,r.person_thread_id,r.act,r.actor_thread_id,r.account,r.evidence_refs_json,r.source_ref,r.as_of,
+        (SELECT COUNT(*) FROM thread_encounter_experiences e
+          JOIN encounter_story_thread_presence p ON p.encounter_ref=e.encounter_ref
+          WHERE e.experience_id=json_extract(r.evidence_refs_json,'$[0]')) AS present
+      FROM thread_perceived_regard r WHERE r.thread_id=? AND r.as_of<?
+      ORDER BY r.as_of DESC,r.regard_id LIMIT ?
+    `).all(threadId,before,limit).map(regardFromRow));
+  }
+
+  // How an exchange held this Thread, in its own reading; once per source.
+  recordEngagementReading({threadId,reading,sourceKind,sourceRef,at}){
+    assertId("engagement threadId",threadId);
+    assertNonEmpty("engagement source",sourceRef);
+    assertIsoTimestamp("engagement at",at);
+    const readingId=`eng_${sha256(canonicalJson({threadId,sourceKind,sourceRef})).slice(0,32)}`;
+    this.#database.prepare(`
+      INSERT INTO thread_engagement_readings(reading_id,thread_id,reading,source_kind,source_ref,at)
+      VALUES (?,?,?,?,?,?) ON CONFLICT(reading_id) DO NOTHING
+    `).run(readingId,threadId,reading,sourceKind,sourceRef,at);
+    return Object.freeze({readingId});
+  }
+
+  // Its own readings in a window, newest first.
+  listEngagementReadings(threadId,{since,until,limit=48}={}){
+    assertId("engagement threadId",threadId);
+    assertIsoTimestamp("engagement since",since);
+    assertIsoTimestamp("engagement until",until);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>96)throw new TypeError("engagement readings must be bounded");
+    return Object.freeze(this.#database.prepare(`
+      SELECT reading,source_kind AS sourceKind,at FROM thread_engagement_readings
+      WHERE thread_id=? AND at>=? AND at<? ORDER BY at DESC LIMIT ?
+    `).all(threadId,since,until,limit).map(row=>Object.freeze({...row})));
+  }
+
+  // What this Thread's recent exchanges said, newest first: the words of the
+  // conversations it spoke in and of the messages it sent or received.
+  // Facts, for measuring how much a new exchange repeats them.
+  listRecentExchangeTexts(threadId,{since,until,limit=12}={}){
+    assertId("exchanges threadId",threadId);
+    assertIsoTimestamp("exchanges since",since);
+    assertIsoTimestamp("exchanges until",until);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>24)throw new TypeError("recent exchanges must be bounded");
+    const talk=this.#database.prepare(`
+      SELECT own.occurred_at AS at,own.encounter_ref AS ref,
+        (SELECT group_concat(json_extract(beat.value,'$.text'),' ') FROM json_each(e.story_json,'$.beats') beat
+          WHERE json_extract(beat.value,'$.kind')='utterance') AS text
+      FROM thread_encounter_story_timeline own
+      JOIN encounter_story_records e ON e.encounter_id=own.encounter_ref
+      WHERE own.thread_id=? AND own.occurred_at>=? AND own.occurred_at<?
+        AND EXISTS (SELECT 1 FROM json_each(e.story_json,'$.beats') beat
+          WHERE json_extract(beat.value,'$.kind')='utterance'
+            AND json_extract(beat.value,'$.actorThreadId')=?)
+      ORDER BY own.occurred_at DESC LIMIT ?
+    `).all(threadId,since,until,threadId,limit);
+    const messages=!worldTableExists(this.#database,"thread_contact_messages")?[]:this.#database.prepare(`
+      SELECT sent_at AS at,message_id AS ref,message_text AS text FROM thread_contact_messages
+      WHERE (sender_thread_id=? OR (recipient_kind='thread' AND recipient_party_id=?))
+        AND sent_at>=? AND sent_at<?
+      ORDER BY sent_at DESC LIMIT ?
+    `).all(threadId,threadId,since,until,limit);
+    return Object.freeze([...talk,...messages].filter(item=>typeof item.text==="string"&&item.text.trim()!=="")
+      .sort((a,b)=>b.at.localeCompare(a.at)).slice(0,limit).map(item=>Object.freeze({...item})));
   }
 
   // A Thread's newest moments, optionally only those with some people.

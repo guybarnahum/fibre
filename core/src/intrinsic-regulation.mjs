@@ -152,6 +152,9 @@ function normalizeExploration(value = {}) {
   }
   return {
     novelty: optionalUnit("perceptFrame.exploration.novelty", value.novelty),
+    // Weariness of what this Thread has been going over, from its own
+    // readings of how its recent exchanges held it.
+    weariness: optionalUnit("perceptFrame.exploration.weariness", value.weariness) ?? 0,
     // People present whom this Thread hardly knows, or knew and is now out
     // of date with, as World measured it.
     unfamiliarPeople: people.map((person, index) => {
@@ -194,7 +197,9 @@ function normalizeUrgeTriggers(value=[]){
     const pressure=unit("urge trigger pressure",item.pressure);
     const evidenceRefs=normalizeRefs("urge trigger evidenceRefs",item.evidenceRefs);
     if(evidenceRefs.length===0)throw new TypeError("urge trigger must cite admitted evidence");
-    return {family:item.family,kind:item.kind,pressure,evidenceRefs};
+    // A trigger may point at the person who caused it.
+    const personRef=item.personRef===undefined?null:nonEmpty("urge trigger personRef",item.personRef);
+    return {family:item.family,kind:item.kind,pressure,evidenceRefs,personRef};
   });
 }
 
@@ -300,6 +305,47 @@ function normalizeBonds(value) {
   });
 }
 
+// Where this Thread feels it stands (ADR-0037), as World measured it from the
+// regard it perceived: in general (self, from -1 to 1, and gap, how the
+// regard it has been shown lately compares with what it expects, null when
+// too little was shown), and toward each person (status, from -1 below it to
+// 1 above it, with the regard gap of a recent slight or recognition).
+function normalizeStanding(value) {
+  if (value === undefined) return { self: null, people: [] };
+  plainObject("perceptFrame.standing", value);
+  const signed = (name, x) => {
+    if (typeof x !== "number" || !Number.isFinite(x) || x < -2 || x > 2) throw new TypeError(`${name} must be a bounded number`);
+    return x;
+  };
+  const act = (name, x) => x === null || x === undefined ? null
+    : (plainObject(name, x), { act: nonEmpty(`${name}.act`, x.act), gap: signed(`${name}.gap`, x.gap) });
+  const self = value.self === undefined ? null : (() => {
+    plainObject("perceptFrame.standing.self", value.self);
+    return {
+      self: signed("perceptFrame.standing.self.self", value.self.self),
+      gap: value.self.gap === null ? null : signed("perceptFrame.standing.self.gap", value.self.gap),
+      acts: value.self.acts,
+      evidenceRefs: normalizeRefs("perceptFrame.standing.self.evidenceRefs", value.self.evidenceRefs),
+    };
+  })();
+  const people = value.people ?? [];
+  if (!Array.isArray(people) || people.length > 4) throw new TypeError("perceptFrame.standing.people must list at most four people");
+  return {
+    self,
+    people: people.map((person, index) => {
+      const name = `perceptFrame.standing.people[${index}]`;
+      plainObject(name, person);
+      return {
+        personRef: nonEmpty(`${name}.personRef`, person.personRef),
+        status: signed(`${name}.status`, person.status),
+        slight: act(`${name}.slight`, person.slight),
+        recognition: act(`${name}.recognition`, person.recognition),
+        evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, person.evidenceRefs),
+      };
+    }),
+  };
+}
+
 function normalizeSocialCue(value, index) {
   const name = `perceptFrame.social[${index}]`;
   plainObject(name, value);
@@ -329,6 +375,7 @@ export function normalizePerceptFrame(value) {
     socialEnergy: normalizeSocialEnergy(value.socialEnergy),
     trust: normalizeTrust(value.trust),
     bonds: normalizeBonds(value.bonds),
+    standing: normalizeStanding(value.standing),
     urgeAvailability:normalizeUrgeAvailability(value.urgeAvailability??{}),
     urgeTriggers:normalizeUrgeTriggers(value.urgeTriggers??[]),
     social: social.map(normalizeSocialCue),
@@ -501,6 +548,20 @@ function basalDrives(percept, profile) {
     }));
   }
 
+  // Having had enough of the same: a pull toward something new, in whatever
+  // direction this Body is inherited to seek it.
+  if (exploration.weariness > 0) {
+    const restless = 0.5 * exploration.weariness * profile.sensitivity.exploration;
+    drives.push(drive({
+      family:"exploration",
+      targetRef:"self:weariness",
+      orientation:"approach",
+      pressure:restless,
+      urgency:restless,
+      evidenceRefs,
+    }));
+  }
+
   // Someone new is interesting in their own right: their ways are not yet
   // known. So, less, is someone known whose life has moved on since. The
   // pull is a Body signal; whether it draws this Thread toward that person,
@@ -549,6 +610,42 @@ function basalDrives(percept, profile) {
       attained:person.present && person.longing > 0,
       evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
     }));
+  }
+
+  // A place among others (ADR-0037). Toward oneself: frustration when the
+  // regard shown lately falls short of what this Body expects, calm (the
+  // drive attained) when it matches or exceeds it. Toward a person: a pull to
+  // hold one's own with someone who stands above, or who just treated it as
+  // less than it expects; attained when they showed it more regard.
+  const CALM = 0.15;
+  if (percept.standing.self !== null) {
+    const { self, gap, acts } = percept.standing.self;
+    const known = gap !== null && acts >= 3;
+    const frustration = known && gap < -CALM ? Math.min(1, -2 * gap) : 0;
+    drives.push({...drive({
+      family:"standing",
+      targetRef:"self:standing",
+      orientation:"approach",
+      pressure:frustration * profile.sensitivity.social,
+      urgency:frustration,
+      progressError:gap ?? 0,
+      attained:known && gap >= -CALM,
+      evidenceRefs:[...new Set([...evidenceRefs,...percept.standing.self.evidenceRefs])],
+    }), standingSelf:self});
+  }
+  for (const person of percept.standing.people) {
+    const pull = (0.4 * Math.max(0, person.status) + Math.max(0, -(person.slight?.gap ?? 0))) * profile.sensitivity.social;
+    drives.push({...drive({
+      family:"standing",
+      targetRef:`person:${person.personRef}`,
+      orientation:"approach",
+      pressure:pull,
+      urgency:pull,
+      progressError:person.recognition?.gap ?? person.slight?.gap ?? 0,
+      attained:person.recognition !== null,
+      evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
+    }), status:person.status, ...(person.slight===null?{}:{slight:person.slight.act}),
+      ...(person.recognition===null?{}:{recognition:person.recognition.act})});
   }
 
   // Time-supported lack of observed reciprocal contact is a Body signal,
@@ -685,7 +782,7 @@ export function evaluateIntrinsicRegulation({
     ...normalizedTargets.map((target) => presenceDrive(target, percept, profile)),
   ];
   const triggered=policy===null?[]:percept.urgeTriggers.map(event=>drive({
-    family:event.family,targetRef:`self:urge:${event.family}:${event.kind}`,
+    family:event.family,targetRef:event.personRef===null?`self:urge:${event.family}:${event.kind}`:`person:${event.personRef}`,
     orientation:"maintain",pressure:event.pressure,urgency:event.pressure,
     evidenceRefs:event.evidenceRefs,
   })).map((item,index)=>({...item,triggerKind:percept.urgeTriggers[index].kind}));

@@ -19,6 +19,7 @@ function socialLiveInput({
   liveEncounter,
   opportunity,
   body=[],
+  sameGround=null,
 }){
   assertPlainObject("live social Thread",thread);
   assertId("live social Thread.threadId",thread.threadId);
@@ -69,6 +70,9 @@ function socialLiveInput({
       opportunity:structuredClone(opportunity),
       // How this Body feels the talk now, in words (ADR-0036).
       ...(body.length===0?{}:{body:[...body]}),
+      // A fact, for this Thread's own judgment: whether this talk goes over
+      // ground it has covered lately (S5b).
+      ...(sameGround?{sameGround}:{}),
     },
   });
 }
@@ -97,13 +101,29 @@ const MARKER_LENGTH=Math.max(...TURN_MARKERS.map(([marker])=>marker.length));
 // is not part of the turn.
 const MARKER_STYLE=/^[\s*_`#>]+/u;
 
+// A turn may first say, in one word, how the talk holds this Thread now
+// (S5b): absorbed, engaged, going through the motions, or weary. It is its
+// own private reading, never spoken. undefined while the opening could still
+// become one.
+const READINGS=Object.freeze(["absorbed","engaged","going_through_motions","weary"]);
+function splitReading(text){
+  const opening=text.replace(MARKER_STYLE,"");
+  const word=/^([A-Za-z_]+)[\s|:,;.-]+/u.exec(opening);
+  if(word!==null&&READINGS.includes(word[1].toLowerCase()))
+    return {reading:word[1].toLowerCase(),rest:opening.slice(word[0].length)};
+  if(/^[A-Za-z_]*$/u.test(opening)&&READINGS.some(item=>item.startsWith(opening.toLowerCase())))return undefined;
+  return {reading:null,rest:text};
+}
+
 // undefined while the opening could still become a marker; null when it cannot.
 function turnMarker(text){
-  const opening=text.replace(MARKER_STYLE,"");
+  const split=splitReading(text);
+  if(split===undefined)return undefined;
+  const opening=split.rest.replace(MARKER_STYLE,"");
   const head=opening.slice(0,MARKER_LENGTH).toUpperCase();
   for(const [marker,decision] of TURN_MARKERS){
     if(head.startsWith(marker)){
-      return {decision,rest:opening.slice(marker.length).replace(/^[*_`]+/u,"")};
+      return {decision,reading:split.reading,rest:opening.slice(marker.length).replace(/^[*_`]+/u,"")};
     }
   }
   return TURN_MARKERS.some(([marker])=>marker.startsWith(head))?undefined:null;
@@ -143,6 +163,8 @@ export async function takeLiveSocialTurn({
   opportunity,
   modelAdapter,
   feltBody=null,
+  onReading=null,
+  sameGround=null,
   signal=null,
 }={}){
   const input=socialLiveInput({
@@ -153,6 +175,7 @@ export async function takeLiveSocialTurn({
     liveEncounter,
     opportunity,
     body:feltBody===null?[]:feltBody(story),
+    sameGround:sameGround===null?null:sameGround(story),
   });
   const events=modelAdapter.streamExpression({
     ...promptRequest("social.live-turn",{threadId:thread.threadId}),
@@ -179,6 +202,7 @@ export async function takeLiveSocialTurn({
     await events.return?.();
     return SILENCE;
   }
+  if(turn?.reading)onReading?.(turn.reading);
   if(!turn||SPEECH.has(turn.decision)&&turn.rest.trim()===""){
     await remainder(events);
     return unclearTurn(text);

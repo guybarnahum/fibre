@@ -9,6 +9,7 @@ import {
 } from "./lived-contact-cognition.mjs";
 import { feltSocialBody, feltTowardPeople } from "./interoceptive-cognition.mjs";
 import { bodyTowardPeople, livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
+import { sameGroundNow } from "./engagement.mjs";
 
 const CONTACTABLE_RELATION_KINDS=new Set([
   "biological_parent",
@@ -203,6 +204,9 @@ export function createThreadContactProcess({
         people:candidates.filter(candidate=>candidate.recipientKind==="thread")
           .map(candidate=>({threadId:candidate.partyId,evidenceRef:candidate.relationRef??candidate.partyId,
             present:false}))}));
+      // Whether what it would write about goes over ground covered lately.
+      const ground=sameGroundNow({experienceStore,threadId:thread.threadId,at:contactAt,
+        text:afterthoughts.map(item=>item.text).join(" ")});
       const decision=await decideLaterContact({
         thread,
         afterthoughts,
@@ -212,6 +216,7 @@ export function createThreadContactProcess({
         candidates:candidates.map(candidate=>toward.has(candidate.partyId)
           ?{...candidate,felt:toward.get(candidate.partyId).join(" ")}:candidate),
         body,
+        sameGround:ground,
         modelAdapter,
       });
       decisionStage=contactStore.recordStage({
@@ -225,7 +230,8 @@ export function createThreadContactProcess({
           provenance:decision.provenance,
           // What the Body said at this choice, in the words the Thread read:
           // for operators reading why it wrote or did not. Never read back.
-          felt:{body:[...body],toward:Object.fromEntries([...toward].map(([party,lines])=>[party,[...lines]]))},
+          felt:{body:[...body],toward:Object.fromEntries([...toward].map(([party,lines])=>[party,[...lines]])),
+            sameGround:ground},
         },
       });
     }

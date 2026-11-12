@@ -150,6 +150,8 @@ export async function runThreadLiveSocialEncounter({
         opportunity,
         modelAdapter,
         feltBody:context.feltBody??null,
+        onReading:context.onReading??null,
+        sameGround:context.sameGround??null,
         signal:controller.signal,
       });
       if(turn.decision==="silent")return;

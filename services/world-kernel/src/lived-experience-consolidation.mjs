@@ -10,6 +10,7 @@ import {
 } from "./thread-interests.mjs";
 import {MOMENT_SCHEMA,admitMoments,momentsInReflection,normalizeMoments} from "./felt-expertise.mjs";
 import {REGARD_SCHEMA,admitRegard,normalizeRegard} from "./perceived-regard.mjs";
+import {ENGAGEMENT_READINGS,sameGroundNow} from "./engagement.mjs";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
@@ -109,6 +110,9 @@ function normalizeDecision(output){
       standing:item.standing??null})));
   const moments=normalizeMoments(output.moments);
   const regard=normalizeRegard(output.regard);
+  // How these experiences held this Thread, in its own reading (S5b);
+  // decisions recorded before readings existed have none.
+  const engagement=ENGAGEMENT_READINGS.includes(output.engagement)?output.engagement:null;
 
   assertPlainObject("experience consolidation memory",output.memory);
   const memory=output.memory;
@@ -124,6 +128,7 @@ function normalizeDecision(output){
       interests,
       moments,
       regard,
+      engagement,
       memory:Object.freeze({
         outcome:"not_remembered",
         rememberedContent:null,
@@ -155,6 +160,7 @@ function normalizeDecision(output){
     interests,
     moments,
     regard,
+    engagement,
     memory:Object.freeze({
       outcome:"retained",
       rememberedContent:memory.rememberedContent,
@@ -182,6 +188,7 @@ async function formDecision({
   people,
   interests,
   moments,
+  sameGround=null,
   modelAdapter,
 }){
   const storyById=new Map(encounterStories.map((story)=>[story.encounterId,story]));
@@ -209,6 +216,9 @@ async function formDecision({
     })),
     people:people.map(person=>({personRef:person.personRef,name:person.name,
       appearance:person.appearance})),
+    // A fact for this Thread's own reading: whether these experiences went
+    // over ground it has covered lately.
+    ...(sameGround===null?{}:{sameGround}),
     consolidation:{
       consolidationId:consolidation.consolidationId,
       startedAt:consolidation.startedAt,
@@ -221,7 +231,7 @@ async function formDecision({
     responseSchema:{
       type:"object",
       additionalProperties:false,
-      required:["journalEntry","memory","afterthoughts","stances","interests","moments","regard"],
+      required:["journalEntry","memory","afterthoughts","stances","interests","moments","regard","engagement"],
       properties:{
         journalEntry:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
         afterthoughts:{
@@ -240,6 +250,7 @@ async function formDecision({
         interests:INTEREST_CHANGE_SCHEMA,
         moments:MOMENT_SCHEMA,
         regard:REGARD_SCHEMA,
+        engagement:{anyOf:[{type:"string",enum:[...ENGAGEMENT_READINGS]},{type:"null"}]},
         stances:{
           type:"array",
           maxItems:STANCE_LIMIT,
@@ -542,6 +553,10 @@ export function createExperienceConsolidationProcess({
         people,
         interests:interestsHeld?experienceStore.listCurrentInterests(consolidation.threadId):[],
         moments:momentsHeld?momentsInReflection(experienceStore,consolidation.threadId):[],
+        sameGround:sameGroundNow({experienceStore,threadId:consolidation.threadId,at:consolidation.startedAt,
+          excludeRefs:experiences.map(experience=>experience.encounterRef),
+          text:encounterStories.flatMap(story=>(story?.story?.beats??[])
+            .filter(beat=>beat.kind==="utterance"||beat.kind==="occurrence").map(beat=>beat.text??"")).join(" ")}),
         modelAdapter,
       });
       decisionStage=experienceStore.recordThreadExperienceConsolidationStage({
@@ -610,6 +625,11 @@ export function createExperienceConsolidationProcess({
       interests:experienceStore.listCurrentInterests(consolidation.threadId),
       sourceRef:consolidation.consolidationId,asOf:consolidation.startedAt,
     }):{admitted:[],dropped:0};
+
+    // How these experiences held it, for its Body's weariness (S5b).
+    if(decision.engagement!==null&&decision.engagement!==undefined)experienceStore.recordEngagementReading?.({
+      threadId:consolidation.threadId,reading:decision.engagement,sourceKind:"reflection",
+      sourceRef:consolidation.consolidationId,at:consolidation.startedAt});
 
     // Regard as this Thread perceived it, for its Body's felt status (ADR-0037).
     const regard=typeof experienceStore.recordPerceivedRegard==="function"?admitRegard({

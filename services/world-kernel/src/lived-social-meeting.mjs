@@ -25,6 +25,7 @@ import { lifeRelationId } from "./situated-life-domain.mjs";
 import { selectDevelopedSelfEvidence } from "./interior-cognition.mjs";
 import { admitMeetingProposal } from "./appointments.mjs";
 import { bookInHand } from "./scene-glance.mjs";
+import { recentExchangeTexts, repetitionOf, sameGround } from "./engagement.mjs";
 
 const MEMORY_LIMIT = 6;
 // How many of the people present one social consideration can hold at once.
@@ -603,15 +604,35 @@ export function createSocialMeetingService({
     // The social Body in this talk: where the battery stood when it began,
     // how known the other is, and each turn spoken or heard since.
     const feltBodyFor=(self,other)=>{
-      const {start,regard}=socialBodyBeforeTalk({thread:self.thread,otherThreadId:other.thread.threadId,
-        experienceStore,asOf:at});
+      const {start,regard,self:standing,weariness}=socialBodyBeforeTalk({thread:self.thread,
+        otherThreadId:other.thread.threadId,experienceStore,asOf:at});
       const person={threadId:other.thread.threadId,evidenceRef:other.situation.situationId};
       return (story)=>feltSocialBody(socialBodyInConversation({thread:self.thread,start,regard,asOf:at,
-        other:person,turns:story.beats.filter(beat=>beat.kind==="utterance").length}));
+        other:person,turns:story.beats.filter(beat=>beat.kind==="utterance").length,self:standing,weariness,
+        // Cut off by the other in this very talk.
+        talkedOverNow:story.beats.filter(beat=>beat.actorThreadId===self.thread.threadId
+          &&beat.completion==="interrupted").length}));
+    };
+    // How the talk holds each participant, in its own reading, turn by turn;
+    // and whether it goes over ground it has covered lately (S5b).
+    const readingsFor=(self)=>{
+      let turn=0;
+      return (reading)=>experienceStore.recordEngagementReading?.({threadId:self.thread.threadId,reading,
+        sourceKind:"turn",sourceRef:`live:${self.thread.threadId}:${at}:${turn++}`,at});
+    };
+    const sameGroundFor=(self)=>{
+      let earlier=null;
+      return (story)=>{
+        earlier??=recentExchangeTexts({experienceStore,threadId:self.thread.threadId,at});
+        return sameGround(repetitionOf({earlier,
+          current:story.beats.filter(beat=>beat.kind==="utterance").map(beat=>beat.text).join(" ")}));
+      };
     };
     const speakerFacing=(self,other)=>Object.freeze({
       ...self,
       feltBody:feltBodyFor(self,other),
+      onReading:readingsFor(self),
+      sameGround:sameGroundFor(self),
       perspective:Object.freeze({
         developedSelfEvidence:selectDevelopedSelfEvidence({
           threadId:self.thread.threadId,at,focusPartyId:other.thread.threadId,

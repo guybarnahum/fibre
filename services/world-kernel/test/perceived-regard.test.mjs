@@ -15,7 +15,7 @@ const seed=JSON.parse(readFileSync(new URL("../../../fixtures/threads/mina.threa
 const T0=Date.parse("2026-11-10T09:00:00.000Z");
 const at=minutes=>new Date(T0+minutes*60_000).toISOString();
 const ANA="thr_regard_ana",TOMAS="thr_regard_tomas",SELA="thr_regard_sela";
-const decision=(regard)=>({journalEntry:null,afterthoughts:[],stances:[],interests:[],moments:[],regard,
+const decision=(regard,engagement=null)=>({journalEntry:null,afterthoughts:[],stances:[],interests:[],moments:[],regard,engagement,
   memory:{outcome:"not_remembered",rememberedContent:null,rememberedMeaning:null,
     gist:null,confidence:null,salience:null,uncertainty:[]}});
 
@@ -34,7 +34,7 @@ test("each Thread records regard as it perceived it, and two Threads take the sa
       [ANA]:decision([
         {personRef:TOMAS,act:"talked_over",by:"them",account:"Tomas talked over me before I could finish about the beds."},
         {personRef:SELA,act:"credited",by:"them",account:"Sela said the idea was mine."},
-      ]),
+      ],"weary"),
       [TOMAS]:decision([
         {personRef:ANA,act:"held_ground",by:"me",account:"I kept to the north beds when Ana pushed for the south."},
       ]),
@@ -78,6 +78,10 @@ test("each Thread records regard as it perceived it, and two Threads take the sa
     assert.equal(experience.listPerceivedRegard(ANA,SELA,{before:at(60)}).length,0,
       "regard with someone who was not there was admitted");
     assert.equal(results.find(result=>result.threadId===ANA).regardDropped,1,"the dropped regard was not counted");
+    assert.deepEqual(experience.listEngagementReadings(ANA,{since:at(-60),until:at(60)}).map(item=>item.reading),["weary"],
+      "how the talk held Ana, in her own reading, was not kept");
+    assert.equal(experience.listEngagementReadings(TOMAS,{since:at(-60),until:at(60)}).length,0,
+      "a reading was recorded for a Thread that gave none");
   }finally{
     semantic.close();memory.close();experience.close();world.close();
     rmSync(directory,{recursive:true,force:true});

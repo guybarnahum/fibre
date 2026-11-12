@@ -10,7 +10,9 @@ import {
   projectInteroception,
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
-import { bondOf, conversationDepletion, longingOf, regardOf, socialEnergyEvidence } from "./social-body.mjs";
+import { wearinessOf } from "./engagement.mjs";
+import { bondOf, conversationDepletion, expectedRegard, longingOf, regardOf, regardShown, selfStanding,
+  socialEnergyEvidence } from "./social-body.mjs";
 
 let organismPolicy=DEFAULT_ORGANISM_POLICY;
 export function configureWorldOrganismPolicy(value){
@@ -217,14 +219,62 @@ function locusOf(thread,family){
   if(organismPolicy.inheritedSpread===0)return null;
   const gene=(thread.genome?.urgeProjection??[]).find(item=>item.family===family)??null;
   return gene===null?null:{orientation:gene.orientation,
-    persistence:(gene.positions?.persistence??0)*organismPolicy.inheritedSpread};
+    persistence:(gene.positions?.persistence??0)*organismPolicy.inheritedSpread,
+    selfRegard:(gene.positions?.selfRegard??0)*organismPolicy.inheritedSpread};
 }
 const trustLocus=(thread)=>locusOf(thread,"trust");
+const standingLocus=(thread)=>locusOf(thread,"standing");
+// How weary this Body is of what it has been going over (S5b).
+const wearyOf=({thread,experienceStore,at})=>wearinessOf({experienceStore,threadId:thread.threadId,at,
+  persistence:locusOf(thread,"exploration")?.persistence??0});
+const selfOf=({thread,experienceStore,at})=>selfStanding({experienceStore,threadId:thread.threadId,at,
+  standingLocus:standingLocus(thread)});
+
+// Status felt toward each person (ADR-0037): where they stand, and the
+// regard their latest acts showed against what this Body expected of them.
+// A slight is less than expected, recognition more. Being corrected before
+// others, left out, or refused by someone close stings at once.
+const REGARD_GAP=0.25;
+const STING=Object.freeze({corrected_publicly:"public_correction",left_out:"exclusion"});
+function standingPercept({regards,bonds,self}){
+  const bondFor=(personRef)=>bonds.find(item=>item.personRef===personRef)?.bond??0;
+  const people=[],triggers=[];
+  for(const {person,regard} of regards){
+    const bond=bondFor(person.threadId);
+    const expected=expectedRegard({status:regard.status??0,bond,self:self?.self??0});
+    const acts=(regard.lately??[]).map(item=>({act:item.act,witnesses:item.witnesses??0,
+      gap:rounded(regardShown(item.act)-expected)}));
+    const slight=acts.filter(item=>item.gap< -REGARD_GAP).sort((a,b)=>a.gap-b.gap)[0]??null;
+    const recognition=acts.filter(item=>item.gap>REGARD_GAP).sort((a,b)=>b.gap-a.gap)[0]??null;
+    const evidenceRefs=[person.evidenceRef];
+    if(slight!==null&&STING[slight.act])triggers.push({family:"standing_flare",kind:STING[slight.act],
+      personRef:person.threadId,pressure:Math.min(1,-slight.gap),evidenceRefs});
+    if(regard.refusedLately&&bond>0.3)triggers.push({family:"standing_flare",kind:"refusal_by_close_person",
+      personRef:person.threadId,pressure:bond,evidenceRefs});
+    if((regard.status??0)!==0||slight!==null||recognition!==null)
+      people.push({personRef:person.threadId,status:regard.status??0,slight,recognition,evidenceRefs});
+  }
+  return {people,triggers};
+}
 
 // The regard, and the doors open between them, that the Body's bond reads.
 function regardWithDoors({thread,otherThreadId,experienceStore,at}){
-  return {...regardOf({experienceStore,threadId:thread.threadId,otherThreadId,at,trustLocus:trustLocus(thread)}),
+  return {...regardOf({experienceStore,threadId:thread.threadId,otherThreadId,at,trustLocus:trustLocus(thread),
+    standingLocus:standingLocus(thread)}),
     doors:experienceStore.listOpenDoors?.(thread.threadId,otherThreadId,{before:at})??[]};
+}
+
+// The standing part of a percept frame: self-status, status toward each
+// person, and the stings a slight fires.
+function standingFrame({self=null,people=null}){
+  const frame={};
+  if(self!==null&&(self.gap!==null||self.self!==0)||(people?.standingPeople??[]).length>0){
+    frame.standing={...(self===null?{}:{self:{self:self.self,gap:self.gap,acts:self.acts,
+      evidenceRefs:self.evidenceRefs.length>0?[...self.evidenceRefs]:["self:standing"]}}),
+      people:people?.standingPeople??[]};
+  }
+  if((people?.urgeTriggers??[]).length>0)frame.urgeTriggers=people.urgeTriggers;
+  return frame;
 }
 
 // How this Thread's Body takes the people it perceives now, each citing the
@@ -236,7 +286,7 @@ function regardWithDoors({thread,otherThreadId,experienceStore,at}){
 const UNKNOWN_NOW_ABOVE=0.5;
 const unknownNow=(regard)=>(1-regard.knowing)+0.5*regard.staleness;
 const rounded=(value)=>Math.round(value*1e6)/1e6;
-function peoplePercept({thread,people=[],experienceStore,at,known=null}){
+function peoplePercept({thread,people=[],experienceStore,at,known=null,self=null}){
   const regards=people.slice(0,4).filter(person=>person.threadId!==thread.threadId).map(person=>({person,
     regard:known??regardWithDoors({thread,otherThreadId:person.threadId,experienceStore,at})}));
   if(regards.length===0)return null;
@@ -247,6 +297,7 @@ function peoplePercept({thread,people=[],experienceStore,at,known=null}){
       longing:longingOf({bond,regard,orientation:attachment?.orientation??null,persistence:attachment?.persistence??0}),
       evidenceRefs:[person.evidenceRef]};
   }).filter(item=>item.bond>0);
+  const standing=standingPercept({regards,bonds,self});
   const unfamiliarPeople=regards.filter(({regard})=>unknownNow(regard)>UNKNOWN_NOW_ABOVE)
     .map(({person,regard})=>({personRef:person.threadId,unfamiliarity:rounded(1-regard.knowing),
       staleness:regard.staleness,evidenceRefs:[person.evidenceRef]}));
@@ -255,6 +306,8 @@ function peoplePercept({thread,people=[],experienceStore,at,known=null}){
     trust:regards.map(({person,regard})=>({personRef:person.threadId,trust:regard.trust,
       hurt:regard.hurt,revived:regard.revived,evidenceRefs:[person.evidenceRef]})),
     ...(bonds.length===0?{}:{bonds}),
+    ...(standing.people.length===0?{}:{standingPeople:standing.people}),
+    ...(standing.triggers.length===0?{}:{urgeTriggers:standing.triggers}),
     ...(unfamiliarPeople.length===0?{}:{
       exploration:{unfamiliarPeople},
       urgeAvailability:{exploration:{people:{state:"available",
@@ -290,10 +343,15 @@ export function livedRegulationForLivedHistory({
   const socialEnergy=experienceStore===null?null:socialEnergyEvidence({
     threadId:thread.threadId,experienceStore,asOf,trustLocus:trustLocus(thread),
   });
+  // Where it feels it stands among the people it knows (ADR-0037), and how
+  // weary it is of what it has been going over (S5b).
+  const self=experienceStore===null?null:selfOf({thread,experienceStore,at:asOf});
+  const weariness=experienceStore===null?0:wearyOf({thread,experienceStore,at:asOf});
   const people=experienceStore===null||perceivedPeople.length===0?null:peoplePercept({
-    thread,people:perceivedPeople,experienceStore,at:asOf,
+    thread,people:perceivedPeople,experienceStore,at:asOf,self,
   });
-  if(!continuity.grounded&&contact===null&&socialEnergy===null&&people===null)return null;
+  if(!continuity.grounded&&contact===null&&socialEnergy===null&&people===null&&self?.gap==null
+    &&weariness===0)return null;
   return evaluateIntrinsicRegulation({
     perceptFrame:{
       asOf,
@@ -306,10 +364,12 @@ export function livedRegulationForLivedHistory({
       exploration:{
         ...(continuity.grounded?{novelty:0}:{}),
         ...(people?.exploration??{}),
+        ...(weariness>0?{weariness}:{}),
       },
       ...(people?.urgeAvailability===undefined?{}:{urgeAvailability:people.urgeAvailability}),
       ...(people===null?{}:{trust:people.trust}),
       ...(people?.bonds===undefined?{}:{bonds:people.bonds}),
+      ...standingFrame({self,people}),
       ...(contact===null?{}:{contact}),
       ...(socialEnergy===null?{}:{socialEnergy}),
     },
@@ -323,13 +383,17 @@ export function livedRegulationForLivedHistory({
 // when the talk began, drained by each turn spoken or heard since, less as
 // the other is known and trusted. How far it trusts them is felt too, and
 // someone hardly known is a pull for a Body inherited to seek new people.
-export function socialBodyInConversation({thread,start,regard,turns,asOf,other}){
+export function socialBodyInConversation({thread,start,regard,turns,asOf,other,self=null,talkedOverNow=0,weariness=0}){
   const evidenceRefs=[...(start?.evidenceRefs??[]),`self:conversation-turns:${turns}`];
-  const people=peoplePercept({thread,people:[other],at:asOf,known:regard});
+  // Being cut off in this very talk is felt at once.
+  const now=talkedOverNow===0?regard:{...regard,lately:[
+    ...Array.from({length:talkedOverNow},()=>({act:"talked_over",by:"them",at:asOf,witnesses:0})),...(regard.lately??[])]};
+  const {standingPeople,urgeTriggers,...people}=peoplePercept({thread,people:[other],at:asOf,known:now,self})??{};
   return evaluateIntrinsicRegulation({
     perceptFrame:{asOf,evidenceRefs,
-      socialEnergy:{depletion:conversationDepletion({start,turns,...regard}),evidenceRefs},
-      ...people},
+      socialEnergy:{depletion:conversationDepletion({start,turns,...regard,weariness}),evidenceRefs},
+      ...people,...standingFrame({self,people:{standingPeople,urgeTriggers}}),
+      ...(weariness>0?{exploration:{...(people.exploration??{}),weariness}}:{})},
     runtimeBaselines:thread.genome?.runtimeBaselines??{},
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
@@ -342,16 +406,20 @@ export function socialBodyBeforeTalk({thread,otherThreadId,experienceStore,asOf}
   return {
     start:socialEnergyEvidence({threadId:thread.threadId,experienceStore,asOf,trustLocus:trustLocus(thread)}),
     regard:regardWithDoors({thread,otherThreadId,experienceStore,at:asOf}),
+    self:selfOf({thread,experienceStore,at:asOf}),
+    weariness:wearyOf({thread,experienceStore,at:asOf}),
   };
 }
 
 // How this Thread's Body takes the people it perceives now: how far it
 // trusts each, and curiosity toward anyone it hardly knows.
 export function bodyTowardPeople({thread,people,experienceStore,asOf}){
-  const percept=peoplePercept({thread,people,experienceStore,at:asOf});
+  const self=selfOf({thread,experienceStore,at:asOf});
+  const percept=peoplePercept({thread,people,experienceStore,at:asOf,self});
   if(percept===null)return null;
+  const {standingPeople,urgeTriggers,...rest}=percept;
   return evaluateIntrinsicRegulation({
-    perceptFrame:{asOf,...percept},
+    perceptFrame:{asOf,...rest,...standingFrame({self:null,people:{standingPeople,urgeTriggers}})},
     runtimeBaselines:thread.genome?.runtimeBaselines??{},
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,

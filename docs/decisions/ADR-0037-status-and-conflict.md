@@ -68,13 +68,38 @@ It ships first with nothing reading it, and one staging morning of records is re
 1. C0: this record and the draft loci (docs).
 2. C1: library v5 and late expression (inert). **Built November 10:** births draw all 18 families; `world-genome:express` gives every Thread the three new loci from its own genome; none of the three is enabled yet.
 3. C2: perceived regard (records only, shipped alongside ADR-0036's bond and reunion). **Deployed November 10.**
-4. C3: felt status, self-status, slights and recognition (`standing` and `standing_flare` enabled).
+4. C3: felt status, self-status, slights and recognition (`standing` and `standing_flare` enabled). **Built November 11** (below).
 5. C4: `provocation`.
 6. C5: `remorse`.
 7. C6: views of status in words.
 8. C7: dignity from status, after its own ADR.
 
 The project's slice plan holds the mechanisms and tests of each slice.
+
+## C3 as built (November 11): felt status, slights, recognition
+
+`standing` and `standing_flare` are enabled. World computes everything from its records (`social-body.mjs`); nothing new is stored, and no number reaches cognition. Guy's decisions of November 11 shaped it.
+
+- **Only regard moves status:** the acts a Thread perceived (C2) and interruptions in its conversations. Writing first, seeking someone out, and accepting or declining move the bond and trust, not status.
+- **Lifts** (actor over target): talked over, corrected before others, left out +1; corrected, overlooked, held ground +0.5; gave way −1; credited, asked advice −0.5. An act counts double for the `standing` orientation it bears on.
+- **Status toward a person** is `tanh(Σ lift / 3)` over the acts between them, newest first. It does not fade with absence: each act's weight halves for every 20 acts after it between the same pair, so an old order returns at a reunion and changes only as it is lived differently. An impression forms per episode, not per sentence: the same act by the same person within a day counts once, so a run of messages, each reflected on, weighs no more than one conversation (added November 12, after a morning's message loop recorded five askings of advice from one friend).
+- **Self-status** is status across everyone, each person weighed by how much regard passed between them, leaned by `0.4 × selfRegard`, and lowered by slights before witnesses (0.05 for each witness, up to four, capped at 0.4 in all).
+- **Calm and frustration:** over the last two weeks, the regard shown to a Thread is set against the person's place and against how far its own sense of itself departs from how it is treated.
+  - **A match is calm** ("You feel at ease with your place among these people").
+  - **Rating itself above its treatment is frustration** ("People do not give you the regard you feel is yours").
+  - **Rating itself below its treatment is gratification** ("People value you more than you expected").
+- **Slights and recognition:** an act toward the Thread in the last day shows regard. Against what this Body expects of that person (`0.5 × −status + 0.3 × bond + 0.2 × self`):
+  - **A slight** is a shortfall beyond 0.25. Being corrected before others or left out fires `standing_flare` at that person; refusal by someone close (bond above 0.3) does too. Other slights feed a pull to hold one's own with them.
+  - **Recognition** is regard beyond expectation, felt as warmth. It is greater from someone looked up to.
+  - In a conversation, being cut off is felt at once.
+- **Slights and trust** (Guy: "private slights build trust… but also resentment; a public slight… trust is broken"):
+  - **a private slight** leaves a trivial wound and counts as being spared (built safety 0.5);
+  - **a public one** leaves a moderate wound and costs standing before the witnesses.
+- **Felt in words** in the glance, choosing whom to approach, the contact decision and live turns. Prompts: `contact.decision` v4, `interior.social-initiation` v4, `social.live-turn` v10, `encounter.glance` v6.
+
+Deferred:
+- the Thread's own view of standing in words (C6), and views of third parties;
+- provocation (C4) and remorse (C5).
 
 ## Status of what this excludes
 

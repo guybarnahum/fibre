@@ -126,6 +126,29 @@ Deferred: excused harm, apology and spoken forgiveness, and the Thread's own gri
 
 Deferred: longing toward an absent person in planning (seeking out where they are), and a silence felt as shared presence between bonded people.
 
+## S5b as built (November 11): weariness of the same
+
+Guy, November 11: boredom is "a subjective feeling of the Thread that can bend due to its interests… Someone who is obsessive about trains tolerates train conversation while a typical person would tire of it faster." The design is in the project (`claude/s5b-sameness-design.md`). It follows the split of perceived regard and status (ADR-0037): World states a fact, the Thread reads how something holds it, and the Body accumulates its readings.
+
+- **The fact (World, `engagement.mjs`).** How much an exchange repeats this Thread's recent ones over two days (its conversations and messages): the mean of the three closest by shared content words. Above 0.2 it reaches cognition in words, in live turns (`sameGround`), reflection and contact decisions: "You have been over this same ground several times lately." Nothing is felt from the fact itself.
+  - Word overlap is an English heuristic and misses repetition in other words. A semantic measure through a provider-neutral port is the extension path.
+- **The reading (the Thread):**
+  - each live turn may open with one private word for how the talk holds it now (`absorbed`, `engaged`, `going_through_motions`, `weary`), never spoken;
+  - reflection gives the same reading of the experiences it reflects on (`engagement`).
+
+  Both have the Thread's own interests in view, so what fascinates it can stay absorbing however often it comes up. Readings are kept in `thread_engagement_readings` as its perception.
+- **The Body.** Weariness accumulates from its own readings of the last two days:
+  - weary 1, going through the motions 0.5, engaged 0, absorbed −1, which relieves it;
+  - each fading with a 12-hour half-life scaled by `2^(2 × persistence)` of the `exploration` locus;
+  - `weariness = 1 − 2^(−load/2)`.
+
+  It is an `exploration` pull toward something new, in the locus's direction (a new idea, a new person, a change of scene, making something), felt in words: "You have had enough of this for now; something new to think about would be welcome." Each turn of talk also costs the battery `0.5 × weariness × 0.03` more.
+- Prompts: `social.live-turn` v11, `experience.consolidation` v7, `contact.decision` v5.
+
+Deferred:
+- weariness in the battery cost of messages;
+- the semantic measure of repetition.
+
 ## Status of what this excludes
 
 | Capability | Status | Extension path |

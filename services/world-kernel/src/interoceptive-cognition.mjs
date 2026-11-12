@@ -285,6 +285,45 @@ const REUNION=Object.freeze([
   [1.01,"Seeing them again is a joy; you have missed them a great deal."],
 ]);
 
+// Status (ADR-0037): where a person stands with this Body, the sting of a
+// slight, the warmth of recognition, the pull to hold one's own, and how it
+// sits with its place among people in general.
+const STANDS=(status)=>status>=0.5?"You tend to give way to them."
+  :status<=-0.5?"They tend to give way to you.":null;
+const STUNG=Object.freeze({
+  talked_over:"Being talked over by them stung.",
+  overlooked:"Being passed over by them stung.",
+  corrected:"Their correction stung a little.",
+  corrected_publicly:"Being corrected by them in front of others stung.",
+  left_out:"Being left out by them stung.",
+});
+const FLARE=Object.freeze({
+  public_correction:"Being corrected by them in front of others stung.",
+  exclusion:"Being left out by them stung.",
+  refusal_by_close_person:"Their refusal stung, coming from them.",
+});
+const RECOGNIZED="It warms you that they took notice of what you bring.";
+const WANTS_FROM=Object.freeze({
+  recognition:"You want them to take notice of what you bring.",
+  deference:"You want to hold your own with them.",
+  competence:"You want them to see what you can do.",
+  belonging:"You want them to make room for you.",
+});
+// Having had enough of the same, by what this Body seeks instead (S5b).
+const WEARY=Object.freeze({
+  ideas:"You have had enough of this for now; something new to think about would be welcome.",
+  people:"You have had enough of this for now; someone new would be welcome.",
+  places:"You have had enough of this for now; a change of scene would be welcome.",
+  making:"You have had enough of this for now; you would rather do or make something.",
+});
+const WEARY_ANY="You have had enough of this for now; something new would be welcome.";
+const PLACE=Object.freeze({
+  frustrated:"People do not give you the regard you feel is yours.",
+  calm:"You feel at ease with your place among these people.",
+  valued:"People value you more than you expected.",
+  little:"You feel you count for little here.",
+});
+
 // How this Body takes each person it perceives, in words: how far it is at
 // ease with them and what still hurts, missing them or the joy of seeing them
 // again, and curiosity toward someone still new to it or long unseen (only a
@@ -296,7 +335,16 @@ export function feltTowardPeople(regulationFrame){
     felt.set(person,[...(felt.get(person)??[]),line]);
   };
   for(const item of regulationFrame?.drives??[]){
+    if(item.targetRef?.startsWith("person:")&&item.family==="standing"){
+      const stands=STANDS(item.status??0);
+      if(stands!==null)add(item,stands);
+      if(item.slight&&STUNG[item.slight]&&!["corrected_publicly","left_out"].includes(item.slight))add(item,STUNG[item.slight]);
+      if(item.attained)add(item,RECOGNIZED);
+      else if(item.felt!==false&&item.pressure>0&&WANTS_FROM[item.inheritedDirection])add(item,WANTS_FROM[item.inheritedDirection]);
+      continue;
+    }
     if(!item.targetRef?.startsWith("person:")||item.felt===false||item.pressure<=0)continue;
+    if(item.family==="standing_flare"&&FLARE[item.triggerKind])add(item,FLARE[item.triggerKind]);
     if(item.family==="trust"){
       add(item,band(WARINESS,item.pressure));
       if(item.hurt>0)add(item,band(HURT,item.hurt));
@@ -323,6 +371,15 @@ export function feltSocialBody(regulationFrame){
     if(RESTORES[battery.inheritedDirection])lines.push(RESTORES[battery.inheritedDirection]);
   }
   lines.push(...[...feltTowardPeople(regulationFrame).values()].flat());
+  const place=regulationFrame.drives.find(item=>item.family==="standing"&&item.targetRef==="self:standing")??null;
+  if(place!==null){
+    if(place.felt!==false&&place.pressure>0)lines.push(PLACE.frustrated);
+    else if(place.attained)lines.push(place.progressError>0.15?PLACE.valued:PLACE.calm);
+    else if((place.standingSelf??0)<=-0.4)lines.push(PLACE.little);
+  }
+  const weary=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="self:weariness"
+    &&item.felt!==false&&item.pressure>0)??null;
+  if(weary!==null)lines.push(WEARY[weary.inheritedDirection]??WEARY_ANY);
   const hunger=felt("social_contact");
   if(hunger!==null){
     lines.push(band(HUNGER,hunger.pressure));
