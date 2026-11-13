@@ -10,10 +10,12 @@ const ROUTE="/internal/thread-genome/express";
 const shortThread=(id)=>id.replace(/^(thr_[0-9a-f]{7})[0-9a-f]+$/u,"$1");
 
 function expressionReport(threads,{env,dryRun}){
-  const receiving=threads.filter(entry=>entry.receives.length>0);
+  const receiving=threads.filter(entry=>entry.receives.length>0||(entry.completes??[]).length>0);
+  const completes=(entry)=>(entry.completes??[]).map(item=>`${item.variantId} +${item.positions.join("+")}`);
   const line=(entry)=>`${entry.name??shortThread(entry.threadId)} (${shortThread(entry.threadId)}): `
     +`had ${entry.expressed.length}, ${dryRun?"would receive":"received"} ${entry.receives.length}`
-    +(entry.receives.length>0?` — ${entry.receives.map(item=>item.variantId).join(" ")}`:"");
+    +(entry.receives.length>0?` — ${entry.receives.map(item=>item.variantId).join(" ")}`:"")
+    +(completes(entry).length>0?`; ${dryRun?"would complete":"completed"} ${completes(entry).join(" ")}`:"");
   return [
     `${env} · ${threads.length} Threads · ${dryRun?"dry run":"expressed"} · ${receiving.length} ${dryRun?"would receive":"received"} loci`,
     ...threads.filter(entry=>entry.genome==="none").map(entry=>`no genome, nothing expressed: ${entry.name??shortThread(entry.threadId)}`),

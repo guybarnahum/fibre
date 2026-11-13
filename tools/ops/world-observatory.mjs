@@ -1,4 +1,4 @@
-// Saves the Observatory of every living Thread (or the ones named) as
+// Saves the Observatory and the Body view of every living Thread (or the ones named) as
 // Thread-private evidence under .fibre/, for an operator's morning read.
 // Read-only: nothing in the World changes.
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -37,6 +37,10 @@ async function main(argv){
       token,"observatory");
     const path=resolve(directory,`observatory-${threadId}-${args.label}.json`);
     writeFileSync(path,JSON.stringify(payload)+"\n");
+    // The social Body over the last day (body levels), beside it.
+    const body=await privateGet(base,`/internal/threads/${encodeURIComponent(threadId)}/observatory?view=body`,
+      token,"body");
+    writeFileSync(resolve(directory,`body-${threadId}-${args.label}.json`),JSON.stringify(body)+"\n");
     process.stdout.write(`${payload.observatory?.thread?.identity?.name??threadId}: ${path}\n`);
   }
 }

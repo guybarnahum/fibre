@@ -16,7 +16,10 @@ import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-fi
 import {
   explorationContinuityForLivedHistory,
   explorationInteroceptionForLivedHistory,
+  livedRegulationForLivedHistory,
 } from "#services/world-kernel/src/lived-now-regulation.mjs";
+import { bodyObservatory } from "#services/world-kernel/src/body-observatory.mjs";
+import { feltSocialBody } from "#services/world-kernel/src/interoceptive-cognition.mjs";
 import { openSemanticStateInspectionStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openSituatedLifeInspectionStore } from "#services/world-kernel/src/situated-life-store.mjs";
 import { ThreadDirectoryStore,readThreadBirthCityNames } from "#services/world-kernel/src/thread-directory-store.mjs";
@@ -256,6 +259,25 @@ function originsThreadObservatory(runtime,threadId){
       })),
     },
   });
+}
+
+// The Body panel: the social Body over the last day and the genes shaping
+// it, derived on request from World records (body levels).
+function bodyThreadObservatory(runtime,threadId){
+  const thread=runtime.worldStore.getThread(threadId,{required:false});
+  if(thread===null)return null;
+  const experience=openLivedExperienceInspectionStore(runtime.worldStorage);
+  const livedNow=openLivedNowInspectionStore(runtime.worldStorage);
+  try{
+    const at=new Date().toISOString();
+    const body=bodyObservatory({thread,experienceStore:experience,at,
+      nameOf:(id)=>runtime.worldStore.getThread(id,{required:false})?.identity?.name??null});
+    const currentSituation=livedNow.getCurrentSituation(threadId);
+    // What the Thread reads of its social Body now, in its own words.
+    const felt=currentSituation===null?[]:[...feltSocialBody(livedRegulationForLivedHistory({
+      thread,livedNowStore:livedNow,currentSituation,experienceStore:experience,asOf:at}))];
+    return Object.freeze({threadId,body:{...body,felt}});
+  }finally{experience.close();livedNow.close();}
 }
 
 // The default operator view needs present life, not a lifetime dossier.
@@ -957,7 +979,7 @@ export class FibreWorldDurableObject extends DurableObject {
     const observatoryMatch = THREAD_OBSERVATORY_ROUTE.exec(url.pathname);
     if (observatoryMatch !== null) {
       const view=url.searchParams.get("view")??"full";
-      if(!["full","current","origins"].includes(view)
+      if(!["full","current","origins","body"].includes(view)
         || [...url.searchParams.keys()].some(key=>key!=="view")){
         return Response.json({error:{code:"QUERY_NOT_SUPPORTED"}},{status:400});
       }
@@ -968,6 +990,8 @@ export class FibreWorldDurableObject extends DurableObject {
       const threadId = decodeURIComponent(observatoryMatch[1]);
       const observatory=view==="current"
         ?currentThreadObservatory(this.runtimeForRequest(),threadId)
+        :view==="body"
+          ?bodyThreadObservatory(this.runtimeForRequest(),threadId)
         :view==="origins"
           ?originsThreadObservatory(this.runtimeForRequest(),threadId)
           :threadObservatory(this.runtimeForRequest(),threadId);

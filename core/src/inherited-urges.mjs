@@ -3,7 +3,7 @@ import {createHash} from "node:crypto";
 // Every published library stays immutable birth authority for the Threads
 // born from it. v3 changed only exploration_01's text; v4 adds the social
 // Body's two families (ADR-0036). Births draw from the current version.
-export const URGE_LIBRARY_VERSION="5";
+export const URGE_LIBRARY_VERSION="6";
 export const URGE_LIBRARY_V2_FAMILIES=Object.freeze([
   Object.freeze({
     family:"social_contact",kind:"directional",
@@ -311,7 +311,16 @@ const STATUS_AND_CONFLICT_FAMILIES=Object.freeze([
     ]),
   }),
 ]);
-export const URGE_FAMILIES=Object.freeze([...URGE_LIBRARY_V4_FAMILIES,...STATUS_AND_CONFLICT_FAMILIES]);
+const URGE_LIBRARY_V5_FAMILIES=Object.freeze([...URGE_LIBRARY_V4_FAMILIES,...STATUS_AND_CONFLICT_FAMILIES]);
+// Library v6 (ADR-0037 C3b): standing gains a second position of its own,
+// stubbornness, how far this Body lets the way it is treated revise where it
+// holds it stands. It is unrelated to persistence and to selfRegard: a proud
+// Body may be reasonable, a modest one stubborn.
+const STUBBORNNESS=Object.freeze({standing_01:0.86,standing_02:-0.3,standing_03:-0.05,standing_04:0.45,
+  standing_05:-0.3,standing_06:-0.65,standing_07:0.25,standing_08:0.1,standing_09:-0.9,standing_10:0.62});
+export const URGE_FAMILIES=Object.freeze(URGE_LIBRARY_V5_FAMILIES.map(family=>family.family!=="standing"?family
+  :Object.freeze({...family,variants:Object.freeze(family.variants.map(variant=>Object.freeze({...variant,
+    positions:Object.freeze({...variant.positions,stubbornness:STUBBORNNESS[variant.variantId]})})))})));
 const libraryDigest=families=>"sha256:"+createHash("sha256")
   .update(JSON.stringify(families)).digest("hex");
 export const URGE_LIBRARY_V2_DIGEST=libraryDigest(URGE_LIBRARY_V2_FAMILIES);
@@ -320,7 +329,8 @@ export const URGE_LIBRARIES=Object.freeze({
   "2":Object.freeze({families:URGE_LIBRARY_V2_FAMILIES,digest:URGE_LIBRARY_V2_DIGEST}),
   "3":Object.freeze({families:URGE_LIBRARY_V3_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V3_FAMILIES)}),
   "4":Object.freeze({families:URGE_LIBRARY_V4_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V4_FAMILIES)}),
-  "5":Object.freeze({families:URGE_FAMILIES,digest:URGE_LIBRARY_DIGEST}),
+  "5":Object.freeze({families:URGE_LIBRARY_V5_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V5_FAMILIES)}),
+  "6":Object.freeze({families:URGE_FAMILIES,digest:URGE_LIBRARY_DIGEST}),
 });
 export const URGE_FAMILY_BY_NAME=new Map(URGE_FAMILIES.map(family=>[family.family,family]));
 export const SPECIES_STANDARD_ORIENTATION=Object.freeze(Object.fromEntries(
@@ -367,6 +377,23 @@ export function urgeVariantsFromGenome(genome){
 // Thread's own genome digest, never from its character or behaviour. A
 // species default is not a gene, so a family already expressed is never
 // redrawn, and a Thread with no urge loci expresses every family.
+// When a library adds a position to a family a Body already expressed, the
+// Body receives it from its own variant, recognised by what it already
+// carries (orientation and every earlier position); nothing is redrawn.
+export function lateExpressedPositions({urgeProjection=null,libraryVersion=URGE_LIBRARY_VERSION}){
+  const library=Object.hasOwn(URGE_LIBRARIES,libraryVersion)?URGE_LIBRARIES[libraryVersion]:null;
+  if(library===null)throw new TypeError("unknown urge library");
+  return Object.freeze((urgeProjection??[]).flatMap(locus=>{
+    const family=library.families.find(item=>item.family===locus.family);
+    const own=family?.variants.filter(variant=>variant.orientation===locus.orientation
+      &&Object.entries(locus.positions??{}).every(([name,value])=>variant.positions[name]===value))??[];
+    if(own.length!==1)return [];
+    const added=Object.keys(own[0].positions).filter(name=>!Object.hasOwn(locus.positions??{},name));
+    return added.length===0?[]:[Object.freeze({family:locus.family,variantId:own[0].variantId,
+      positions:Object.freeze(Object.fromEntries(added.map(name=>[name,own[0].positions[name]])))})];
+  }));
+}
+
 export function lateExpressedUrges({urgeProjection=null,genomeDigest,libraryVersion=URGE_LIBRARY_VERSION}){
   if(typeof genomeDigest!=="string"||!/^sha256:[0-9a-f]{64}$/u.test(genomeDigest))
     throw new TypeError("late expression needs the Thread's genome digest");

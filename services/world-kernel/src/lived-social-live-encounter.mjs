@@ -151,6 +151,7 @@ export async function runThreadLiveSocialEncounter({
         modelAdapter,
         feltBody:context.feltBody??null,
         onReading:context.onReading??null,
+        onHeard:context.onHeard??null,
         sameGround:context.sameGround??null,
         signal:controller.signal,
       });

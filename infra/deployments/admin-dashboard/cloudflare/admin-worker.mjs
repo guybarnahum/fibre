@@ -277,7 +277,7 @@ async function proxyWorldEvents(env,hours){
 }
 
 async function proxyThreadObservatory(env, threadId, view=null) {
-  const suffix=view==="current"||view==="origins"?"?view="+view:"";
+  const suffix=["current","origins","body"].includes(view)?"?view="+view:"";
   const upstream = await serviceBinding(env, "WORLD_KERNEL").fetch(new Request(
     `https://world.internal/internal/threads/${encodeURIComponent(threadId)}/observatory${suffix}`,
     { headers:{ Accept:"application/json", "x-fibre-private-token":privateToken(env) } },
@@ -984,7 +984,7 @@ export default {
         if (observatoryMatch) {
           const threadId = id("threadId", decodeURIComponent(observatoryMatch[1]));
           const view=url.searchParams.get("view");
-          if((view!==null&&!["current","origins"].includes(view))
+          if((view!==null&&!["current","origins","body"].includes(view))
             ||[...url.searchParams.keys()].some(key=>key!=="view")){
             return json(400,{error:"unsupported_observatory_view"});
           }

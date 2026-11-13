@@ -32,8 +32,16 @@ test("current authored urge library binds 18 family kinds, origin provenance and
   assert.throws(()=>urgeVariantsFromGenome(tampered),/frozen library/,"origin must bind the actual textual loci");
 });
 
-test("published libraries stay frozen; v4 only adds the social Body, v5 only status and conflict, and every locus is atomic",()=>{
-  assert.equal(URGE_LIBRARY_VERSION,"5");
+test("published libraries stay frozen; v4 only adds the social Body, v5 only status and conflict, v6 only stubbornness, and every locus is atomic",()=>{
+  assert.equal(URGE_LIBRARY_VERSION,"6");
+  assert.equal(URGE_LIBRARIES["5"].digest,
+    "sha256:98fe294551cc68a7480753f046d8c8a007c595f3c19211990fef65d2ef524453","historical v5 library changed");
+  const strip=(family)=>({...family,variants:family.variants.map(({positions:{stubbornness,...positions},...variant})=>
+    ({...variant,positions}))});
+  assert.deepEqual(URGE_LIBRARIES["6"].families.map(strip),URGE_LIBRARIES["5"].families.map(strip),
+    "v6 changed more than adding stubbornness");
+  assert.ok(URGE_LIBRARIES["6"].families.every(family=>family.variants.every(variant=>
+    ("stubbornness" in variant.positions)===(family.family==="standing"))),"stubbornness outside standing, or missing on it");
   assert.equal(URGE_LIBRARIES["3"].digest,
     "sha256:7073678b3123757d8526e5ad01c31d5506c6fe7b66e41cfcc3ac50b7e2ef5cab","historical v3 library changed");
   assert.equal(URGE_LIBRARIES["4"].digest,
@@ -195,6 +203,21 @@ test("inherited positions span the species range without orientation or duplicat
       assert.ok(Math.min(...lean)<=-0.85&&Math.max(...lean)>=0.85&&Math.abs(mean(lean))<=0.1+1e-9,"standing: selfRegard spread");
       for(const group of Object.values(Object.groupBy(variants,v=>v.orientation)))
         assert.ok(Math.abs(mean(group.map(v=>v.positions.selfRegard)))<=0.25+1e-9,"standing: selfRegard leans by orientation");
+    }
+    // How far a Body lets the world revise its self-view, on standing only:
+    // never more stubborn for one way of wanting standing, and unrelated to
+    // how long a state is held or to how a Body places itself.
+    if(variants.some(v=>"stubbornness" in v.positions)){
+      const stubborn=variants.map(v=>v.positions.stubbornness);
+      assert.ok(Math.min(...stubborn)<=-0.85&&Math.max(...stubborn)>=0.85&&Math.abs(mean(stubborn))<=0.1+1e-9,"standing: stubbornness spread");
+      for(const group of Object.values(Object.groupBy(variants,v=>v.orientation)))
+        assert.ok(Math.abs(mean(group.map(v=>v.positions.stubbornness)))<=0.25+1e-9,"standing: stubbornness leans by orientation");
+      const correlation=(a,b)=>{const ma=mean(a),mb=mean(b);
+        const cov=a.reduce((sum,x,i)=>sum+(x-ma)*(b[i]-mb),0);
+        return cov/Math.sqrt(a.reduce((sum,x)=>sum+(x-ma)**2,0)*b.reduce((sum,y)=>sum+(y-mb)**2,0));};
+      for(const position of ["persistence","selfRegard"])
+        assert.ok(Math.abs(correlation(stubborn,variants.map(v=>v.positions[position])))<=0.2,
+          `standing: stubbornness follows ${position}`);
     }
     const uniqueT=[...new Set(variants.map(v=>v.positions.feltThreshold))];
     const effectiveT=uniqueT.map(t=>Math.min(species.speciesFeltThresholdCeiling,

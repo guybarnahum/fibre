@@ -4,7 +4,8 @@
 // Mechanical and read-only, from World records alone; the Thread feels the
 // result through its own urge loci and decides for itself what to do.
 
-const DAY_MS=86_400_000;
+import { bodyLevel, DAY_MS, fade } from "#core/src/body-level.mjs";
+
 const days=(from,to)=>(Date.parse(to)-Date.parse(from))/DAY_MS;
 
 // Knowing: what each lived contact taught, by its depth. It barely fades (a
@@ -59,9 +60,14 @@ const REPEAT_WITHIN_DAYS=365;
 const REVIVED_ABOVE=0.25;
 const REVIVED_FOR_DAYS=7;
 
-function knowingOf(contacts,at){
-  const depth=contacts.reduce((sum,contact)=>sum+depthOf(contact)*2**(-days(contact.at,at)/KNOWING_HALF_LIFE_DAYS),0);
-  return 1-2**(-depth/KNOWING_SCALE);
+// Knowing and being current, over the same contacts (body levels): what
+// each taught accumulates into a baseline that fades over years; being up to
+// date is the latest contact, fading over two weeks.
+function familiarityOf(contacts,at){
+  const level=bodyLevel({at,events:contacts.map(contact=>({at:contact.at,toBaseline:depthOf(contact),size:1})),
+    baseline:{accumulate:{halfLife:KNOWING_HALF_LIFE_DAYS*DAY_MS}},
+    halfLife:CURRENT_HALF_LIFE_DAYS*DAY_MS,combine:"max"});
+  return {knowing:1-2**(-level.baseline/KNOWING_SCALE),current:level.deviation};
 }
 
 // The wounds one person left, lived in order: each harm by its severity,
@@ -81,7 +87,7 @@ function livedTrust({contacts,acts,at,weights,pace}){
   const trustNow=()=>(1-2**(-built/TRUST_SCALE))*2**(-open());
   const advance=(to)=>{
     if(clock!==null)for(const wound of wounds)
-      wound.healable*=2**(-days(clock,to)/(healingHalfLifeDays(wound.severity)*pace));
+      wound.healable=fade(wound.healable,Date.parse(to)-Date.parse(clock),healingHalfLifeDays(wound.severity)*pace*DAY_MS);
     clock=to;
   };
   for(const event of events){
@@ -111,24 +117,30 @@ function livedTrust({contacts,acts,at,weights,pace}){
     revived:revivedAt!==null&&days(revivedAt,at)<=REVIVED_FOR_DAYS};
 }
 
-const NO_ONE=Object.freeze({knowing:0,staleness:0,trust:0,hurt:0,revived:false,status:0,lately:Object.freeze([]),
+const NO_ONE=Object.freeze({knowing:0,staleness:0,trust:0,hurt:0,revived:false,status:0,treated:0,expectedFrom:0,lately:Object.freeze([]),
   refusedLately:false,
   apartDays:null,apartInPersonDays:null});
 
-// Status (ADR-0037): where another person stands relative to this Thread, as
-// it perceived the regard between them. Each act lifts its actor above the
-// other (+) or the other above its actor (−); an act counts double for the
-// standing orientation it bears on. Status does not fade with absence: each
-// act's weight halves for every twenty acts that came after it between them,
-// so an order holds until it is lived differently.
+// Status (ADR-0037, revised in C3b): two signals toward each person, kept
+// apart. How their treatment places me (treated): it starts level and moves a
+// fifth of the way toward what each episode showed, twice that for the act
+// this Body's standing orientation cares about; it is never stubborn, simply
+// what the world has been saying. Where I hold that I stand with them (held):
+// my inherited self-view (selfRegard), revised by how I am treated only as far
+// as my inherited stubbornness lets it; a reasonable Body adapts, never fully.
+// The Body behaves as if what it holds is shared, so its expectations, and
+// the slights it feels, come from held. Neither fades with absence.
+// Each act lifts its actor above the other (+) or the other above its actor
+// (−); ordinary regard lifts no one.
 const LIFT=Object.freeze({talked_over:1,corrected_publicly:1,left_out:1,corrected:0.5,overlooked:0.5,
-  held_ground:0.5,gave_way:-1,credited:-0.5,asked_advice:-0.5});
+  held_ground:0.5,ordinary:0,gave_way:-1,credited:-0.5,asked_advice:-0.5});
 const BEARS_ON=Object.freeze({talked_over:"deference",held_ground:"deference",gave_way:"deference",
   corrected:"competence",corrected_publicly:"competence",asked_advice:"competence",
   left_out:"belonging",overlooked:"recognition",credited:"recognition"});
 const PUBLIC_ACTS=Object.freeze(["corrected_publicly","left_out"]);
-const LATER_ACTS_HALVING=20;
-const STATUS_SCALE=3;
+const LEARNING=0.2;
+const SELF_VIEW=0.4;
+const REVISED_SPECIES=0.5,REVISED_RANGE=0.4;
 const SLIGHT_FRESH_DAYS=1;
 
 // An impression forms per episode, not per sentence: the same act by the
@@ -157,10 +169,20 @@ function regardActs({records,contacts,at,otherThreadId}){
   return [...perceived,...cut].filter(act=>act.at<=at).sort((a,b)=>b.at.localeCompare(a.at));
 }
 
-function statusOf(acts,orientation){
-  const lift=acts.reduce((sum,act,index)=>sum+LIFT[act.act]*(BEARS_ON[act.act]===orientation?2:1)
-    *2**(-index/LATER_ACTS_HALVING)*(act.by==="them"?1:-1),0);
-  return Math.tanh(lift/STATUS_SCALE);
+// Where their treatment places them relative to me, from the acts (newest
+// first), oldest to newest.
+function treatedOf(acts,orientation){
+  return bodyLevel({at:Infinity,baseline:{track:{start:0}},
+    events:[...acts].reverse().map(act=>({at:act.at,value:LIFT[act.act]*(act.by==="them"?1:-1),
+      rate:LEARNING*(BEARS_ON[act.act]===orientation?2:1)}))}).baseline;
+}
+// Where I hold that they stand: my self-view, revised toward how I am treated
+// as far as my stubbornness lets it (half way for the species; from 0.9 for
+// the most reasonable to 0.1 for the most stubborn).
+const priorOf=(locus)=>-SELF_VIEW*(locus?.selfRegard??0);
+function heldOf(treated,locus){
+  const revised=REVISED_SPECIES-REVISED_RANGE*(locus?.stubbornness??0);
+  return (1-revised)*priorOf(locus)+revised*treated;
 }
 
 // The regard this Body expects from a person: more from one it feels below
@@ -171,14 +193,14 @@ export function expectedRegard({status=0,bond=0,self=0}){
 // The regard an act toward this Thread shows.
 export const regardShown=(act)=>-LIFT[act];
 
-// Where this Thread feels it stands in general (ADR-0037), from the regard it
-// perceived with everyone, each person weighed by how much it has lived with
-// them, leaned by its inherited selfRegard and lowered by slights before
-// witnesses; and over the last two weeks, whether how it is treated matches
-// what it expects (calm), falls short (frustration) or exceeds it.
-const SELF_LEAN=0.4;
+// Where this Thread feels it stands in general (ADR-0037): what it holds of
+// everyone it has lived regard with, each weighed by how much, lowered by
+// slights before witnesses; with no one yet, its self-view intact. Over the
+// last two weeks, the gap between what it holds and how it is treated is its
+// calm (none), frustration (it holds itself higher than it is treated) or
+// the pleasure of being valued more than it holds.
 const WITNESS_LOSS=0.05,WITNESS_LOSS_CAP=0.4;
-const CHRONIC_DAYS=14,CHRONIC_HALF_LIFE_DAYS=7;
+const CHRONIC_DAYS=14;
 export function selfStanding({experienceStore,threadId,at,standingLocus=null}){
   const records=episodes(experienceStore.listRecentPerceivedRegard?.(threadId,{before:at})??[]).reverse();
   const people=new Map();
@@ -187,34 +209,25 @@ export function selfStanding({experienceStore,threadId,at,standingLocus=null}){
     people.get(record.personThreadId).push(record);
   }
   const orientation=standingLocus?.orientation??null;
-  let weighed=0,base=0,loss=0;
-  const status=new Map();
+  let weighed=0,base=0,loss=0,gaps=0,lately=0,count=0;
   for(const [person,items] of people){
     const acts=regardActs({records:items,contacts:[],at,otherThreadId:person});
-    status.set(person,statusOf(acts,orientation));
+    const treated=treatedOf(acts,orientation),held=heldOf(treated,standingLocus);
     const weight=Math.min(1,acts.length/5);
-    weighed+=weight;base+=weight*(-status.get(person));
+    weighed+=weight;base+=weight*(-held);
     acts.forEach((act,index)=>{
       if(act.by==="them"&&LIFT[act.act]>0&&act.witnesses>0)
-        loss+=WITNESS_LOSS*Math.min(4,act.witnesses)*2**(-index/LATER_ACTS_HALVING);
+        loss+=WITNESS_LOSS*Math.min(4,act.witnesses)*2**(-index/20);
     });
+    const recent=acts.filter(act=>act.by==="them"&&days(act.at,at)<=CHRONIC_DAYS).length;
+    if(recent>0){
+      const w=Math.min(1,recent/5);
+      gaps+=w*(held-treated);lately+=w;count+=recent;
+    }
   }
-  const treated=weighed===0?0:base/weighed;
-  const self=Math.max(-1,Math.min(1,treated
-    +SELF_LEAN*(standingLocus?.selfRegard??0)-Math.min(WITNESS_LOSS_CAP,loss)));
-  let gaps=0,weights=0,count=0;
-  for(const record of records){
-    const age=days(record.asOf,at);
-    if(record.actorThreadId===threadId||age>CHRONIC_DAYS)continue;
-    const weight=2**(-age/CHRONIC_HALF_LIFE_DAYS);
-    // Over time, what is shown is set against the person's place and against
-    // how far this Body's own sense of itself departs from how it is treated:
-    // a match is calm, a Body that rates itself above its treatment is
-    // frustrated, one that rates itself below it is gratified.
-    gaps+=weight*(regardShown(record.act)-(0.5*(-status.get(record.personThreadId))+(self-treated)));
-    weights+=weight;count+=1;
-  }
-  return Object.freeze({self:rounded(self),gap:count===0?null:rounded(gaps/weights),acts:count,
+  const self=Math.max(-1,Math.min(1,(weighed===0?-priorOf(standingLocus):base/weighed)
+    -Math.min(WITNESS_LOSS_CAP,loss)));
+  return Object.freeze({self:rounded(self),gap:lately===0?null:rounded(gaps/lately),acts:count,
     evidenceRefs:Object.freeze(records.slice(0,4).map(record=>record.regardId))});
 }
 const rounded=(value)=>Math.round(value*1e6)/1e6;
@@ -234,15 +247,19 @@ export function regardOf({experienceStore,threadId,otherThreadId,at,trustLocus=n
     .map(act=>({kind:act.witnesses>0||PUBLIC_ACTS.includes(act.act)?"slighted_publicly":"slighted",occurredAt:act.at}));
   const acts=[...experienceStore.listPairActs(threadId,otherThreadId,{before:at})
     .filter(act=>act.actorThreadId===otherThreadId),...slights];
-  const knowing=knowingOf(contacts,at);
+  const {knowing,current}=familiarityOf(contacts,at);
   const latest=(items)=>items.reduce((when,contact)=>when===null||contact.at>when?contact.at:when,null);
   const last=latest(contacts),lastInPerson=latest(contacts.filter(contact=>contact.kind!=="message"));
-  const current=last===null?0:2**(-days(last,at)/CURRENT_HALF_LIFE_DAYS);
   const lived=livedTrust({contacts,acts,at,weights:TRUST_WEIGHTS[trustLocus?.orientation]??SPECIES_WEIGHTS,
     pace:2**(2*(trustLocus?.persistence??0))});
   return Object.freeze({knowing:rounded(knowing),staleness:rounded(knowing*(1-current)),
     trust:rounded(lived.trust),hurt:rounded(lived.hurt),revived:lived.revived,
-    status:rounded(statusOf(regard,standingLocus?.orientation??null)),
+    status:rounded(heldOf(treatedOf(regard,standingLocus?.orientation??null),standingLocus)),
+    treated:rounded(treatedOf(regard,standingLocus?.orientation??null)),
+    // What it held before the last day's acts: what those acts were judged
+    // against (a slight is measured by the expectation it upset).
+    expectedFrom:rounded(heldOf(treatedOf(regard.filter(act=>days(act.at,at)>SLIGHT_FRESH_DAYS),
+      standingLocus?.orientation??null),standingLocus)),
     refusedLately:acts.some(act=>act.kind==="declined"&&days(act.occurredAt,at)<=SLIGHT_FRESH_DAYS),
     lately:Object.freeze(regard.filter(act=>act.by==="them"&&days(act.at,at)<=SLIGHT_FRESH_DAYS).slice(0,3)),
     apartDays:last===null?null:rounded(days(last,at)),
@@ -282,14 +299,11 @@ export function exposureCost({knowing=0,staleness=0,trust=0,kind="conversation"}
 
 // Depletion after a run of exposures, recovering between them and after the
 // last one (exposures: {at, turns, cost} in any order).
+// (A reservoir on the body-level component: it fills with each exposure,
+// never past empty, and recovers between them.)
 export function socialDepletion(exposures,{asOf}){
-  let depletion=0,last=null;
-  for(const item of [...exposures].sort((a,b)=>a.at.localeCompare(b.at))){
-    if(last!==null)depletion*=2**(-(Date.parse(item.at)-Date.parse(last))/RECOVERY_HALF_LIFE_MS);
-    depletion=Math.min(1,depletion+item.turns*item.cost);
-    last=item.at;
-  }
-  return last===null?0:depletion*2**(-(Date.parse(asOf)-Date.parse(last))/RECOVERY_HALF_LIFE_MS);
+  return bodyLevel({at:asOf,cap:1,halfLife:RECOVERY_HALF_LIFE_MS,
+    events:[...exposures].sort((a,b)=>a.at.localeCompare(b.at)).map(item=>({at:item.at,size:item.turns*item.cost}))}).level;
 }
 
 // The battery as World knows it at asOf, from the last half-day of lived talk

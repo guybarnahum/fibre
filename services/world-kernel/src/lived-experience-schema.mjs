@@ -1,3 +1,18 @@
+const regardTableSql=`
+    CREATE TABLE IF NOT EXISTS thread_perceived_regard (
+      regard_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      person_thread_id TEXT NOT NULL,
+      act TEXT NOT NULL CHECK (act IN ('credited','overlooked','asked_advice','corrected',
+        'corrected_publicly','talked_over','gave_way','held_ground','left_out','ordinary')),
+      actor_thread_id TEXT NOT NULL CHECK (actor_thread_id IN (thread_id,person_thread_id)),
+      account TEXT NOT NULL,
+      evidence_refs_json TEXT NOT NULL CHECK (json_valid(evidence_refs_json)),
+      source_ref TEXT NOT NULL,
+      as_of TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;`;
+
 export function createLivedExperienceTables(database) {
   const needsStoryTimeline=database.prepare(`
     SELECT 1 FROM sqlite_master WHERE type='table'
@@ -322,19 +337,7 @@ export function createLivedExperienceTables(database) {
     -- Regard a Thread perceived between itself and one person, in its own
     -- reflection (ADR-0037): who did what to whom, as it saw it. Append-only;
     -- its perception, never a fact about the other.
-    CREATE TABLE IF NOT EXISTS thread_perceived_regard (
-      regard_id TEXT PRIMARY KEY,
-      thread_id TEXT NOT NULL,
-      person_thread_id TEXT NOT NULL,
-      act TEXT NOT NULL CHECK (act IN ('credited','overlooked','asked_advice','corrected',
-        'corrected_publicly','talked_over','gave_way','held_ground','left_out')),
-      actor_thread_id TEXT NOT NULL CHECK (actor_thread_id IN (thread_id,person_thread_id)),
-      account TEXT NOT NULL,
-      evidence_refs_json TEXT NOT NULL CHECK (json_valid(evidence_refs_json)),
-      source_ref TEXT NOT NULL,
-      as_of TEXT NOT NULL,
-      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
-    ) STRICT;
+    ${regardTableSql}
     CREATE INDEX IF NOT EXISTS thread_perceived_regard_by_pair
       ON thread_perceived_regard(thread_id,person_thread_id,as_of);
 
@@ -654,6 +657,21 @@ export function createLivedExperienceTables(database) {
         SELECT RAISE(ABORT, 'thread_journal_entries is append-only');
       END;
   `);
+  // Install-only migration (ADR-0037 C3b): perceived regard may be ordinary,
+  // read turn by turn. SQLite cannot widen a CHECK in place, so the table is
+  // rebuilt once with every row kept as it was.
+  const regardSql=database.prepare(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_perceived_regard'").get()?.sql??"";
+  if(!regardSql.includes("'ordinary'")){
+    database.exec(`
+      ALTER TABLE thread_perceived_regard RENAME TO thread_perceived_regard_before_ordinary;
+      ${regardTableSql}
+      INSERT INTO thread_perceived_regard SELECT * FROM thread_perceived_regard_before_ordinary;
+      DROP TABLE thread_perceived_regard_before_ordinary;
+      CREATE INDEX IF NOT EXISTS thread_perceived_regard_by_pair
+        ON thread_perceived_regard(thread_id,person_thread_id,as_of);
+    `);
+  }
   // Install-only additive migration: earlier immutable attention rows have no
   // reason, and their original record digests remain unchanged.
   if(!database.prepare("PRAGMA table_info(thread_encounter_attention)").all()

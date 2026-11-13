@@ -43,6 +43,8 @@ export class ThreadGenomeExpressionStore {
           genome:genome === null ? "none" : "present",
           expressed:(thread.genome.urgeProjection ?? []).map((item) => item.family),
           receives:expression?.payload.expressed ?? [],
+          // Positions a newer library adds to loci already expressed.
+          completes:expression?.payload.completed ?? [],
         });
       });
   }
@@ -56,7 +58,7 @@ export class ThreadGenomeExpressionStore {
     const genome = this.#birthGenome(threadId);
     if (genome === null) throw new TypeError(`Thread ${threadId} has no genome to express`);
     const expression = genomeLociExpression(thread, genome);
-    if (expression === null) return Object.freeze({ threadId, eventId:null, expressed:[] });
+    if (expression === null) return Object.freeze({ threadId, eventId:null, expressed:[], completed:[] });
 
     const eventId = boundedThreadScopedId({ prefix:"evt", threadId,
       suffix:`genome_expressed_${sha256(canonicalJson(expression.payload)).slice(0, 24)}` });
@@ -84,6 +86,7 @@ export class ThreadGenomeExpressionStore {
       `).run(next.version, canonicalJson(next), stateHash, eventId, at, threadId, thread.version);
       if (Number(updated.changes) !== 1) throw new Error(`Thread ${threadId} changed during genome expression`);
     });
-    return Object.freeze({ threadId, eventId, expressed:expression.payload.expressed });
+    return Object.freeze({ threadId, eventId, expressed:expression.payload.expressed,
+      completed:expression.payload.completed ?? [] });
   }
 }

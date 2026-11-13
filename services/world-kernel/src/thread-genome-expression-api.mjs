@@ -22,8 +22,8 @@ export function createThreadGenomeExpressionApi({expressionStore,privateToken,no
       // Each entry keeps what the Body had before; receives is what it was given now.
       return json({contract:"fibre-genome-expression-v1",threads:plan.map(entry=>{
         if(entry.genome==="none")return {...entry,eventId:null};
-        const {eventId,expressed}=expressionStore.express(entry.threadId,{at});
-        return {...entry,eventId,receives:expressed};
+        const {eventId,expressed,completed=[]}=expressionStore.express(entry.threadId,{at});
+        return {...entry,eventId,receives:expressed,completes:completed};
       })});
     },
   });

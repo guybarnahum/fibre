@@ -14,6 +14,8 @@ import {
   assertId,
   assertIsoTimestamp,
   assertPlainObject,
+  canonicalJson,
+  sha256,
 } from "./persistence-common.mjs";
 import { projectSituatedPercept } from "./situated-percept.mjs";
 import { evaluateSalience } from "./salience-gate.mjs";
@@ -603,12 +605,13 @@ export function createSocialMeetingService({
     };
     // The social Body in this talk: where the battery stood when it began,
     // how known the other is, and each turn spoken or heard since.
-    const feltBodyFor=(self,other)=>{
+    const feltBodyFor=(self,other,heard)=>{
       const {start,regard,self:standing,weariness}=socialBodyBeforeTalk({thread:self.thread,
         otherThreadId:other.thread.threadId,experienceStore,asOf:at});
       const person={threadId:other.thread.threadId,evidenceRef:other.situation.situationId};
       return (story)=>feltSocialBody(socialBodyInConversation({thread:self.thread,start,regard,asOf:at,
         other:person,turns:story.beats.filter(beat=>beat.kind==="utterance").length,self:standing,weariness,
+        heardNow:heard,
         // Cut off by the other in this very talk.
         talkedOverNow:story.beats.filter(beat=>beat.actorThreadId===self.thread.threadId
           &&beat.completion==="interrupted").length}));
@@ -620,6 +623,23 @@ export function createSocialMeetingService({
       return (reading)=>experienceStore.recordEngagementReading?.({threadId:self.thread.threadId,reading,
         sourceKind:"turn",sourceRef:`live:${self.thread.threadId}:${at}:${turn++}`,at});
     };
+    // How the other's last words or gesture treated each participant, in its
+    // own reading, turn by turn (ADR-0037 C3b): its perception, recorded at
+    // once and felt from its next turn. A correction with others present is
+    // a public one.
+    const heardFor=(self,other,heard)=>{
+      let turn=0;
+      return (reading)=>{
+        const act=reading==="corrected"&&witnesses.length>0?"corrected_publicly":reading;
+        const sourceRef=`heard:${self.thread.threadId}:${at}:${turn++}`;
+        heard.push(Object.freeze({act,witnesses:witnesses.length}));
+        experienceStore.recordPerceivedRegard?.({
+          regardId:`reg_${sha256(canonicalJson({threadId:self.thread.threadId,sourceRef})).slice(0,32)}`,
+          threadId:self.thread.threadId,personThreadId:other.thread.threadId,act,
+          actorThreadId:other.thread.threadId,account:"How I took what they had just said or done.",
+          evidenceRefs:[self.situation.situationId],sourceRef,asOf:at});
+      };
+    };
     const sameGroundFor=(self)=>{
       let earlier=null;
       return (story)=>{
@@ -628,10 +648,11 @@ export function createSocialMeetingService({
           current:story.beats.filter(beat=>beat.kind==="utterance").map(beat=>beat.text).join(" ")}));
       };
     };
-    const speakerFacing=(self,other)=>Object.freeze({
+    const speakerFacing=(self,other,heard=[])=>Object.freeze({
       ...self,
-      feltBody:feltBodyFor(self,other),
+      feltBody:feltBodyFor(self,other,heard),
       onReading:readingsFor(self),
+      onHeard:heardFor(self,other,heard),
       sameGround:sameGroundFor(self),
       perspective:Object.freeze({
         developedSelfEvidence:selectDevelopedSelfEvidence({

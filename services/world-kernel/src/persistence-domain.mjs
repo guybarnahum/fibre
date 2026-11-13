@@ -1,6 +1,6 @@
 import { normalizeGenesisSex } from "#core/src/genesis-sex.mjs";
 import { PHYSICAL_GENOME_VERSION, phenotypeFromPhysicalGenome } from "#core/src/human-appearance/index.mjs";
-import { URGE_LIBRARIES, URGE_LIBRARY_VERSION, lateExpressedUrges } from "#core/src/inherited-urges.mjs";
+import { URGE_LIBRARIES, URGE_LIBRARY_VERSION, lateExpressedPositions, lateExpressedUrges } from "#core/src/inherited-urges.mjs";
 import {
   MAX_COMMAND_PAYLOAD_BYTES,
   EVENT_TYPES,
@@ -445,11 +445,17 @@ export const GENOME_EXPRESSION_PROVENANCE=Object.freeze({
 export function genomeLociExpression(thread,{genomeId,genomeDigest,libraryVersion=URGE_LIBRARY_VERSION}){
   assertId("expressed genome",genomeId);
   const expressed=lateExpressedUrges({urgeProjection:thread.genome.urgeProjection,genomeDigest,libraryVersion});
-  if(expressed.length===0)return null;
+  // Positions a newer library adds to a locus already expressed (ADR-0037 C3b).
+  const completed=lateExpressedPositions({urgeProjection:thread.genome.urgeProjection,libraryVersion});
+  if(expressed.length===0&&completed.length===0)return null;
   const payload={genomeId,genomeDigest,libraryVersion,libraryDigest:URGE_LIBRARIES[libraryVersion].digest,
-    expressed:expressed.map(({family,variantId})=>({family,variantId}))};
-  const urgeProjection=[...(thread.genome.urgeProjection??[]),
-    ...expressed.map(({family,kind,orientation,positions})=>({family,kind,orientation,positions:{...positions}}))];
+    expressed:expressed.map(({family,variantId})=>({family,variantId})),
+    ...(completed.length===0?{}:{completed:completed.map(({family,variantId,positions})=>
+      ({family,variantId,positions:Object.keys(positions)}))})};
+  const urgeProjection=[...(thread.genome.urgeProjection??[]).map(locus=>{
+    const added=completed.find(item=>item.family===locus.family);
+    return added===undefined?locus:{...locus,positions:{...locus.positions,...added.positions}};
+  }),...expressed.map(({family,kind,orientation,positions})=>({family,kind,orientation,positions:{...positions}}))];
   return {payload,genome:{...thread.genome,urgeProjection}};
 }
 

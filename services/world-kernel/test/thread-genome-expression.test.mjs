@@ -81,6 +81,29 @@ test("late expression gives each Thread its never-expressed families once, from 
   });
 });
 
+test("a position a newer library adds reaches a Body from its own variant, once, and nothing else changes", () => {
+  withWorld(({ world, expression, born }) => {
+    const v5Projection = URGE_LIBRARIES["5"].families.map((family) => {
+      const variant = family.variants[3];
+      return { family:family.family, kind:family.kind, orientation:variant.orientation, positions:{ ...variant.positions } };
+    });
+    const v5 = born("thr_v5_body", v5Projection);
+    const result = expression.express(v5.thread.threadId, { at });
+    assert.deepEqual(result.expressed, [], "a family already expressed was drawn again");
+    assert.deepEqual(result.completed, [{ family:"standing", variantId:"standing_04", positions:["stubbornness"] }],
+      "the Body did not receive the new position from its own variant");
+    const body = world.getThread(v5.thread.threadId).genome.urgeProjection;
+    const standing = body.find((locus) => locus.family === "standing");
+    assert.deepEqual(standing, { ...v5Projection.find((locus) => locus.family === "standing"),
+      positions:{ ...v5Projection.find((locus) => locus.family === "standing").positions,
+        stubbornness:URGE_FAMILIES.find((family) => family.family === "standing").variants[3].positions.stubbornness } },
+      "an existing position changed");
+    assert.deepEqual(body.filter((locus) => locus.family !== "standing"), v5Projection.filter((locus) => locus.family !== "standing"));
+    assert.deepEqual(world.replayThread(v5.thread.threadId), world.getThread(v5.thread.threadId), "completion did not survive replay");
+    assert.equal(expression.express(v5.thread.threadId, { at:"2026-11-14T12:00:00.000Z" }).eventId, null, "a second run completed again");
+  });
+});
+
 test("with inherited spread at zero, expressed loci act as the species default", () => {
   const percept = { asOf:at, evidenceRefs:["admitted_contact_interval"],
     contact:{ observedUnmetHours:24, evidenceRefs:["admitted_contact_interval"] } };

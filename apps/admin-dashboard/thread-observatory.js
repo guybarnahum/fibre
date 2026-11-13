@@ -9,6 +9,7 @@ import { buildEncounterEpisodes, buildSocialAnalytics, buildThreadWorldEvents } 
 import { openThreadActionDialog } from "./thread-action-dialog.js";
 import {renderVisualAgeAnchors} from "./visual-age-anchors.js";
 import { currentThreadPlace, threadLocationText } from "./thread-person-ui.js";
+import { bodySection } from "./thread-body-ui.js";
 
 function el(tag, className = null, text = null) {
   const node = document.createElement(tag);
@@ -1765,6 +1766,7 @@ export function renderThreadObservatory({
     identitySection(identity,threadId,livedNow),
     renderFidSection(identity,threadId),
     nowSection(identity,livedNow),
+    bodySection(threadId),
   );
   let deferredPlaceholder=null;
   if(deferredHistory){

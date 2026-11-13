@@ -347,3 +347,13 @@ Modern Genesis may author several private local places (home, transit, study, co
 
 
 Pending responses expose durable local Birth Center state immediately and never wait on World. When stale work is visible, Birth Center may kick one coalesced background reconciliation pass; repeated dashboard polling cannot fan out duplicate work, and retries are throttled. The pass asks World about the bounded stale cohort in one set query. World presence settles `born`; confirmed World absence plus an explicit terminal/non-retryable Genesis failure settles `stillborn`. Retryable or ambiguous interruptions remain recoverable/unresolved.
+
+## Body panel (November 13)
+
+The Thread Observatory has a **Body** section, read only when an operator presses *Show the Body* (`/api/threads/:id/observatory?view=body`, [ADR-0038](../../docs/decisions/ADR-0038-body-levels.md)). It shows:
+- the social Body over the last day, every two hours: battery, weariness, self-status, and the self-view gap, with the events that moved them;
+- toward the six people the Thread lived most with: trust, hurt, knowing, bond, and held and treated place;
+- the words the Thread reads of its Body now;
+- its 18 inherited urges with every position.
+
+World derives it from its records on request and stores nothing. The panel is presentation only.

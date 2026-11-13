@@ -90,3 +90,54 @@ G = inherited gain, T = felt awareness threshold, P = persistence, S = `selfRega
 
 - **Texts:** does each read as something a Body inherits, not a trait or an instruction? `remorse_03` (turning away from the person one let down) is deliberately the avoidant answer, beside the reparative ones.
 - **`selfRegard` spread:** from -0.88 to +0.88. At the extremes, a Body feels clearly above or below what its life shows. Narrowing the range makes temperament matter less.
+
+## Library v6: `stubbornness` on `standing` (proposed, November 13)
+
+**Status: proposed**, for Guy's review, with [ADR-0037 C3b](../decisions/ADR-0037-status-and-conflict.md#c3b-as-built-november-13-two-signals-and-the-slights-asserting-leaves).
+
+Guy, November 13: "A genetic trait of social stubbornness keeps the ego self-view intact even in the face of social feedback from the world… Reasonable Threads adapt, while unreasonable Threads build frustration from the gap they refuse to reconcile." And: persistence "is not the same as social stubbornness. They are unrelated, not even correlated."
+
+v6 changes nothing else in the library: every text, orientation and earlier position of v5 is unchanged (checked against v5's frozen digest).
+
+**What it means.** `stubbornness` (Q), in [-1, +1], is how far this Body lets the way it is treated revise where it holds it stands. The share revised is `0.5 − 0.4 × Q` (scaled by inherited spread):
+- from 0.9 for the most reasonable, who adapt but never fully;
+- to 0.1 for the most stubborn, whose self-view stays nearly intact;
+- 0.5 for the species.
+
+**Rules, checked on every family by `core/test/inherited-urges.test.mjs`:**
+- `stubbornness` exists on `standing` only;
+- it reaches beyond ±0.85, and its family mean is within ±0.10;
+- its mean within each orientation is within ±0.25, so no way of wanting standing is inherited as more stubborn;
+- it is uncorrelated with persistence and with `selfRegard` (|r| ≤ 0.2): a proud Body may be reasonable and a modest one stubborn;
+- the matched pair (`standing_02`, `standing_05`) shares it, so the two still differ only in direction.
+
+| Variant | Orientation | P | S | Q (stubbornness) |
+|---|---|---|---|---|
+| `standing_01` | `recognition` | 0.30 | 0.50 | 0.86 |
+| `standing_02` | `recognition` | -0.60 | -0.30 | -0.30 |
+| `standing_03` | `recognition` | 0.55 | -0.88 | -0.05 |
+| `standing_04` | `deference` | 0.88 | 0.15 | 0.45 |
+| `standing_05` | `deference` | -0.60 | -0.30 | -0.30 |
+| `standing_06` | `deference` | -0.25 | 0.88 | -0.65 |
+| `standing_07` | `competence` | -0.88 | 0.35 | 0.25 |
+| `standing_08` | `competence` | 0.10 | -0.60 | 0.10 |
+| `standing_09` | `belonging` | 0.62 | 0.15 | -0.90 |
+| `standing_10` | `belonging` | -0.70 | -0.10 | 0.62 |
+
+| | Value |
+|---|---|
+| Family mean | 0.008 |
+| Orientation means | recognition 0.17 · deference -0.17 · competence 0.18 · belonging -0.14 |
+| Correlation with persistence | -0.02 |
+| Correlation with `selfRegard` | -0.01 |
+
+**Threads already living.** A Body that expressed `standing` before v6 receives `stubbornness` once, from its own variant. The variant is recognised by what the Body already carries: its orientation and every earlier position. Nothing is redrawn, and the completion is recorded as a `THREAD_GENOME_LOCI_EXPRESSED` event (`world-genome:express`). On staging:
+
+| Variant | Threads | Q |
+|---|---|---|
+| `standing_01` | Kaleb | 0.86, proud-leaning and very stubborn |
+| `standing_04` | Mikias | 0.45 |
+| `standing_05` | Kadir, Nathan | -0.30 |
+| `standing_06` | Hassan, Habiba | -0.65, the proudest and fairly reasonable |
+| `standing_09` | Bontu | -0.90, the most reasonable |
+| `standing_10` | Surafel | 0.62 |

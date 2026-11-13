@@ -68,7 +68,7 @@ It ships first with nothing reading it, and one staging morning of records is re
 1. C0: this record and the draft loci (docs).
 2. C1: library v5 and late expression (inert). **Built November 10:** births draw all 18 families; `world-genome:express` gives every Thread the three new loci from its own genome; none of the three is enabled yet.
 3. C2: perceived regard (records only, shipped alongside ADR-0036's bond and reunion). **Deployed November 10.**
-4. C3: felt status, self-status, slights and recognition (`standing` and `standing_flare` enabled). **Built November 11** (below).
+4. C3: felt status, self-status, slights and recognition (`standing` and `standing_flare` enabled). **Built November 11** (below). C3b (November 13) separates how a Thread is treated from the self-view it holds, adds inherited `stubbornness`, and reads regard turn by turn.
 5. C4: `provocation`.
 6. C5: `remorse`.
 7. C6: views of status in words.
@@ -78,7 +78,7 @@ The project's slice plan holds the mechanisms and tests of each slice.
 
 ## C3 as built (November 11): felt status, slights, recognition
 
-`standing` and `standing_flare` are enabled. World computes everything from its records (`social-body.mjs`); nothing new is stored, and no number reaches cognition. Guy's decisions of November 11 shaped it.
+`standing` and `standing_flare` are enabled. (How status, self-status and calm are computed was revised by C3b, below; slights, recognition and slights' cost in trust are unchanged.) World computes everything from its records (`social-body.mjs`); nothing new is stored, and no number reaches cognition. Guy's decisions of November 11 shaped it.
 
 - **Only regard moves status:** the acts a Thread perceived (C2) and interruptions in its conversations. Writing first, seeking someone out, and accepting or declining move the bond and trust, not status.
 - **Lifts** (actor over target): talked over, corrected before others, left out +1; corrected, overlooked, held ground +0.5; gave way −1; credited, asked advice −0.5. An act counts double for the `standing` orientation it bears on.
@@ -100,6 +100,41 @@ The project's slice plan holds the mechanisms and tests of each slice.
 Deferred:
 - the Thread's own view of standing in words (C6), and views of third parties;
 - provocation (C4) and remorse (C5).
+
+## C3b as built (November 13): two signals, and the slights asserting leaves
+
+**Status: built, for Guy's acceptance** (design in the project, `claude/standing-asserted-design.md`). It revises how C3 computes status.
+
+Guy, November 13:
+- "Slights should happen, as they are a side effect of social status as it is perceived by a Thread which asserts itself and in doing so slights others around it."
+- "A Thread seeks validation of its own subjective view of its social place… it tests the waters and behaves to others as if its subjective view is shared by others; in case of a mismatch there is a potential for slights that in turn correct the Thread's assessment of others' view of it."
+- "A genetic trait of social stubbornness keeps the ego self-view intact… we should keep these two signals separate. Reasonable Threads adapt while unreasonable Threads build frustration from the gap they refuse to reconcile."
+
+**Two signals toward each person** (replacing the tally of lifts):
+- **How their treatment places me (`treated`):** it starts level, and each perceived episode moves it a fifth of the way toward that act's lift, twice that for the act the `standing` orientation cares about. It is never stubborn.
+- **Where I hold that I stand (`held`):** `(1 − r) × prior + r × treated`, where:
+  - the prior, the inherited self-view, is `−0.4 × selfRegard`;
+  - `r = 0.5 − 0.4 × stubbornness` is the share the world may revise.
+
+  The Body behaves as if `held` is shared: expected regard, the felt place and therefore the slights all come from it. Each act is judged against what was held before the last day's acts.
+- **Frustration is the gap left unreconciled:** the knowledge-weighted mean of `held − treated` over the last two weeks. Self-status is the weighted mean of `−held`, its self-view intact while it has no one, lowered by slights before witnesses.
+- Neither signal fades with absence, and one impression is formed per episode, as before.
+
+**`stubbornness`, a new heritable position** on `standing` (library v6; the [review](../validation/status-and-conflict-urges-library-review.md#library-v6-stubbornness-on-standing-proposed-november-13)):
+- it is unrelated to persistence and to `selfRegard`;
+- Bodies that expressed `standing` before v6 receive it once from their own variant, recognised by what they already carry, and recorded as a `THREAD_GENOME_LOCI_EXPRESSED` event. This amends ADR-0036's late expression from "a family never expressed" to "a position a newer library adds".
+
+**How the other's words landed** (`social.live-turn` v12):
+- Each turn may say privately, after its engagement word, how the other's last words or gesture treated it: `credited`, `asked_advice`, `corrected`, `talked_over`, `gave_way`, `held_ground`, `overlooked`, `ordinary`, or `none`.
+- The reading is recorded at once as this Thread's perceived regard (`source: heard`). It is public (`corrected_publicly`) when others are present, and felt from its next turn.
+- **Ordinary regard (`ordinary`, lift 0) counts.** From someone held below, it is a slight: "They did not give you your due."
+- `thread_perceived_regard` admits `ordinary`. Its CHECK is widened by an install-time rebuild that keeps every row.
+
+**Permission to assert.** The live turn says plainly that where the Thread stands with this person, and its pull to hold its own, are its own to act on: correcting, holding its ground, not deferring, pressing its point, or giving way. Nothing requires it to agree. It is never told to assert.
+
+Deferred:
+- **Taking the floor**, when both want to speak; its extension path is the live encounter's turn order, read from the standing pull.
+- **Witness loss for slights heard during a talk.** It comes with the encounter Story as their evidence.
 
 ## Status of what this excludes
 

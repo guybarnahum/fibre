@@ -296,6 +296,8 @@ const STUNG=Object.freeze({
   corrected:"Their correction stung a little.",
   corrected_publicly:"Being corrected by them in front of others stung.",
   left_out:"Being left out by them stung.",
+  held_ground:"Their not giving way to you grated.",
+  ordinary:"They did not give you your due.",
 });
 const FLARE=Object.freeze({
   public_correction:"Being corrected by them in front of others stung.",

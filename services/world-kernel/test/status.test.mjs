@@ -4,7 +4,9 @@ import test from "node:test";
 import { URGE_FAMILY_BY_NAME } from "#core/src/inherited-urges.mjs";
 import { DEFAULT_ORGANISM_POLICY } from "#core/src/organism-policy.mjs";
 import { feltTowardPeople, feltSocialBody } from "../src/interoceptive-cognition.mjs";
-import { bodyTowardPeople, configureWorldOrganismPolicy, livedRegulationForLivedHistory } from "../src/lived-now-regulation.mjs";
+import { bodyTowardPeople, configureWorldOrganismPolicy, livedRegulationForLivedHistory, socialBodyBeforeTalk,
+  socialBodyInConversation } from "../src/lived-now-regulation.mjs";
+import { runThreadLiveSocialEncounter } from "../src/lived-social-live-encounter.mjs";
 import { regardOf, selfStanding } from "../src/social-body.mjs";
 
 const AT = "2026-11-12T12:00:00.000Z";
@@ -27,7 +29,7 @@ const store = (items) => {
   const all = records(items);
   return {
     listSharedContact:() => Array.from({ length:10 }, (_, i) => ({ at:minutesBefore(60 * 24 * (i + 1)), kind:"conversation", turns:8 })),
-    listPairActs:() => [], listOpenDoors:() => ["conversation"],
+    listPairActs:() => [], listOpenDoors:() => ["conversation"], listSocialExposures:() => [],
     listPerceivedRegard:(threadId, person) => all.filter((item) => item.personThreadId === person),
     listRecentPerceivedRegard:() => all,
   };
@@ -38,9 +40,9 @@ const drive = (frame, family, target = `person:${OTHER}`) =>
   frame.drives.find((item) => item.family === family && item.targetRef === target);
 
 test("the same public correction stings far more from someone this Body feels below it than from one above it, and points at them", () => {
-  const thread = body("standing_07", "standing_flare_03");
-  const fromBelow = toward(thread, [...Array(6).fill(["gave_way", "them"]), ["corrected_publicly", "them", 3]]);
-  const fromAbove = toward(thread, [...Array(6).fill(["gave_way", "me"]), ["corrected_publicly", "them", 3]]);
+  const thread = body("standing_09", "standing_flare_03");
+  const fromBelow = toward(thread, [...Array(10).fill(["gave_way", "them"]), ["corrected_publicly", "them", 3]]);
+  const fromAbove = toward(thread, [...Array(10).fill(["gave_way", "me"]), ["corrected_publicly", "them", 3]]);
   const sting = (frame) => drive(frame, "standing_flare")?.pressure ?? 0;
   assert.ok(sting(fromBelow) > 1.5 * sting(fromAbove), "a correction stung as much from someone looked up to");
   assert.equal(drive(fromBelow, "standing_flare").triggerKind, "public_correction");
@@ -48,31 +50,33 @@ test("the same public correction stings far more from someone this Body feels be
 });
 
 test("the same history reads differently by what standing means to a Body", () => {
-  const history = [...Array(3).fill(["asked_advice", "them"]), ...Array(3).fill(["held_ground", "them"])];
+  const history = Array.from({ length:6 }, (_, i) => [i % 2 === 0 ? "asked_advice" : "held_ground", "them"]);
   const status = (variantId) => regardOf({ experienceStore:store(history), threadId:SELF, otherThreadId:OTHER, at:AT,
     standingLocus:{ orientation:locus(variantId).orientation, persistence:0, selfRegard:0 } }).status;
   assert.ok(status("standing_07") < 0, "a competence Body did not feel the advice-seeker below it");
   assert.ok(status("standing_06") > 0, "a deference Body did not feel the one who held ground above it");
 });
 
-test("treated alike, a Body that rates itself high is frustrated and one that rates itself low is gratified", () => {
-  // Ordinary regard: credited as often as passed over, by two people.
-  const ordinary = ["thr_a", "thr_b"].flatMap((person) =>
-    Array.from({ length:10 }, (_, i) => [i % 2 === 0 ? "credited" : "overlooked", "them", 0, person]));
+test("treated ordinarily, a proud stubborn Body stays frustrated, a proud reasonable one comes near calm, and a modest one is gratified", () => {
+  // Ordinary regard from two people, ten days each.
+  const ordinary = ["thr_a", "thr_b"].flatMap((person) => Array.from({ length:10 }, () => ["ordinary", "them", 0, person]));
   const place = (variantId) => {
     const standing = locus(variantId);
     return selfStanding({ experienceStore:store(ordinary), threadId:SELF, at:AT,
-      standingLocus:{ orientation:standing.orientation, persistence:0, selfRegard:standing.positions.selfRegard } });
+      standingLocus:{ orientation:standing.orientation, persistence:0, selfRegard:standing.positions.selfRegard,
+        stubbornness:standing.positions.stubbornness } });
   };
-  const proud = place("standing_06"), modest = place("standing_03");
-  assert.ok(proud.gap < -0.15, "a Body rating itself above its treatment was not frustrated");
-  assert.ok(modest.gap > 0.15, "a Body rating itself below its treatment was not gratified");
+  const stubborn = place("standing_01"), reasonable = place("standing_06"), modest = place("standing_03");
+  assert.ok(stubborn.gap < -0.15, "a proud stubborn Body treated ordinarily was not frustrated");
+  assert.ok(Math.abs(reasonable.gap) < Math.abs(stubborn.gap) && Math.abs(reasonable.gap) <= 0.15,
+    "a proud reasonable Body did not come near calm");
+  assert.ok(modest.gap > 0.15, "a modest Body treated ordinarily was not gratified");
   const situation = { threadId:SELF, situationId:"sit_now", establishedAt:AT };
   const words = (variantId) => feltSocialBody(livedRegulationForLivedHistory({ thread:body(variantId), asOf:AT,
     livedNowStore:{ getPreviousSituation:() => null }, currentSituation:situation,
     experienceStore:{ ...store(ordinary), listSocialInteractions:() => [], listAcceptedHumanMeetings:() => [],
       listReciprocalConversations:() => [], listSocialExposures:() => [] } }));
-  assert.notDeepEqual(words("standing_06"), words("standing_03"), "frustration and gratification felt the same");
+  assert.notDeepEqual(words("standing_01"), words("standing_03"), "frustration and gratification felt the same");
 });
 
 test("a Body that keeps giving way comes to feel the other above it, and a pull to hold its own", () => {
@@ -83,7 +87,7 @@ test("a Body that keeps giving way comes to feel the other above it, and a pull 
 });
 
 test("credit warms from someone looked up to, where the same credit from someone below is only expected", () => {
-  const thread = body("standing_01");
+  const thread = body("standing_06");
   const fromAbove = toward(thread, [...Array(6).fill(["gave_way", "me"]), ["credited", "them"]]);
   const fromBelow = toward(thread, [...Array(6).fill(["gave_way", "them"]), ["credited", "them"]]);
   assert.equal(drive(fromAbove, "standing").attained, true, "credit from someone looked up to did not warm");
@@ -130,4 +134,60 @@ test("with inherited spread at zero, every Body feels status the species way", (
     const status = (variantId) => drive(toward(body(variantId), history), "standing")?.status ?? 0;
     assert.equal(status("standing_07"), status("standing_06"), "inherited differences acted with spread at zero");
   } finally { configureWorldOrganismPolicy(DEFAULT_ORGANISM_POLICY); }
+});
+
+// ---- Asserting standing, and the slights it leaves (C3b) ----
+
+test("how one is treated and the self-view one holds are separate: a stubborn Body keeps its view where a reasonable one revises it", () => {
+  // Left out, again and again: an act neither Body's orientation weighs more.
+  const history = Array(10).fill(["left_out", "them"]);
+  const regard = (variantId) => {
+    const standing = locus(variantId);
+    return regardOf({ experienceStore:store(history), threadId:SELF, otherThreadId:OTHER, at:AT,
+      standingLocus:{ orientation:standing.orientation, persistence:0, selfRegard:standing.positions.selfRegard,
+        stubbornness:standing.positions.stubbornness } });
+  };
+  const stubborn = regard("standing_01"), reasonable = regard("standing_06");
+  assert.equal(stubborn.treated, reasonable.treated, "the world's answer depended on the Body hearing it");
+  assert.ok(Math.abs(stubborn.status - stubborn.treated) > 2 * Math.abs(reasonable.status - reasonable.treated),
+    "a stubborn self-view was revised as far as a reasonable one");
+});
+
+test("an ordinary turn from someone a Body holds below it is a slight, felt at once; from someone it holds above it is not", () => {
+  const thread = body("standing_06");
+  const felt = (history) => {
+    const before = socialBodyBeforeTalk({ thread, otherThreadId:OTHER, experienceStore:store(history), asOf:AT });
+    return feltTowardPeople(socialBodyInConversation({ thread, ...before, turns:2, asOf:AT,
+      other:{ threadId:OTHER, evidenceRef:"sit_other" }, heardNow:[{ act:"ordinary", witnesses:0 }] })).get(OTHER) ?? [];
+  };
+  const due = (lines) => lines.some((line) => line.includes("due"));
+  assert.ok(due(felt(Array(8).fill(["credited", "them"]))), "ordinary regard from one who usually credits it did not grate");
+  assert.ok(!due(felt(Array(8).fill(["gave_way", "me"]))), "ordinary regard from one it looks up to grated");
+});
+
+test("each turn may privately say how the other's last words treated the Thread; it is heard, never spoken", async () => {
+  const thread = (threadId, name) => ({ threadId, version:1, identity:{ name },
+    currentState:{ selfModel:`I am ${name}.`, unresolvedIntentions:[] }, genome:{ runtimeBaselines:{}, urgeProjection:[] } });
+  const heard = [];
+  const context = (self, other) => ({ thread:self,
+    situation:{ situationId:`sit_${self.threadId}`, threadId:self.threadId, establishedAt:AT, activity:"Talking." },
+    perspective:{ developedSelfEvidence:[], placeName:"the library",
+      counterparts:[{ threadId:other.threadId, name:other.identity.name, appearance:"a reader", noticedBefore:[] }] },
+    onHeard:(act) => heard.push([self.threadId, act]) });
+  const mina = thread("thr_heard_mina", "Mina"), noor = thread("thr_heard_noor", "Noor");
+  const lines = ["engaged none SAY: That caption overstates it.", "absorbed corrected SAY: No, it is exactly right.", "SILENT"];
+  let turns = 0;
+  const result = await runThreadLiveSocialEncounter({
+    initiator:context(mina, noor), counterparty:context(noor, mina),
+    request:{ initiatorThreadId:mina.threadId, text:"Look at this caption." },
+    stance:{ decision:"accept", expression:null, suggestedAt:null, reason:"Yes." },
+    modelAdapter:{ async invoke() { throw new Error("no structured call"); },
+      async *streamExpression() {
+        yield { type:"expression_delta", text:lines[Math.min(turns++, lines.length - 1)] };
+        yield { type:"expression_complete", provenance:{ provider:"fixture", modelId:"fixture" } };
+      } },
+  });
+  assert.deepEqual(heard.map(([, act]) => act), ["corrected"], "how the other's words landed was lost, or nothing was invented");
+  assert.ok(result.story.beats.every((beat) => !/corrected|engaged|absorbed|\bnone\b/iu.test(beat.text ?? "")),
+    "a private reading was spoken aloud");
 });

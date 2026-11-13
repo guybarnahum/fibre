@@ -4,6 +4,7 @@
 // own interests in view; its Body accumulates those readings at the pace of
 // its inherited exploration locus. An enthusiast's readings stay absorbed and
 // it never wearies of its subject; the fact of repetition is there for all.
+import { bodyLevel, HOUR_MS, inheritedHalfLife } from "#core/src/body-level.mjs";
 import { contentWords } from "./conversation-shape.mjs";
 
 export const ENGAGEMENT_READINGS=Object.freeze(["absorbed","engaged","going_through_motions","weary"]);
@@ -63,8 +64,7 @@ export function sameGroundNow({experienceStore,threadId,text,at,excludeRefs=[]})
 export function wearinessOf({experienceStore,threadId,at,persistence=0}){
   const readings=experienceStore?.listEngagementReadings?.(threadId,{
     since:new Date(Date.parse(at)-RECENT_MS).toISOString(),until:at})??[];
-  const halfLife=WEARINESS_HALF_LIFE_HOURS*2**(2*persistence);
-  const load=readings.reduce((sum,item)=>sum+WEIGHT[item.reading]
-    *2**(-(Date.parse(at)-Date.parse(item.at))/3_600_000/halfLife),0);
-  return Math.round(Math.max(0,1-2**(-Math.max(0,load)/WEARINESS_SCALE))*1e6)/1e6;
+  return Math.round(bodyLevel({at,events:readings.map(item=>({at:item.at,size:WEIGHT[item.reading]})),
+    halfLife:inheritedHalfLife(WEARINESS_HALF_LIFE_HOURS*HOUR_MS,persistence),
+    bound:{saturate:WEARINESS_SCALE}}).level*1e6)/1e6;
 }

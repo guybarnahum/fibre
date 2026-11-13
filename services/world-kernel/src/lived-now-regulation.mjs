@@ -266,7 +266,13 @@ function locusOf(thread,family){
   const gene=(thread.genome?.urgeProjection??[]).find(item=>item.family===family)??null;
   return gene===null?null:{orientation:gene.orientation,
     persistence:(gene.positions?.persistence??0)*organismPolicy.inheritedSpread,
-    selfRegard:(gene.positions?.selfRegard??0)*organismPolicy.inheritedSpread};
+    selfRegard:(gene.positions?.selfRegard??0)*organismPolicy.inheritedSpread,
+    stubbornness:(gene.positions?.stubbornness??0)*organismPolicy.inheritedSpread};
+}
+// The loci the social Body reads, for an operator's view of it.
+export function socialBodyLoci(thread){
+  return Object.freeze({trust:locusOf(thread,"trust"),standing:locusOf(thread,"standing"),
+    exploration:locusOf(thread,"exploration")});
 }
 const trustLocus=(thread)=>locusOf(thread,"trust");
 const standingLocus=(thread)=>locusOf(thread,"standing");
@@ -287,7 +293,7 @@ function standingPercept({regards,bonds,self}){
   const people=[],triggers=[];
   for(const {person,regard} of regards){
     const bond=bondFor(person.threadId);
-    const expected=expectedRegard({status:regard.status??0,bond,self:self?.self??0});
+    const expected=expectedRegard({status:regard.expectedFrom??regard.status??0,bond,self:self?.self??0});
     const acts=(regard.lately??[]).map(item=>({act:item.act,witnesses:item.witnesses??0,
       gap:rounded(regardShown(item.act)-expected)}));
     const slight=acts.filter(item=>item.gap< -REGARD_GAP).sort((a,b)=>a.gap-b.gap)[0]??null;
@@ -429,10 +435,13 @@ export function livedRegulationForLivedHistory({
 // when the talk began, drained by each turn spoken or heard since, less as
 // the other is known and trusted. How far it trusts them is felt too, and
 // someone hardly known is a pull for a Body inherited to seek new people.
-export function socialBodyInConversation({thread,start,regard,turns,asOf,other,self=null,talkedOverNow=0,weariness=0}){
+export function socialBodyInConversation({thread,start,regard,turns,asOf,other,self=null,talkedOverNow=0,
+  heardNow=[],weariness=0}){
   const evidenceRefs=[...(start?.evidenceRefs??[]),`self:conversation-turns:${turns}`];
-  // Being cut off in this very talk is felt at once.
-  const now=talkedOverNow===0?regard:{...regard,lately:[
+  // Being cut off in this very talk, and how the other's words just landed
+  // (ADR-0037 C3b), are felt at once.
+  const fresh=[...heardNow].reverse().map(item=>({act:item.act,by:"them",at:asOf,witnesses:item.witnesses??0}));
+  const now=talkedOverNow===0&&fresh.length===0?regard:{...regard,lately:[...fresh,
     ...Array.from({length:talkedOverNow},()=>({act:"talked_over",by:"them",at:asOf,witnesses:0})),...(regard.lately??[])]};
   const {standingPeople,urgeTriggers,...people}=peoplePercept({thread,people:[other],at:asOf,known:now,self})??{};
   return evaluateIntrinsicRegulation({

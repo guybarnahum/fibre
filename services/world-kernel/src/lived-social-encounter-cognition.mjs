@@ -102,17 +102,29 @@ const MARKER_LENGTH=Math.max(...TURN_MARKERS.map(([marker])=>marker.length));
 const MARKER_STYLE=/^[\s*_`#>]+/u;
 
 // A turn may first say, in one word, how the talk holds this Thread now
-// (S5b): absorbed, engaged, going through the motions, or weary. It is its
-// own private reading, never spoken. undefined while the opening could still
-// become one.
+// (S5b): absorbed, engaged, going through the motions, or weary; and then, in
+// one more, how the other's last words or gesture treated it (ADR-0037 C3b).
+// Both are its own private readings, never spoken. undefined while the
+// opening could still become one.
 const READINGS=Object.freeze(["absorbed","engaged","going_through_motions","weary"]);
+export const HEARD=Object.freeze(["credited","asked_advice","corrected","talked_over","gave_way",
+  "held_ground","overlooked","ordinary","none"]);
 function splitReading(text){
-  const opening=text.replace(MARKER_STYLE,"");
-  const word=/^([A-Za-z_]+)[\s|:,;.-]+/u.exec(opening);
-  if(word!==null&&READINGS.includes(word[1].toLowerCase()))
-    return {reading:word[1].toLowerCase(),rest:opening.slice(word[0].length)};
-  if(/^[A-Za-z_]*$/u.test(opening)&&READINGS.some(item=>item.startsWith(opening.toLowerCase())))return undefined;
-  return {reading:null,rest:text};
+  let opening=text.replace(MARKER_STYLE,"");
+  const found=[];
+  for(const words of [READINGS,HEARD]){
+    const word=/^([A-Za-z_]+)[\s|:,;.-]+/u.exec(opening);
+    if(word!==null&&words.includes(word[1].toLowerCase())){
+      found.push(word[1].toLowerCase());
+      opening=opening.slice(word[0].length).replace(MARKER_STYLE,"");
+      continue;
+    }
+    if(/^[A-Za-z_]*$/u.test(opening)&&words.some(item=>item.startsWith(opening.toLowerCase())))return undefined;
+    found.push(null);
+    if(found[0]===null)return {reading:null,heard:null,rest:text};
+    break;
+  }
+  return {reading:found[0],heard:found[1]??null,rest:opening};
 }
 
 // undefined while the opening could still become a marker; null when it cannot.
@@ -123,7 +135,7 @@ function turnMarker(text){
   const head=opening.slice(0,MARKER_LENGTH).toUpperCase();
   for(const [marker,decision] of TURN_MARKERS){
     if(head.startsWith(marker)){
-      return {decision,reading:split.reading,rest:opening.slice(marker.length).replace(/^[*_`]+/u,"")};
+      return {decision,reading:split.reading,heard:split.heard,rest:opening.slice(marker.length).replace(/^[*_`]+/u,"")};
     }
   }
   return TURN_MARKERS.some(([marker])=>marker.startsWith(head))?undefined:null;
@@ -164,6 +176,7 @@ export async function takeLiveSocialTurn({
   modelAdapter,
   feltBody=null,
   onReading=null,
+  onHeard=null,
   sameGround=null,
   signal=null,
 }={}){
@@ -203,6 +216,7 @@ export async function takeLiveSocialTurn({
     return SILENCE;
   }
   if(turn?.reading)onReading?.(turn.reading);
+  if(turn?.heard&&turn.heard!=="none")onHeard?.(turn.heard);
   if(!turn||SPEECH.has(turn.decision)&&turn.rest.trim()===""){
     await remainder(events);
     return unclearTurn(text);
