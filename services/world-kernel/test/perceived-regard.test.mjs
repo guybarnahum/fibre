@@ -87,3 +87,32 @@ test("each Thread records regard as it perceived it, and two Threads take the sa
     rmSync(directory,{recursive:true,force:true});
   }
 });
+
+test("a World installed before ordinary regard keeps every perceived act and admits ordinary regard, through portable storage", async () => {
+  const { DatabaseSync } = await import("node:sqlite");
+  const directory = mkdtempSync(join(tmpdir(), "fibre-regard-ordinary-"));
+  const path = join(directory, "world.sqlite");
+  try {
+    const world = openWorldStore(installedWorldStateStorage(path));
+    const seed = JSON.parse(readFileSync(new URL("../../../fixtures/threads/mina.thread.json", import.meta.url), "utf8"));
+    world.seedThread({ ...seed, threadId:"thr_a" });
+    world.close();
+    const before = new DatabaseSync(path);
+    before.exec(`PRAGMA foreign_keys=OFF; DROP TABLE thread_perceived_regard;
+      CREATE TABLE thread_perceived_regard (regard_id TEXT PRIMARY KEY, thread_id TEXT NOT NULL, person_thread_id TEXT NOT NULL,
+        act TEXT NOT NULL CHECK (act IN ('credited','overlooked','asked_advice','corrected','corrected_publicly','talked_over',
+          'gave_way','held_ground','left_out')),
+        actor_thread_id TEXT NOT NULL CHECK (actor_thread_id IN (thread_id,person_thread_id)), account TEXT NOT NULL,
+        evidence_refs_json TEXT NOT NULL CHECK (json_valid(evidence_refs_json)), source_ref TEXT NOT NULL, as_of TEXT NOT NULL,
+        FOREIGN KEY (thread_id) REFERENCES threads(thread_id)) STRICT;
+      INSERT INTO thread_perceived_regard VALUES ('reg_old','thr_a','thr_b','credited','thr_b','As I saw it.','["e"]','s','2026-11-12T00:00:00Z');`);
+    before.close();
+    installedWorldStateStorage(path);
+    const after = new DatabaseSync(path);
+    after.exec("PRAGMA foreign_keys=OFF");
+    after.prepare(`INSERT INTO thread_perceived_regard VALUES ('reg_new','thr_a','thr_b','ordinary','thr_b','How I took it.','["e"]','s','2026-11-13T00:00:00Z')`).run();
+    assert.deepEqual(after.prepare("SELECT regard_id FROM thread_perceived_regard ORDER BY regard_id").all().map((row) => row.regard_id),
+      ["reg_new", "reg_old"], "an earlier perceived act was lost, or ordinary regard was refused");
+    after.close();
+  } finally { rmSync(directory, { recursive:true, force:true }); }
+});

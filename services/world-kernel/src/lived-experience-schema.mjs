@@ -662,12 +662,17 @@ export function createLivedExperienceTables(database) {
   // rebuilt once with every row kept as it was.
   const regardSql=database.prepare(
     "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_perceived_regard'").get()?.sql??"";
+  // (No ALTER ... RENAME: World storage rebuilds by create, copy and drop.)
   if(!regardSql.includes("'ordinary'")){
+    const kept=regardTableSql.replace("thread_perceived_regard (","thread_perceived_regard_kept (");
     database.exec(`
-      ALTER TABLE thread_perceived_regard RENAME TO thread_perceived_regard_before_ordinary;
+      DROP TABLE IF EXISTS thread_perceived_regard_kept;
+      ${kept}
+      INSERT INTO thread_perceived_regard_kept SELECT * FROM thread_perceived_regard;
+      DROP TABLE thread_perceived_regard;
       ${regardTableSql}
-      INSERT INTO thread_perceived_regard SELECT * FROM thread_perceived_regard_before_ordinary;
-      DROP TABLE thread_perceived_regard_before_ordinary;
+      INSERT INTO thread_perceived_regard SELECT * FROM thread_perceived_regard_kept;
+      DROP TABLE thread_perceived_regard_kept;
       CREATE INDEX IF NOT EXISTS thread_perceived_regard_by_pair
         ON thread_perceived_regard(thread_id,person_thread_id,as_of);
     `);
