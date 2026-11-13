@@ -44,9 +44,11 @@ export function enqueueNextSocialNeedBand({
   if(nextBoundaryAt===null||visitSince===null)return null;
   const contact=socialContactEvidenceForLivedHistory({
     threadId:situation.threadId,currentSituation:situation,
-    livedNowStore,experienceStore,asOf:at,
+    livedNowStore,experienceStore,asOf:at,thread,
   });
   if(contact===null)return null; // Time alone is not proof of social deprivation.
+  // Among people who ease it, the need builds more slowly, or not at all.
+  if(contact.buildRate<=0)return null;
   const sensitivity=threadRegulatorProfile(
     thread.genome?.runtimeBaselines??{},
   ).sensitivity.social;
@@ -59,7 +61,7 @@ export function enqueueNextSocialNeedBand({
     if(pressure>=band)continue;
     const targetHours=band*24/(0.8*sensitivity);
     const due=new Date(Math.ceil(Date.parse(at)
-      +(targetHours-contact.observedUnmetHours)*3600_000)+1).toISOString();
+      +(targetHours-contact.observedUnmetHours)/contact.buildRate*3600_000)+1).toISOString();
     if(Date.parse(due)>=Date.parse(nextBoundaryAt))continue;
     const result=experienceStore.enqueueSocialOpportunity({
       threadId:situation.threadId,situationId:situation.situationId,

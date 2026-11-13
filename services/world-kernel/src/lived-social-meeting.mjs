@@ -826,8 +826,14 @@ export function createSocialMeetingService({
       const visitSince=input.reconsiderationVisitSince??null;
       const sourceKind=input.sourceKind??null;
       const sourceEncounterRef=input.sourceEncounterRef??null;
+      // Going over to someone here, with what was on its mind (presence).
+      const cameOverToSay=sourceKind==="intention"?input.cameOverToSay:null;
+      if(sourceKind==="intention"&&(!Array.isArray(cameOverToSay)||cameOverToSay.length===0))
+        throw new TypeError("going over carries what the Thread had on its mind");
       assertExactKeys("social meeting input", input,
-        sourceKind!==null
+        sourceKind==="intention"
+          ?["initiatorThreadId","at","counterpartyThreadId","sourceKind","cameOverToSay"]
+          :sourceKind!==null
           ?["initiatorThreadId","at","counterpartyThreadId","sourceKind","sourceEncounterRef"]
           :visitSince!==null
             ?["initiatorThreadId","at",
@@ -914,11 +920,15 @@ export function createSocialMeetingService({
           experienceStore,
         });
         const actorOpportunity = situatedPercept.opportunities[0];
-        const salience = evaluateSalience({
+        const gate = evaluateSalience({
           opportunity:actorOpportunity,
           situatedPercept,
           regulationFrame,
         });
+        // A person it chose to go over to is not in the background.
+        const salience = sourceKind==="intention"&&counterparty.thread.threadId===counterpartyThreadId
+          ?Object.freeze({...gate,outcome:"salient",anchors:Object.freeze([...gate.anchors,"own_intention"])})
+          :gate;
 
         if (salience.outcome === "background") {
           attemptByActor.set(counterparty.thread.threadId, Object.freeze({
@@ -994,6 +1004,7 @@ export function createSocialMeetingService({
           modelAdapter,
           continuationEligible:continuation!==null,
           conversationAvailable,
+          cameOverToSay,
         });
         const chosen=initiation.towardThreadId===null?null
           :consideration.find(person=>

@@ -10,6 +10,11 @@ import {
 import { feltSocialBody, feltTowardPeople } from "./interoceptive-cognition.mjs";
 import { bodyTowardPeople, livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
 import { sameGroundNow } from "./engagement.mjs";
+import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
+import { bookInHand } from "./scene-glance.mjs";
+import { observablePerson } from "./world-observable-person.mjs";
+
+const APPROACHES_PER_VISIT=3;
 
 const CONTACTABLE_RELATION_KINDS=new Set([
   "biological_parent",
@@ -110,6 +115,10 @@ export function createThreadContactProcess({
   contactStore,
   livedNowStore,
   modelAdapter,
+  // Going over to someone here (presence) is the ordinary approach; without
+  // a meeting service, a Thread can only write.
+  meetingService=null,
+  embodimentStore=null,
   now=()=>new Date().toISOString(),
   batchLimit=4,
 }={}){
@@ -132,6 +141,13 @@ export function createThreadContactProcess({
   requireMethod("contact contactStore",contactStore,"getPersonCapability");
   requireMethod("contact contactStore",contactStore,"hasPendingAttempts");
   requireMethod("contact modelAdapter",modelAdapter,"invoke");
+  if(meetingService!==null){
+    requireMethod("contact meetingService",meetingService,"meet");
+    for(const method of ["getCurrentSituation","getWorldPlace","listCurrentVenueSituations"])
+      requireMethod("contact livedNowStore",livedNowStore,method);
+    requireMethod("contact experienceStore",experienceStore,"listSeenSince");
+    requireMethod("contact contactStore",contactStore,"countApproaches");
+  }
   if(typeof now!=="function")throw new TypeError("contact now must be a function");
   if(!Number.isSafeInteger(batchLimit)||batchLimit<1||batchLimit>16){
     throw new TypeError("contact batchLimit must be 1-16");
@@ -145,12 +161,99 @@ export function createThreadContactProcess({
     });
   }
 
+  // Who is here (presence): people at the same place now whom this Thread
+  // has seen during this visit, in a Story they were both in. Going over to
+  // someone needs no door, and happens at most three times a visit.
+  function peopleHere(threadId,at,{capped=true}={}){
+    if(meetingService===null)return [];
+    const situation=livedNowStore.getCurrentSituation(threadId);
+    if(situation?.location?.kind!=="place"||situation.wakefulness==="asleep")return [];
+    const venueRef=livedNowStore.getWorldPlace(threadId,situation.location.placeRef,
+      {required:false})?.physicalVenue?.ref??null;
+    const since=venueRef===null?null:socialVenueVisitSince(livedNowStore,situation,venueRef);
+    if(since===null)return [];
+    const seen=new Set(experienceStore.listSeenSince(threadId,{since}));
+    if(seen.size===0)return [];
+    return livedNowStore.listCurrentVenueSituations({venueRef,at,limit:8,excludeThreadId:threadId})
+      .filter(other=>seen.has(other.threadId)&&(!capped||contactStore.countApproaches({
+        threadId,recipientPartyId:other.threadId,since})<APPROACHES_PER_VISIT))
+      .map(other=>({situation:other,venueRef}));
+  }
+  // What anyone can see of someone here: a book in hand, or what they are doing.
+  function hereLine({situation,venueRef},at){
+    const book=bookInHand({experienceStore,threadId:situation.threadId,venueRef,at});
+    return book!==null?`They are here, reading "${book.title}" by ${book.by}.`
+      :situation.outwardActivity?`They are here, ${situation.outwardActivity}.`:"They are here.";
+  }
+
+  // Everyone it could reach: whom it can write to, and whom it could go over to.
+  function candidatesFor(threadId,at){
+    const routes=currentCandidates(threadId);
+    const here=peopleHere(threadId,at);
+    const hereOf=(partyId)=>here.find(person=>person.situation.threadId===partyId);
+    const reachable=routes.map(candidate=>{
+      const person=candidate.recipientKind==="thread"?hereOf(candidate.partyId):undefined;
+      return Object.freeze({...candidate,canWrite:true,
+        ...(person===undefined?{}:{here:hereLine(person,at)})});
+    });
+    for(const person of here){
+      const partyId=person.situation.threadId;
+      if(reachable.some(candidate=>candidate.recipientKind==="thread"&&candidate.partyId===partyId))continue;
+      const identity=worldReader.getThread(partyId,{required:false})?.identity;
+      if(!identity)continue;
+      const seen=observablePerson({threadId:partyId,situation:person.situation,observerThreadId:threadId,
+        name:identity.name??null,birthDate:identity.birthDate??null,sex:identity.sex??null,
+        embodimentStore,situatedLifeStore,experienceStore,at});
+      reachable.push(Object.freeze({partyId,recipientKind:"thread",
+        displayName:seen.name??seen.observableDescription,relationKind:"here",
+        factualRoleRefs:[],relationshipFacts:[],capabilityRef:null,
+        canWrite:false,here:hereLine(person,at)}));
+    }
+    return Object.freeze(reachable.sort((left,right)=>left.partyId.localeCompare(right.partyId)));
+  }
+
   function unconsideredSources(limit){
     return contactStore.listUnconsideredAfterthoughtSources({limit})
       .map((source)=>Object.freeze({
         source,
-        candidates:currentCandidates(source.threadId),
+        candidates:candidatesFor(source.threadId,meetingService===null?null:now()),
       }));
+  }
+
+  // Going over in person to someone here, with what it had on its mind: the
+  // ordinary approach, where the Thread chooses how to open and the other how
+  // to answer. Made at most once: an approach begun is not made again.
+  async function goOver(attempt,decisionStage,afterthoughts){
+    const id=attempt.contactAttemptId;
+    const recipientPartyId=decisionStage.payload.recipientPartyId;
+    const finish=(payload)=>{
+      const complete=contactStore.getStage(id,"complete")??contactStore.recordStage({
+        contactAttemptId:id,stage:"complete",recordedAt:now(),
+        payload:{recipientPartyId,messageId:null,...payload}});
+      return Object.freeze({contactAttemptId:id,consolidationId:attempt.consolidationId,
+        outcome:complete.payload.outcome,completed:true});
+    };
+    if(contactStore.getStage(id,"complete")!==null)return finish({});
+    if(contactStore.getStage(id,"expression")!==null)return finish({outcome:"went_over_interrupted"});
+    const at=now();
+    if(meetingService===null||!peopleHere(attempt.threadId,at,{capped:false})
+      .some(person=>person.situation.threadId===recipientPartyId))return finish({outcome:"no_longer_here"});
+    // Neither life may be mid-change; the attempt waits until both are settled.
+    const unsettled=(threadId)=>{
+      const boundary=livedNowStore.inspectLivedBoundary?.(threadId)??null;
+      return (boundary?.failedAttempts??0)>0
+        ||(boundary?.dueAt!=null&&Date.parse(boundary.dueAt)<=Date.parse(at));
+    };
+    if(unsettled(attempt.threadId)||unsettled(recipientPartyId))return Object.freeze({
+      contactAttemptId:id,consolidationId:attempt.consolidationId,outcome:"waiting",completed:false});
+    contactStore.recordStage({contactAttemptId:id,stage:"expression",recordedAt:at,
+      payload:{recipientPartyId,recipientKind:"thread",wentOver:true}});
+    const met=await meetingService.meet({initiatorThreadId:attempt.threadId,at,
+      counterpartyThreadId:recipientPartyId,sourceKind:"intention",
+      cameOverToSay:afterthoughts.map(item=>structuredClone(item))});
+    const first=met.attempts?.[0]??null;
+    return finish({outcome:"went_over",approach:first?.outcome??met.outcome,
+      encounterRef:first?.encounterStory?.encounterId??null});
   }
 
   async function runAttempt(attempt,cachedCandidates=null){
@@ -160,7 +263,7 @@ export function createThreadContactProcess({
     );
     const thread=worldReader.getThread(attempt.threadId,{required:false});
     if(thread===null)throw new TypeError(`contact Thread ${attempt.threadId} was not found`);
-    const candidates=cachedCandidates??currentCandidates(attempt.threadId);
+    let candidates=cachedCandidates??candidatesFor(attempt.threadId,meetingService===null?null:now());
     let decisionStage=contactStore.getStage(attempt.contactAttemptId,"decision");
 
     if(decisionStage===null){
@@ -188,6 +291,9 @@ export function createThreadContactProcess({
         threadId:attempt.threadId,
         at:contactAt,
       });
+      // Who is here may have changed while its life caught up.
+      const settled=candidatesFor(attempt.threadId,contactAt);
+      if(settled.length>0)candidates=settled;
       const semanticStates=semanticStateStore.listCurrentState(attempt.threadId);
       const memories=memoryStore.listCurrentMemories(attempt.threadId,{inMind:"background",
         limit:8,
@@ -198,12 +304,12 @@ export function createThreadContactProcess({
       const body=feltSocialBody(livedRegulationForLivedHistory({
         thread,livedNowStore,currentSituation,experienceStore,asOf:contactAt,
       }));
-      // How the Body takes each Thread it could write to, none of them here:
-      // at ease or guarded, and missing them or not.
+      // How the Body takes each Thread it could reach: at ease or guarded,
+      // missing them or with them here.
       const toward=feltTowardPeople(bodyTowardPeople({thread,experienceStore,asOf:contactAt,
         people:candidates.filter(candidate=>candidate.recipientKind==="thread")
           .map(candidate=>({threadId:candidate.partyId,evidenceRef:candidate.relationRef??candidate.partyId,
-            present:false}))}));
+            present:typeof candidate.here==="string"}))}));
       // Whether what it would write about goes over ground covered lately.
       const ground=sameGroundNow({experienceStore,threadId:thread.threadId,at:contactAt,
         text:afterthoughts.map(item=>item.text).join(" ")});
@@ -256,8 +362,10 @@ export function createThreadContactProcess({
       });
     }
 
+    if(decisionStage.payload.decision==="go_over")return goOver(attempt,decisionStage,afterthoughts);
+
     const recipientPartyId=decisionStage.payload.recipientPartyId;
-    const candidate=candidates.find((item)=>item.partyId===recipientPartyId)??null;
+    const candidate=candidates.find((item)=>item.partyId===recipientPartyId&&item.canWrite!==false)??null;
     if(candidate===null){
       const complete=contactStore.getStage(attempt.contactAttemptId,"complete")
         ??contactStore.recordStage({

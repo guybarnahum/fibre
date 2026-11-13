@@ -455,6 +455,9 @@ export async function startWorldKernelFromEnvironment(
         return contactModelAdapter.invoke(request);
       },
     },
+    // Going over to someone here is the ordinary approach (presence).
+    meetingService:{meet:(input)=>socialMeetingService.meet(input)},
+    embodimentStore,
   });
   const contactReceptionProcess=createThreadContactPerception({
     contactStore,livedNow:contactLivedNow,livedNowStore,

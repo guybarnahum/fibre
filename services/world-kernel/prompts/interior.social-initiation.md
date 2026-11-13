@@ -1,6 +1,6 @@
 ---
 id: interior.social-initiation
-version: 4
+version: 5
 depth: deep
 cache: thread
 latency: minutes
@@ -28,4 +28,5 @@ RecentPersonalExperiences are this person's own admitted interpretations; they m
 but do not command this choice. PriorSocialChoicesThisVisit records this person's own
 earlier voluntary acts or silence toward the same person in this shared visit.
 They are lived history, not an obligation to repeat or reverse any choice.
+cameOverToSay, when present, is what this person had on its mind when it chose to go over to the other: its own private insight, question or intention. Having come over is no obligation to say it, or to say anything.
 Do not invent private motives, relationships or company.

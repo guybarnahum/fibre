@@ -1534,6 +1534,20 @@ export class LivedExperienceStore {
 
   // The doors two Threads have open to each other at a time: facts, for the
   // social Body's bond (ADR-0036 R2).
+  // Who this Thread has been in a Story with since a moment (presence): the
+  // people it has seen during a visit.
+  listSeenSince(threadId,{since}={}){
+    assertId("seen-since Thread",threadId);
+    assertIsoTimestamp("seen since",since);
+    return Object.freeze(this.#database.prepare(`
+      SELECT DISTINCT other.thread_id AS threadId
+      FROM thread_encounter_story_timeline own
+      JOIN encounter_story_thread_presence other ON other.encounter_ref=own.encounter_ref
+      WHERE own.thread_id=? AND own.occurred_at>=? AND other.thread_id<>?
+      LIMIT 16
+    `).all(threadId,since,threadId).map(row=>row.threadId));
+  }
+
   listOpenDoors(threadId,otherThreadId,{before}={}){
     assertId("open doors Thread",threadId);
     assertId("open doors person",otherThreadId);

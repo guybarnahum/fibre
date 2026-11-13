@@ -151,10 +151,24 @@ function requireMethod(owner, name) {
   }
 }
 
+// What eases the need for company between real contact (presence), by what
+// this Body inherited to want: time among people, and each message, as the
+// share of what had built up that it takes away. "Known" means someone it
+// knows must be there (any door open between them).
+const EASE=Object.freeze({
+  ambient_company:Object.freeze({company:1,message:0,known:false}),
+  familiar_person:Object.freeze({company:1,message:0.5,known:true}),
+  conversation:Object.freeze({company:0.25,message:0.5,known:false}),
+  closeness:Object.freeze({company:1,message:0.25,known:true}),
+});
+const SPECIES_EASE=Object.freeze({company:0.5,message:0.5,known:true});
+const easeOf=(thread)=>thread===null?SPECIES_EASE:EASE[locusOf(thread,"social_contact")?.orientation]??SPECIES_EASE;
+
 // Bounded, provenance-bearing evidence of life without recorded reciprocal contact.
 // This is not proof of subjective loneliness or a complete account of a person's social life.
 export function socialContactEvidenceForLivedHistory({
   threadId,currentSituation,livedNowStore,experienceStore,asOf=currentSituation?.establishedAt,
+  thread=null,
 }) {
   if(currentSituation===null||experienceStore===null||experienceStore===undefined)return null;
   if(currentSituation.threadId!==threadId)throw new TypeError("social contact situation belongs to another Thread");
@@ -169,12 +183,15 @@ export function socialContactEvidenceForLivedHistory({
   let before=currentSituation.establishedAt;
   let observedStart=end;
   let firstRef=currentSituation.situationId;
+  // The situations lived in the window, newest first, each until the next.
+  const segments=[{situation:currentSituation,start:Date.parse(currentSituation.establishedAt),until:end}];
   // An unobserved long gap cannot be silently counted as deprivation.
   for(let i=0;i<8;i++){
     const prior=livedNowStore.getPreviousSituation(threadId,before);
     if(prior===null)break;
     const at=Date.parse(prior.establishedAt);
     if(!Number.isFinite(at)||at>=observedStart||observedStart-at>12*3600_000)break;
+    segments.push({situation:prior,start:at,until:segments.at(-1).start});
     observedStart=at;
     firstRef=prior.situationId;
     before=prior.establishedAt;
@@ -195,18 +212,47 @@ export function socialContactEvidenceForLivedHistory({
     &&Date.parse(item.occurredAt)<=end)
     .sort((a,b)=>Date.parse(b.occurredAt)-Date.parse(a.occurredAt))[0]??null;
   const since=contact===null?observedStart:Date.parse(contact.occurredAt);
-  // A message sent or received since then relieves the gap, more weakly than
-  // talk: half of what had built up before it remains.
-  const message=experienceStore.listSocialExposures(threadId,{...window,limit:8})
-    .find(item=>item.kind==="message"&&Date.parse(item.at)>since)??null;
-  const unmetMs=message===null?end-since
-    :(end-Date.parse(message.at))+(Date.parse(message.at)-since)/2;
+  const ease=easeOf(thread);
+  // Since then the need builds hour by hour, more slowly among people for a
+  // Body that is eased by them; each message sent or received takes away its
+  // share of what had built up.
+  const company=(segment)=>{
+    const {situation}=segment;
+    if(situation.location?.kind!=="place"||situation.wakefulness==="asleep")return false;
+    const venueRef=livedNowStore.getWorldPlace?.(threadId,situation.location.placeRef,{required:false})
+      ?.physicalVenue?.ref??null;
+    if(venueRef===null||typeof livedNowStore.listCurrentVenueSituations!=="function")return false;
+    const at=new Date(segment.until-1).toISOString();
+    const others=livedNowStore.listCurrentVenueSituations({venueRef,at,limit:8,excludeThreadId:threadId});
+    return ease.known
+      ?others.some(other=>(experienceStore.listOpenDoors?.(threadId,other.threadId,{before:at})?.length??0)>0)
+      :others.length>0;
+  };
+  const lived=segments.filter(segment=>segment.until>since).reverse()
+    .map(segment=>({start:Math.max(since,segment.start),until:segment.until,
+      rate:company(segment)?1-ease.company:1}));
+  const messages=experienceStore.listSocialExposures(threadId,{...window,limit:16})
+    .filter(item=>item.kind==="message"&&Date.parse(item.at)>since)
+    .sort((a,b)=>a.at.localeCompare(b.at));
+  let unmetMs=0,clock=since;
+  const advance=(to)=>{
+    for(const segment of lived)
+      unmetMs+=Math.max(0,Math.min(to,segment.until)-Math.max(clock,segment.start))*segment.rate;
+    clock=Math.max(clock,to);
+  };
+  for(const message of messages){
+    advance(Date.parse(message.at));
+    unmetMs*=1-ease.message;
+  }
+  advance(end);
   return Object.freeze({
     observedUnmetHours:Math.min(96,Math.max(0,unmetMs/3600_000)),
+    // How fast it builds now, where this Thread is (1: as if alone).
+    buildRate:lived.at(-1)?.rate??1,
     evidenceRefs:Object.freeze([...new Set([
       firstRef,currentSituation.situationId,
       ...(contact===null?[]:[contact.ref]),
-      ...(message===null?[]:[message.ref]),
+      ...messages.slice(-2).map(message=>message.ref),
     ])]),
   });
 }
@@ -338,7 +384,7 @@ export function livedRegulationForLivedHistory({
     livedNowStore,currentSituation:decisionSituation,
   });
   const contact=experienceStore===null?null:socialContactEvidenceForLivedHistory({
-    threadId:thread.threadId,currentSituation,livedNowStore,experienceStore,asOf,
+    threadId:thread.threadId,currentSituation,livedNowStore,experienceStore,asOf,thread,
   });
   const socialEnergy=experienceStore===null?null:socialEnergyEvidence({
     threadId:thread.threadId,experienceStore,asOf,trustLocus:trustLocus(thread),
@@ -451,7 +497,7 @@ function frameForSituation({ thread, situation, livedNowStore, experienceStore }
       evidenceRefs:[...situation.evidenceRefs],
       ...(experienceStore===null?{}:{
         contact:socialContactEvidenceForLivedHistory({
-          threadId:thread.threadId,currentSituation:situation,livedNowStore,experienceStore,
+          threadId:thread.threadId,currentSituation:situation,livedNowStore,experienceStore,thread,
         })??undefined,
         socialEnergy:socialEnergyEvidence({
           threadId:thread.threadId,experienceStore,asOf:situation.establishedAt,

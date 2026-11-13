@@ -2252,3 +2252,26 @@ test("choosing no one among the people present is remembered toward each of them
     }
   }finally{f.close();}
 });
+
+test("going over to someone here reaches the ordinary approach with what was on the Thread's mind, and it may still say nothing",async()=>{
+  const seen=[];
+  const f=groundedReconsiderationFixture({onInvoke:request=>{
+    seen.push(request.input?.concern?.externalContext?.cameOverToSay);
+    return {output:{result:{act:"none",expression:null,experienceText:null,introducesSelf:false,
+      reason:"Up close, she looks absorbed; it can wait."},evidenceRefs:[],conflictingMotives:[],uncertainty:null},
+    provenance:{provider:"fixture",modelId:"went-over"}};
+  }});
+  try{
+    const [reader,neighbor]=f.people;
+    f.enact(neighbor,"2026-10-23T08:00:00.000Z","Reading.");
+    f.enact(reader,"2026-10-23T08:30:00.000Z","Reading.");
+    const result=await f.meeting.meet({initiatorThreadId:reader,at:"2026-10-23T09:00:00.000Z",
+      counterpartyThreadId:neighbor,sourceKind:"intention",
+      cameOverToSay:[{kind:"question",text:"Does the second chapter undo the first?"}]});
+    assert.deepEqual(seen,[[{kind:"question",text:"Does the second chapter undo the first?"}]],
+      "the approach did not carry what the Thread came over to say");
+    assert.equal(result.attempts[0].outcome,"not_initiated","having come over obliged it to speak");
+    assert.ok(result.attempts[0].salience.anchors.includes("own_intention"),
+      "the person it chose to go to stayed in the background");
+  }finally{f.close();}
+});

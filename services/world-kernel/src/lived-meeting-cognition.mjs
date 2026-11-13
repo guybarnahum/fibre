@@ -76,6 +76,7 @@ export async function formSocialEncounterRequest({
   modelAdapter,
   continuationEligible=false,
   conversationAvailable=true,
+  cameOverToSay=null,
 }) {
   assertId("social encounter initiator Thread.threadId", threadId);
   assertIsoTimestamp("social encounter at", at);
@@ -117,6 +118,8 @@ export async function formSocialEncounterRequest({
         priorSocialChoicesThisVisit:structuredClone(priorSocialChoicesThisVisit),
         ...(interoception===null?{}:{interoception:structuredClone(interoception)}),
         remainingFlightPlan:remainingPlanForCognition(plan,at),
+        // What it had on its mind when it chose to go over (presence).
+        ...(cameOverToSay===null?{}:{cameOverToSay:structuredClone(cameOverToSay)}),
       },
     },
     adapter:{

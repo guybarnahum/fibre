@@ -555,6 +555,21 @@ export class ContactStore {
     }));
   }
 
+  // How many times this Thread has gone over to a person since a moment
+  // (presence): a decision to go over, whatever came of it.
+  countApproaches({threadId,recipientPartyId,since}={}){
+    assertId("approach Thread",threadId);
+    assertId("approach person",recipientPartyId);
+    assertIsoTimestamp("approaches since",since);
+    return this.#database.prepare(`
+      SELECT COUNT(*) AS n FROM thread_contact_attempt_stages s
+      JOIN thread_contact_attempts a ON a.contact_attempt_id=s.contact_attempt_id
+      WHERE a.thread_id=? AND s.stage='decision' AND s.recorded_at>=?
+        AND json_extract(s.payload_json,'$.decision')='go_over'
+        AND json_extract(s.payload_json,'$.recipientPartyId')=?
+    `).get(threadId,since,recipientPartyId).n;
+  }
+
   hasPendingAttempts(){
     return this.#database.prepare(`
       SELECT 1 AS pending FROM thread_contact_pending_work w

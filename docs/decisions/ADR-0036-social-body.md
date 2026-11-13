@@ -149,6 +149,39 @@ Deferred:
 - weariness in the battery cost of messages;
 - the semantic measure of repetition.
 
+## Presence as built (November 12): going over, being among people, messages that ease
+
+On November 12, two pairs of friends sat in the same library and exchanged 22 messages without speaking. Contact decisions treated every recipient as absent. Messages kept the need for company just under the level that offers another chance to approach, yet never eased what the Body said. And being among people eased nothing, even for a Body whose words asked for exactly that. The design is in the project (`claude/presence-design.md`); Guy's decisions, November 12, are below.
+
+- **Who is here:** someone at the same place now whom this Thread has seen during this visit, in a Story they were both in (`listSeenSince`). Being in the same building unseen does not count.
+- **Going over** (`contact.decision` v6, `interior.social-initiation` v5):
+  - the contact decision is offered everyone it can write to and everyone here, each marked as here (with what anyone can see them doing) and whether it can write to them;
+  - it may write (`contact`), go over (`go_over`) or keep the thought;
+  - going over needs no door, since approaching someone is how doors open; writing still needs the contact route;
+  - going over is the ordinary approach (`meetingService.meet`, source `intention`): the Thread chooses how to open, or not to after all, and the other chooses how to answer. What it had on its mind travels with it (`cameOverToSay`), and the person it went to is never in the background;
+  - at most three approaches to one person per visit;
+  - it is made at most once: an approach begun is recorded first, and is not repeated if cut short.
+
+  The felt line toward someone here is that of a person present (longing attained).
+- **Being among people, and each message** ease the need for company between real conversations, by the inherited `social_contact` orientation:
+
+  | Orientation | Among people | Each message |
+  |---|---|---|
+  | `ambient_company` | fully | 0 |
+  | `familiar_person` | fully, if someone it knows is there (any door open) | half |
+  | `conversation` | a quarter | half |
+  | `closeness` | fully, if someone it knows is there | a quarter |
+  | species (spread 0) | half, if someone it knows is there | half |
+
+  - Company is read per lived situation from the venue index.
+  - Messages are folded in order, each taking its share of what had built up, so a run of them eases far more than one.
+  - The need-band chance to approach is predicted at the rate the need now builds, and never while it is not building.
+
+Deferred:
+- whispering or passing a note in a quiet place (venue norms as a World fact about the place);
+- noticing someone later in a long stay without a shared Story (the same venue query);
+- "someone it knows" as felt bond rather than any open door.
+
 ## Status of what this excludes
 
 | Capability | Status | Extension path |
@@ -172,4 +205,5 @@ No permanent constraint.
 - S3: a kept appointment makes the next talk drain less, a broken one more.
 - R2: seeing a bonded friend again after a week is a joy, after a day hardly anything; a stranger is never missed; a message answers longing for the exchange but not for presence; a light bond settles into memory and a deep one stays; a friend who wronged one is missed and guarded at once.
 - R1: an old friend after six months is still known and trusted; time forgives a declined invitation and not a closed door; a friend's harm and a repeated one weigh more; the inherited pace of forgiving; kept faith never heals a scar; a second broken appointment brings back the first.
-- On staging: endings by kind; length by familiarity and trust; messages per pair per day.
+- Presence: a Thread is offered going over to someone it saw here and not to someone unseen, carries its thought, and stops at three; a morning among people eases each orientation as inherited; a run of messages eases missing someone far more than one, and never a Body that wants bustle.
+- On staging: endings by kind; length by familiarity and trust; messages per pair per day; messages between people at the same place; approaches by intention and how many become conversations.

@@ -50,6 +50,10 @@ function candidateContext(candidates){
       relationshipFacts:[...(candidate.relationshipFacts??[])],
       // How this Thread's Body takes them now, in words (ADR-0036).
       ...(typeof candidate.felt==="string"?{felt:candidate.felt}:{}),
+      // Whether they are here, in the same place, so it could go over to
+      // them; and whether it can write to them (presence).
+      ...(typeof candidate.here==="string"?{here:candidate.here}:{}),
+      canWrite:candidate.canWrite!==false,
     };
   });
 }
@@ -71,6 +75,13 @@ export async function decideLaterContact({
     throw new TypeError("contact cognition requires delayed private residue");
   }
   const routableCandidates=candidateContext(candidates);
+  // Writing needs a way to reach them; going over needs them here.
+  const reachable=(decision,partyId)=>routableCandidates.some(candidate=>candidate.partyId===partyId
+    &&(decision==="go_over"?typeof candidate.here==="string":candidate.canWrite));
+  const choices=[
+    ...(routableCandidates.some(candidate=>candidate.canWrite)?["contact"]:[]),
+    ...(routableCandidates.some(candidate=>typeof candidate.here==="string")?["go_over"]:[]),
+    "keep_private"];
   const input={
     thread:{
       threadId:thread.threadId,
@@ -99,7 +110,7 @@ export async function decideLaterContact({
       additionalProperties:false,
       required:["decision","recipientPartyId","reason"],
       properties:{
-        decision:{type:"string",enum:["contact","keep_private"]},
+        decision:{type:"string",enum:choices},
         recipientPartyId:{anyOf:[{type:"string",minLength:1},{type:"null"}]},
         reason:{type:"string",minLength:1,maxLength:800},
       },
@@ -111,7 +122,7 @@ export async function decideLaterContact({
     "decision","recipientPartyId","reason",
   ]);
   assertNonEmpty("later contact reason",invocation.output.reason);
-  if(!["contact","keep_private"].includes(invocation.output.decision)){
+  if(!choices.includes(invocation.output.decision)){
     throw new TypeError("later contact decision is invalid");
   }
   if(invocation.output.decision==="keep_private"){
@@ -120,8 +131,8 @@ export async function decideLaterContact({
     }
   }else{
     assertId("later contact recipientPartyId",invocation.output.recipientPartyId);
-    if(!routableCandidates.some((candidate)=>candidate.partyId===invocation.output.recipientPartyId)){
-      throw new TypeError("later contact selected an unroutable party");
+    if(!reachable(invocation.output.decision,invocation.output.recipientPartyId)){
+      throw new TypeError("later contact selected a party it cannot reach that way");
     }
   }
   return Object.freeze({

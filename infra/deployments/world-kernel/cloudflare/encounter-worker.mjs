@@ -217,16 +217,29 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         situatedLifeStore,
         modelAdapter:this.reasoningFor("livedNow"),
       });
+      const experienceStore=openLivedExperienceStore(runtime.worldStorage);
+      const embodimentStore=openEmbodimentStore(runtime.worldStorage);
       this.contactOutreachProcess=createThreadContactProcess({
         worldReader:runtime.worldStore,
         livedNow,
         situatedLifeStore,
         semanticStateStore,
         memoryStore,
-        experienceStore:openLivedExperienceStore(runtime.worldStorage),
+        experienceStore,
         contactStore:openContactStore(runtime.worldStorage),
         livedNowStore,
         modelAdapter:this.reasoningFor("encounter"),
+        // Going over to someone here is the ordinary approach (presence).
+        meetingService:createSocialMeetingService({
+          worldReader:runtime.worldStore,livedNow,livedNowStore,
+          identityStore:openIdentityStore(runtime.worldStorage),
+          situatedLifeStore,semanticStateStore,memoryStore,experienceStore,embodimentStore,
+          modelAdapter:this.reasoningFor("encounter",{lazy:true}),
+          boundedVenueDiscovery:true,
+          onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
+          onConversationEnded:logConversationEnded,
+        }),
+        embodimentStore,
       });
       runtime.reconciliationProcess.setContactOutreachProcess(
         this.contactOutreachProcess,
