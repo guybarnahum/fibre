@@ -378,7 +378,7 @@ export async function deployCloudflareStack({
   if (!client) throw new TypeError("Cloudflare deployment client is required");
 
   await validateRepository();
-  await localBirthPreflight({repoRoot,environment:env,bootstrapPreflight});
+  const localBirth=await localBirthPreflight({repoRoot,environment:env,bootstrapPreflight});
   await client.assertAuthenticated();
   const resourceState = await provision();
   if (resourceState?.environment !== env) throw new Error(`provisioned Cloudflare state environment mismatch: ${String(resourceState?.environment)}`);
@@ -459,7 +459,7 @@ export async function deployCloudflareStack({
         })
       : null;
     if(serviceId==="birth-center"&&birthPreflight!==null){
-      try{await birthPreflight({baseUrl,expectedSha});}
+      try{await birthPreflight({baseUrl,expectedSha,probeSchemas:localBirth?.probed!==false});}
       catch(error){throw new Error("BIRTH POST-DEPLOY PREFLIGHT failed; NEW VERSION IS SERVING: "+
         String(error?.message??error),{cause:error});}
     }

@@ -174,8 +174,8 @@ export async function deployCloudflareService({
     schemaDigest:serviceId==="world-kernel"
       ?await getWorldSchemaDigest({repoRoot:root}):null,
   });
-  if(serviceId==="birth-center")
-    await localBirthPreflight({repoRoot:root,environment:env,bootstrapPreflight});
+  const localBirth=serviceId==="birth-center"
+    ?await localBirthPreflight({repoRoot:root,environment:env,bootstrapPreflight}):null;
   const deployConfigPath = resolve(root, ".fibre", "cloudflare", env, "service-deploy", `${serviceId}.jsonc`);
   await mkdir(dirname(deployConfigPath), { recursive:true });
   const deployConfig = structuredClone(prepared.config);
@@ -248,7 +248,7 @@ export async function deployCloudflareService({
     :null;
   if(schemaAcceptance!==null&&preinstalledWorldSchema===null)print("STATE SCHEMA INSTALLED "+serviceId);
   if(serviceId==="birth-center"&&birthPreflight!==null){
-    try{await birthPreflight({baseUrl:serviceRevision.baseUrl,expectedSha});}
+    try{await birthPreflight({baseUrl:serviceRevision.baseUrl,expectedSha,probeSchemas:localBirth?.probed!==false});}
     catch(error){throw new Error("BIRTH POST-DEPLOY PREFLIGHT failed; NEW VERSION IS SERVING: "+
       String(error?.message??error),{cause:error});}
   }
@@ -287,8 +287,8 @@ async function main(argv) {
   const result = await deployCloudflareService({
     repoRoot,environment,service,bootstrapPreflight,
     birthPreflight:service==="birth-center"
-      ?({baseUrl,expectedSha})=>runBirthPreflight({
-        baseUrl,expectedSha,privateToken:process.env.FIBRE_PRIVATE_TOKEN,
+      ?({baseUrl,expectedSha,probeSchemas})=>runBirthPreflight({
+        baseUrl,expectedSha,probeSchemas,privateToken:process.env.FIBRE_PRIVATE_TOKEN,
       }):null,
   });
   console.log(`Cloudflare service deployed: ${result.serviceId} -> ${result.workerName}`);

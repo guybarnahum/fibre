@@ -5,6 +5,7 @@ import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs"
 import { migrateBirthState } from "#services/birth-center/src/birth-state-migrations.mjs";
 import {rehearseStoredBirth,snapshotStoredBirthMaterial} from "#services/birth-center/src/birth-preflight.mjs";
 import {probeBirthModelSchemas} from "./birth-schema-probe.mjs";
+import {BIRTH_RESPONSE_SCHEMAS} from "#services/birth-center/src/model-response-schemas.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
@@ -122,15 +123,19 @@ export class FibreBirthCenterDurableObject extends DurableObject {
       try{
         const body=await request.json();
         if(!body||typeof body!=="object"||Array.isArray(body)||
-          Object.keys(body).some(key=>key!=="place"))
+          Object.keys(body).some(key=>!["place","probeSchemas"].includes(key))||
+          (body.probeSchemas!==undefined&&typeof body.probeSchemas!=="boolean"))
           return Response.json({error:"invalid_preflight_input"},{status:400});
         const cloud=this.runtimeForRequest();
-        const schemas=await probeBirthModelSchemas(this.env,{
+        // The provider probe is skipped when the operator's preflight found
+        // the schemas unchanged since the provider last accepted them.
+        const probed=body.probeSchemas!==false;
+        const schemas=probed?await probeBirthModelSchemas(this.env,{
           creative:reasoningProfile("creative"),repair:reasoningProfile("repair"),
-        });
+        }):BIRTH_RESPONSE_SCHEMAS.length;
         const dryRun=rehearseStoredBirth({store:cloud.lifecycleStore,
           place:body.place??"United States/Hilo"});
-        return Response.json({ok:true,schemas,place:dryRun.place,
+        return Response.json({ok:true,schemas,probed,place:dryRun.place,
           deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null});
       }catch(error){
         return Response.json({ok:false,error:"birth_preflight_failed",

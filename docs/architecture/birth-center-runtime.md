@@ -98,6 +98,17 @@ local provider schema probes, and retains the post-upload smoke check.
 If the snapshot route exists, or the read fails for any other reason,
 the flag is refused. Normal subsequent deployments always rehearse.
 
+The provider schema probes run only when what they prove has changed. The
+operator records the SHA-256 fingerprint of the seven response schemas and
+the creative and repair model profiles each time the provider accepts them,
+in `.fibre/cloudflare/<env>/birth-schema-acceptance.json`. A deploy whose
+fingerprint matches skips both the local probe and the deployed one, and
+logs `BIRTH SCHEMAS unchanged … probe skipped`; it still rehearses a stored
+birth. A deploy that changes the schemas or profiles must be accepted by the
+provider, failing closed as before. So an unrelated deploy (a World change)
+never depends on the provider being reachable or paid for. The first deploy
+after this rule, or on a new operator machine, probes once.
+
 A provider `MODEL_REQUEST_CONFIGURATION_ERROR` is a paused,
 operator-resumable birth rather than a terminal rejection or recurring
 provider retry. Resume after correcting the deployed schema/request

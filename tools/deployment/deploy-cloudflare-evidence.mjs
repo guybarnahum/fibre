@@ -210,8 +210,8 @@ async function main() {
     environment,
     bootstrapPreflight,
     client,
-    birthPreflight:({baseUrl,expectedSha})=>runBirthPreflight({
-      baseUrl,expectedSha,privateToken:process.env.FIBRE_PRIVATE_TOKEN,
+    birthPreflight:({baseUrl,expectedSha,probeSchemas})=>runBirthPreflight({
+      baseUrl,expectedSha,probeSchemas,privateToken:process.env.FIBRE_PRIVATE_TOKEN,
     }),
     validateRepository: () => runCommand("npm", ["run", "validate"], { cwd: repoRoot }),
     provision: ({ sourceGitSha } = {}) => provisionCloudflareResources({
