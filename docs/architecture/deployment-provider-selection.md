@@ -84,6 +84,27 @@ infra/deployments/environments/cloudflare-remote.json
 
 A generalized manifest-to-provider compiler remains deferred; current Wrangler JSONC is explicit provider output checked against Fibre's architecture and deployment tests.
 
+## A model for each cognitive job
+
+A service's manifest entry names an integration for each port (`livedNow`, `encounter`), and may also name one for a cognitive job by its prompt id:
+```yaml
+world-kernel:
+  integrations:
+    encounter: lived-encounter-openai
+    world.happening: lived-workers-ai-gemma4
+```
+- **Routing:** every call carries its prompt id. `routedReasoningIntegration` sends it to the job's integration when one is named, else to the port's.
+- **Moving a job** to another model is therefore one line of configuration, and no code names a provider. A job's credentials are read only when that job first thinks.
+- **Choosing:** jobs are moved one at a time, after `model:quality` on recorded requests, by the accepted rule: quality within noise of the best first, then quality per dollar.
+
+**Workers AI** (`provider: cloudflare`, `integrations/ai/reasoning/cloudflare.mjs`):
+- **Inside the World,** it runs through the Worker's `AI` binding, beside it, with no key. Operator tools use the account's REST endpoint with `CLOUDFLARE_ACCOUNT_ID` and a Workers AI token, `CLOUDFLARE_AI_API_TOKEN`.
+- **Structured output** is asked as the job's JSON schema, which Workers AI honours on a best-effort basis. An answer that misses it is unparseable, and the job's own validation and retry decide.
+- **Live speech** arrives as one utterance, not streamed.
+- **Hidden thinking** is off unless an integration sets `thinking: true`.
+
+**Recovery:** a provider-wide failure (billing, credentials, access) stops calls to that provider for ten minutes, then lets the next call try again. A long-lived World therefore resumes on its own once the account is fixed.
+
 ## Model providers in infrastructure health
 
 A service's infrastructure health (`/internal/health/infra`) includes every reasoning integration its manifest entry names.

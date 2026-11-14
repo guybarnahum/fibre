@@ -52,6 +52,31 @@ integrations:
         - gate
     secrets:
       apiKey: OPENAI_API_KEY
+  # Workers AI candidates for the World's jobs, beside it on Cloudflare.
+  # Selected for a job by naming the job's prompt id under a service's
+  # integrations, e.g. "world.happening: lived-workers-ai-gemma4".
+  lived-workers-ai-gemma4:
+    kind: ai.reasoning
+    provider: cloudflare
+    config:
+      model: "@cf/google/gemma-4-26b-a4b-it"
+      binding: AI
+      maxOutputTokens: 2000
+    environment:
+      accountId: CLOUDFLARE_ACCOUNT_ID
+    secrets:
+      apiToken: CLOUDFLARE_AI_API_TOKEN
+  lived-workers-ai-qwen3:
+    kind: ai.reasoning
+    provider: cloudflare
+    config:
+      model: "@cf/qwen/qwen3-30b-a3b-fp8"
+      binding: AI
+      maxOutputTokens: 2000
+    environment:
+      accountId: CLOUDFLARE_ACCOUNT_ID
+    secrets:
+      apiToken: CLOUDFLARE_AI_API_TOKEN
   genesis-openai-creative:
     kind: ai.reasoning
     provider: openai

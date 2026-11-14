@@ -52,3 +52,21 @@ export function retryDelayFor(error, fallbackMs) {
   if (Number.isFinite(providerDelay) && providerDelay >= 0) return Math.max(fallbackMs, providerDelay);
   return fallbackMs;
 }
+
+// A provider-wide failure (billing, credentials, access) stops further calls
+// for a while instead of sending requests that will fail the same way, then
+// lets the next call try again: a long-lived World process resumes on its
+// own once the operator has fixed the account.
+const PROVIDER_CIRCUIT_OPEN_MS = 10 * 60_000;
+export function createProviderCircuit({ now = Date.now, openMs = PROVIDER_CIRCUIT_OPEN_MS } = {}) {
+  let open = null;
+  return Object.freeze({
+    check() {
+      if (open !== null && now() - open.at < openMs) throw open.error;
+      open = null;
+    },
+    record(error) {
+      if (shouldOpenProviderCircuit(error)) open = { error, at: now() };
+    },
+  });
+}

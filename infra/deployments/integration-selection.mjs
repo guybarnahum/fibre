@@ -1,5 +1,6 @@
 import { createBflFluxImageProvider } from "#integrations/ai/image/bfl.mjs";
 import { createOpenAIImageProvider } from "#integrations/ai/image/openai.mjs";
+import { createCloudflareModelAdapter } from "#integrations/ai/reasoning/cloudflare.mjs";
 import { createGoogleModelAdapter } from "#integrations/ai/reasoning/google.mjs";
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
 import { sha256 } from "#integrations/ai/persistence-common.mjs";
@@ -298,6 +299,26 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log, 
 export function selectReasoningIntegration(value, { environment = process.env, fetchImpl = globalThis.fetch, observer = null } = {}) {
   const chosen = selection("reasoning integration", value, "ai.reasoning");
   const modelId = configured("reasoning integration config.model", chosen.config?.model);
+  // Workers AI: the Worker's AI binding when it has one, else the account's
+  // REST endpoint with a Workers AI token.
+  if (chosen.provider === "cloudflare") {
+    const binding = environment?.[chosen.config?.binding ?? "AI"];
+    const viaBinding = typeof binding?.run === "function";
+    return createCloudflareModelAdapter({
+      binding: viaBinding ? binding : null,
+      accountId: viaBinding ? null : environmentValue("reasoning integration environment", chosen.environment, "accountId", environment),
+      apiToken: viaBinding ? null : environmentValue("reasoning integration secrets", chosen.secrets, "apiToken", environment),
+      modelId,
+      fetchImpl,
+      observer,
+      maxOutputTokens: chosen.config?.maxOutputTokens,
+      timeoutMs: chosen.config?.timeoutMs,
+      retryLimit: chosen.config?.retryLimit,
+      retryDelayMs: chosen.config?.retryDelayMs,
+      temperature: chosen.config?.temperature ?? null,
+      thinking: chosen.config?.thinking === true,
+    });
+  }
   const apiKey = environmentValue("reasoning integration secrets", chosen.secrets, "apiKey", environment);
 
   if (chosen.provider === "openai") {
@@ -327,6 +348,48 @@ export function selectReasoningIntegration(value, { environment = process.env, f
     });
   }
   throw new TypeError(`unsupported reasoning integration provider ${chosen.provider}`);
+}
+
+// Where an operator tool finds a provider's credentials when it names only a
+// provider and a model (a quality run, a smoke call).
+const PROVIDER_CREDENTIALS = Object.freeze({
+  openai: Object.freeze({ secrets: { apiKey: "OPENAI_API_KEY" } }),
+  google: Object.freeze({ secrets: { apiKey: "GEMINI_API_KEY" } }),
+  cloudflare: Object.freeze({ secrets: { apiToken: "CLOUDFLARE_AI_API_TOKEN" }, environment: { accountId: "CLOUDFLARE_ACCOUNT_ID" } }),
+});
+export function reasoningIntegrationFor(provider, model, config = {}) {
+  const credentials = PROVIDER_CREDENTIALS[provider];
+  if (!credentials) throw new TypeError(`unsupported reasoning integration provider ${provider}`);
+  return { kind: "ai.reasoning", provider, config: { ...config, model }, ...structuredClone(credentials) };
+}
+
+// A service's mind for each cognitive job: the integration its manifest
+// names for the job's prompt id, if any, else the port's. So one job can move
+// to another model by configuration, with no code naming a provider. Each
+// adapter is made on first use, so a job's credentials are read only when
+// that job thinks.
+export function routedReasoningIntegration(integrations, port, { lazy = false, ...options } = {}) {
+  const base = integrations?.[port];
+  const adapters = new Map();
+  const adapterFor = (request) => {
+    const job = typeof request?.promptRef === "string" ? request.promptRef.split("@")[0] : null;
+    const routed = job !== null && integrations?.[job]?.kind === "ai.reasoning";
+    const key = routed ? job : port;
+    if (!adapters.has(key)) {
+      adapters.set(key, routed || lazy
+        ? lazyReasoningIntegration(routed ? integrations[job] : base, options)
+        : selectReasoningIntegration(base, options));
+    }
+    return adapters.get(key);
+  };
+  const portAdapter = adapterFor(null);
+  return Object.freeze({
+    provider: portAdapter.provider,
+    modelId: portAdapter.modelId,
+    configuration: portAdapter.configuration,
+    invoke: (request) => adapterFor(request).invoke(request),
+    streamExpression: (request) => adapterFor(request).streamExpression(request),
+  });
 }
 
 export function selectImageIntegration(value, { environment = process.env, fetchImpl = globalThis.fetch } = {}) {

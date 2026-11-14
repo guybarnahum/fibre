@@ -14,7 +14,7 @@ import {
   httpRetryGuidance,
   isClearlyTransientTransportError,
   retryDelayFor,
-  shouldOpenProviderCircuit,
+  createProviderCircuit,
 } from "./retry-policy.mjs";
 
 const DEFAULTS = Object.freeze({
@@ -313,6 +313,7 @@ export function createOpenAIModelAdapter({
   deferredServiceTier = null,
   deferredTimeoutMs = DEFAULTS.deferredTimeoutMs,
   cacheMode = "implicit",
+  now = Date.now,
 } = {}) {
   const key = apiKey(environment);
   if (key === null) {
@@ -352,7 +353,7 @@ export function createOpenAIModelAdapter({
     topP,
     reasoningEffort,
   });
-  let terminalFailure = null;
+  const circuit = createProviderCircuit({ now });
 
   return Object.freeze({
     provider: "openai",
@@ -365,7 +366,7 @@ export function createOpenAIModelAdapter({
       if (signal !== null && typeof signal?.addEventListener !== "function") {
         throw new TypeError("expression signal must be an AbortSignal");
       }
-      if (terminalFailure !== null) throw terminalFailure;
+      circuit.check();
       if (signal?.aborted) return;
 
       const controller = new AbortController();
@@ -469,7 +470,7 @@ export function createOpenAIModelAdapter({
       assertPlainObject("model input", input);
       assertPlainObject("model responseSchema", responseSchema);
       assertId("model clientRequestId", clientRequestId);
-      if (terminalFailure !== null) throw terminalFailure;
+      circuit.check();
 
       const providerResponseSchema = projectOpenAIStructuredOutputSchema(responseSchema);
       assertOpenAIStrictResponseSchema(providerResponseSchema);
@@ -634,7 +635,7 @@ export function createOpenAIModelAdapter({
             failure,
           });
           if (normalized.retryable === false) {
-            if (shouldOpenProviderCircuit(normalized)) terminalFailure = normalized;
+            circuit.record(normalized);
             throw normalized;
           }
           if (!retrying) throw normalized;

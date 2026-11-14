@@ -1,0 +1,68 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import { createCloudflareModelAdapter } from "./cloudflare.mjs";
+import { routedReasoningIntegration, selectReasoningIntegration } from "../../../infra/deployments/integration-selection.mjs";
+
+const SCHEMA = { type:"object", properties:{ noticed:{ type:"boolean" } }, required:["noticed"], additionalProperties:false };
+const ask = (adapter) => adapter.invoke({ systemPrompt:"Notice or not.", input:{ scene:"a library" },
+  responseSchema:SCHEMA, clientRequestId:"attention_test" });
+const chat = (content, extra = {}) => ({ choices:[{ message:{ content }, finish_reason:"stop", ...extra }],
+  usage:{ prompt_tokens:120, completion_tokens:9, total_tokens:129 } });
+
+test("Workers AI thinks beside the World through its binding, asked for the job's schema, without hidden thinking", async () => {
+  const sent = [];
+  const adapter = createCloudflareModelAdapter({ modelId:"@cf/google/gemma-4-26b-a4b-it",
+    binding:{ run:async (model, body) => { sent.push({ model, body }); return chat("{\"noticed\":true}"); } } });
+  const { output, provenance } = await ask(adapter);
+  assert.deepEqual(output, { noticed:true });
+  assert.equal(sent[0].model, "@cf/google/gemma-4-26b-a4b-it");
+  assert.deepEqual(sent[0].body.response_format.json_schema.schema, SCHEMA, "the job's schema was not asked for");
+  assert.equal(sent[0].body.chat_template_kwargs.enable_thinking, false);
+  assert.equal(provenance.usage.inputTokens, 120, "usage was not reported for metering");
+  const older = createCloudflareModelAdapter({ modelId:"@cf/old", binding:{ run:async () => ({ response:{ noticed:false } }) } });
+  assert.deepEqual((await ask(older)).output, { noticed:false }, "an older model's parsed answer was not read");
+});
+
+test("Workers AI failures are classified like any provider's: allocation, schema missed, credentials", async () => {
+  const failing = (message) => createCloudflareModelAdapter({ modelId:"@cf/m", retryLimit:0,
+    binding:{ run:async () => { throw new Error(message); } } });
+  await assert.rejects(ask(failing("3036: You have used up your daily free allocation of 10,000 neurons")),
+    { code:"MODEL_BILLING_QUOTA_EXHAUSTED" });
+  await assert.rejects(ask(failing("JSON Mode couldn't be met")), { code:"UNPARSEABLE_MODEL_OUTPUT" });
+  const rest = createCloudflareModelAdapter({ modelId:"@cf/m", accountId:"acct", apiToken:"bad", retryLimit:0,
+    fetchImpl:async () => Response.json({ success:false, errors:[{ code:10000, message:"Authentication error" }] }, { status:401 }) });
+  await assert.rejects(ask(rest), { code:"MODEL_AUTHENTICATION_ERROR" });
+  const cut = createCloudflareModelAdapter({ modelId:"@cf/m", binding:{ run:async () => chat("{\"noti", ) } });
+  await assert.rejects(ask(cut), { code:"UNPARSEABLE_MODEL_OUTPUT" });
+});
+
+test("a live turn can speak through Workers AI, as one utterance", async () => {
+  const adapter = createCloudflareModelAdapter({ modelId:"@cf/m", binding:{ run:async () => chat("engaged ordinary SAY: Hello.") } });
+  const events = [];
+  for await (const event of adapter.streamExpression({ systemPrompt:"Speak.", input:{ turn:1 }, clientRequestId:"live_turn" })) events.push(event);
+  assert.deepEqual(events.map((event) => event.type), ["expression_delta", "expression_complete"]);
+  assert.equal(events[0].text, "engaged ordinary SAY: Hello.");
+});
+
+test("a job thinks with the model its service names for it, every other job with the port's, by configuration alone", async () => {
+  const integrations = {
+    encounter:{ kind:"ai.reasoning", provider:"openai", config:{ model:"gpt-test" }, secrets:{ apiKey:"OPENAI_API_KEY" } },
+    "world.happening":{ kind:"ai.reasoning", provider:"cloudflare", config:{ model:"@cf/google/gemma-4-26b-a4b-it", binding:"AI" } },
+  };
+  const ran = [];
+  const environment = { OPENAI_API_KEY:"key", AI:{ run:async (model) => { ran.push(model); return chat("{\"noticed\":true}"); } } };
+  const openaiCalls = [];
+  const adapter = routedReasoningIntegration(integrations, "encounter", { environment,
+    fetchImpl:async (url) => { openaiCalls.push(url); throw new Error("not reached"); } });
+  await adapter.invoke({ promptRef:"world.happening@3", systemPrompt:"A happening.", input:{ place:"park" },
+    responseSchema:SCHEMA, clientRequestId:"happening_test" });
+  assert.deepEqual(ran, ["@cf/google/gemma-4-26b-a4b-it"], "the routed job did not think with its own model");
+  assert.equal(openaiCalls.length, 0, "the routed job reached the port's provider");
+  await assert.rejects(adapter.invoke({ promptRef:"encounter.attention@4", systemPrompt:"Notice.", input:{ scene:"x" },
+    responseSchema:SCHEMA, clientRequestId:"attention_test" }));
+  assert.ok(openaiCalls.length > 0, "an unrouted job did not think with the port's model");
+  assert.equal(adapter.provider, "openai");
+  assert.throws(() => selectReasoningIntegration(integrations["world.happening"], { environment:{} }),
+    "Workers AI without a binding or token was accepted");
+});

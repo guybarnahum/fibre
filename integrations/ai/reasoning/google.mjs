@@ -12,7 +12,7 @@ import {
   httpRetryGuidance,
   isClearlyTransientTransportError,
   retryDelayFor,
-  shouldOpenProviderCircuit,
+  createProviderCircuit,
 } from "./retry-policy.mjs";
 
 const DEFAULTS = Object.freeze({
@@ -136,6 +136,7 @@ export function createGoogleModelAdapter({
   retryDelayMs = DEFAULTS.retryDelayMs,
   fetchImpl = globalThis.fetch,
   observer = null,
+  now = Date.now,
 } = {}) {
   const key = apiKey(environment);
   if (key === null) {
@@ -162,7 +163,7 @@ export function createGoogleModelAdapter({
     endpoint:streamEndpoint,
     maxOutputTokens,
   });
-  let terminalFailure = null;
+  const circuit = createProviderCircuit({ now });
 
   return Object.freeze({
     provider: "google",
@@ -175,7 +176,7 @@ export function createGoogleModelAdapter({
       if (signal !== null && typeof signal?.addEventListener !== "function") {
         throw new TypeError("expression signal must be an AbortSignal");
       }
-      if (terminalFailure !== null) throw terminalFailure;
+      circuit.check();
       if (signal?.aborted) return;
 
       const controller = new AbortController();
@@ -280,7 +281,7 @@ export function createGoogleModelAdapter({
       assertPlainObject("model input", input);
       assertPlainObject("model responseSchema", responseSchema);
       assertId("model clientRequestId", clientRequestId);
-      if (terminalFailure !== null) throw terminalFailure;
+      circuit.check();
 
       const maximumAttempts = retryLimit + 1;
       const operationalRetries = [];
@@ -378,7 +379,7 @@ export function createGoogleModelAdapter({
             failure,
           });
           if (normalized.retryable === false) {
-            if (shouldOpenProviderCircuit(normalized)) terminalFailure = normalized;
+            circuit.record(normalized);
             throw normalized;
           }
           if (!retrying) throw normalized;

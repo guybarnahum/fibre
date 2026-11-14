@@ -2,7 +2,7 @@ import baseWorker, { FibreWorldDurableObject as BaseWorldDurableObject } from ".
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
-import { lazyReasoningIntegration,meteredReasoningIntegration,selectReasoningIntegration } from "../../integration-selection.mjs";
+import { meteredReasoningIntegration,routedReasoningIntegration } from "../../integration-selection.mjs";
 import { createLivedEncounterWriteApi } from "#services/world-kernel/src/lived-encounter-write-api.mjs";
 import { createEnvironmentalEncounterService } from "#services/world-kernel/src/lived-environmental-encounter.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
@@ -134,12 +134,13 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     this.liveEncounterRegistry = createLiveEncounterRegistry();
   }
 
-  // Every World model call is metered by deployment port and cognitive job.
+  // Every World model call is metered by deployment port and cognitive job,
+  // and thinks with the model the manifest names for that job, else the
+  // port's.
   reasoningFor(port,{lazy=false}={}) {
-    const value=resolveServiceDeployment(DEPLOYMENT,"world-kernel").integrations[port];
-    const select=lazy?lazyReasoningIntegration:selectReasoningIntegration;
-    return meteredReasoningIntegration(select(value,{environment:this.env}),{
-      port,captureDepths:value?.config?.captureDepths??[],
+    const integrations=resolveServiceDeployment(DEPLOYMENT,"world-kernel").integrations;
+    return meteredReasoningIntegration(routedReasoningIntegration(integrations,port,{lazy,environment:this.env}),{
+      port,captureDepths:integrations[port]?.config?.captureDepths??[],
     });
   }
 

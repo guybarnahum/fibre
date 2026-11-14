@@ -16,7 +16,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { loadDeploymentManifest, resolveServiceDeployment } from "../deployment/deployment-manifest.mjs";
-import { selectReasoningIntegration } from "../../infra/deployments/integration-selection.mjs";
+import { reasoningIntegrationFor, selectReasoningIntegration } from "../../infra/deployments/integration-selection.mjs";
 import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
 import { judgesFor } from "./model-judges.mjs";
@@ -42,7 +42,7 @@ function args(argv) {
     else throw new Error(`unknown option ${name}`);
   }
   if (!options.prompt || jobOf(options.prompt) === null) {
-    throw new Error("usage: model:quality -- --prompt <gate job> [--models openai:<model>,google:<model>] [--judges claude-opus-5-5,gpt-5.6-sol]");
+    throw new Error("usage: model:quality -- --prompt <gate job> [--models openai:<model>,google:<model>,cloudflare:<@cf model>] [--judges claude-opus-5-5,gpt-5.6-sol]");
   }
   options.models = options.models.map((item) => {
     const [provider, model] = item.includes(":") ? item.split(":", 2) : ["openai", item];
@@ -77,10 +77,8 @@ async function main() {
   const base = resolveServiceDeployment(manifest, "world-kernel").integrations.encounter;
   const adapters = new Map();
   const adapterFor = (model, provider = "openai") => {
-    if (!adapters.has(model)) adapters.set(model, selectReasoningIntegration({
-      kind: "ai.reasoning", provider, config: { ...base.config, model },
-      secrets: { apiKey: provider === "google" ? "GEMINI_API_KEY" : "OPENAI_API_KEY" },
-    }, { environment: process.env }));
+    if (!adapters.has(model)) adapters.set(model, selectReasoningIntegration(
+      reasoningIntegrationFor(provider, model, provider === "openai" ? base.config : {}), { environment: process.env }));
     return adapters.get(model);
   };
   const judges = judgesFor(options.judges, { environment: process.env, adapterFor: (model) => adapterFor(model) });

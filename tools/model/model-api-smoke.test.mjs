@@ -20,7 +20,7 @@ test("model API smoke requires explicit provider and model", () => {
     help: false,
   });
   assert.throws(() => parseModelSmokeArgs(["--provider", "openai"]), /--model is required/);
-  assert.throws(() => parseModelSmokeArgs(["--provider", "other", "--model", "x"]), /openai or google/);
+  assert.throws(() => parseModelSmokeArgs(["--provider", "other", "--model", "x"]), /openai, google or cloudflare/);
 });
 
 test("model API smoke validates the exact tiny result", () => {

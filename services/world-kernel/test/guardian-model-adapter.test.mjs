@@ -154,10 +154,11 @@ test("transient OpenAI rate-limit 429 retries inside one invocation and records 
   assert.equal(result.provenance.operationalRetries[0].retryable, true);
 });
 
-test("billing-quota 429 is terminal, performs no retry, and opens the provider circuit", async () => {
-  let calls = 0;
+test("billing-quota 429 is terminal, performs no retry, and opens the provider circuit for a while", async () => {
+  let calls = 0, clock = 0;
   const modelAdapter = adapter({
     retryLimit: 2,
+    now: () => clock,
     fetchImpl: async () => {
       calls += 1;
       return response({
@@ -185,6 +186,9 @@ test("billing-quota 429 is terminal, performs no retry, and opens the provider c
 
   await assert.rejects(() => invocation(modelAdapter), (error) => error === firstError);
   assert.equal(calls, 1, "terminal provider circuit must prevent later HTTP calls");
+  clock = 11 * 60_000;
+  await assert.rejects(() => invocation(modelAdapter));
+  assert.equal(calls, 2, "a long-lived World never tried the provider again after its account was fixed");
 });
 
 test("exhausting the declared retry cap for a transient provider failure produces no judgment", async () => {
