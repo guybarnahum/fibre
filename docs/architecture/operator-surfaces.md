@@ -217,7 +217,7 @@ Simple in-page World events / Encounters / Journal / Memories links keep those s
 
 `status.insidefibre.com` is public. Staging is `status.staging.insidefibre.com`.
 
-The Status Worker publishes coarse component health and check time only. It does not expose Thread, request, provider, retry, Activity, database or deployment internals.
+The Status Worker publishes three experiences a visitor relies on, Thread life, Births and insidefibre.com, each Running, Partly running or Paused with one plain sentence, and the check time. Each is judged from whether its services answer and from real failures that Admin infrastructure health found in them (a coarse level per service, never usage thresholds). It does not expose Thread, request, service, resource, provider, retry, Activity, database or deployment internals; the Admin infrastructure panel holds that detail.
 
 Incident history requires explicit durable incident/publication records; it must not be inferred from missing Activity.
 

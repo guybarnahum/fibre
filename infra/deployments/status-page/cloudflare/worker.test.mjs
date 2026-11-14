@@ -11,22 +11,12 @@ function serviceBinding(service, { ok = true, status = 200 } = {}) {
   };
 }
 
-function infraBinding(level = "normal", { stale = false } = {}) {
+function infraBinding(failures = {}, { stale = false } = {}) {
   return {
     async fetch(request) {
       assert.equal(new URL(request.url).pathname, "/internal/infra-health");
-      return new Response(JSON.stringify({ contract:"fibre-infra-health-summary-v0.5", level, stale, observedAt:"2026-09-13T14:00:00.000Z" }), { status:200, headers:{ "Content-Type":"application/json" } });
-    },
-  };
-}
-
-function changingInfraBinding(levels) {
-  let reads = 0;
-  return {
-    async fetch() {
-      const level = levels[Math.min(reads, levels.length - 1)];
-      reads += 1;
-      return new Response(JSON.stringify({ contract:"fibre-infra-health-summary-v0.5", level, stale:false }), { status:200, headers:{ "Content-Type":"application/json" } });
+      return Response.json({ contract:"fibre-infra-health-summary-v0.6", level:"normal", stale, failures,
+        observedAt:"2026-09-13T14:00:00.000Z" });
     },
   };
 }
@@ -45,70 +35,52 @@ function environment(overrides = {}) {
 }
 
 const viewerOk = async () => new Response("ok", { status: 200 });
+const down = { fetch: async () => { throw new Error("secret internal detail"); } };
+const of = (result, key) => result.components.find((component) => component.key === key);
 
-test("public status is operational only when viewer, runtime, and infra health are normal", async () => {
-  const result = await currentPublicStatus(environment(), {
-    fetchImpl: viewerOk,
-    now: () => "2026-09-01T14:00:00.000Z",
-  });
+test("the public page speaks of what a visitor relies on: Thread life, births and the website, with no internals", async () => {
+  const result = await currentPublicStatus(environment(), { fetchImpl: viewerOk, now: () => "2026-09-01T14:00:00.000Z" });
   assert.equal(result.status, "operational");
-  assert.equal(result.environment, "staging");
-  assert.equal(result.components.length, 6);
-  assert.ok(result.components.every((component) => component.status === "operational"));
+  assert.deepEqual(result.components.map((component) => component.key), ["life", "birth", "web"]);
+  assert.ok(result.components.every((component) => component.status === "operational" && component.summary));
   const serialized = JSON.stringify(result);
-  for (const forbidden of ["requestId", "threadId", "genesisId", "providerRequestId", "error", "databaseId", "accountId"]) assert.equal(serialized.includes(forbidden), false);
+  for (const forbidden of ["requestId", "threadId", "providerRequestId", "error", "openai", "world-kernel", "durable", "accountId"])
+    assert.equal(serialized.includes(forbidden), false, `the public status exposed ${forbidden}`);
 });
 
-test("public status does not hide a new infrastructure failure behind stale health", async () => {
-  const env = environment({ ADMIN_DASHBOARD:changingInfraBinding(["normal", "critical"]) });
-  assert.equal((await currentPublicStatus(env, { fetchImpl:viewerOk })).status, "operational");
-  assert.equal((await currentPublicStatus(env, { fetchImpl:viewerOk })).status, "degraded");
+test("a World that answers but cannot think pauses Thread life, without saying why", async () => {
+  const result = await currentPublicStatus(environment({ ADMIN_DASHBOARD:infraBinding({ "world-kernel":"critical" }) }), { fetchImpl: viewerOk });
+  assert.equal(of(result, "life").status, "outage");
+  assert.equal(result.status, "outage", "Fibre read as running while Thread life was paused");
+  assert.equal(of(result, "birth").status, "operational");
+  assert.equal(JSON.stringify(result).includes("critical"), false);
 });
 
-test("elevated resource use stays operational while remaining visible", async () => {
-  const result = await currentPublicStatus(environment({ ADMIN_DASHBOARD:infraBinding("elevated") }), { fetchImpl:viewerOk });
-  assert.equal(result.status, "operational");
-  const infra = result.components.find((component) => component.key === "infra");
-  assert.equal(infra.status, "operational");
-  assert.match(infra.description, /elevated/u);
+test("a failure that only touches new portraits degrades the website, never takes it down", async () => {
+  const media = await currentPublicStatus(environment({ ASSET_GENERATOR: down }), { fetchImpl: viewerOk });
+  assert.equal(of(media, "web").status, "degraded");
+  assert.equal(media.status, "degraded");
+  const viewer = await currentPublicStatus(environment(), { fetchImpl: async () => { throw new Error("down"); } });
+  assert.equal(of(viewer, "web").status, "outage");
+  assert.equal(of(viewer, "life").status, "operational");
 });
 
-test("one failed component degrades public status without exposing its internal error", async () => {
-  const result = await currentPublicStatus(environment({ WORLD_KERNEL: { fetch: async () => { throw new Error("secret internal detail"); } } }), { fetchImpl: viewerOk });
-  assert.equal(result.status, "degraded");
-  const world = result.components.find((component) => component.key === "world");
-  assert.equal(world.status, "outage");
-  assert.equal(JSON.stringify(result).includes("secret internal detail"), false);
-});
-
-test("viewer failure degrades public status without changing healthy internal components", async () => {
-  const result = await currentPublicStatus(environment(), {
-    fetchImpl: async () => new Response("down", { status: 503 }),
-  });
-  assert.equal(result.status, "degraded");
-  const web = result.components.find((component) => component.key === "web");
-  assert.equal(web.status, "degraded");
-  assert.ok(result.components.filter((component) => component.key !== "web").every((component) => component.status === "operational"));
+test("stale or unavailable infrastructure health neither alarms nor reassures", async () => {
+  const stale = await currentPublicStatus(environment({ ADMIN_DASHBOARD:infraBinding({ "world-kernel":"critical" }, { stale:true }) }), { fetchImpl: viewerOk });
+  assert.equal(stale.status, "operational");
+  const missing = await currentPublicStatus(environment({ ADMIN_DASHBOARD: down, WORLD_KERNEL: down }), { fetchImpl: viewerOk });
+  assert.equal(of(missing, "life").status, "outage", "an unreachable World was hidden by missing infrastructure health");
 });
 
 test("a hanging service binding is bounded and reported as an outage", async () => {
-  const hangingWorld = { fetch() { return new Promise(() => {}); } };
   const started = Date.now();
-  const result = await currentPublicStatus(environment({ WORLD_KERNEL: hangingWorld }), {
-    fetchImpl: viewerOk,
-    bindingTimeoutMs: 10,
+  const result = await currentPublicStatus(environment({ BIRTH_CENTER: { fetch() { return new Promise(() => {}); } } }), {
+    fetchImpl: viewerOk, bindingTimeoutMs: 10,
   });
   assert.ok(Date.now() - started < 1000);
+  assert.equal(of(result, "birth").status, "outage");
   assert.equal(result.status, "degraded");
-  assert.equal(result.components.find((component) => component.key === "world").status, "outage");
-});
-
-test("multiple outages produce an outage state", async () => {
-  const result = await currentPublicStatus(environment({
-    WORLD_KERNEL: { fetch: async () => { throw new Error("down"); } },
-    BIRTH_CENTER: { fetch: async () => { throw new Error("down"); } },
-  }), { fetchImpl: viewerOk });
-  assert.equal(result.status, "outage");
+  assert.equal(JSON.stringify(result).includes("secret internal detail"), false);
 });
 
 test("status Worker exposes public API and its own minimal health identity", async () => {

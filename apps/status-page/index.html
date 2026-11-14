@@ -10,18 +10,16 @@
 <body>
   <header class="site-head"><a class="brand" href="https://insidefibre.com"><span>F</span><strong>Fibre</strong></a><a class="back" href="https://insidefibre.com">insidefibre.com ↗</a></header>
   <main>
-    <section class="hero">
-      <p class="eyebrow">System status</p>
-      <div class="overall"><span id="overall-dot" class="dot checking"></span><div><h1 id="overall-title">Checking Fibre…</h1><p id="overall-detail">Retrieving current service health.</p></div></div>
-      <div class="meta"><span id="environment">—</span><span>·</span><span id="checked-at">—</span></div>
+    <section class="hero" aria-live="polite">
+      <p class="eyebrow">Status</p>
+      <div class="overall"><span id="overall-dot" class="dot checking" aria-hidden="true"></span><div><h1 id="overall-title">Checking Fibre…</h1><p id="overall-detail">Looking at how the World is doing right now.</p></div></div>
     </section>
 
-    <section class="card">
-      <div class="card-head"><div><h2>Components</h2><p>Current availability across the public Fibre experience and runtime.</p></div><button id="refresh" type="button">Refresh</button></div>
-      <div id="components" class="components"></div>
-    </section>
+    <section id="experiences" class="experiences" aria-label="Parts of Fibre"></section>
 
-    <section class="note"><strong>About this page</strong><p>This page reports current health only. It intentionally exposes no Thread, Genesis, request, provider, or internal error details. Durable incident history will be added when Fibre has an incident record designed for public publication.</p></section>
+    <div class="meta"><span id="checked-at">—</span><span id="environment" class="environment"></span><button id="refresh" type="button">Check again</button></div>
+
+    <section class="note"><strong>About this page</strong><p>Fibre is a persistent world for artificial persons called Threads. This page shows, in plain terms, whether they are living their days, whether new Threads can be born, and whether you can follow them on insidefibre.com. It shows current health only and never details about a Thread or how Fibre is built.</p></section>
   </main>
   <footer>Fibre · Persistent world for artificial persons</footer>
   <script type="module" src="/app.js"></script>

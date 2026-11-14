@@ -171,13 +171,27 @@ export async function readAdminInfraMonitor({ env, environment, fetchImpl = glob
   });
 }
 
+// The coarse summary the public status page reads: an overall level, and
+// for each service only whether a health check actually failed there and
+// how badly. Usage thresholds, resources, providers and errors stay private.
+function failedServices(checks) {
+  const services = {};
+  for (const check of checks) {
+    if (!check.error || !["critical", "elevated"].includes(check.level)) continue;
+    const service = check.service ?? "account";
+    if (services[service] !== "critical") services[service] = check.level;
+  }
+  return Object.freeze(services);
+}
+
 export async function readCachedInfraHealth({ env, environment } = {}) {
   const payload = await readAdminInfraMonitor({ env, environment });
   return Object.freeze({
-    contract:"fibre-infra-health-summary-v0.5",
+    contract:"fibre-infra-health-summary-v0.6",
     environment:payload.environment,
     observedAt:payload.sample.observedAt,
     level:payload.sample.level,
     stale:payload.stale,
+    failures:failedServices(payload.sample.checks ?? []),
   });
 }
