@@ -325,6 +325,13 @@ const PLACE=Object.freeze({
   valued:"People value you more than you expected.",
   little:"You feel you count for little here.",
 });
+// Frustration risen above its baseline by something lately (body levels B2):
+// less patience, with anyone.
+const PATIENCE=Object.freeze([
+  [0.5,"You are a little short on patience."],
+  [0.8,"You are short on patience today."],
+  [1.01,"Little things are getting under your skin."],
+]);
 
 // How this Body takes each person it perceives, in words: how far it is at
 // ease with them and what still hurts, missing them or the joy of seeing them
@@ -375,7 +382,11 @@ export function feltSocialBody(regulationFrame){
   lines.push(...[...feltTowardPeople(regulationFrame).values()].flat());
   const place=regulationFrame.drives.find(item=>item.family==="standing"&&item.targetRef==="self:standing")??null;
   if(place!==null){
-    if(place.felt!==false&&place.pressure>0)lines.push(PLACE.frustrated);
+    if(place.felt!==false&&place.pressure>0){
+      const {level=null,baseline=0}=place.frustration??{};
+      if(level===null||baseline>0)lines.push(PLACE.frustrated);
+      if(level!==null&&(level-baseline>=0.15||baseline===0))lines.push(band(PATIENCE,level));
+    }
     else if(place.attained)lines.push(place.progressError>0.15?PLACE.valued:PLACE.calm);
     else if((place.standingSelf??0)<=-0.4)lines.push(PLACE.little);
   }

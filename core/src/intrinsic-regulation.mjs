@@ -325,6 +325,13 @@ function normalizeStanding(value) {
       self: signed("perceptFrame.standing.self.self", value.self.self),
       gap: value.self.gap === null ? null : signed("perceptFrame.standing.self.gap", value.self.gap),
       acts: value.self.acts,
+      // Frustration as a Body level (body levels B2): its baseline, the gap it
+      // will not reconcile, and the level now with recent spikes on it.
+      frustration: value.self.frustration === undefined ? null : (() => {
+        plainObject("perceptFrame.standing.self.frustration", value.self.frustration);
+        return { level: unit("perceptFrame.standing.self.frustration.level", value.self.frustration.level),
+          baseline: unit("perceptFrame.standing.self.frustration.baseline", value.self.frustration.baseline) };
+      })(),
       evidenceRefs: normalizeRefs("perceptFrame.standing.self.evidenceRefs", value.self.evidenceRefs),
     };
   })();
@@ -619,9 +626,10 @@ function basalDrives(percept, profile) {
   // less than it expects; attained when they showed it more regard.
   const CALM = 0.15;
   if (percept.standing.self !== null) {
-    const { self, gap, acts } = percept.standing.self;
+    const { self, gap, acts, frustration: level } = percept.standing.self;
     const known = gap !== null && acts >= 3;
-    const frustration = known && gap < -CALM ? Math.min(1, -2 * gap) : 0;
+    // Frustration: World's Body level when it measured one, else the gap alone.
+    const frustration = level !== null ? level.level : known && gap < -CALM ? Math.min(1, -2 * gap) : 0;
     drives.push({...drive({
       family:"standing",
       targetRef:"self:standing",
@@ -629,9 +637,9 @@ function basalDrives(percept, profile) {
       pressure:frustration * profile.sensitivity.social,
       urgency:frustration,
       progressError:gap ?? 0,
-      attained:known && gap >= -CALM,
+      attained:known && gap >= -CALM && frustration < CALM,
       evidenceRefs:[...new Set([...evidenceRefs,...percept.standing.self.evidenceRefs])],
-    }), standingSelf:self});
+    }), standingSelf:self, ...(level === null ? {} : { frustration:level })});
   }
   for (const person of percept.standing.people) {
     const pull = (0.4 * Math.max(0, person.status) + Math.max(0, -(person.slight?.gap ?? 0))) * profile.sensitivity.social;

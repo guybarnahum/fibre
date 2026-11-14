@@ -20,7 +20,7 @@ function svg(tag,attributes={}){
 const fixed=(value)=>value===null||value===undefined?"—":Number(value).toFixed(2);
 const hour=(at)=>new Date(at).toISOString().slice(11,16);
 
-function spark(values,{range,ticks=[],from,to}){
+function spark(values,{range,ticks=[],from,to,baseline=null}){
   const box=svg("svg",{viewBox:`0 0 ${WIDTH} ${HEIGHT}`,width:WIDTH,height:HEIGHT,class:"thread-body-spark",role:"img"});
   if(range[0]<0)box.append(svg("line",{x1:0,x2:WIDTH,y1:HEIGHT/2,y2:HEIGHT/2,class:"thread-body-zero"}));
   for(const tick of eventTicks(ticks,{from,to,width:WIDTH})){
@@ -31,6 +31,8 @@ function spark(values,{range,ticks=[],from,to}){
     mark.append(title);
     box.append(mark);
   }
+  if(baseline!==null)box.append(svg("polyline",{points:sparkPoints(baseline,{range,width:WIDTH,height:HEIGHT}),
+    class:"thread-body-base"}));
   box.append(svg("polyline",{points:sparkPoints(values,{range,width:WIDTH,height:HEIGHT}),class:"thread-body-line"}));
   return box;
 }
@@ -49,7 +51,8 @@ function renderBody(body){
     const card=el("div","thread-body-card");
     card.title=state.note??"";
     card.append(el("span","thread-person-label",state.label),el("strong",null,fixed(values.at(-1))),
-      spark(values,{range:state.range,ticks:body.events?.[state.events]??[],from,to}));
+      spark(values,{range:state.range,ticks:body.events?.[state.events]??[],from,to,
+        baseline:state.baselineKey?body.series.map(point=>point[state.baselineKey]??null):null}));
     states.append(card);
   }
   view.append(el("h4",null,`The last ${body.window.hours} hours`),states);

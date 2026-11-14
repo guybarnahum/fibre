@@ -191,3 +191,69 @@ test("each turn may privately say how the other's last words treated the Thread;
   assert.ok(result.story.beats.every((beat) => !/corrected|engaged|absorbed|\bnone\b/iu.test(beat.text ?? "")),
     "a private reading was spoken aloud");
 });
+
+// ---- Frustration, and stings that fade (body levels B2) ----
+
+const standingOf = (variantId) => {
+  const standing = locus(variantId);
+  return { orientation:standing.orientation, persistence:standing.positions.persistence,
+    selfRegard:standing.positions.selfRegard, stubbornness:standing.positions.stubbornness };
+};
+// Ordinary regard from two people for ten days, then whatever happened last, at
+// its own time; read at a moment.
+const lived = (last, { declined = false } = {}) => {
+  const ordinary = records(["thr_a", "thr_b"].flatMap((person) =>
+    Array.from({ length:10 }, () => ["ordinary", "them", 0, person])));
+  const fresh = last.map(([act, hours, witnesses = 0], i) => ({ regardId:`reg_fresh_${i}`, personThreadId:"thr_a", act,
+    actorThreadId:"thr_a", witnesses, asOf:minutesBefore(hours * 60) }));
+  const all = [...fresh, ...ordinary];
+  return { ...store([]), listRecentPerceivedRegard:() => all,
+    listPerceivedRegard:(threadId, person) => all.filter((item) => item.personThreadId === person),
+    listSocialInteractions:() => declined ? [{ initiatorThreadId:SELF, recipientThreadId:"thr_a",
+      responseDecision:"decline", occurredAt:minutesBefore(60) }] : [] };
+};
+const frustration = (variantId, experienceStore, hoursLater = 0) => selfStanding({ experienceStore, threadId:SELF,
+  at:new Date(Date.parse(AT) + hoursLater * 3_600_000).toISOString(), standingLocus:standingOf(variantId) }).frustration;
+
+test("a sting spikes frustration, which fades back to the baseline: low for a calm Body, high for a stubborn one with a grievance", () => {
+  const stung = lived([["corrected_publicly", 1, 2]]);
+  const calm = frustration("standing_06", stung), stubborn = frustration("standing_01", stung);
+  assert.ok(calm.level > calm.baseline + 0.2 && stubborn.level > stubborn.baseline + 0.2, "the sting did not spike frustration");
+  const calmLater = frustration("standing_06", stung, 24 * 8), stubbornLater = frustration("standing_01", stung, 24 * 8);
+  assert.ok(calmLater.level < 0.1, "a calm Body did not return to a low baseline");
+  assert.ok(stubbornLater.level >= 0.3 && stubbornLater.level === stubbornLater.baseline,
+    "a stubborn Body with a grievance did not return to its high baseline");
+  const praised = frustration("standing_01", lived([["credited", 1]]));
+  assert.ok(praised.level < frustration("standing_01", lived([])).level, "praise did not lower frustration");
+  const afterPraise = frustration("standing_01", lived([["credited", 1]]), 24 * 8);
+  assert.equal(afterPraise.level, afterPraise.baseline, "after praise it did not return to its baseline");
+});
+
+test("an approach turned down spikes frustration too", () => {
+  assert.ok(frustration("standing_06", lived([], { declined:true })).level > frustration("standing_06", lived([])).level,
+    "being turned down left no frustration");
+});
+
+test("frustration is less patience with anyone: every turn costs more, and the Body says so", () => {
+  const stung = lived([["corrected_publicly", 1, 2]]);
+  const thread = body("standing_01");
+  const before = socialBodyBeforeTalk({ thread, otherThreadId:"thr_c", experienceStore:stung, asOf:AT });
+  const calmBefore = socialBodyBeforeTalk({ thread, otherThreadId:"thr_c", experienceStore:lived([]), asOf:AT });
+  const talk = (start) => socialBodyInConversation({ thread, ...start, turns:10, asOf:AT,
+    other:{ threadId:"thr_c", evidenceRef:"sit_c" } });
+  const spent = (frame) => frame.drives.find((item) => item.family === "social_energy")?.pressure ?? 0;
+  assert.ok(spent(talk(before)) > spent(talk(calmBefore)), "frustration did not make talk with someone else cost more");
+  assert.ok(feltSocialBody(talk(before)).some((line) => /patience|under your skin/u.test(line)),
+    "frustration did not reach the Body's words in talk with someone who did nothing");
+});
+
+test("a sting lasts as long as this Body holds such things: a day later a persistent Body still feels it, a fleeting one not", () => {
+  const stung = (variantId) => {
+    const experienceStore = lived([["corrected_publicly", 24, 2]]);
+    return bodyTowardPeople({ thread:body(variantId, "standing_flare_03"), asOf:AT, experienceStore,
+      people:[{ threadId:"thr_a", evidenceRef:"sit_a" }] });
+  };
+  const flare = (frame) => frame.drives.find((item) => item.family === "standing_flare")?.pressure ?? 0;
+  assert.ok(flare(stung("standing_04")) > 0, "a persistent Body no longer felt yesterday's public correction");
+  assert.equal(flare(stung("standing_07")), 0, "a fleeting Body still felt yesterday's public correction");
+});

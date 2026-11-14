@@ -88,7 +88,7 @@ The project's slice plan holds the mechanisms and tests of each slice.
   - **A match is calm** ("You feel at ease with your place among these people").
   - **Rating itself above its treatment is frustration** ("People do not give you the regard you feel is yours").
   - **Rating itself below its treatment is gratification** ("People value you more than you expected").
-- **Slights and recognition:** an act toward the Thread in the last day shows regard. Against what this Body expects of that person (`0.5 × −status + 0.3 × bond + 0.2 × self`):
+- **Slights and recognition:** an act toward the Thread in the last day shows regard (since ADR-0038 B2, in the last week, weighed by how much of it remains at the Body's standing persistence). Against what this Body expects of that person (`0.5 × −status + 0.3 × bond + 0.2 × self`):
   - **A slight** is a shortfall beyond 0.25. Being corrected before others or left out fires `standing_flare` at that person; refusal by someone close (bond above 0.3) does too. Other slights feed a pull to hold one's own with them.
   - **Recognition** is regard beyond expectation, felt as warmth. It is greater from someone looked up to.
   - In a conversation, being cut off is felt at once.

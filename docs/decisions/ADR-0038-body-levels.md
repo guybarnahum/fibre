@@ -74,6 +74,28 @@ The design and plan are in the project (`claude/body-levels-design.md`, `claude/
   - the words the Thread reads of its Body now;
   - the 18 inherited urges with every position, `selfRegard` and `stubbornness` included.
 
+## B2 as built (November 13): frustration, and stings that fade
+
+**Frustration is a Body level** (`selfStanding`, `social-body.mjs`):
+- **Baseline:** the self-view gap it will not reconcile (C3b), `min(1, −2 × gap)` once the gap passes −0.15 over at least three acts. A stubborn proud Body treated ordinarily keeps a high baseline; a reasonable one a low one.
+- **Spikes:**
+  - each act of the last week, judged against what was held of that person just before it: a slight adds half its shortfall, and recognition takes away half its excess;
+  - an approach this Thread made that was turned down adds 0.3.
+- **Fade:** half in 12 hours, scaled by the `standing` locus's persistence (`× 2^(2·persistence)`), back to the baseline. After a week a spike is gone.
+
+**What it does.** There is no rule; it is felt, and read by the Thread's own cognition:
+- **Less patience with anyone:** every turn of talk costs the battery `0.5 × frustration × 0.03` more, whoever the other is.
+- **Felt in words** among the social Body's general lines, which every social cognition reads, so it spills over onto people who did nothing:
+  - the baseline: "People do not give you the regard you feel is yours";
+  - the level, when spikes have raised it: "You are a little short on patience" / "You are short on patience today" / "Little things are getting under your skin".
+- **Calm** (the standing drive attained) now needs frustration under 0.15 as well as a small gap.
+
+**Stings and recognition fade** by the same persistence, instead of being felt for exactly one day.
+- A slight, a warmth or a close person's refusal from the last week is weighed by what remains of it.
+- A day later, a persistent Body still feels a public correction and a fleeting one does not.
+
+**The Body panel** shows frustration over the day, with its baseline dashed beneath it.
+
 ## Status of what this excludes
 
 | Capability | Status | Extension path |

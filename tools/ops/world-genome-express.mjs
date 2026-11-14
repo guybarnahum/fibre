@@ -17,7 +17,9 @@ function expressionReport(threads,{env,dryRun}){
     +(entry.receives.length>0?` — ${entry.receives.map(item=>item.variantId).join(" ")}`:"")
     +(completes(entry).length>0?`; ${dryRun?"would complete":"completed"} ${completes(entry).join(" ")}`:"");
   return [
-    `${env} · ${threads.length} Threads · ${dryRun?"dry run":"expressed"} · ${receiving.length} ${dryRun?"would receive":"received"} loci`,
+    `${env} · ${threads.length} Threads · ${dryRun?"dry run":"expressed"} · `
+      +`${threads.filter(entry=>entry.receives.length>0).length} ${dryRun?"would receive":"received"} loci · `
+      +`${threads.filter(entry=>(entry.completes??[]).length>0).length} ${dryRun?"would complete":"completed"} a position`,
     ...threads.filter(entry=>entry.genome==="none").map(entry=>`no genome, nothing expressed: ${entry.name??shortThread(entry.threadId)}`),
     ...receiving.map(line),
   ].join("\n");

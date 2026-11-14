@@ -65,6 +65,7 @@ export function bodyObservatory({thread,experienceStore,at,nameOf=()=>null,hours
       weariness:round(wearinessOf({experienceStore:records,threadId,at:instant,
         persistence:loci.exploration?.persistence??0})),
       self:round(standing.self),gap:standing.gap===null?null:round(standing.gap),
+      frustration:round(standing.frustration.level),frustrationBaseline:round(standing.frustration.baseline),
       people:Object.freeze(Object.fromEntries(people.map(person=>{
         const seen=regardOf({experienceStore:records,threadId,otherThreadId:person,at:instant,
           trustLocus:loci.trust,standingLocus:loci.standing});

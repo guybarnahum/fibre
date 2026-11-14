@@ -1,6 +1,7 @@
 import {DEFAULT_ORGANISM_POLICY,normalizeOrganismPolicy} from "../../../core/src/organism-policy.mjs";
 import { evaluateIntrinsicRegulation } from "../../../core/src/intrinsic-regulation.mjs";
 import { selectRegulationAttention } from "../../../core/src/regulation-attention.mjs";
+import { fade } from "../../../core/src/body-level.mjs";
 import {
   assessFlightPlanPresence,
   observationFromCurrentSituation,
@@ -12,6 +13,7 @@ import {
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 import { wearinessOf } from "./engagement.mjs";
 import { bondOf, conversationDepletion, expectedRegard, longingOf, regardOf, regardShown, selfStanding,
+  SLIGHT_GAP, stingHalfLife,
   socialEnergyEvidence } from "./social-body.mjs";
 
 let organismPolicy=DEFAULT_ORGANISM_POLICY;
@@ -286,23 +288,27 @@ const selfOf=({thread,experienceStore,at})=>selfStanding({experienceStore,thread
 // regard their latest acts showed against what this Body expected of them.
 // A slight is less than expected, recognition more. Being corrected before
 // others, left out, or refused by someone close stings at once.
-const REGARD_GAP=0.25;
+// Each sting or warmth fades back at the Body's standing persistence (body
+// levels B2): the gap an act opened, faded by the time since.
 const STING=Object.freeze({corrected_publicly:"public_correction",left_out:"exclusion"});
-function standingPercept({regards,bonds,self}){
+function standingPercept({regards,bonds,self,at,standingLocus=null}){
   const bondFor=(personRef)=>bonds.find(item=>item.personRef===personRef)?.bond??0;
+  const halfLife=stingHalfLife(standingLocus);
+  const since=(when)=>Math.max(0,Date.parse(at)-Date.parse(when));
   const people=[],triggers=[];
   for(const {person,regard} of regards){
     const bond=bondFor(person.threadId);
     const expected=expectedRegard({status:regard.expectedFrom??regard.status??0,bond,self:self?.self??0});
     const acts=(regard.lately??[]).map(item=>({act:item.act,witnesses:item.witnesses??0,
-      gap:rounded(regardShown(item.act)-expected)}));
-    const slight=acts.filter(item=>item.gap< -REGARD_GAP).sort((a,b)=>a.gap-b.gap)[0]??null;
-    const recognition=acts.filter(item=>item.gap>REGARD_GAP).sort((a,b)=>b.gap-a.gap)[0]??null;
+      gap:rounded(fade(regardShown(item.act)-expected,since(item.at??at),halfLife))}));
+    const slight=acts.filter(item=>item.gap< -SLIGHT_GAP).sort((a,b)=>a.gap-b.gap)[0]??null;
+    const recognition=acts.filter(item=>item.gap>SLIGHT_GAP).sort((a,b)=>b.gap-a.gap)[0]??null;
     const evidenceRefs=[person.evidenceRef];
     if(slight!==null&&STING[slight.act])triggers.push({family:"standing_flare",kind:STING[slight.act],
       personRef:person.threadId,pressure:Math.min(1,-slight.gap),evidenceRefs});
-    if(regard.refusedLately&&bond>0.3)triggers.push({family:"standing_flare",kind:"refusal_by_close_person",
-      personRef:person.threadId,pressure:bond,evidenceRefs});
+    const refusal=regard.refusedAt?fade(bond,since(regard.refusedAt),halfLife):0;
+    if(bond>0.3&&refusal>SLIGHT_GAP)triggers.push({family:"standing_flare",kind:"refusal_by_close_person",
+      personRef:person.threadId,pressure:refusal,evidenceRefs});
     if((regard.status??0)!==0||slight!==null||recognition!==null)
       people.push({personRef:person.threadId,status:regard.status??0,slight,recognition,evidenceRefs});
   }
@@ -320,8 +326,9 @@ function regardWithDoors({thread,otherThreadId,experienceStore,at}){
 // person, and the stings a slight fires.
 function standingFrame({self=null,people=null}){
   const frame={};
-  if(self!==null&&(self.gap!==null||self.self!==0)||(people?.standingPeople??[]).length>0){
+  if(self!==null&&(self.gap!==null||self.self!==0||(self.frustration?.level??0)>0)||(people?.standingPeople??[]).length>0){
     frame.standing={...(self===null?{}:{self:{self:self.self,gap:self.gap,acts:self.acts,
+      ...(self.frustration?{frustration:{...self.frustration}}:{}),
       evidenceRefs:self.evidenceRefs.length>0?[...self.evidenceRefs]:["self:standing"]}}),
       people:people?.standingPeople??[]};
   }
@@ -349,7 +356,7 @@ function peoplePercept({thread,people=[],experienceStore,at,known=null,self=null
       longing:longingOf({bond,regard,orientation:attachment?.orientation??null,persistence:attachment?.persistence??0}),
       evidenceRefs:[person.evidenceRef]};
   }).filter(item=>item.bond>0);
-  const standing=standingPercept({regards,bonds,self});
+  const standing=standingPercept({regards,bonds,self,at,standingLocus:standingLocus(thread)});
   const unfamiliarPeople=regards.filter(({regard})=>unknownNow(regard)>UNKNOWN_NOW_ABOVE)
     .map(({person,regard})=>({personRef:person.threadId,unfamiliarity:rounded(1-regard.knowing),
       staleness:regard.staleness,evidenceRefs:[person.evidenceRef]}));
@@ -446,7 +453,8 @@ export function socialBodyInConversation({thread,start,regard,turns,asOf,other,s
   const {standingPeople,urgeTriggers,...people}=peoplePercept({thread,people:[other],at:asOf,known:now,self})??{};
   return evaluateIntrinsicRegulation({
     perceptFrame:{asOf,evidenceRefs,
-      socialEnergy:{depletion:conversationDepletion({start,turns,...regard,weariness}),evidenceRefs},
+      socialEnergy:{depletion:conversationDepletion({start,turns,...regard,weariness,
+        frustration:self?.frustration?.level??0}),evidenceRefs},
       ...people,...standingFrame({self,people:{standingPeople,urgeTriggers}}),
       ...(weariness>0?{exploration:{...(people.exploration??{}),weariness}}:{})},
     runtimeBaselines:thread.genome?.runtimeBaselines??{},

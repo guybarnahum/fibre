@@ -3,6 +3,8 @@
 
 // The social Body as a whole, over the day.
 export const BODY_STATES=Object.freeze([
+  Object.freeze({key:"frustration",baselineKey:"frustrationBaseline",label:"Frustration",range:[0,1],events:"regard",
+    note:"dashed: its baseline, the gap it will not reconcile; spikes from slights fade back to it"}),
   Object.freeze({key:"battery",label:"Spent by talk",range:[0,1],events:"exposures"}),
   Object.freeze({key:"weariness",label:"Weary of the same",range:[0,1],events:"readings"}),
   Object.freeze({key:"self",label:"Where it holds it stands",range:[-1,1],events:"regard"}),

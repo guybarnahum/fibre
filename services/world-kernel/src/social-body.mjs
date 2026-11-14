@@ -4,7 +4,7 @@
 // Mechanical and read-only, from World records alone; the Thread feels the
 // result through its own urge loci and decides for itself what to do.
 
-import { bodyLevel, DAY_MS, fade } from "#core/src/body-level.mjs";
+import { bodyLevel, DAY_MS, fade, HOUR_MS, inheritedHalfLife } from "#core/src/body-level.mjs";
 
 const days=(from,to)=>(Date.parse(to)-Date.parse(from))/DAY_MS;
 
@@ -118,7 +118,7 @@ function livedTrust({contacts,acts,at,weights,pace}){
 }
 
 const NO_ONE=Object.freeze({knowing:0,staleness:0,trust:0,hurt:0,revived:false,status:0,treated:0,expectedFrom:0,lately:Object.freeze([]),
-  refusedLately:false,
+  refusedAt:null,
   apartDays:null,apartInPersonDays:null});
 
 // Status (ADR-0037, revised in C3b): two signals toward each person, kept
@@ -142,6 +142,13 @@ const LEARNING=0.2;
 const SELF_VIEW=0.4;
 const REVISED_SPECIES=0.5,REVISED_RANGE=0.4;
 const SLIGHT_FRESH_DAYS=1;
+// A sting or a warmth (body levels B2) fades back at this Body's standing
+// persistence: half of it in twelve hours for the species, longer for a Body
+// that holds on to such things. After a week nothing is left to feel.
+export const SLIGHT_GAP=0.25;
+const STING_HALF_LIFE_MS=12*HOUR_MS;
+const STING_DAYS=7;
+export const stingHalfLife=(standingLocus)=>inheritedHalfLife(STING_HALF_LIFE_MS,standingLocus?.persistence??0);
 
 // An impression forms per episode, not per sentence: the same act by the
 // same person toward the same person within a day counts once. A run of
@@ -201,6 +208,14 @@ export const regardShown=(act)=>-LIFT[act];
 // the pleasure of being valued more than it holds.
 const WITNESS_LOSS=0.05,WITNESS_LOSS_CAP=0.4;
 const CHRONIC_DAYS=14;
+// Frustration (body levels B2, Guy: "world events spike frustration from the
+// base level and it should fade to the base level"): its baseline is the gap
+// it will not reconcile, its self-view held above its treatment; each slight
+// in the last days spikes it, each recognition eases it for a while, an
+// approach turned down spikes it too, and all of it fades back to the
+// baseline at this Body's standing persistence.
+const FRUSTRATION_CALM=0.15;
+const SLIGHT_SPIKE=0.5,REFUSED_SPIKE=0.3;
 export function selfStanding({experienceStore,threadId,at,standingLocus=null}){
   const records=episodes(experienceStore.listRecentPerceivedRegard?.(threadId,{before:at})??[]).reverse();
   const people=new Map();
@@ -210,9 +225,19 @@ export function selfStanding({experienceStore,threadId,at,standingLocus=null}){
   }
   const orientation=standingLocus?.orientation??null;
   let weighed=0,base=0,loss=0,gaps=0,lately=0,count=0;
+  const spikes=[];
+  const selfView=-priorOf(standingLocus);
   for(const [person,items] of people){
     const acts=regardActs({records:items,contacts:[],at,otherThreadId:person});
     const treated=treatedOf(acts,orientation),held=heldOf(treated,standingLocus);
+    // Each act of theirs lately, against what was held of them just before it.
+    acts.forEach((act,index)=>{
+      if(act.by!=="them"||days(act.at,at)>STING_DAYS)return;
+      const before=heldOf(treatedOf(acts.slice(index+1),orientation),standingLocus);
+      const gap=regardShown(act.act)-expectedRegard({status:before,self:selfView});
+      if(gap< -SLIGHT_GAP)spikes.push({at:act.at,size:Math.min(1,-gap)*SLIGHT_SPIKE});
+      else if(gap>SLIGHT_GAP)spikes.push({at:act.at,size:-gap*SLIGHT_SPIKE});
+    });
     const weight=Math.min(1,acts.length/5);
     weighed+=weight;base+=weight*(-held);
     acts.forEach((act,index)=>{
@@ -227,7 +252,16 @@ export function selfStanding({experienceStore,threadId,at,standingLocus=null}){
   }
   const self=Math.max(-1,Math.min(1,(weighed===0?-priorOf(standingLocus):base/weighed)
     -Math.min(WITNESS_LOSS_CAP,loss)));
-  return Object.freeze({self:rounded(self),gap:lately===0?null:rounded(gaps/lately),acts:count,
+  const gap=lately===0?null:gaps/lately;
+  // Approaches it made that were turned down.
+  for(const item of experienceStore.listSocialInteractions?.(threadId,{limit:8})??[])
+    if(item.initiatorThreadId===threadId&&item.responseDecision!=="accept"
+      &&item.occurredAt<=at&&days(item.occurredAt,at)<=STING_DAYS)
+      spikes.push({at:item.occurredAt,size:REFUSED_SPIKE});
+  const frustration=bodyLevel({at,events:spikes,halfLife:stingHalfLife(standingLocus),
+    baseline:{given:gap!==null&&count>=3&&gap< -FRUSTRATION_CALM?Math.min(1,-2*gap):0},bound:{min:0,max:1}});
+  return Object.freeze({self:rounded(self),gap:gap===null?null:rounded(gap),acts:count,
+    frustration:Object.freeze({level:rounded(frustration.level),baseline:rounded(frustration.baseline)}),
     evidenceRefs:Object.freeze(records.slice(0,4).map(record=>record.regardId))});
 }
 const rounded=(value)=>Math.round(value*1e6)/1e6;
@@ -260,8 +294,9 @@ export function regardOf({experienceStore,threadId,otherThreadId,at,trustLocus=n
     // against (a slight is measured by the expectation it upset).
     expectedFrom:rounded(heldOf(treatedOf(regard.filter(act=>days(act.at,at)>SLIGHT_FRESH_DAYS),
       standingLocus?.orientation??null),standingLocus)),
-    refusedLately:acts.some(act=>act.kind==="declined"&&days(act.occurredAt,at)<=SLIGHT_FRESH_DAYS),
-    lately:Object.freeze(regard.filter(act=>act.by==="them"&&days(act.at,at)<=SLIGHT_FRESH_DAYS).slice(0,3)),
+    refusedAt:acts.filter(act=>act.kind==="declined"&&days(act.occurredAt,at)<=STING_DAYS)
+      .reduce((when,act)=>when===null||act.occurredAt>when?act.occurredAt:when,null),
+    lately:Object.freeze(regard.filter(act=>act.by==="them"&&days(act.at,at)<=STING_DAYS).slice(0,3)),
     apartDays:last===null?null:rounded(days(last,at)),
     apartInPersonDays:lastInPerson===null?null:rounded(days(lastInPerson,at))});
 }
@@ -327,6 +362,9 @@ export function socialEnergyEvidence({threadId,experienceStore,asOf,trustLocus=n
 // The battery during a conversation: where it stood when the talk began, and
 // each turn spoken or heard since.
 // Going over ground this Body is weary of costs a little more (S5b).
-export function conversationDepletion({start,turns,knowing=0,staleness=0,trust=0,weariness=0}){
-  return Math.min(1,(start?.depletion??0)+turns*(exposureCost({knowing,staleness,trust})+0.5*weariness*TURN_COST));
+// Weariness and frustration each make every turn cost a little more: less
+// patience for the same, and for anyone.
+export function conversationDepletion({start,turns,knowing=0,staleness=0,trust=0,weariness=0,frustration=0}){
+  return Math.min(1,(start?.depletion??0)+turns*(exposureCost({knowing,staleness,trust})
+    +0.5*(weariness+frustration)*TURN_COST));
 }
