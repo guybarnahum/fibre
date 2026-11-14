@@ -6,6 +6,7 @@ import { migrateBirthState } from "#services/birth-center/src/birth-state-migrat
 import {rehearseStoredBirth,snapshotStoredBirthMaterial} from "#services/birth-center/src/birth-preflight.mjs";
 import {probeBirthModelSchemas} from "./birth-schema-probe.mjs";
 import {BIRTH_RESPONSE_SCHEMAS} from "#services/birth-center/src/model-response-schemas.mjs";
+import { modelProviderChecks, withModelProviders } from "../../model-provider-health.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { selectReasoningIntegration } from "../../integration-selection.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
@@ -104,9 +105,15 @@ export class FibreBirthCenterDurableObject extends DurableObject {
     }
     if (request.method === "GET"
       && (url.pathname === "/internal/health/state" || url.pathname === "/internal/health/infra")) {
-      const health = await this.health.check();
+      const storage = await this.health.check();
+      // Infrastructure health includes the model providers births think
+      // with, as the deployment configures them; the state route does not.
+      const health = url.pathname === "/internal/health/infra"
+        ? withModelProviders(storage, await modelProviderChecks({ service:"birth-center", environment:this.env,
+          integrations:DEPLOYMENT.integrations }))
+        : storage;
       return Response.json({
-        ok: health.level === "normal",
+        ok: storage.level === "normal",
         service: "birth-center",
         provider: health.provider,
         stateScopeId: BIRTH_SCOPE_ID,
@@ -114,7 +121,7 @@ export class FibreBirthCenterDurableObject extends DurableObject {
         deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
         capabilities:["state"],
         health,
-      }, { status:health.level === "normal" ? 200 : 503 });
+      }, { status:storage.level === "normal" ? 200 : 503 });
     }
     if(url.pathname==="/internal/births/preflight"){
       if(request.method!=="POST")return Response.json({error:"method_not_allowed"},{status:405});

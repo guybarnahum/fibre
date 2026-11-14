@@ -29,6 +29,9 @@ import { createThreadHealthProjectionService } from "#services/world-kernel/src/
 import { THREAD_REPAIR_CONTRACT } from "#services/world-kernel/src/thread-genesis-repair-api.mjs";
 import { createCloudflareDurableObjectServiceRouter } from "../../cloudflare-do-service-router.mjs";
 import { createWorldCloudflareRuntime } from "./runtime.mjs";
+import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
+import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
+import { modelProviderChecks, withModelProviders } from "../../model-provider-health.mjs";
 import {installWorldSchemas} from "#services/world-kernel/src/world-schema-installation.mjs";
 import {openWorldStateDatabase} from "#services/world-kernel/src/world-state-storage.mjs";
 import {auditWorldIntegrityBatch} from "#services/world-kernel/src/world-integrity-audit.mjs";
@@ -1147,9 +1150,15 @@ export class FibreWorldDurableObject extends DurableObject {
     }
     if (request.method === "GET"
       && (url.pathname === "/internal/health/state" || url.pathname === "/internal/health/infra")) {
-      const health = await this.health.check();
+      const storage = await this.health.check();
+      // Infrastructure health includes the model providers the World thinks
+      // with, as its deployment configures them; the state route does not.
+      const health = url.pathname === "/internal/health/infra"
+        ? withModelProviders(storage, await modelProviderChecks({ service:"world-kernel", environment:this.env,
+          integrations:resolveServiceDeployment(parseDeploymentManifest(cloudflareDeploymentYaml),"world-kernel").integrations }))
+        : storage;
       return Response.json({
-        ok: health.level === "normal",
+        ok: storage.level === "normal",
         service: "world-kernel",
         provider: health.provider,
         stateScopeId: WORLD_SCOPE_ID,
@@ -1157,7 +1166,7 @@ export class FibreWorldDurableObject extends DurableObject {
         deploymentGitSha:this.env.FIBRE_DEPLOYMENT_GIT_SHA??null,
         capabilities:["state"],
         health,
-      }, { status:health.level === "normal" ? 200 : 503 });
+      }, { status:storage.level === "normal" ? 200 : 503 });
     }
     return this.withStateCost(
       { kind:"request", method:request.method, path:url.pathname },

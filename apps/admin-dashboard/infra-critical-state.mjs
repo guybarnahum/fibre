@@ -6,12 +6,14 @@ const DAILY_QUOTAS=new Map([
 ]);
 
 // Actual failed health checks, not analytics thresholds, determine outage.
-// A single ancillary-service failure should not lock the entire dashboard.
+// A single ancillary-service failure should not lock the entire dashboard,
+// nor a model provider: the World and its records can still be read while
+// Threads cannot think, and the banner says why.
 export function criticalInfrastructureState(payload,now=Date.now()){
   const sample=payload?.sample;
   if(sample?.level!=="critical")return null;
   const failures=(sample.checks??[]).filter(check=>
-    check.level==="critical"&&check.error);
+    check.level==="critical"&&check.error&&check.kind!=="model_provider");
   const quota=failures.find(check=>DAILY_QUOTAS.has(check.error.code));
   const core=failures.find(check=>
     ["world-kernel","admin-dashboard"].includes(check.service));

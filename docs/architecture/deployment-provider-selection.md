@@ -84,6 +84,17 @@ infra/deployments/environments/cloudflare-remote.json
 
 A generalized manifest-to-provider compiler remains deferred; current Wrangler JSONC is explicit provider output checked against Fibre's architecture and deployment tests.
 
+## Model providers in infrastructure health
+
+A service's infrastructure health (`/internal/health/infra`) includes every reasoning integration its manifest entry names.
+- **Probe:** each is reached through its own adapter with the smallest request it can make, once per provider, model and key, held for 15 minutes (2 after a failure).
+- **Critical:** billing, credentials, permission and model-configuration failures, since nothing thinks until an operator acts.
+- **Elevated:** other provider errors.
+- **Nothing is hardcoded** (`infra/deployments/model-provider-health.mjs`), so changing a provider in the manifest changes what health reports.
+- **Unaffected:** the state route used to accept deployments, and the service's own HTTP status.
+- **Admin dashboard:** a critical provider raises the banner but does not lock the dashboard, since World records stay readable.
+- **Deferred:** image integrations are not probed, because their smallest request is an image.
+
 ## Asset Generator
 
 Portable construction remains:
