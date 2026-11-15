@@ -27,9 +27,14 @@ function notify(observer, event) {
 
 // Workers AI answers in the OpenAI chat shape for current models and as
 // { response } for older ones; a schema answer may already be parsed.
-function answerOf(body) {
+// With thinking off, some models (Qwen3, Nov 14) still return the whole
+// answer in the reasoning field and leave content empty; then that field is
+// the answer. With thinking on it is hidden thought, never the answer.
+function answerOf(body, { thinking = false } = {}) {
   const result = body?.result ?? body;
-  const content = result?.choices?.[0]?.message?.content ?? result?.response;
+  const message = result?.choices?.[0]?.message;
+  const content = message?.content ?? (thinking ? null : message?.reasoning_content ?? message?.reasoning ?? null)
+    ?? result?.response;
   const usage = result?.usage ?? {};
   return {
     content,
@@ -175,7 +180,7 @@ export function createCloudflareModelAdapter({
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       try {
-        const answer = answerOf(await run(body, controller.signal));
+        const answer = answerOf(await run(body, controller.signal), { thinking });
         return { answer, attemptNumber, operationalRetries };
       } catch (error) {
         const normalized = normalizeError(error);

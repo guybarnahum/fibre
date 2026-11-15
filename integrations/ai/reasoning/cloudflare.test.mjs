@@ -22,6 +22,12 @@ test("Workers AI thinks beside the World through its binding, asked for the job'
   assert.equal(provenance.usage.inputTokens, 120, "usage was not reported for metering");
   const older = createCloudflareModelAdapter({ modelId:"@cf/old", binding:{ run:async () => ({ response:{ noticed:false } }) } });
   assert.deepEqual((await ask(older)).output, { noticed:false }, "an older model's parsed answer was not read");
+  const misplaced = (thinking) => createCloudflareModelAdapter({ modelId:"@cf/qwen/qwen3-30b-a3b-fp8", thinking, retryLimit:0,
+    binding:{ run:async () => ({ choices:[{ message:{ content:null, reasoning_content:"{\"noticed\":true}" }, finish_reason:"stop" }] }) } });
+  assert.deepEqual((await ask(misplaced(false))).output, { noticed:true },
+    "with thinking off, an answer returned in the reasoning field was lost");
+  await assert.rejects(ask(misplaced(true)), { code:"UNPARSEABLE_MODEL_OUTPUT" },
+    "hidden thought was taken as the answer");
 });
 
 test("Workers AI failures are classified like any provider's: allocation, schema missed, credentials", async () => {
