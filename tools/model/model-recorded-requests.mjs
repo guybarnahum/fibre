@@ -16,6 +16,9 @@ export const PRICES = Object.freeze({
   "gemini-3.6-flash": { input: 0.75, cached: 0.075, output: 3.75, flex: 1 },
   // Claude Opus 5.5 list price, checked November 8, 2026; judge only.
   "claude-opus-5-5": { input: 4, cached: 0.4, output: 20, flex: 1 },
+  // Workers AI list prices, checked November 14, 2026 (no cache discount or deferred tier).
+  "@cf/google/gemma-4-26b-a4b-it": { input: 0.1, cached: 0.1, output: 0.3, flex: 1 },
+  "@cf/qwen/qwen3-30b-a3b-fp8": { input: 0.051, cached: 0.051, output: 0.335, flex: 1 },
 });
 
 export async function captures(directory, promptId) {
