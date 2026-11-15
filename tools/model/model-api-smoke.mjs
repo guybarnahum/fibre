@@ -91,7 +91,8 @@ export async function runModelApiSmoke({ provider, model, environment = process.
       expectedToken: MODEL_SMOKE_TOKEN,
     },
     responseSchema: MODEL_SMOKE_SCHEMA,
-    clientRequestId: `model-api-smoke:${provider}:${model}`,
+    // A request id carries only id characters; a model id may not (@cf/…).
+    clientRequestId: `model-api-smoke:${provider}:${model.replace(/[^A-Za-z0-9._-]+/gu, "-")}`,
   });
   validateModelSmokeOutput(result.output);
   return {

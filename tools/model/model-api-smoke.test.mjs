@@ -89,3 +89,20 @@ test("Google live-smoke path validates generateContent adapter shape", async () 
   assert.equal(result.status, "passed");
   assert.equal(result.usage.totalTokens, 9);
 });
+
+test("Workers AI smoke reaches a model whose id is a path, through the account endpoint", async () => {
+  let url = null;
+  const result = await runModelApiSmoke({
+    provider: "cloudflare",
+    model: "@cf/google/gemma-4-26b-a4b-it",
+    environment: { CLOUDFLARE_ACCOUNT_ID: "acct", CLOUDFLARE_AI_API_TOKEN: "test-token" },
+    fetchImpl: async (requestUrl) => {
+      url = requestUrl;
+      return Response.json({ success: true, result: {
+        choices: [{ message: { content: JSON.stringify({ status: "ok", token: MODEL_SMOKE_TOKEN }) }, finish_reason: "stop" }],
+        usage: { prompt_tokens: 5, completion_tokens: 4, total_tokens: 9 } } });
+    },
+  });
+  assert.match(url, /accounts\/acct\/ai\/run\/@cf\/google\/gemma-4-26b-a4b-it$/);
+  assert.equal(result.status, "passed");
+});
