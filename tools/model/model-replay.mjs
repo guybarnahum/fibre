@@ -11,7 +11,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { loadDeploymentManifest, resolveServiceDeployment } from "../deployment/deployment-manifest.mjs";
-import { selectReasoningIntegration } from "../../infra/deployments/integration-selection.mjs";
+import { reasoningIntegrationFor, selectReasoningIntegration } from "../../infra/deployments/integration-selection.mjs";
 import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 import { decisionOf, judgeReplay, sharedEventKey } from "./model-replay-judge.mjs";
 import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
@@ -48,10 +48,8 @@ async function main() {
   const baselineModel = baselineValue.config.model;
   const adapters = new Map([[baselineModel, selectReasoningIntegration(baselineValue, { environment: process.env })]]);
   for (const { provider, model } of options.candidates) {
-    adapters.set(model, selectReasoningIntegration({
-      kind: "ai.reasoning", provider, config: { ...baselineValue.config, model },
-      secrets: { apiKey: provider === "google" ? "GEMINI_API_KEY" : "OPENAI_API_KEY" },
-    }, { environment: process.env }));
+    adapters.set(model, selectReasoningIntegration(reasoningIntegrationFor(provider, model,
+      provider === baselineValue.provider ? baselineValue.config : {}), { environment: process.env }));
   }
 
   const { found, stale } = await captures(resolve(repoRoot, options.evidence), options.prompt);

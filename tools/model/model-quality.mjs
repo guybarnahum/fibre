@@ -78,7 +78,7 @@ async function main() {
   const adapters = new Map();
   const adapterFor = (model, provider = "openai") => {
     if (!adapters.has(model)) adapters.set(model, selectReasoningIntegration(
-      reasoningIntegrationFor(provider, model, provider === "openai" ? base.config : {}), { environment: process.env }));
+      reasoningIntegrationFor(provider, model, provider === base.provider ? base.config : {}), { environment: process.env }));
     return adapters.get(model);
   };
   const judges = judgesFor(options.judges, { environment: process.env, adapterFor: (model) => adapterFor(model) });

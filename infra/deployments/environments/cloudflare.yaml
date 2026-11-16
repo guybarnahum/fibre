@@ -61,7 +61,10 @@ integrations:
     config:
       model: "@cf/google/gemma-4-26b-a4b-it"
       binding: AI
-      maxOutputTokens: 2000
+      maxOutputTokens: 4096
+      temperature: 0.3
+      captureDepths:
+        - gate
     environment:
       accountId: CLOUDFLARE_ACCOUNT_ID
     secrets:
@@ -112,9 +115,13 @@ services:
   world-kernel:
     runtime: cloudflare
     infra: world-cloudflare
+    # Experiment from Nov 16, while the OpenAI account has no credits (this
+    # file serves every Cloudflare environment): the World thinks with Gemma 4
+    # on Workers AI. Back to Sol by setting both
+    # ports to lived-encounter-openai.
     integrations:
-      livedNow: lived-encounter-openai
-      encounter: lived-encounter-openai
+      livedNow: lived-workers-ai-gemma4
+      encounter: lived-workers-ai-gemma4
   birth-center:
     runtime: cloudflare
     infra: birth-cloudflare
