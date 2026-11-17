@@ -239,7 +239,9 @@ function captureLine(request, provenance, output) {
 export function meteredReasoningIntegration(adapter, { port, log = console.log, captureDepths = [] } = {}) {
   const capturing = new Set(captureDepths);
   const kindOf = (request) => String(request?.clientRequestId ?? "unknown").replace(/_[0-9a-f]{16,}$/u, "");
-  const report = (request, startedAt, provenance, outcome) => {
+  // A failed call names its error code and a short message, so an outage or
+  // a model that misses the schema can be read from the logs.
+  const report = (request, startedAt, provenance, outcome, error = null) => {
     const usage = provenance?.usage ?? null;
     log(JSON.stringify({
       event: "model-call",
@@ -261,18 +263,22 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log, 
       cachedInputTokens: usage?.cachedInputTokens ?? null,
       cacheWriteTokens: usage?.cacheWriteTokens ?? null,
       outputTokens: usage?.outputTokens ?? null,
+      ...(error === null ? {} : { errorCode: error?.code ?? null, error: String(error?.message ?? error).slice(0, 200) }),
     }));
   };
   return Object.freeze({
     ...adapter,
     async invoke(request) {
       const startedAt = Date.now();
-      let result;
+      let result, failure = null;
       try {
         result = await adapter.invoke(request);
         return result;
+      } catch (error) {
+        failure = error;
+        throw error;
       } finally {
-        report(request, startedAt, result?.provenance, result === undefined ? "failed" : "completed");
+        report(request, startedAt, result?.provenance, result === undefined ? "failed" : "completed", failure);
         if (result !== undefined && capturing.has(request?.depth)) {
           const line = captureLine(request, result.provenance, result.output);
           if (line !== null) log(line);
@@ -282,14 +288,17 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log, 
     ...(typeof adapter.streamExpression !== "function" ? {} : {
       async *streamExpression(request) {
         const startedAt = Date.now();
-        let provenance = null;
+        let provenance = null, failure = null;
         try {
           for await (const event of adapter.streamExpression(request)) {
             if (event?.type === "expression_complete") provenance = event.provenance;
             yield event;
           }
+        } catch (error) {
+          failure = error;
+          throw error;
         } finally {
-          report(request, startedAt, provenance, provenance === null ? "stopped" : "completed");
+          report(request, startedAt, provenance, failure !== null ? "failed" : provenance === null ? "stopped" : "completed", failure);
         }
       },
     }),

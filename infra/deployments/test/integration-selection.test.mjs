@@ -169,3 +169,12 @@ test("Thread-private requests are captured for replay only for the depths explic
   assert.deepEqual(captured.map((line) => [line.depth, line.input.memory, line.output.outcome]),
     [["gate", "a private recollection", "noticed"]], "capture did not keep exactly the named depth");
 });
+
+test("a failed model call says why in the log, so an outage or a missed schema can be read afterwards", async () => {
+  const lines = [];
+  const failing = meteredReasoningIntegration({ provider:"cloudflare", modelId:"@cf/m", configuration:{},
+    invoke:async () => { throw Object.assign(new Error("JSON Mode couldn't be met"), { code:"UNPARSEABLE_MODEL_OUTPUT" }); } },
+  { port:"livedNow", log:(line) => lines.push(JSON.parse(line)) });
+  await assert.rejects(failing.invoke({ clientRequestId:"interior_flight-plan_test" }));
+  assert.deepEqual([lines[0].outcome, lines[0].errorCode], ["failed", "UNPARSEABLE_MODEL_OUTPUT"]);
+});

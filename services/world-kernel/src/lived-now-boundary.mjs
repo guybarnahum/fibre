@@ -48,7 +48,7 @@ export async function auditLivedContinuity({livedNowStore,reconciliationRuntime,
 }
 
 export function createLivedBoundaryProcess({
-  livedNowStore,livedNow,now=()=>new Date().toISOString(),
+  livedNowStore,livedNow,now=()=>new Date().toISOString(),log=null,
 }={}){
   for(const key of [
     "listDueLivedBoundaries","nextLivedBoundaryAt",
@@ -110,6 +110,10 @@ export function createLivedBoundaryProcess({
           const failure=livedNowStore.failLivedBoundary({
             ...item,message,at,unavailable:error instanceof LivedNowCoverageError,
           });
+          // Only the third failure's reason is kept on the boundary; every
+          // reason goes to the operator log.
+          log?.(JSON.stringify({event:"lived-boundary-failed",threadId:item.threadId,
+            attempts:failure.attempts,blocked:failure.blocked===true,errorCode:error?.code??null,message}));
           results.push({
             threadId:item.threadId,
             outcome:failure.blocked?"blocked":"retry_scheduled",

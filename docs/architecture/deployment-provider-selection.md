@@ -104,6 +104,8 @@ world-kernel:
 - **Hidden thinking** is off unless an integration sets `thinking: true`.
 
 **Recovery:** a provider-wide failure (billing, credentials, access) stops calls to that provider for ten minutes, then lets the next call try again. A long-lived World therefore resumes on its own once the account is fixed.
+- **Waiting:** while World work keeps failing, the World's reconciliation backs off exponentially up to half an hour. A Thread's next boundary or another deadline due sooner still wakes it on time. A World whose minds are unavailable therefore costs two wakes an hour, not twelve.
+- **Reasons:** every failed model call logs its error code and a short message (`model-call`), and every failed lived boundary logs its reason (`lived-boundary-failed`). An outage, an allowance running out, or a model missing the schema can be read afterwards in Workers Logs.
 
 ## Model providers in infrastructure health
 

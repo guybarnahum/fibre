@@ -893,3 +893,23 @@ test("World waits for the consolidation deadline instead of retrying early",asyn
       "World did not preserve the Thread's due reflection deadline");
   }finally{await runtime.stop();}
 });
+
+test("a World whose minds are unavailable backs off to half an hour, yet wakes on time for a life due sooner",async()=>{
+  let clock=0;
+  let livedNext=null;
+  const process=createWorldReconciliationProcess({
+    experienceConsolidationProcess:{async runOnce(){return {attempted:1,completed:0,failed:1,hasPending:true,results:[]};}},
+    livedBoundaryProcess:{async runOnce(){return {due:0,completed:0,failed:0,nextDueAt:livedNext,results:[]};}},
+  });
+  const {infraDriver,runtime}=createRuntimeFixture({process,now:()=>clock,intervalMs:5_000,maxRetryMs:30*60_000});
+  try{
+    await runtime.requestWake();
+    let delay=0;
+    for(let pass=0;pass<12;pass+=1){clock+=delay;delay=(await runtime.handleWake()).retryDelayMs;}
+    assert.equal(delay,30*60_000,"a failing World kept polling every few minutes");
+    livedNext=new Date(clock+10*60_000).toISOString();
+    await runtime.handleWake();
+    assert.equal(await infraDriver.scheduler.get("world"),clock+10*60_000,
+      "a Thread's next boundary waited for the failure backoff");
+  }finally{await runtime.stop();}
+});

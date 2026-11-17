@@ -2,7 +2,10 @@ import { requireInfraCapabilities } from "#infra";
 import { openWorldReconciliationRetryStore } from "./world-reconciliation-retry-store.mjs";
 
 export const WORLD_RECONCILIATION_SCOPE_ID = "world";
-const DEFAULT_MAX_RETRY_MS = 300_000;
+// A failing pass backs off up to half an hour, so a World whose minds are
+// unavailable (a provider outage) does not read its state every few minutes
+// for nothing; work due sooner still wakes it on time.
+const DEFAULT_MAX_RETRY_MS = 30 * 60_000;
 
 // One cheap hourly check can revive a missing or stale World alarm.
 // Healthy scheduled lives do not require an extra reconciliation pass.
@@ -373,11 +376,13 @@ export function createWorldReconciliationRuntime({
     return Object.freeze({ scopeId, scheduledTimeMs: current, existing: true });
   }
 
-  async function scheduleRetry() {
+  // Work that fails waits for the backoff; work due later than now (a life's
+  // next boundary, a consolidation deadline) is never postponed by it.
+  async function scheduleRetry(dueLaterMs = null) {
     const streak = await retryStreak();
     const delayMs = retryDelayMs(streak);
     await setRetryStreak(streak + 1);
-    await infra.scheduler.schedule(scopeId, now() + delayMs);
+    await infra.scheduler.schedule(scopeId, dueLaterMs === null ? now() + delayMs : Math.min(now() + delayMs, dueLaterMs));
     return delayMs;
   }
 
@@ -409,12 +414,7 @@ export function createWorldReconciliationRuntime({
       await scheduleRetry();
       throw error;
     }
-    if (worldReconciliationNeedsRetry(result)) {
-      const delayMs = await scheduleRetry();
-      return Object.freeze({ ...result, reconciliationPending: true, retryDelayMs: delayMs });
-    }
-    await setRetryStreak(0);
-    const dueAt=[
+    const deadlines=[
       result.experienceConsolidation?.result?.nextDueAt,
       result.environmentEvolution?.result?.nextDueAt,
       result.socialOpportunity?.result?.nextDueAt,
@@ -422,7 +422,14 @@ export function createWorldReconciliationRuntime({
       result.firstLife?.result?.nextDueAt,
       result.contactReception?.result?.nextDueAt,
       result.appointments?.result?.nextDueAt,
-    ].filter(Boolean).sort()[0]??null;
+    ].filter(Boolean).sort();
+    const dueAt=deadlines[0]??null;
+    if (worldReconciliationNeedsRetry(result)) {
+      const dueLater=deadlines.map(Date.parse).filter(at=>Number.isFinite(at)&&at>now());
+      const delayMs = await scheduleRetry(dueLater.length===0?null:dueLater[0]);
+      return Object.freeze({ ...result, reconciliationPending: true, retryDelayMs: delayMs });
+    }
+    await setRetryStreak(0);
     if(dueAt!==null){
       const timestamp=Date.parse(dueAt);
       if(!Number.isFinite(timestamp))throw new TypeError("World environment next due time is invalid");

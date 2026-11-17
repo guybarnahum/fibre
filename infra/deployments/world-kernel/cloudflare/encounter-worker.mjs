@@ -790,7 +790,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         onSituationResolved:(situation)=>this.scheduleNextLivedBoundary(situation),
       });
       this.livedBoundaryProcess=createLivedBoundaryProcess({
-        livedNowStore,livedNow,
+        livedNowStore,livedNow,log:console.log,
       });
       this.firstLifeProcess=createGenesisFirstLifeProcess({
         workStore:openGenesisFirstLifeStore(runtime.worldStorage),livedNow,
