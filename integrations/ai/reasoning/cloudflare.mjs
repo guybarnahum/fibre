@@ -14,8 +14,13 @@ import {
 // JSON schema, which Workers AI honours on a best-effort basis: an answer
 // that misses it is unparseable and the caller's validation decides.
 // Live speech is not streamed: the whole utterance arrives as one delta.
+// The binding cannot cancel a request: one we stop waiting for still runs
+// and is billed. So a binding timeout is never retried, and cognition that
+// may take minutes is given minutes to answer.
 
-const DEFAULTS = Object.freeze({ timeoutMs:60_000, maxOutputTokens:2_000, retryLimit:2, retryDelayMs:2_000 });
+const DEFAULTS = Object.freeze({
+  timeoutMs:60_000, deferredTimeoutMs:180_000, maxOutputTokens:2_000, retryLimit:2, retryDelayMs:2_000,
+});
 
 const digest = (value) => `sha256:${sha256(typeof value === "string" ? value : canonicalJson(value))}`;
 const wait = (ms) => ms <= 0 ? Promise.resolve() : new Promise((resolve) => setTimeout(resolve, ms));
@@ -118,6 +123,7 @@ export function createCloudflareModelAdapter({
   modelId,
   maxOutputTokens = DEFAULTS.maxOutputTokens,
   timeoutMs = DEFAULTS.timeoutMs,
+  deferredTimeoutMs = Math.max(timeoutMs, DEFAULTS.deferredTimeoutMs),
   retryLimit = DEFAULTS.retryLimit,
   retryDelayMs = DEFAULTS.retryDelayMs,
   temperature = null,
@@ -170,7 +176,7 @@ export function createCloudflareModelAdapter({
     }),
   });
 
-  async function attempt(body, clientRequestId, context) {
+  async function attempt(body, clientRequestId, context, waitMs = timeoutMs) {
     const maximumAttempts = retryLimit + 1;
     const operationalRetries = [];
     for (let attemptNumber = 1; attemptNumber <= maximumAttempts; attemptNumber += 1) {
@@ -178,13 +184,14 @@ export function createCloudflareModelAdapter({
       notify(observer, { type:"model_attempt", provider:"cloudflare", modelId, clientRequestId,
         attempt:attemptNumber, maximumAttempts });
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const timer = setTimeout(() => controller.abort(), waitMs);
       try {
         const answer = answerOf(await run(body, controller.signal), { thinking });
         return { answer, attemptNumber, operationalRetries };
       } catch (error) {
         const normalized = normalizeError(error);
-        const retrying = normalized.retryable === true && attemptNumber < maximumAttempts;
+        const stillRunning = viaBinding && normalized.code === "MODEL_TIMEOUT";
+        const retrying = normalized.retryable === true && !stillRunning && attemptNumber < maximumAttempts;
         notify(observer, { type:"operational_failure", provider:"cloudflare", modelId, clientRequestId,
           attempt:attemptNumber, maximumAttempts, retrying, ...context,
           failure:{ code:normalized.code, message:normalized.message, retryable:normalized.retryable } });
@@ -214,14 +221,15 @@ export function createCloudflareModelAdapter({
     provider:"cloudflare",
     modelId,
     configuration,
-    async invoke({ systemPrompt, input, responseSchema, clientRequestId }) {
+    async invoke({ systemPrompt, input, responseSchema, clientRequestId, latency = "live" }) {
       assertNonEmpty("model systemPrompt", systemPrompt);
       assertPlainObject("model input", input);
       assertPlainObject("model responseSchema", responseSchema);
       assertId("model clientRequestId", clientRequestId);
       const context = { inputDigest:digest(input), promptHash:digest(systemPrompt), responseSchemaHash:digest(responseSchema) };
       const { answer, attemptNumber, operationalRetries } =
-        await attempt(request({ systemPrompt, input, responseSchema }), clientRequestId, context);
+        await attempt(request({ systemPrompt, input, responseSchema }), clientRequestId, context,
+          latency === "minutes" ? deferredTimeoutMs : timeoutMs);
       const output = parseOutput(answer.content, answer.finishReason);
       notify(observer, { type:"model_response", provider:"cloudflare", modelId, clientRequestId,
         attempt:attemptNumber, ...context, modelOutput:structuredClone(output), usage:answer.usage });

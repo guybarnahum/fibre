@@ -189,6 +189,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         journalBook:this.journalBookForRequest(),
         modelAdapter:this.reasoningFor("encounter"),
         onAfterthoughts:(event)=>this.liveEncounterRegistry.publishAfterthoughts(event),
+        log:console.log,
       });
       runtime.reconciliationProcess.setExperienceConsolidationProcess(
         this.experienceConsolidationProcess,

@@ -88,7 +88,7 @@ function experienceConsolidationNeedsRetry(entry) {
   if (entry.ok !== true) return true;
   const result = entry.result;
   if (!result || typeof result !== "object") return false;
-  if (Number.isSafeInteger(result.failed) && result.failed > 0) return true;
+  // A failed reflection carries its own retry deadline in nextDueAt.
   return result.hasPending === true;
 }
 

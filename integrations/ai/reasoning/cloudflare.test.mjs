@@ -43,6 +43,17 @@ test("Workers AI failures are classified like any provider's: allocation, schema
   await assert.rejects(ask(cut), { code:"UNPARSEABLE_MODEL_OUTPUT" });
 });
 
+test("a request the binding cannot cancel is waited for, never sent twice", async () => {
+  let runs = 0;
+  const slow = (ms) => createCloudflareModelAdapter({ modelId:"@cf/m", timeoutMs:20, deferredTimeoutMs:200,
+    binding:{ run:async () => { runs += 1; await new Promise((done) => setTimeout(done, ms)); return chat("{\"noticed\":true}"); } } });
+  await assert.rejects(ask(slow(60)), { code:"MODEL_TIMEOUT" });
+  assert.equal(runs, 1, "a timed-out request, still running and billed, was sent again");
+  const reflection = await slow(60).invoke({ systemPrompt:"Reflect.", input:{ day:1 }, responseSchema:SCHEMA,
+    clientRequestId:"reflection_test", latency:"minutes" });
+  assert.deepEqual(reflection.output, { noticed:true }, "cognition that may take minutes was cut short");
+});
+
 test("a live turn can speak through Workers AI, as one utterance", async () => {
   const adapter = createCloudflareModelAdapter({ modelId:"@cf/m", binding:{ run:async () => chat("engaged ordinary SAY: Hello.") } });
   const events = [];

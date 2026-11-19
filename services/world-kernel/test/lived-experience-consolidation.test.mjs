@@ -325,7 +325,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
   }
 });
 
-test("N7.5 retry reuses the durable consolidation decision",async()=>{
+test("a failed reflection waits, then resumes from its durable decision",async()=>{
   const directory=mkdtempSync(join(tmpdir(),"fibre-n75-retry-"));
   const storage={
     infraDriver:createSqliteStateInfraDriver({scopes:{world:join(directory,"world.sqlite")}}),
@@ -378,6 +378,8 @@ test("N7.5 retry reuses the durable consolidation decision",async()=>{
     };
     let failOnce=true;
     const attemptedRecordedAt=[];
+    let clockMs=Date.parse("2026-10-07T19:00:00.000Z");
+    const logged=[];
     const flakyMemoryStore={
       listCurrentMemories:(...args)=>memoryStore.listCurrentMemories(...args),
       memoryHistory:(...args)=>memoryStore.memoryHistory(...args),
@@ -413,16 +415,27 @@ test("N7.5 retry reuses the durable consolidation decision",async()=>{
         const times=[
           "2026-10-07T19:00:00.000Z",
           "2026-10-07T19:00:01.000Z",
-          "2026-10-07T19:05:00.000Z",
-          "2026-10-07T19:05:01.000Z",
+          "2026-10-07T19:31:00.000Z",
+          "2026-10-07T19:31:01.000Z",
         ];
         return ()=>times.shift();
       })(),
+      clock:()=>clockMs,
+      log:(line)=>logged.push(JSON.parse(line)),
       batchLimit:1,
     });
 
     const failed=await process.runOnce();
     assert.equal(failed.failed,1,"simulated persistence failure did not leave consolidation retryable");
+    assert.equal(failed.nextDueAt,"2026-10-07T19:30:00.000Z","the failed reflection lost its retry deadline");
+    assert.equal(failed.hasPending,false,"a failed reflection was retried at once");
+    assert.deepEqual(logged.map((entry)=>[entry.event,entry.message]),
+      [["experience-consolidation-failed","simulated memory persistence interruption"]],
+      "the failure and its reason were not logged");
+
+    clockMs=Date.parse("2026-10-07T19:10:00.000Z");
+    assert.equal((await process.runOnce()).attempted,0,"the reflection was attempted before its wait ended");
+    clockMs=Date.parse("2026-10-07T19:31:00.000Z");
     assert.equal(cognitionCalls,1,"first consolidation did not form one decision");
     assert.notEqual(
       experienceStore.listPendingThreadExperienceConsolidations({limit:1}).length,
@@ -435,14 +448,14 @@ test("N7.5 retry reuses the durable consolidation decision",async()=>{
     assert.equal(cognitionCalls,1,"retry resampled the Thread's consolidation decision");
     assert.deepEqual(
       attemptedRecordedAt,
-      ["2026-10-07T19:00:01.000Z","2026-10-07T19:05:00.000Z"],
+      ["2026-10-07T19:00:01.000Z","2026-10-07T19:31:00.000Z"],
       "retry backdated memory materialization instead of preserving the decision and advancing formation time",
     );
     assert.equal(memoryStore.listCurrentMemories(thread.threadId).length,1,
       "retry did not materialize the retained memory");
     assert.equal(
       memoryStore.listCurrentMemories(thread.threadId)[0].recordedAt,
-      "2026-10-07T19:05:00.000Z",
+      "2026-10-07T19:31:00.000Z",
       "retried memory did not record when it actually became durable",
     );
   }finally{

@@ -32,6 +32,11 @@ const DEFAULT_BATCH_LIMIT=4;
 const DEFAULT_GROUP_LIMIT=8;
 const DEFAULT_GROUP_WINDOW_MS=EXPERIENCE_CONSOLIDATION_DELAY_MS;
 const MEMORY_LIMIT=6;
+// A failed reflection waits as long as it has been failing: half an hour at
+// first, doubling, at most a day. Cognition that is down is not asked again
+// every few minutes, and the reflection is never dropped.
+const RETRY_MIN_MS=30*60_000;
+const RETRY_MAX_MS=24*60*60_000;
 // The ways one Thread may regard another (registered relationship_attitude
 // dimensions). The first-person description, not the aspect, carries meaning.
 const STANCE_ASPECTS=Object.freeze(["fondness","trust","respect","attachment","resentment","guardedness"]);
@@ -441,6 +446,7 @@ export function createExperienceConsolidationProcess({
   batchLimit=DEFAULT_BATCH_LIMIT,
   groupLimit=DEFAULT_GROUP_LIMIT,
   groupWindowMs=DEFAULT_GROUP_WINDOW_MS,
+  log=null,
 }={}){
   requireMethod("worldReader",worldReader,"getThread");
   requireMethod("livedNowStore",livedNowStore,"getSituation");
@@ -458,6 +464,8 @@ export function createExperienceConsolidationProcess({
   requireMethod("experienceStore",experienceStore,"recordThreadExperienceConsolidationJournal");
   requireMethod("experienceStore",experienceStore,"getThreadExperienceConsolidationJournal");
   requireMethod("experienceStore",experienceStore,"hasPendingExperienceConsolidation");
+  requireMethod("experienceStore",experienceStore,"nextExperienceConsolidationDueAt");
+  requireMethod("experienceStore",experienceStore,"deferThreadExperienceConsolidation");
   requireMethod("modelAdapter",modelAdapter,"invoke");
   if(journalBook!==null)requireMethod("journalBook",journalBook,"ensureProfile");
   if(onAfterthoughts!==null&&typeof onAfterthoughts!=="function"){
@@ -707,15 +715,18 @@ export function createExperienceConsolidationProcess({
   return Object.freeze({
     async runOnce(){
       const atMs=clock();
+      const dueBy=new Date(atMs).toISOString();
       let pending=experienceStore.listPendingThreadExperienceConsolidations({
-        limit:batchLimit,
+        limit:batchLimit,dueBy,
       });
       let claimed=[];
+      // What was just claimed is due now, whatever moment it was stamped with.
+      const dueNow=()=>[dueBy,...claimed.map((item)=>item.startedAt)].sort().at(-1);
       if(pending.length<batchLimit){
         claimed=claimGroups(batchLimit-pending.length,atMs);
         if(claimed.length>0){
           pending=experienceStore.listPendingThreadExperienceConsolidations({
-            limit:batchLimit,
+            limit:batchLimit,dueBy:dueNow(),
           });
         }
       }
@@ -727,19 +738,33 @@ export function createExperienceConsolidationProcess({
           results.push(await consolidate(consolidation));
         }catch(error){
           failed+=1;
-          results.push(Object.freeze({
+          const waitMs=Math.min(RETRY_MAX_MS,
+            Math.max(RETRY_MIN_MS,atMs-Date.parse(consolidation.startedAt)));
+          const retryAt=new Date(atMs+waitMs).toISOString();
+          experienceStore.deferThreadExperienceConsolidation({
+            consolidationId:consolidation.consolidationId,until:retryAt,
+          });
+          const failure=Object.freeze({
             consolidationId:consolidation.consolidationId,
             threadId:consolidation.threadId,
             errorName:error?.constructor?.name??"Error",
+            errorCode:typeof error?.code==="string"?error.code:null,
             message:String(error?.message??error).slice(0,300),
-          }));
+            retryAt,
+          });
+          results.push(failure);
+          log?.(JSON.stringify({event:"experience-consolidation-failed",...failure}));
         }
       }
       const next=experienceStore.listUnclaimedExperienceConsolidationCandidates({limit:1})[0];
-      const nextDueAt=next
-        ?new Date(Date.parse(next.queuedAt)+groupWindowMs).toISOString():null;
-      const hasUnfinished=failed>0||
-        experienceStore.listPendingThreadExperienceConsolidations({limit:1}).length>0;
+      const nextDueAt=[
+        next?new Date(Date.parse(next.queuedAt)+groupWindowMs).toISOString():null,
+        experienceStore.nextExperienceConsolidationDueAt(),
+      ].filter(Boolean).sort()[0]??null;
+      // A failed reflection is not unfinished work now: it waits for retryAt.
+      const hasUnfinished=experienceStore.listPendingThreadExperienceConsolidations({
+        limit:1,dueBy:dueNow(),
+      }).length>0;
       return Object.freeze({
         attempted:pending.length,
         completed:pending.length-failed,

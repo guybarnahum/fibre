@@ -2014,18 +2014,20 @@ export class LivedExperienceStore {
     };
   }
 
-  listPendingThreadExperienceConsolidations({limit=4}={}) {
+  listPendingThreadExperienceConsolidations({limit=4,dueBy=null}={}) {
     if(!Number.isSafeInteger(limit)||limit<1||limit>32){
       throw new TypeError("pending consolidation limit must be 1-32");
     }
+    if(dueBy!==null)assertIsoTimestamp("pending consolidation dueBy",dueBy);
     return this.#database.prepare(`
       SELECT c.consolidation_id,c.thread_id,c.started_at,c.experience_refs_json
       FROM thread_experience_pending_work w
       JOIN thread_experience_consolidations c ON c.consolidation_id=w.reference
-      WHERE w.kind='consolidation' AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=c.thread_id)
+      WHERE w.kind='consolidation' AND (? IS NULL OR w.due_at<=?)
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=c.thread_id)
       ORDER BY w.due_at,w.reference
       LIMIT ?
-    `).all(limit).map((row)=>({
+    `).all(dueBy,dueBy,limit).map((row)=>({
       consolidationId:row.consolidation_id,
       threadId:row.thread_id,
       startedAt:row.started_at,
@@ -2246,6 +2248,28 @@ export class LivedExperienceStore {
       queued:Object.freeze(queued),
       consolidations:Object.freeze(consolidations),
     });
+  }
+
+  nextExperienceConsolidationDueAt() {
+    return this.#database.prepare(`
+      SELECT MIN(w.due_at) AS due_at FROM thread_experience_pending_work w
+      JOIN thread_experience_consolidations c ON c.consolidation_id=w.reference
+      WHERE w.kind='consolidation'
+        AND NOT EXISTS (SELECT 1 FROM thread_life_rest life_rest WHERE life_rest.thread_id=c.thread_id)
+    `).get()?.due_at??null;
+  }
+
+  // A reflection that failed waits before it is attempted again. Only the
+  // derived work frontier moves; the claim and its history are untouched.
+  deferThreadExperienceConsolidation({consolidationId,until}) {
+    assertId("deferred consolidationId",consolidationId);
+    assertIsoTimestamp("deferred consolidation until",until);
+    try{
+      this.#database.prepare(`
+        UPDATE thread_experience_pending_work SET due_at=?
+        WHERE kind='consolidation' AND reference=?
+      `).run(until,consolidationId);
+    }catch(error){throw translateStorageError(error);}
   }
 
   hasPendingExperienceConsolidation() {

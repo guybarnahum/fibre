@@ -102,10 +102,12 @@ world-kernel:
 - **Structured output** is asked as the job's JSON schema, which Workers AI honours on a best-effort basis. An answer that misses it is unparseable, and the job's own validation and retry decide.
 - **Live speech** arrives as one utterance, not streamed.
 - **Hidden thinking** is off unless an integration sets `thinking: true`.
+- **Timeouts:** the binding cannot cancel a request; one the World stops waiting for still runs and is billed. A binding timeout is therefore never retried, and a `latency: minutes` job waits up to three minutes (live jobs one).
 
 **Recovery:** a provider-wide failure (billing, credentials, access) stops calls to that provider for ten minutes, then lets the next call try again. A long-lived World therefore resumes on its own once the account is fixed.
 - **Waiting:** while World work keeps failing, the World's reconciliation backs off exponentially up to half an hour. A Thread's next boundary or another deadline due sooner still wakes it on time. A World whose minds are unavailable therefore costs two wakes an hour, not twelve.
-- **Reasons:** every failed model call logs its error code and a short message (`model-call`), and every failed lived boundary logs its reason (`lived-boundary-failed`). An outage, an allowance running out, or a model missing the schema can be read afterwards in Workers Logs.
+- **Reflections** that fail wait as long as they have been failing: half an hour at first, doubling, at most a day. Only the work frontier's due time moves; the reflection is never dropped and resumes from any decision it already recorded.
+- **Reasons:** every failed model call logs its error code and a short message (`model-call`), every failed lived boundary logs its reason (`lived-boundary-failed`), and every failed reflection logs its reason and next attempt (`experience-consolidation-failed`). An outage, an allowance running out, or a model missing the schema can be read afterwards in Workers Logs.
 
 ## Model providers in infrastructure health
 
