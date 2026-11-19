@@ -20,7 +20,7 @@ test("model API smoke requires explicit provider and model", () => {
     help: false,
   });
   assert.throws(() => parseModelSmokeArgs(["--provider", "openai"]), /--model is required/);
-  assert.throws(() => parseModelSmokeArgs(["--provider", "other", "--model", "x"]), /openai, google or cloudflare/);
+  assert.throws(() => parseModelSmokeArgs(["--provider", "other", "--model", "x"]), /openai, google, cloudflare or anthropic/);
 });
 
 test("model API smoke validates the exact tiny result", () => {
@@ -105,4 +105,24 @@ test("Workers AI smoke reaches a model whose id is a path, through the account e
   });
   assert.match(url, /accounts\/acct\/ai\/run\/@cf\/google\/gemma-4-26b-a4b-it$/);
   assert.equal(result.status, "passed");
+});
+
+test("Claude smoke checks the judge's own path: structured output, credit and key", async () => {
+  let request = null;
+  const claude = (status, body) => runModelApiSmoke({
+    provider: "anthropic",
+    model: "claude-test",
+    environment: { ANTHROPIC_API_KEY: "test-key" },
+    fetchImpl: async (url, init) => { request = { url, init, body: JSON.parse(init.body) }; return Response.json(body, { status }); },
+  });
+  const result = await claude(200, { stop_reason: "end_turn",
+    content: [{ type: "text", text: JSON.stringify({ status: "ok", token: MODEL_SMOKE_TOKEN }) }],
+    usage: { input_tokens: 5, output_tokens: 4 } });
+  assert.match(request.url, /\/v1\/messages$/);
+  assert.equal(request.body.output_config.format.type, "json_schema");
+  assert.equal(result.usage.totalTokens, 9);
+  await assert.rejects(claude(400, { error: { message: "Your credit balance is too low" } }), /credit balance/,
+    "an empty Anthropic balance was not reported");
+  await assert.rejects(runModelApiSmoke({ provider: "anthropic", model: "claude-test", environment: {} }),
+    /ANTHROPIC_API_KEY/, "a missing key was not reported");
 });

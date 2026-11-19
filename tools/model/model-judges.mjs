@@ -30,27 +30,44 @@ export const JUDGE_TASKS = Object.freeze({
 const unbounded = (schema) => JSON.parse(JSON.stringify(schema, (key, value) =>
   ["minimum", "maximum", "minLength", "maxLength"].includes(key) ? undefined : value));
 
-function claudeJudge(model, apiKey) {
+// Claude through the Messages API, shaped like a Fibre reasoning adapter so
+// the operator smoke checks exactly the path the judges use.
+export function createClaudeAdapter({ model, apiKey, fetchImpl = globalThis.fetch, timeoutMs = 180_000 }) {
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set in .env");
   return {
     model,
-    async ask(task, material) {
-      const { system, schema } = JUDGE_TASKS[task];
-      const response = await fetch(ANTHROPIC_URL, {
+    async invoke({ systemPrompt, input, responseSchema }) {
+      const response = await fetchImpl(ANTHROPIC_URL, {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({
-          model, max_tokens: 4000, system,
-          messages: [{ role: "user", content: JSON.stringify(material) }],
-          output_config: { effort: "low", format: { type: "json_schema", schema: unbounded(schema) } },
+          model, max_tokens: 4000, system: systemPrompt,
+          messages: [{ role: "user", content: JSON.stringify(input) }],
+          output_config: { effort: "low", format: { type: "json_schema", schema: unbounded(responseSchema) } },
         }),
-        signal: AbortSignal.timeout(180_000),
+        signal: AbortSignal.timeout(timeoutMs),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(`${model} ${response.status}: ${body?.error?.message ?? "error"}`);
       const text = body.content?.find((block) => block.type === "text")?.text;
-      if (!text || body.stop_reason !== "end_turn") throw new Error(`${model} gave no verdict (${body.stop_reason})`);
-      const verdict = JSON.parse(text);
-      return { verdict, cost: costOf(model, { inputTokens: body.usage?.input_tokens, outputTokens: body.usage?.output_tokens }) };
+      if (!text || body.stop_reason !== "end_turn") throw new Error(`${model} gave no answer (${body.stop_reason})`);
+      const inputTokens = body.usage?.input_tokens ?? 0;
+      const outputTokens = body.usage?.output_tokens ?? 0;
+      return { output: JSON.parse(text), provenance: { provider: "anthropic", transport: "anthropic-messages",
+        modelId: model, invocationAttempts: 1,
+        usage: { inputTokens, outputTokens, totalTokens: inputTokens + outputTokens } } };
+    },
+  };
+}
+
+function claudeJudge(model, apiKey) {
+  const claude = createClaudeAdapter({ model, apiKey });
+  return {
+    model,
+    async ask(task, material) {
+      const { system, schema } = JUDGE_TASKS[task];
+      const { output, provenance } = await claude.invoke({ systemPrompt: system, input: material, responseSchema: schema });
+      return { verdict: output, cost: costOf(model, provenance.usage) };
     },
   };
 }
@@ -72,10 +89,7 @@ function fibreJudge(model, adapter) {
 // "claude-…" names a Claude judge; anything else, a model behind Fibre's adapter.
 export function judgesFor(names, { environment, adapterFor }) {
   return names.map((name) => {
-    if (name.startsWith("claude-")) {
-      if (!environment.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not set in .env");
-      return claudeJudge(name, environment.ANTHROPIC_API_KEY);
-    }
+    if (name.startsWith("claude-")) return claudeJudge(name, environment.ANTHROPIC_API_KEY);
     return fibreJudge(name, adapterFor(name));
   });
 }

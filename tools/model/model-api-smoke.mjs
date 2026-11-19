@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 
 import { reasoningIntegrationFor, selectReasoningIntegration } from "../../infra/deployments/integration-selection.mjs";
 import { resolvePromptAsset } from "#integrations/ai/reasoning/prompt-assets.mjs";
+import { createClaudeAdapter } from "./model-judges.mjs";
 
 export const MODEL_SMOKE_TOKEN = "fibre-model-smoke-v1";
 export const MODEL_SMOKE_PROMPT = resolvePromptAsset({
@@ -22,7 +23,7 @@ export const MODEL_SMOKE_SCHEMA = Object.freeze({
 });
 
 function usage() {
-  return `Fibre model API smoke\n\nUsage:\n  npm run model:smoke -- --provider openai --model gpt-5.6-luna\n  npm run model:smoke -- --provider google --model gemini-3.6-flash\n  npm run model:smoke -- --provider google --model gemma-4-26b-a4b-it\n  npm run model:smoke -- --provider cloudflare --model @cf/google/gemma-4-26b-a4b-it\n\nOptions:\n  --provider <openai|google|cloudflare>  Provider adapter to exercise.\n  --model <id>                Exact provider model id.\n  --help                      Show this help.\n\nThis performs one live, low-level structured-output call. It validates provider authentication, endpoint/model availability, request shape, response parsing, and the minimal structured-output contract.\n`;
+  return `Fibre model API smoke\n\nUsage:\n  npm run model:smoke -- --provider openai --model gpt-5.6-luna\n  npm run model:smoke -- --provider google --model gemini-3.6-flash\n  npm run model:smoke -- --provider google --model gemma-4-26b-a4b-it\n  npm run model:smoke -- --provider cloudflare --model @cf/google/gemma-4-26b-a4b-it\n  npm run model:smoke -- --provider anthropic --model claude-opus-5-5\n\nOptions:\n  --provider <openai|google|cloudflare|anthropic>  Provider adapter to exercise (anthropic: the model:quality judge path).\n  --model <id>                Exact provider model id.\n  --help                      Show this help.\n\nThis performs one live, low-level structured-output call. It validates provider authentication, endpoint/model availability, request shape, response parsing, and the minimal structured-output contract.\n`;
 }
 
 function readValue(argv, index, name) {
@@ -55,8 +56,8 @@ export function parseModelSmokeArgs(argv) {
     else throw new Error(`unknown option: ${arg}`);
   }
   if (options.help) return options;
-  if (!["openai", "google", "cloudflare"].includes(options.provider)) {
-    throw new Error("--provider must be openai, google or cloudflare");
+  if (!["openai", "google", "cloudflare", "anthropic"].includes(options.provider)) {
+    throw new Error("--provider must be openai, google, cloudflare or anthropic");
   }
   if (typeof options.model !== "string" || options.model === "") {
     throw new Error("--model is required");
@@ -70,6 +71,8 @@ export function validateModelSmokeOutput(output) {
 }
 
 export function createSmokeAdapter({ provider, model, environment = process.env, fetchImpl = globalThis.fetch, observer = null }) {
+  // Claude is no Fibre runtime's cognition; it judges model:quality.
+  if (provider === "anthropic") return createClaudeAdapter({ model, apiKey: environment.ANTHROPIC_API_KEY, fetchImpl });
   return selectReasoningIntegration(reasoningIntegrationFor(provider, model), { environment, fetchImpl, observer });
 }
 
