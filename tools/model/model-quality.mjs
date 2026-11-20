@@ -190,6 +190,10 @@ async function main() {
 
     console.log(`\n${model}${result.tooFew ? " — too few cases to decide" : ""}`);
     console.log(`  cost ${result.costPerCall === null ? "unknown" : `$${(result.costPerCall * 1000).toFixed(2)} per 1,000 calls`}${failed ? ` · ${failed} requests failed` : ""}`);
+    // Why answers failed matters as much as how many: a timeout, the schema missed, an account limit.
+    const reasons = new Map();
+    for (const item of answers.get(model)) if (item.error) reasons.set(item.error, (reasons.get(item.error) ?? 0) + 1);
+    for (const [reason, count] of [...reasons].sort((a, b) => b[1] - a[1]).slice(0, 3)) console.log(`  failed ${count}×: ${reason}`);
     console.log(`  valid: defects in ${share(result.defects)}${result.defectExamples.length ? ` (${result.defectExamples.join("; ")})` : ""}`);
     for (const judge of readers) console.log(`  invented a fact (${judge.model}): ${share(invented[judge.model])}`);
     for (const judge of readers) console.log(`  attributable (${judge.model}): ${share(attributed[judge.model])} · without the answer ${share(unaided[judge.model])} · chance ${percent(chance)}`);

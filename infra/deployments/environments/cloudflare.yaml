@@ -115,13 +115,13 @@ services:
   world-kernel:
     runtime: cloudflare
     infra: world-cloudflare
-    # Experiment from Nov 16, while the OpenAI account has no credits (this
-    # file serves every Cloudflare environment): the World thinks with Gemma 4
-    # on Workers AI. Back to Sol by setting both
-    # ports to lived-encounter-openai.
+    # Gemma 4 on Workers AI (Nov 16–19) failed encounter.attention in
+    # model:quality: acceptable 35% against a 90% bar, noticing nothing in 70%
+    # of moments. A job moves to another model only after it passes, by naming
+    # its prompt id here, e.g. "world.happening: lived-workers-ai-gemma4".
     integrations:
-      livedNow: lived-workers-ai-gemma4
-      encounter: lived-workers-ai-gemma4
+      livedNow: lived-encounter-openai
+      encounter: lived-encounter-openai
   birth-center:
     runtime: cloudflare
     infra: birth-cloudflare
