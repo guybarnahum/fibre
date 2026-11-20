@@ -54,6 +54,27 @@ test("a request the binding cannot cancel is waited for, never sent twice", asyn
   assert.deepEqual(reflection.output, { noticed:true }, "cognition that may take minutes was cut short");
 });
 
+test("what may be empty is asked as optional and read back as null, so a model need not write null", async () => {
+  const schema = { type:"object", additionalProperties:false, required:["outcome", "experienceText", "passedReason", "notes"],
+    properties:{ outcome:{ type:"string", enum:["noticed", "not_noticed"] },
+      experienceText:{ anyOf:[{ type:"string", minLength:1 }, { type:"null" }] },
+      passedReason:{ anyOf:[{ type:"string", minLength:1 }, { type:"null" }] },
+      notes:{ type:"array", items:{ type:"object", additionalProperties:false, required:["text", "about"],
+        properties:{ text:{ type:"string" }, about:{ type:["string", "null"] } } } } } };
+  let asked = null;
+  const adapter = createCloudflareModelAdapter({ modelId:"@cf/m", binding:{ run:async (model, body) => {
+    asked = body.response_format.json_schema.schema;
+    return chat(JSON.stringify({ outcome:"noticed", experienceText:"I look up.", notes:[{ text:"a friend" }] }));
+  } } });
+  const { output } = await adapter.invoke({ systemPrompt:"Notice.", input:{ scene:"library" }, responseSchema:schema,
+    clientRequestId:"attention_test" });
+  assert.deepEqual(asked.required, ["outcome", "notes"], "a nullable field was still required of the model");
+  assert.equal(asked.properties.passedReason.type, "string", "null was still offered to the model");
+  assert.deepEqual(asked.properties.notes.items.required, ["text"], "a nested nullable field was still required");
+  assert.deepEqual(output, { outcome:"noticed", experienceText:"I look up.", passedReason:null,
+    notes:[{ text:"a friend", about:null }] }, "an absent nullable field did not read back as null");
+});
+
 test("a live turn can speak through Workers AI, as one utterance", async () => {
   const adapter = createCloudflareModelAdapter({ modelId:"@cf/m", binding:{ run:async () => chat("engaged ordinary SAY: Hello.") } });
   const events = [];

@@ -7,6 +7,8 @@
 //   npm run model:quality -- --prompt encounter.attention --models openai:gpt-5.6-sol,openai:gpt-5.6-terra
 //
 // Answers and verdicts are cached, so a re-run pays only for what is new.
+// --fresh <model,...> asks those models again (after their adapter changed);
+// the new answers replace the cached ones.
 // Evidence (Thread-private; never committed) goes to .fibre/model-quality/,
 // including review-<prompt>-<stamp>.json for the admin Model Quality page.
 // Verdicts saved from that page (verdicts-<review>.json, put back in the same
@@ -28,7 +30,7 @@ const REVIEW_ANSWERS = 30;
 
 function args(argv) {
   const options = { prompt: null, models: ["openai:gpt-5.6-sol"], judges: ["claude-opus-5-5", "gpt-5.6-sol"],
-    limit: 200, concurrency: 4, evidence: ".fibre/infra-measure", agreementOnly: false };
+    limit: 200, concurrency: 4, evidence: ".fibre/infra-measure", agreementOnly: false, fresh: [] };
   for (let index = 0; index < argv.length; index += 1) {
     const [name, inline] = argv[index].split("=", 2);
     if (name === "--agreement") { options.agreementOnly = true; continue; }
@@ -36,13 +38,14 @@ function args(argv) {
     if (name === "--prompt") options.prompt = value;
     else if (name === "--models") options.models = value.split(",");
     else if (name === "--judges") options.judges = value.split(",");
+    else if (name === "--fresh") options.fresh = value.split(",");
     else if (name === "--limit") options.limit = Number(value);
     else if (name === "--concurrency") options.concurrency = Number(value);
     else if (name === "--evidence") options.evidence = value;
     else throw new Error(`unknown option ${name}`);
   }
   if (!options.prompt || jobOf(options.prompt) === null) {
-    throw new Error("usage: model:quality -- --prompt <gate job> [--models openai:<model>,google:<model>,cloudflare:<@cf model>] [--judges claude-opus-5-5,gpt-5.6-sol]");
+    throw new Error("usage: model:quality -- --prompt <gate job> [--models openai:<model>,google:<model>,cloudflare:<@cf model>] [--judges claude-opus-5-5,gpt-5.6-sol] [--fresh <model,...>]");
   }
   options.models = options.models.map((item) => {
     const [provider, model] = item.includes(":") ? item.split(":", 2) : ["openai", item];
@@ -62,9 +65,9 @@ async function main() {
   const out = join(repoRoot, ".fibre/model-quality");
   const cacheDir = join(out, "cache");
   await mkdir(cacheDir, { recursive: true });
-  const cached = async (key, work) => {
+  const cached = async (key, work, { fresh = false } = {}) => {
     const file = join(cacheDir, `${digest(key)}.json`);
-    try { return JSON.parse(await readFile(file, "utf8")); } catch {}
+    if (!fresh) try { return JSON.parse(await readFile(file, "utf8")); } catch {}
     const value = await work();
     if (!value.error) await writeFile(file, JSON.stringify(value));
     return value;
@@ -95,7 +98,8 @@ async function main() {
     () => adapterFor(model, provider).invoke({ systemPrompt: prompt.text, input, responseSchema: requests[0].responseSchema,
       clientRequestId: `quality_${digest(input).slice(0, 24)}`, latency: "minutes" })
       .then((result) => ({ output: result.output, cost: costOf(model, result.provenance?.usage, result.provenance?.serviceTier) }),
-        (error) => ({ error: String(error?.message ?? error).slice(0, 200) })));
+        (error) => ({ error: String(error?.message ?? error).slice(0, 200) })),
+    { fresh: options.fresh.includes(model) });
   const answers = new Map();
   for (const { provider, model } of options.models) {
     let done = 0;

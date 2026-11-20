@@ -100,6 +100,7 @@ world-kernel:
 **Workers AI** (`provider: cloudflare`, `integrations/ai/reasoning/cloudflare.mjs`):
 - **Inside the World,** it runs through the Worker's `AI` binding, beside it, with no key. Operator tools use the account's REST endpoint with `CLOUDFLARE_ACCOUNT_ID` and a Workers AI token, `CLOUDFLARE_AI_API_TOKEN`.
 - **Structured output** is asked as the job's JSON schema, which Workers AI honours on a best-effort basis. An answer that misses it is unparseable, and the job's own validation and retry decide.
+- **Fields that may be null** are asked as optional and read back as null when absent. Under the enforced schema a model may be unable to write null: Gemma 4 emitted whitespace to its output limit wherever a null was due.
 - **Live speech** arrives as one utterance, not streamed.
 - **Hidden thinking** is off unless an integration sets `thinking: true`.
 - **Timeouts:** the binding cannot cancel a request; one the World stops waiting for still runs and is billed. A binding timeout is therefore never retried, and a `latency: minutes` job waits up to three minutes (live jobs one).

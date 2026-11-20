@@ -14,6 +14,10 @@ import {
 // JSON schema, which Workers AI honours on a best-effort basis: an answer
 // that misses it is unparseable and the caller's validation decides.
 // Live speech is not streamed: the whole utterance arrives as one delta.
+// Under Workers AI's enforced schema a model may be unable to write null: on
+// Nov 20 Gemma 4 emitted whitespace to its output limit where a null was due.
+// So a field that may be null is asked as optional, and an absent one is
+// read back as null; the job's own validation then judges the answer.
 // The binding cannot cancel a request: one we stop waiting for still runs
 // and is billed. So a binding timeout is never retried, and cognition that
 // may take minutes is given minutes to answer.
@@ -51,6 +55,55 @@ function answerOf(body, { thinking = false } = {}) {
       totalTokens:Number(usage.total_tokens ?? 0),
     },
   };
+}
+
+const nonNull = (schema) => {
+  if (Array.isArray(schema?.anyOf) && schema.anyOf.some((branch) => branch?.type === "null")) {
+    const rest = schema.anyOf.filter((branch) => branch?.type !== "null");
+    return rest.length === 1 ? rest[0] : { ...schema, anyOf: rest };
+  }
+  if (Array.isArray(schema?.type) && schema.type.includes("null")) {
+    const rest = schema.type.filter((type) => type !== "null");
+    return { ...schema, type: rest.length === 1 ? rest[0] : rest };
+  }
+  return null;
+};
+
+// The schema as asked of Workers AI: every nullable field optional instead.
+function withOptionalNulls(schema) {
+  if (schema === null || typeof schema !== "object") return schema;
+  if (Array.isArray(schema)) return schema.map(withOptionalNulls);
+  const result = Object.fromEntries(Object.entries(schema).map(([key, value]) =>
+    [key, key === "properties" ? value : withOptionalNulls(value)]));
+  if (schema.properties && typeof schema.properties === "object") {
+    const nullable = new Set();
+    result.properties = Object.fromEntries(Object.entries(schema.properties).map(([name, property]) => {
+      const present = nonNull(property);
+      if (present !== null) nullable.add(name);
+      return [name, withOptionalNulls(present ?? property)];
+    }));
+    if (Array.isArray(schema.required)) result.required = schema.required.filter((name) => !nullable.has(name));
+  }
+  return result;
+}
+
+// The answer as the job asked for it: an absent nullable field is null.
+function withNullsRestored(value, schema) {
+  if (value === null || typeof value !== "object" || schema === null || typeof schema !== "object") return value;
+  const shape = nonNull(schema) ?? schema;
+  if (Array.isArray(value)) return value.map((item) => withNullsRestored(item, shape.items));
+  if (Array.isArray(shape.anyOf)) {
+    const objectBranch = shape.anyOf.find((branch) => branch?.properties);
+    return objectBranch ? withNullsRestored(value, objectBranch) : value;
+  }
+  if (!shape.properties) return value;
+  const result = { ...value };
+  for (const [name, property] of Object.entries(shape.properties)) {
+    if (!(name in result)) {
+      if (nonNull(property) !== null) result[name] = null;
+    } else result[name] = withNullsRestored(result[name], property);
+  }
+  return result;
 }
 
 function parseOutput(content, finishReason) {
@@ -143,7 +196,7 @@ export function createCloudflareModelAdapter({
     : `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${modelId}`;
   const transport = viaBinding ? "workers-ai-binding" : "workers-ai-rest";
   const configuration = Object.freeze({ transport, maxOutputTokens, retryLimit, retryDelayMs, thinking,
-    temperature, structuredOutput:"json_schema" });
+    temperature, structuredOutput:"json_schema-optional-nulls" });
   const circuit = createProviderCircuit({ now });
 
   async function run(body, signal) {
@@ -172,7 +225,7 @@ export function createCloudflareModelAdapter({
     ...(temperature === null ? {} : { temperature }),
     chat_template_kwargs:{ enable_thinking:thinking },
     ...(responseSchema === null ? {} : {
-      response_format:{ type:"json_schema", json_schema:{ name:"fibre_cognition", schema:responseSchema } },
+      response_format:{ type:"json_schema", json_schema:{ name:"fibre_cognition", schema:withOptionalNulls(responseSchema) } },
     }),
   });
 
@@ -230,7 +283,7 @@ export function createCloudflareModelAdapter({
       const { answer, attemptNumber, operationalRetries } =
         await attempt(request({ systemPrompt, input, responseSchema }), clientRequestId, context,
           latency === "minutes" ? deferredTimeoutMs : timeoutMs);
-      const output = parseOutput(answer.content, answer.finishReason);
+      const output = withNullsRestored(parseOutput(answer.content, answer.finishReason), responseSchema);
       notify(observer, { type:"model_response", provider:"cloudflare", modelId, clientRequestId,
         attempt:attemptNumber, ...context, modelOutput:structuredClone(output), usage:answer.usage });
       return { output, provenance:provenance(answer, attemptNumber, operationalRetries) };
