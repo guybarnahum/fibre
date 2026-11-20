@@ -261,6 +261,17 @@ export function dayAlarms(prompt, answered) {
 // the one-sided 95% bound is on the right side of it, fails when it is
 // clearly on the wrong side, and is otherwise undecided — more cases needed.
 // Starting values, to be recalibrated against Guy's blind accept/reject reads.
+// Every candidate is scored by the same judges: those that read every model
+// compared. A judge that is itself a candidate never reads its own answers, so
+// letting it score the others would hold them to more judges than itself.
+// Its verdicts are still shown. With no such judge, each model falls back to
+// the judges that read it.
+export function scoringJudges(judges, candidates, model) {
+  const readers = judges.filter((judge) => judge !== model);
+  const panel = judges.filter((judge) => !candidates.includes(judge));
+  return panel.length === 0 ? readers : panel;
+}
+
 export const BARS = Object.freeze({
   defects: 0.01, // hard-rule defects, at most
   invented: 0.05, // facts invented, where every judge that read it agrees, at most

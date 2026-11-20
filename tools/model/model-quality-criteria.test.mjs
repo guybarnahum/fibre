@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dayAlarms, goodEnough, jobOf, lineup, perturbed, scopeOf } from "./model-quality-criteria.mjs";
+import { dayAlarms, goodEnough, jobOf, lineup, perturbed, scopeOf, scoringJudges } from "./model-quality-criteria.mjs";
 
 const ATTENTION = "encounter.attention@1";
 const thread = (id, name, activity) => ({
@@ -74,4 +74,14 @@ test("good enough is an absolute bar: clear passes pass, clear failures fail, an
   assert.equal(goodEnough(ATTENTION, { ...strong, alarms: ["noticed nothing"] }).overall, "fail", "a dead day passed");
   const few = { ...strong, defects: [0, 7], invented: [0, 7], gains: Array(7).fill(0.3), invariant: [7, 7], acceptable: [7, 7] };
   assert.equal(goodEnough(ATTENTION, few).overall, "undecided", "seven cases decided whether a model is good enough");
+});
+
+test("every compared model is scored by the same judges, never by a rival alone", () => {
+  const judges = ["claude-opus-5-5", "gpt-5.6-sol"];
+  const candidates = ["gpt-5.6-sol", "@cf/google/gemma-4-26b-a4b-it"];
+  assert.deepEqual(scoringJudges(judges, candidates, "gpt-5.6-sol"), ["claude-opus-5-5"]);
+  assert.deepEqual(scoringJudges(judges, candidates, "@cf/google/gemma-4-26b-a4b-it"), ["claude-opus-5-5"],
+    "a candidate was held to more judges than the model it is compared with");
+  assert.deepEqual(scoringJudges(["gpt-5.6-sol"], candidates, "@cf/google/gemma-4-26b-a4b-it"), ["gpt-5.6-sol"],
+    "with no independent judge, a model lost the judges that read it");
 });

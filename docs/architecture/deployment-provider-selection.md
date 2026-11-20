@@ -96,6 +96,7 @@ world-kernel:
 - **Routing:** every call carries its prompt id. `routedReasoningIntegration` sends it to the job's integration when one is named, else to the port's.
 - **Moving a job** to another model is therefore one line of configuration, and no code names a provider. A job's credentials are read only when that job first thinks.
 - **Choosing:** jobs are moved one at a time, after `model:quality` on recorded requests, by the accepted rule: quality within noise of the best first, then quality per dollar.
+- **Fair judging:** every compared model is scored by the same judges, those that read every candidate. No judge reads its own model's answers, so a judge that is also a candidate is shown but does not score its rivals; otherwise a cheaper model would be held to more judges than the reference.
 
 **Workers AI** (`provider: cloudflare`, `integrations/ai/reasoning/cloudflare.mjs`):
 - **Inside the World,** it runs through the Worker's `AI` binding, beside it, with no key. Operator tools use the account's REST endpoint with `CLOUDFLARE_ACCOUNT_ID` and a Workers AI token, `CLOUDFLARE_AI_API_TOKEN`.

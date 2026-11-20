@@ -22,7 +22,7 @@ import { reasoningIntegrationFor, selectReasoningIntegration } from "../../infra
 import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
 import { judgesFor } from "./model-judges.mjs";
-import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, scopeOf } from "./model-quality-criteria.mjs";
+import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, scopeOf, scoringJudges } from "./model-quality-criteria.mjs";
 import { agreement, readReview, readVerdicts, REVIEW_KIND, testReading } from "../../apps/admin-dashboard/model-quality-review.mjs";
 
 const MIN_CASES = 30;
@@ -89,6 +89,9 @@ async function main() {
   const { found } = await captures(resolve(repoRoot, options.evidence), options.prompt);
   const requests = found.slice(-options.limit);
   console.log(`${options.prompt}: ${requests.length} recorded requests · models ${options.models.map((m) => m.model).join(", ")} · judges ${judges.map((j) => j.model).join(", ")}`);
+  const panel = judges.map((j) => j.model).filter((name) => !options.models.some((m) => m.model === name));
+  console.log(panel.length ? `scored by the judges that read every model: ${panel.join(", ")}`
+    : "no judge reads every model: each model is scored by the judges that read it");
   if (requests.length === 0) return;
   const job = jobOf(options.prompt);
   const prompt = promptFor(options.prompt);
@@ -129,6 +132,7 @@ async function main() {
     const answered = answers.get(model).filter((item) => !item.error);
     const failed = answers.get(model).length - answered.length;
     const readers = judges.filter((judge) => judge.model !== model);
+    const scorers = scoringJudges(judges.map((judge) => judge.model), options.models.map((m) => m.model), model);
     const items = answered.flatMap((item) => job.items(item.input, item.output)
       .filter((entry) => entry.text).map((entry) => ({ ...entry, request: item })));
     const defects = answered.map((item) => job.defects(item.input, item.output));
@@ -170,12 +174,13 @@ async function main() {
     const invented = Object.fromEntries(readers.map((judge) => [judge.model, tally((row) => [row.results[judge.model]?.invented])]));
     const decided = answered.filter((item) => item.perturbedOutput !== undefined);
     const invariant = [decided.filter((item) => decision(options.prompt, item.output) === decision(options.prompt, item.perturbedOutput)).length, decided.length];
-    // Per answer: invented or acceptable only when every judge that read it says so.
-    const every = (field, value) => { const rows = judged.map((row) => Object.values(row.results)
+    // Per answer: invented or acceptable only when every scoring judge says so.
+    const scored = (row) => scorers.map((name) => row.results[name]).filter(Boolean);
+    const every = (field, value) => { const rows = judged.map((row) => scored(row)
       .map((result) => result[field]).filter((v) => v !== null && v !== undefined)).filter((votes) => votes.length > 0);
       return [rows.filter((votes) => votes.every((vote) => vote === value)).length, rows.length]; };
     const gains = judged.flatMap((row) => {
-      const both = Object.values(row.results).filter((r) => r.correct !== null && r.withoutAnswer !== null);
+      const both = scored(row).filter((r) => r.correct !== null && r.withoutAnswer !== null);
       return both.length === 0 ? [] : [mean(both.map((r) => Number(r.correct))) - mean(both.map((r) => Number(r.withoutAnswer)))];
     });
     const nothing = [answered.filter((item) => job.nothing(item.output)).length, answered.length];
@@ -188,7 +193,7 @@ async function main() {
       tooFew: answered.length < MIN_CASES,
     };
     result.goodEnough = goodEnough(options.prompt, { defects: result.defects, invented: every("invented", true), gains,
-      correct: Object.values(attributed).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]), chance,
+      correct: scorers.map((name) => attributed[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]), chance,
       invariant: decided.length === 0 ? null : invariant, alarms: result.alarms, acceptable: result.acceptable });
     report.models.push(result);
 
@@ -203,7 +208,10 @@ async function main() {
     for (const judge of readers) console.log(`  attributable (${judge.model}): ${share(attributed[judge.model])} · without the answer ${share(unaided[judge.model])} · chance ${percent(chance)}`);
     console.log(`  invariant: ${share(invariant)} · "nothing" chosen ${share(nothing)}`);
     console.log(`  day alarms: ${result.alarms.length ? result.alarms.join("; ") : "none"}`);
-    console.log(`  acceptable (every judge that read it): ${share(result.acceptable)}`);
+    console.log(`  acceptable (${scorers.join(" and ")}): ${share(result.acceptable)}`);
+    for (const judge of readers) if (!scorers.includes(judge.model)) {
+      console.log(`  also read by ${judge.model} (a candidate, not scored): acceptable ${share(tally((row) => [row.results[judge.model]?.acceptable]))}`);
+    }
     console.log(`  GOOD ENOUGH FOR FIBRE: ${result.goodEnough.overall.toUpperCase()}`);
     for (const test of result.goodEnough.tests) {
       const { value, bar } = testReading(test);
