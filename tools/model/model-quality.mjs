@@ -67,7 +67,7 @@ async function main() {
   await mkdir(cacheDir, { recursive: true });
   const cached = async (key, work, { fresh = false } = {}) => {
     const file = join(cacheDir, `${digest(key)}.json`);
-    if (!fresh) try { return JSON.parse(await readFile(file, "utf8")); } catch {}
+    if (!fresh) try { return { ...JSON.parse(await readFile(file, "utf8")), cached: true }; } catch {}
     const value = await work();
     if (!value.error) await writeFile(file, JSON.stringify(value));
     return value;
@@ -126,6 +126,8 @@ async function main() {
     return result;
   };
   const report = { prompt: options.prompt, requests: requests.length, judges: judges.map((j) => j.model), models: [] };
+  // Only verdicts asked in this run cost anything; cached ones were paid for before.
+  const spent = (result) => result && !result.cached ? result.cost ?? 0 : 0;
   let judgeCost = 0;
 
   for (const { model } of options.models) {
@@ -154,7 +156,7 @@ async function main() {
         // points to the source. Shared by every model, so judged once.
         const control = round === null ? null : await verdict(judge, "attribute",
           lineupMaterial("(not shown: choose the most likely source from what was faced alone)"));
-        judgeCost += (fidelity.cost ?? 0) + (acceptable.cost ?? 0) + (attribution?.cost ?? 0) + (control?.cost ?? 0);
+        judgeCost += [fidelity, acceptable, attribution, control].reduce((sum, result) => sum + spent(result), 0);
         const right = (result) => result?.verdict ? result.verdict.choice - 1 === round.truth : null;
         results[judge.model] = { invented: fidelity.verdict?.invented ?? null, example: fidelity.verdict?.example ?? null,
           acceptable: acceptable.verdict?.acceptable ?? null, why: acceptable.verdict?.reason ?? null,
