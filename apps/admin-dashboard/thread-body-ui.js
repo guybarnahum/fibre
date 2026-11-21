@@ -27,7 +27,7 @@ function spark(values,{range,ticks=[],from,to,baseline=null}){
     const mark=svg("line",{x1:tick.x,x2:tick.x,y1:HEIGHT-6,y2:HEIGHT,class:"thread-body-tick"});
     const title=svg("title");
     title.textContent=`${hour(tick.event.at)} ${[tick.event.kind,tick.event.reading,tick.event.act,tick.event.by]
-      .filter(Boolean).join(" ")}`;
+      .filter(Boolean).join(" ")}${tick.event.note?` — ${tick.event.note}`:""}`;
     mark.append(title);
     box.append(mark);
   }

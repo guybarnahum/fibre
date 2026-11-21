@@ -9,6 +9,7 @@ import { migrateDatabase, translateStorageError } from "./persistence-sqlite.mjs
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 import { openWorldStateDatabase,worldTableExists } from "./world-state-storage.mjs";
 import { spokenNameDisclosure } from "./spoken-name.mjs";
+import { decodeMeaning } from "./meaning-vectors.mjs";
 import {
   recordAppointmentOutcomeActs,recordAppointmentRelationalActs,
   recordInvitationRelationalActs,recordStoryRelationalActs,
@@ -2719,15 +2720,16 @@ export class LivedExperienceStore {
   }
 
   // How an exchange held this Thread, in its own reading; once per source.
-  recordEngagementReading({threadId,reading,sourceKind,sourceRef,at}){
+  recordEngagementReading({threadId,reading,sourceKind,sourceRef,at,note=null}){
     assertId("engagement threadId",threadId);
     assertNonEmpty("engagement source",sourceRef);
     assertIsoTimestamp("engagement at",at);
+    if(note!==null&&(typeof note!=="string"||note.length>200))throw new TypeError("engagement note must be short");
     const readingId=`eng_${sha256(canonicalJson({threadId,sourceKind,sourceRef})).slice(0,32)}`;
     this.#database.prepare(`
-      INSERT INTO thread_engagement_readings(reading_id,thread_id,reading,source_kind,source_ref,at)
-      VALUES (?,?,?,?,?,?) ON CONFLICT(reading_id) DO NOTHING
-    `).run(readingId,threadId,reading,sourceKind,sourceRef,at);
+      INSERT INTO thread_engagement_readings(reading_id,thread_id,reading,source_kind,source_ref,at,note)
+      VALUES (?,?,?,?,?,?,?) ON CONFLICT(reading_id) DO NOTHING
+    `).run(readingId,threadId,reading,sourceKind,sourceRef,at,note);
     return Object.freeze({readingId});
   }
 
@@ -2738,9 +2740,41 @@ export class LivedExperienceStore {
     assertIsoTimestamp("engagement until",until);
     if(!Number.isSafeInteger(limit)||limit<1||limit>96)throw new TypeError("engagement readings must be bounded");
     return Object.freeze(this.#database.prepare(`
-      SELECT reading,source_kind AS sourceKind,at FROM thread_engagement_readings
+      SELECT reading,source_kind AS sourceKind,at,note FROM thread_engagement_readings
       WHERE thread_id=? AND at>=? AND at<? ORDER BY at DESC LIMIT ?
     `).all(threadId,since,until,limit).map(row=>Object.freeze({...row})));
+  }
+
+  // The measured meaning of exchanges, by ref (S5b repair); unmeasured ones
+  // are absent.
+  exchangeMeanings(refs){
+    if(!Array.isArray(refs)||refs.length>48)throw new TypeError("exchange meanings must be bounded");
+    if(refs.length===0||!worldTableExists(this.#database,"exchange_meanings"))return new Map();
+    const rows=this.#database.prepare(`
+      SELECT exchange_ref AS ref,at,model,vector FROM exchange_meanings
+      WHERE exchange_ref IN (${refs.map(()=>"?").join(",")})
+    `).all(...refs);
+    return new Map(rows.map(row=>[row.ref,Object.freeze({at:row.at,model:row.model,vector:decodeMeaning(row.vector)})]));
+  }
+
+  // Keeps the meaning of newly measured exchanges, and lets go of those
+  // older than a week: a derived index, not history.
+  recordExchangeMeanings(items){
+    if(!Array.isArray(items)||items.length>48)throw new TypeError("exchange meanings must be bounded");
+    if(items.length===0)return;
+    const insert=this.#database.prepare(`
+      INSERT INTO exchange_meanings(exchange_ref,at,model,vector) VALUES (?,?,?,?)
+      ON CONFLICT(exchange_ref) DO NOTHING`);
+    for(const {ref,at,model,vector} of items){
+      assertNonEmpty("exchange meaning ref",ref);
+      assertIsoTimestamp("exchange meaning at",at);
+      assertNonEmpty("exchange meaning model",model);
+      assertNonEmpty("exchange meaning vector",vector);
+      insert.run(ref,at,model,vector);
+    }
+    const newest=items.map(item=>item.at).sort().at(-1);
+    this.#database.prepare("DELETE FROM exchange_meanings WHERE at<?")
+      .run(new Date(Date.parse(newest)-7*86_400_000).toISOString());
   }
 
   // What this Thread's recent exchanges said, newest first: the words of the

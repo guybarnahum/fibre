@@ -2,7 +2,7 @@ import baseWorker, { FibreWorldDurableObject as BaseWorldDurableObject } from ".
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import cloudflareDeploymentYaml from "../../environments/cloudflare.yaml";
 import { parseDeploymentManifest, resolveServiceDeployment } from "../../manifest.mjs";
-import { meteredReasoningIntegration,routedReasoningIntegration } from "../../integration-selection.mjs";
+import { meteredReasoningIntegration,routedReasoningIntegration,selectMeaningIntegration } from "../../integration-selection.mjs";
 import { createLivedEncounterWriteApi } from "#services/world-kernel/src/lived-encounter-write-api.mjs";
 import { createEnvironmentalEncounterService } from "#services/world-kernel/src/lived-environmental-encounter.mjs";
 import { createWorldEnvironmentEvolution } from "#services/world-kernel/src/world-environment-evolution.mjs";
@@ -144,6 +144,12 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
     });
   }
 
+  // Meaning (S5b repair): World's embedding port, or null to measure by words.
+  meaningEmbedder() {
+    const integration=resolveServiceDeployment(DEPLOYMENT,"world-kernel").integrations.meaning;
+    return selectMeaningIntegration(integration??null,{environment:this.env});
+  }
+
   journalBookForRequest() {
     if (this.threadJournalBook === null) {
       const storage=this.runtimeForRequest().worldStorage;
@@ -190,6 +196,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         modelAdapter:this.reasoningFor("encounter"),
         onAfterthoughts:(event)=>this.liveEncounterRegistry.publishAfterthoughts(event),
         log:console.log,
+        embedder:this.meaningEmbedder(),
       });
       runtime.reconciliationProcess.setExperienceConsolidationProcess(
         this.experienceConsolidationProcess,
@@ -240,8 +247,10 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
           boundedVenueDiscovery:true,
           onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
           onConversationEnded:logConversationEnded,
+          embedder:this.meaningEmbedder(),log:console.log,
         }),
         embodimentStore,
+        embedder:this.meaningEmbedder(),log:console.log,
       });
       runtime.reconciliationProcess.setContactOutreachProcess(
         this.contactOutreachProcess,
@@ -370,6 +379,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         boundedVenueDiscovery:true,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
         onConversationEnded:logConversationEnded,
+        embedder:this.meaningEmbedder(),log:console.log,
       });
       this.worldSocialOpportunityProcess=createWorldSocialOpportunity({
         experienceStore,livedNowStore,meetingService,
@@ -470,6 +480,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         liveEncounterRegistry:this.liveEncounterRegistry,
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
         onConversationEnded:logConversationEnded,
+        embedder:this.meaningEmbedder(),log:console.log,
       });
       this.socialMeetingApi = createSocialMeetingWriteApi({
         meetingService,

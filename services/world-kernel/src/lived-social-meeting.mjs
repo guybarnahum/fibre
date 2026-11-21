@@ -27,7 +27,8 @@ import { lifeRelationId } from "./situated-life-domain.mjs";
 import { selectDevelopedSelfEvidence } from "./interior-cognition.mjs";
 import { admitMeetingProposal } from "./appointments.mjs";
 import { bookInHand } from "./scene-glance.mjs";
-import { recentExchangeTexts, repetitionOf, sameGround } from "./engagement.mjs";
+import { recentExchanges } from "./engagement.mjs";
+import { createExchangeMeaning } from "./exchange-meaning.mjs";
 
 const MEMORY_LIMIT = 6;
 // How many of the people present one social consideration can hold at once.
@@ -199,6 +200,9 @@ export function createSocialMeetingService({
   onExperienceQueued = null,
   onConversationEnded = null,
   boundedVenueDiscovery = false,
+  // Meaning (S5b repair): without an embedder, repetition is by shared words.
+  embedder = null,
+  log = null,
 }) {
   requireMethod("worldReader", worldReader, "getThread");
   requireMethod("livedNow", livedNow, "ensure");
@@ -212,6 +216,7 @@ export function createSocialMeetingService({
   }
   requireMethod("livedNowStore", livedNowStore, "listWorldPlaces");
   requireMethod("livedNowStore", livedNowStore, "latestPlan");
+  const meaning=createExchangeMeaning({embedder,experienceStore,log});
   requireMethod("identityStore", identityStore, "getCurrentIdentityView");
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentLifeRelations");
   requireMethod("situatedLifeStore", situatedLifeStore, "listCurrentPlaceEpisodes");
@@ -640,12 +645,14 @@ export function createSocialMeetingService({
           evidenceRefs:[self.situation.situationId],sourceRef,asOf:at});
       };
     };
+    // Whether the talk goes over ground this Thread covered lately, or back
+    // over its own first turns: World's fact, by meaning where measured.
     const sameGroundFor=(self)=>{
       let earlier=null;
       return (story)=>{
-        earlier??=recentExchangeTexts({experienceStore,threadId:self.thread.threadId,at});
-        return sameGround(repetitionOf({earlier,
-          current:story.beats.filter(beat=>beat.kind==="utterance").map(beat=>beat.text).join(" ")}));
+        earlier??=recentExchanges({experienceStore,threadId:self.thread.threadId,at});
+        return meaning.conversationGround({threadId:self.thread.threadId,at,earlier,
+          utterances:story.beats.filter(beat=>beat.kind==="utterance").map(beat=>beat.text)});
       };
     };
     const speakerFacing=(self,other,heard=[])=>Object.freeze({

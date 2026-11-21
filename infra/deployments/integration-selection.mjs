@@ -1,5 +1,6 @@
 import { createBflFluxImageProvider } from "#integrations/ai/image/bfl.mjs";
 import { createOpenAIImageProvider } from "#integrations/ai/image/openai.mjs";
+import { createCloudflareEmbeddingAdapter } from "#integrations/ai/embedding/cloudflare.mjs";
 import { createCloudflareModelAdapter } from "#integrations/ai/reasoning/cloudflare.mjs";
 import { createGoogleModelAdapter } from "#integrations/ai/reasoning/google.mjs";
 import { createOpenAIModelAdapter } from "#integrations/ai/reasoning/openai.mjs";
@@ -398,6 +399,23 @@ export function routedReasoningIntegration(integrations, port, { lazy = false, .
     configuration: portAdapter.configuration,
     invoke: (request) => adapterFor(request).invoke(request),
     streamExpression: (request) => adapterFor(request).streamExpression(request),
+  });
+}
+
+// Meaning (S5b repair): an embedding port for World's own measures, never a
+// Thread's cognition. A service without one measures by shared words.
+export function selectMeaningIntegration(value, { environment = process.env, fetchImpl = globalThis.fetch } = {}) {
+  if (value === undefined || value === null) return null;
+  const chosen = selection("meaning integration", value, "ai.embedding");
+  const modelId = configured("meaning integration config.model", chosen.config?.model);
+  if (chosen.provider !== "cloudflare") throw new TypeError(`unsupported meaning provider ${chosen.provider}`);
+  const binding = environment?.[chosen.config?.binding ?? "AI"];
+  const viaBinding = typeof binding?.run === "function";
+  return createCloudflareEmbeddingAdapter({
+    binding: viaBinding ? binding : null,
+    accountId: viaBinding ? null : environmentValue("meaning integration environment", chosen.environment, "accountId", environment),
+    apiToken: viaBinding ? null : environmentValue("meaning integration secrets", chosen.secrets, "apiToken", environment),
+    modelId, fetchImpl, timeoutMs: chosen.config?.timeoutMs,
   });
 }
 

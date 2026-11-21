@@ -4,7 +4,7 @@
 // to evaluate earlier moments; nothing is stored and nothing runs unasked.
 import { HOUR_MS, DAY_MS } from "#core/src/body-level.mjs";
 import { bondOf, regardOf, selfStanding, socialEnergyEvidence } from "./social-body.mjs";
-import { wearinessOf } from "./engagement.mjs";
+import { wearinessLevel } from "./engagement.mjs";
 import { socialBodyLoci } from "./lived-now-regulation.mjs";
 
 const iso=(ms)=>new Date(ms).toISOString();
@@ -37,6 +37,10 @@ export function recordsAsOf(store,{now,since}){
     listEngagementReadings:(threadId,{since:from,until,limit=48}={})=>newestFirst(
       once("readings",()=>store.listEngagementReadings?.(threadId,{since,until:now,limit:96})??[]),
       "at",item=>item.at>=from&&item.at<until,limit),
+    listRecentExchangeTexts:(threadId,{since:from,until,limit=12}={})=>newestFirst(
+      once("exchanges",()=>store.listRecentExchangeTexts?.(threadId,{since,until:now,limit:24})??[]),
+      "at",item=>item.at>=from&&item.at<until,limit),
+    exchangeMeanings:(refs)=>once(`meanings:${refs.join(",")}`,()=>store.exchangeMeanings?.(refs)??new Map()),
     // Doors carry no time here; they are read as they stand now.
     listOpenDoors:(threadId,otherThreadId)=>once(`doors:${otherThreadId}`,
       ()=>store.listOpenDoors?.(threadId,otherThreadId,{before:now})??[]),
@@ -60,10 +64,11 @@ export function bodyObservatory({thread,experienceStore,at,nameOf=()=>null,hours
   const people=[...weight].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,most).map(([person])=>person);
   const series=instants.map(instant=>{
     const standing=selfStanding({experienceStore:records,threadId,at:instant,standingLocus:loci.standing});
+    const weariness=wearinessLevel({experienceStore:records,threadId,at:instant,
+      persistence:loci.exploration?.persistence??0});
     return Object.freeze({at:instant,
       battery:round(socialEnergyEvidence({threadId,experienceStore:records,asOf:instant,trustLocus:loci.trust})?.depletion??0),
-      weariness:round(wearinessOf({experienceStore:records,threadId,at:instant,
-        persistence:loci.exploration?.persistence??0})),
+      weariness:round(weariness.level),wearinessBaseline:round(weariness.baseline),
       self:round(standing.self),gap:standing.gap===null?null:round(standing.gap),
       frustration:round(standing.frustration.level),frustrationBaseline:round(standing.frustration.baseline),
       people:Object.freeze(Object.fromEntries(people.map(person=>{
@@ -83,7 +88,8 @@ export function bodyObservatory({thread,experienceStore,at,nameOf=()=>null,hours
     events:Object.freeze({
       exposures:exposures.filter(item=>item.at>=iso(from)).map(item=>({at:item.at,kind:item.kind,
         person:item.otherThreadId??null,turns:item.turns})),
-      readings:readings.map(item=>({at:item.at,reading:item.reading,source:item.sourceKind})),
+      readings:readings.map(item=>({at:item.at,reading:item.reading,source:item.sourceKind,
+        ...(item.note?{note:item.note}:{})})),
       regard:regard.filter(item=>item.asOf>=iso(from)).map(item=>({at:item.asOf,act:item.act,
         person:item.personThreadId,by:item.actorThreadId===threadId?"me":"them"})),
     }),

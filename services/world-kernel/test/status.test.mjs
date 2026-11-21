@@ -175,7 +175,7 @@ test("each turn may privately say how the other's last words treated the Thread;
       counterparts:[{ threadId:other.threadId, name:other.identity.name, appearance:"a reader", noticedBefore:[] }] },
     onHeard:(act) => heard.push([self.threadId, act]) });
   const mina = thread("thr_heard_mina", "Mina"), noor = thread("thr_heard_noor", "Noor");
-  const lines = ["engaged none SAY: That caption overstates it.", "absorbed corrected SAY: No, it is exactly right.", "SILENT"];
+  const lines = ["none none SAY: That caption overstates it.", "some_new corrected SAY: No, it is exactly right.", "SILENT"];
   let turns = 0;
   const result = await runThreadLiveSocialEncounter({
     initiator:context(mina, noor), counterparty:context(noor, mina),
@@ -188,7 +188,7 @@ test("each turn may privately say how the other's last words treated the Thread;
       } },
   });
   assert.deepEqual(heard.map(([, act]) => act), ["corrected"], "how the other's words landed was lost, or nothing was invented");
-  assert.ok(result.story.beats.every((beat) => !/corrected|engaged|absorbed|\bnone\b/iu.test(beat.text ?? "")),
+  assert.ok(result.story.beats.every((beat) => !/corrected|some_new|\bnone\b/iu.test(beat.text ?? "")),
     "a private reading was spoken aloud");
 });
 

@@ -149,6 +149,16 @@ Deferred:
 - weariness in the battery cost of messages;
 - the semantic measure of repetition.
 
+## S5b repaired (November 20): meaning, and what was new
+
+On staging (November 13) S5b was inert: the Threads reworded one subject, so word overlap stayed under its line, and every reading was `engaged` or `absorbed`, which relieved weariness. Guy accepted the repair on November 20 (design in the project, `claude/s5b-repair-design.md`). Weariness became a Body level (ADR-0038).
+
+- **The fact, by meaning (`exchange-meaning.mjs`).** Each exchange's public words (a conversation, a message) are embedded once, through a replaceable embedding port (`meaning`, Workers AI `@cf/baai/bge-m3` through the World's AI binding), and kept a week in `exchange_meanings`: a derived index, never memory, never shown to a Thread. An exchange's sameness is the mean of its three closest cosines to this Thread's exchanges of the last two days, mapped from 0.55 (other ground) to 0.9 (the same said again). In a live conversation the last three turns are also compared with the earlier ones, so a talk that circles back feels it. Above 0.5 the same `sameGround` words reach cognition. The thresholds are provisional, to be set from staging. Without the port, or when it fails, shared words remain the measure.
+- **The reading, of content.** A live turn's first private word and reflection's `engagement` now say what was new to the Thread against what it already knew and had heard or said lately, with its interests in view: `new`, `some_new`, `nothing_new` (and `none` before anything is said). Reflection adds `newToIt`, its own phrase for what was new, shown on the Body panel. Earlier readings stay as history. Prompts: `social.live-turn` v13, `experience.consolidation` v8.
+- **The Body level.** Habituation is the baseline: each measured exchange's sameness, accumulated over two days and fading with the 12-hour half-life scaled by the `exploration` locus. Readings are the spikes: `nothing_new` +1, `some_new` +0.3, `new` −0.5 (older readings keep their weights). `weariness = 1 − 2^(−(baseline + spikes)/2)`. Its consumers are unchanged. The panel shows habituation dashed beneath it.
+
+Deferred: embedding reading sessions (the books Threads read); embedding memories and interests for retrieval; topic tracking across the World. Exchanges no cognition has yet measured add nothing to habituation.
+
 ## Presence as built (November 12): going over, being among people, messages that ease
 
 On November 12, two pairs of friends sat in the same library and exchanged 22 messages without speaking. Contact decisions treated every recipient as absent. Messages kept the need for company just under the level that offers another chance to approach, yet never eased what the Body said. And being among people eased nothing, even for a Body whose words asked for exactly that. The design is in the project (`claude/presence-design.md`); Guy's decisions, November 12, are below.

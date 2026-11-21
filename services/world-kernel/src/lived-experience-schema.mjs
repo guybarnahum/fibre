@@ -13,7 +13,38 @@ const regardTableSql=`
       FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
     ) STRICT;`;
 
+const readingsTableSql=`
+    CREATE TABLE IF NOT EXISTS thread_engagement_readings (
+      reading_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      reading TEXT NOT NULL CHECK (reading IN ('new','some_new','nothing_new',
+        'absorbed','engaged','going_through_motions','weary')),
+      source_kind TEXT NOT NULL CHECK (source_kind IN ('turn','reflection')),
+      source_ref TEXT NOT NULL,
+      at TEXT NOT NULL,
+      note TEXT CHECK (note IS NULL OR length(note)<=200),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;`;
+
+function widenEngagementReadings(database){
+  // Install-only migration (S5b repair): readings become what was new, with
+  // the Thread's phrase for it. Earlier readings are kept as they were.
+  const sql=database.prepare(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='thread_engagement_readings'").get()?.sql??"";
+  if(sql===""||sql.includes("'nothing_new'"))return;
+  const columns="reading_id,thread_id,reading,source_kind,source_ref,at";
+  database.exec(`
+    DROP TABLE IF EXISTS thread_engagement_readings_kept;
+    CREATE TABLE thread_engagement_readings_kept AS SELECT ${columns} FROM thread_engagement_readings;
+    DROP TABLE thread_engagement_readings;
+    ${readingsTableSql}
+    INSERT INTO thread_engagement_readings(${columns}) SELECT ${columns} FROM thread_engagement_readings_kept;
+    DROP TABLE thread_engagement_readings_kept;
+  `);
+}
+
 export function createLivedExperienceTables(database) {
+  widenEngagementReadings(database);
   const needsStoryTimeline=database.prepare(`
     SELECT 1 FROM sqlite_master WHERE type='table'
       AND name='thread_encounter_story_timeline'
@@ -344,17 +375,20 @@ export function createLivedExperienceTables(database) {
     -- How an exchange held a Thread, in its own reading (S5b): absorbed,
     -- engaged, going through the motions, or weary. Its perception, read by
     -- its Body as the stuff boredom is made of. Append-only.
-    CREATE TABLE IF NOT EXISTS thread_engagement_readings (
-      reading_id TEXT PRIMARY KEY,
-      thread_id TEXT NOT NULL,
-      reading TEXT NOT NULL CHECK (reading IN ('absorbed','engaged','going_through_motions','weary')),
-      source_kind TEXT NOT NULL CHECK (source_kind IN ('turn','reflection')),
-      source_ref TEXT NOT NULL,
-      at TEXT NOT NULL,
-      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
-    ) STRICT;
+    ${readingsTableSql}
     CREATE INDEX IF NOT EXISTS thread_engagement_readings_by_thread
       ON thread_engagement_readings(thread_id,at);
+
+    -- The meaning of an exchange's public words (S5b repair): a derived index
+    -- for World's fact of repetition, kept a week; never memory, never shown
+    -- to a Thread. One row per exchange, shared by everyone in it.
+    CREATE TABLE IF NOT EXISTS exchange_meanings (
+      exchange_ref TEXT PRIMARY KEY,
+      at TEXT NOT NULL,
+      model TEXT NOT NULL,
+      vector TEXT NOT NULL
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS exchange_meanings_by_time ON exchange_meanings(at);
 
     -- Appointments two Threads agreed in conversation: where and when, who
     -- proposed, and the Story in which it was agreed. Its outcome is a

@@ -111,6 +111,10 @@ world-kernel:
 - **Reflections** that fail wait as long as they have been failing: half an hour at first, doubling, at most a day. Only the work frontier's due time moves; the reflection is never dropped and resumes from any decision it already recorded.
 - **Reasons:** every failed model call logs its error code and a short message (`model-call`), every failed lived boundary logs its reason (`lived-boundary-failed`), and every failed reflection logs its reason and next attempt (`experience-consolidation-failed`). An outage, an allowance running out, or a model missing the schema can be read afterwards in Workers Logs.
 
+## Meaning (embeddings)
+
+A service may name a `meaning` port of kind `ai.embedding` for World's own measures, never a Thread's cognition. The World uses Workers AI `@cf/baai/bge-m3` through its AI binding to measure how far an exchange repeats a Thread's earlier ones (ADR-0036, S5b repaired). Without the port, or when it fails, the measure falls back to shared words; every attempt is logged as `meaning-call`.
+
 ## Model providers in infrastructure health
 
 A service's infrastructure health (`/internal/health/infra`) includes every reasoning integration its manifest entry names.

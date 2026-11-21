@@ -1,5 +1,6 @@
 import { relayExpressionIntoLiveEncounter } from "./live-encounter-expression.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
+import { RECORDED_READINGS } from "./engagement.mjs";
 import {
   assertId,
   assertPlainObject,
@@ -101,12 +102,13 @@ const MARKER_LENGTH=Math.max(...TURN_MARKERS.map(([marker])=>marker.length));
 // is not part of the turn.
 const MARKER_STYLE=/^[\s*_`#>]+/u;
 
-// A turn may first say, in one word, how the talk holds this Thread now
-// (S5b): absorbed, engaged, going through the motions, or weary; and then, in
-// one more, how the other's last words or gesture treated it (ADR-0037 C3b).
-// Both are its own private readings, never spoken. undefined while the
-// opening could still become one.
-const READINGS=Object.freeze(["absorbed","engaged","going_through_motions","weary"]);
+// A turn may first say, in one word, what the talk just brought was to this
+// Thread (S5b repair): new, some_new, nothing_new, or none before anything
+// has been said; and then, in one more, how the other's last words or
+// gesture treated it (ADR-0037 C3b). Both are its own private readings,
+// never spoken; a reading in the older words is still understood. undefined
+// while the opening could still become one.
+const READINGS=Object.freeze([...RECORDED_READINGS,"none"]);
 export const HEARD=Object.freeze(["credited","asked_advice","corrected","talked_over","gave_way",
   "held_ground","overlooked","ordinary","none"]);
 function splitReading(text){
@@ -188,7 +190,7 @@ export async function takeLiveSocialTurn({
     liveEncounter,
     opportunity,
     body:feltBody===null?[]:feltBody(story),
-    sameGround:sameGround===null?null:sameGround(story),
+    sameGround:sameGround===null?null:await sameGround(story),
   });
   const events=modelAdapter.streamExpression({
     ...promptRequest("social.live-turn",{threadId:thread.threadId}),
@@ -215,7 +217,7 @@ export async function takeLiveSocialTurn({
     await events.return?.();
     return SILENCE;
   }
-  if(turn?.reading)onReading?.(turn.reading);
+  if(turn?.reading&&turn.reading!=="none")onReading?.(turn.reading);
   if(turn?.heard&&turn.heard!=="none")onHeard?.(turn.heard);
   if(!turn||SPEECH.has(turn.decision)&&turn.rest.trim()===""){
     await remainder(events);

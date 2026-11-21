@@ -55,6 +55,18 @@ integrations:
   # Workers AI candidates for the World's jobs, beside it on Cloudflare.
   # Selected for a job by naming the job's prompt id under a service's
   # integrations, e.g. "world.happening: lived-workers-ai-gemma4".
+  # Meaning of exchanges (S5b repair): embeddings for World's fact of how far
+  # an exchange repeats a Thread's earlier ones. World's measure, not cognition.
+  meaning-workers-ai-bge-m3:
+    kind: ai.embedding
+    provider: cloudflare
+    config:
+      model: "@cf/baai/bge-m3"
+      binding: AI
+    environment:
+      accountId: CLOUDFLARE_ACCOUNT_ID
+    secrets:
+      apiToken: CLOUDFLARE_AI_API_TOKEN
   lived-workers-ai-gemma4:
     kind: ai.reasoning
     provider: cloudflare
@@ -122,6 +134,7 @@ services:
     integrations:
       livedNow: lived-encounter-openai
       encounter: lived-encounter-openai
+      meaning: meaning-workers-ai-bge-m3
   birth-center:
     runtime: cloudflare
     infra: birth-cloudflare

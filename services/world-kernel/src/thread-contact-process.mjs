@@ -9,7 +9,7 @@ import {
 } from "./lived-contact-cognition.mjs";
 import { feltSocialBody, feltTowardPeople } from "./interoceptive-cognition.mjs";
 import { bodyTowardPeople, livedRegulationForLivedHistory } from "./lived-now-regulation.mjs";
-import { sameGroundNow } from "./engagement.mjs";
+import { createExchangeMeaning } from "./exchange-meaning.mjs";
 import { socialVenueVisitSince } from "./world-social-opportunity.mjs";
 import { bookInHand } from "./scene-glance.mjs";
 import { observablePerson } from "./world-observable-person.mjs";
@@ -121,6 +121,9 @@ export function createThreadContactProcess({
   embodimentStore=null,
   now=()=>new Date().toISOString(),
   batchLimit=4,
+  // Meaning (S5b repair): without an embedder, repetition is by shared words.
+  embedder=null,
+  log=null,
 }={}){
   requireMethod("contact worldReader",worldReader,"getThread");
   requireMethod("contact livedNow",livedNow,"ensure");
@@ -311,7 +314,7 @@ export function createThreadContactProcess({
           .map(candidate=>({threadId:candidate.partyId,evidenceRef:candidate.relationRef??candidate.partyId,
             present:typeof candidate.here==="string"}))}));
       // Whether what it would write about goes over ground covered lately.
-      const ground=sameGroundNow({experienceStore,threadId:thread.threadId,at:contactAt,
+      const ground=await createExchangeMeaning({embedder,experienceStore,log}).sameGround({threadId:thread.threadId,at:contactAt,
         text:afterthoughts.map(item=>item.text).join(" ")});
       const decision=await decideLaterContact({
         thread,

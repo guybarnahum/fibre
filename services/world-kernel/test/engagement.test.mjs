@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { URGE_FAMILY_BY_NAME } from "#core/src/inherited-urges.mjs";
-import { repetitionOf, sameGround, wearinessOf } from "../src/engagement.mjs";
+import { repetitionOf, sameGround, wearinessLevel } from "../src/engagement.mjs";
+import { createExchangeMeaning } from "../src/exchange-meaning.mjs";
+import { decodeMeaning as decode, encodeMeaning } from "../src/meaning-vectors.mjs";
 import { feltSocialBody } from "../src/interoceptive-cognition.mjs";
 import { livedRegulationForLivedHistory } from "../src/lived-now-regulation.mjs";
 import { runThreadLiveSocialEncounter } from "../src/lived-social-live-encounter.mjs";
@@ -28,22 +30,30 @@ const frame = (variantId, readings) => livedRegulationForLivedHistory({
 });
 const restless = (value) => value?.drives.find((item) => item.targetRef === "self:weariness") ?? null;
 
-test("weariness is the Thread's own reading of the same ground: the absorbed never tire of it, the weary do", () => {
-  const weary = frame("exploration_10", ["weary", "going_through_motions", "weary", "weary"]);
-  const absorbed = frame("exploration_10", ["absorbed", "absorbed", "engaged", "absorbed"]);
-  assert.ok(restless(weary)?.felt, "repeated weary readings left no pull toward something new");
-  assert.equal(restless(absorbed), null, "an absorbed Thread grew weary of what fascinates it");
-  assert.ok(feltSocialBody(weary).some((line) => !feltSocialBody(absorbed).includes(line)),
+test("weariness follows the Thread's own reading of what was new: nothing new wearies, the new does not", () => {
+  const weary = frame("exploration_10", ["nothing_new", "nothing_new", "some_new", "nothing_new"]);
+  const fresh = frame("exploration_10", ["new", "new", "some_new", "new"]);
+  assert.ok(restless(weary)?.felt, "repeated nothing-new left no pull toward something new");
+  assert.equal(restless(fresh), null, "a Thread still finding the new grew weary");
+  assert.ok(feltSocialBody(weary).some((line) => !feltSocialBody(fresh).includes(line)),
     "weariness did not reach the Body's words");
 });
 
+test("one new thing eases a day of repetition without erasing it", () => {
+  const level = (readings) => wearinessLevel({ threadId:"thr_self", at:AT, experienceStore:store(readings) }).level;
+  const repeated = level(["nothing_new", "nothing_new", "nothing_new", "nothing_new"]);
+  const thenNew = level(["new", "nothing_new", "nothing_new", "nothing_new", "nothing_new"]);
+  assert.ok(thenNew < repeated, "something new brought no relief");
+  assert.ok(thenNew > 0.5 * repeated, "one new thing wiped out a day of the same");
+});
+
 test("a novelty-seeking temperament tires sooner of the same readings than a steady one", () => {
-  const readings = ["going_through_motions", "going_through_motions", "weary"];
+  const readings = ["some_new", "some_new", "nothing_new"];
   assert.ok(restless(frame("exploration_10", readings)).pressure > restless(frame("exploration_06", readings)).pressure,
     "inherited temperament did not set how strongly the same is felt");
 });
 
-test("repetition is a fact stated for the Thread's judgment, and only when the ground is the same", () => {
+test("without meaning measured, shared words still state the fact", () => {
   const framework = "The claim goes beyond what the caption supports; we should mark the boundary of evidence.";
   const earlier = [
     "Does the caption support the claim, or does it go beyond the evidence we can see?",
@@ -61,7 +71,7 @@ test("talk over ground this Body is weary of tires it sooner", () => {
   assert.ok(weary > 1.5 * fresh, "weariness cost the battery nothing");
 });
 
-test("a turn may open with the Thread's private reading of how the talk holds it, which is recorded and never spoken", async () => {
+test("a turn may open with the Thread's private reading of what was new to it, which is recorded and never spoken", async () => {
   const thread = (threadId, name) => ({ threadId, version:1, identity:{ name },
     currentState:{ selfModel:`I am ${name}.`, unresolvedIntentions:[] }, genome:{ runtimeBaselines:{}, urgeProjection:[] } });
   const readings = [];
@@ -79,10 +89,66 @@ test("a turn may open with the Thread's private reading of how the talk holds it
     modelAdapter:{ async invoke() { throw new Error("no structured call"); },
       async *streamExpression() {
         turns += 1;
-        yield { type:"expression_delta", text:turns < 3 ? "weary SAY: Another one, then." : "SILENT" };
+        yield { type:"expression_delta", text:turns === 1 ? "none none SAY: Another one?"
+          : turns < 3 ? "nothing_new ordinary SAY: Another one, then." : "SILENT" };
         yield { type:"expression_complete", provenance:{ provider:"fixture", modelId:"fixture" } };
       } },
   });
-  assert.ok(readings.some(([, reading]) => reading === "weary"), "the Thread's reading of the talk was lost");
-  assert.ok(result.story.beats.every((beat) => !/weary/iu.test(beat.text ?? "")), "a private reading was spoken aloud");
+  assert.deepEqual(readings.map(([, reading]) => reading), ["nothing_new"],
+    "the Thread's reading of the talk was lost, or nothing yet said was read as something");
+  assert.ok(result.story.beats.every((beat) => !/nothing_new|none/iu.test(beat.text ?? "")), "a private reading was spoken aloud");
+});
+
+// Meaning, measured through a stand-in port: texts on one subject share a
+// direction whatever their words; other subjects point elsewhere.
+const SUBJECTS = [[/caption|label|claim|assert|evidence|support/iu, [1, 0.1, 0]], [/tea|market|kiosk|sweet/iu, [0, 1, 0.1]]];
+const embedder = { modelId:"fixture-meaning", calls:0,
+  async embed(texts) { this.calls += 1;
+    return { modelId:"fixture-meaning", vectors:texts.map((text) => SUBJECTS.find(([pattern]) => pattern.test(text))?.[1] ?? [0, 0, 1]) }; } };
+const meaningStore = (exchanges) => {
+  const kept = new Map();
+  return { listRecentExchangeTexts:() => exchanges, kept,
+    exchangeMeanings:(refs) => new Map(refs.filter((ref) => kept.has(ref)).map((ref) => [ref, { vector:decode(kept.get(ref)) }])),
+    recordExchangeMeanings:(items) => items.forEach((item) => kept.set(item.ref, item.vector)),
+    listEngagementReadings:() => [] };
+};
+const talks = [
+  { ref:"enc_1", at:hoursBefore(5), text:"Does the caption support the claim it makes?" },
+  { ref:"enc_2", at:hoursBefore(3), text:"Mark where the evidence stops supporting what is asserted." },
+  { ref:"enc_3", at:hoursBefore(1), text:"Again the label claims more than the object supports." },
+];
+
+test("the same ground in other words is still the same ground, by meaning; other ground is not", async () => {
+  const meaning = createExchangeMeaning({ embedder, experienceStore:meaningStore(talks) });
+  assert.ok(await meaning.sameGround({ threadId:"thr_self", at:AT, text:"Whether that inscription really backs what is asserted." }),
+    "reworded ground was not recognised as the same");
+  assert.equal(await meaning.sameGround({ threadId:"thr_self", at:AT, text:"The tea at the kiosk was sweeter than at home." }), null,
+    "new ground was reported as the same");
+  const words = createExchangeMeaning({ embedder:null, experienceStore:meaningStore(talks) });
+  assert.equal(await words.sameGround({ threadId:"thr_self", at:AT, text:"Whether that inscription really backs what is asserted." }), null,
+    "without meaning, the fallback was not by shared words");
+});
+
+test("habituation: a run of talk on one subject raises weariness's baseline, varied talk does not", async () => {
+  const baseline = (exchanges) => {
+    const experienceStore = meaningStore(exchanges);
+    for (const exchange of exchanges) experienceStore.kept.set(exchange.ref,
+      encodeMeaning(SUBJECTS.find(([pattern]) => pattern.test(exchange.text))?.[1] ?? [0, 0, 1]));
+    return wearinessLevel({ threadId:"thr_self", at:AT, experienceStore }).baseline;
+  };
+  const varied = [talks[0], { ref:"msg_1", at:hoursBefore(4), text:"The tea at the market was sweet." },
+    { ref:"enc_9", at:hoursBefore(2), text:"Rain on the tin roofs all night." }];
+  assert.ok(baseline(talks) > 0.2, "repeating one subject left no habituation");
+  assert.ok(baseline(varied) < 0.05, "varied talk was felt as repetition");
+});
+
+test("a conversation whose last turns go back over its first ones feels the same ground; one that moves on does not", async () => {
+  const meaning = createExchangeMeaning({ embedder, experienceStore:meaningStore([]) });
+  const circling = ["Does the caption support the claim?", "Only partly.", "Where does the evidence stop?",
+    "The label asserts more.", "So the claim outruns the evidence?", "Yes, the caption claims too much."];
+  const moving = [...circling.slice(0, 3), "Shall we get tea at the kiosk?", "The market one is sweeter.", "Sweet tea it is."];
+  assert.ok(await meaning.conversationGround({ threadId:"thr_self", at:AT, earlier:[], utterances:circling }),
+    "a talk circling back was not felt as the same ground");
+  assert.equal(await meaning.conversationGround({ threadId:"thr_self", at:AT, earlier:[], utterances:moving }), null,
+    "a talk that moved on was felt as circling");
 });
