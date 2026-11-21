@@ -20,14 +20,16 @@ async function recordedDay() {
   if (files.length === 0) return null;
   const day = JSON.parse(await readFile(join(directory, files.at(-1)), "utf8"));
   const days = (Date.parse(day.to) - Date.parse(day.from)) / 86_400_000;
-  const calls = new Map(), threads = new Set();
+  // A job cached per Thread has one scope per Thread, so the busiest such job
+  // shows how many Threads lived in the window; World jobs are shared by all.
+  const calls = new Map(), scopes = new Map();
   for (const event of day.events) {
     const id = String(event.prompt).split("@")[0];
     calls.set(id, (calls.get(id) ?? 0) + 1 / days);
-    const threadId = JSON.parse(event.capture).input?.thread?.threadId;
-    if (threadId) threads.add(threadId);
+    if (PROMPTS[id]?.cache === "thread") scopes.set(id, (scopes.get(id) ?? new Set()).add(event.scope));
   }
-  return { file: files.at(-1), calls, threads: Math.max(1, threads.size) };
+  const threads = Math.max(1, ...[...scopes.values()].map((seen) => seen.size));
+  return { file: files.at(-1), calls, threads };
 }
 
 const manifest = await loadDeploymentManifest(join(REPO_ROOT, "infra/deployments/environments/cloudflare.yaml"));
@@ -35,7 +37,7 @@ const integrations = resolveServiceDeployment(manifest, "world-kernel").integrat
 const portModel = `${integrations.encounter.provider}:${integrations.encounter.config.model}`;
 const record = JSON.parse(await readFile(join(REPO_ROOT, CERTIFICATIONS_PATH), "utf8"));
 const day = await recordedDay();
-console.log(day ? `calls per day from ${day.file}, ${day.threads} Threads` : "no recorded day yet (npm run model:captures): calls per day unknown");
+console.log(day ? `calls per day from ${day.file}, ${day.threads} Threads lived in it (World jobs are shared among them)` : "no recorded day yet (npm run model:captures): calls per day unknown");
 let total = 0;
 for (const [id, prompt] of Object.entries(PROMPTS).sort()) {
   const routed = integrations[id]?.kind === "ai.reasoning" ? `${integrations[id].provider}:${integrations[id].config.model}` : null;

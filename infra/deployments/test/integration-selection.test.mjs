@@ -170,6 +170,25 @@ test("Thread-private requests are captured for replay only for the depths explic
     [["gate", "a private recollection", "noticed"]], "capture did not keep exactly the named depth");
 });
 
+test("a spoken turn is recorded as it was said once finished, and a turn cut short is not", async () => {
+  const lines = [];
+  const inner = { provider:"openai", modelId:"gpt-test", configuration:{},
+    async *streamExpression() {
+      yield { type:"expression_delta", text:"SAY: Hello " };
+      yield { type:"expression_delta", text:"again, Kadir." };
+      yield { type:"expression_complete", provenance:{ modelId:"gpt-test" } };
+    } };
+  const world = meteredReasoningIntegration(inner, { port:"encounter", captureDepths:["deep"],
+    log:(line) => lines.push(JSON.parse(line)) });
+  const turn = { clientRequestId:`social-live-turn_${"c".repeat(24)}`, depth:"deep", promptRef:"social.live-turn@13",
+    input:{ said:["Hi Habiba"] } };
+  for await (const event of world.streamExpression(turn)) void event;
+  for await (const event of world.streamExpression(turn)) if (event.type === "expression_delta") break;
+  const captured = lines.filter((line) => line.event === "model-capture").map((line) => JSON.parse(line.capture));
+  assert.deepEqual(captured.map((item) => [item.input.said[0], item.output.text]), [["Hi Habiba", "SAY: Hello again, Kadir."]],
+    "the turn was not recorded whole, or one cut short was recorded");
+});
+
 test("a failed model call says why in the log, so an outage or a missed schema can be read afterwards", async () => {
   const lines = [];
   const failing = meteredReasoningIntegration({ provider:"cloudflare", modelId:"@cf/m", configuration:{},

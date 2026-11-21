@@ -284,9 +284,10 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log, 
     ...(typeof adapter.streamExpression !== "function" ? {} : {
       async *streamExpression(request) {
         const startedAt = Date.now();
-        let provenance = null, failure = null;
+        let provenance = null, failure = null, text = "";
         try {
           for await (const event of adapter.streamExpression(request)) {
+            if (event?.type === "expression_delta") text += event.text ?? "";
             if (event?.type === "expression_complete") provenance = event.provenance;
             yield event;
           }
@@ -295,6 +296,9 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log, 
           throw error;
         } finally {
           report(request, startedAt, provenance, failure !== null ? "failed" : provenance === null ? "stopped" : "completed", failure);
+          // A spoken turn is recorded whole, as said, once the model finished it.
+          if (provenance !== null && failure === null && capturing.has(request?.depth))
+            log(captureLine(request, provenance, { text }));
         }
       },
     }),
