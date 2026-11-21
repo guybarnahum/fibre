@@ -5,6 +5,7 @@
 // the models and the judges.
 
 import { decisionOf } from "./model-replay-judge.mjs";
+import { PROMPTS } from "../../services/world-kernel/src/generated/prompts.mjs";
 
 const without = (object, ...keys) => Object.fromEntries(Object.entries(object ?? {})
   .filter(([key]) => !keys.includes(key)));
@@ -195,6 +196,37 @@ export const JOBS = Object.freeze({
   },
 });
 
+// Every other World job (Guy, November 21): the job's own instructions are
+// the rule, until a review shows a job needs criteria of its own. Attributable
+// to the Thread whose self it was given; no decision or "nothing" is assumed.
+const GENERAL_JOBS = new Map();
+function generalJob(id) {
+  const prompt = PROMPTS[id];
+  if (prompt === undefined) return null;
+  if (!GENERAL_JOBS.has(id)) GENERAL_JOBS.set(id, Object.freeze({
+    lineupOf: "a Thread doing this",
+    source: (input) => input?.thread ? identityOnly({ thread: input.thread }) : null,
+    items: (input, output) => [{ key: "answer", source: input?.thread ? identityOnly({ thread: input.thread }) : null,
+      faced: identityOnly(without(input, "thread")), text: plainText(output) }],
+    nothing: () => false,
+    defects: () => [],
+    unordered: [],
+    faithful: `What this job's instructions leave to the Thread is its own to form. Report invented for an event, speech, action, person or fact that the input does not hold and the instructions do not ask for. The job's instructions:\n${prompt.text}`,
+    readable: `Does what this job's instructions ask, as they ask it, in this Thread's own voice wherever it speaks as the Thread. The job's instructions:\n${prompt.text}`,
+  }));
+  return GENERAL_JOBS.get(id);
+}
+
+// An answer's words, field by field, for a reader; record identities left out.
+function plainText(value, path = "") {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "object") return path ? `${path}: ${value}` : String(value);
+  const lines = Array.isArray(value)
+    ? value.map((item, index) => plainText(item, `${path}${path ? " " : ""}${index + 1}`))
+    : Object.entries(value).filter(([key]) => !VOLATILE.test(key)).map(([key, item]) => plainText(item, path ? `${path} ${key}` : key));
+  return lines.filter(Boolean).join("\n") || null;
+}
+
 // Whose source it is, so a lineup's distractors come from someone (or
 // somewhere, or some time) else.
 export function scopeOf(prompt, input) {
@@ -203,7 +235,7 @@ export function scopeOf(prompt, input) {
 
 export function jobOf(prompt) {
   const id = String(prompt).split("@")[0];
-  return JOBS[id] ?? (id.startsWith("world.") ? JOBS["world.happening"] : null);
+  return JOBS[id] ?? (id.startsWith("world.") ? JOBS["world.happening"] : generalJob(id));
 }
 
 // A seeded shuffle, so a lineup is the same on every run (and judged once).

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { dayAlarms, goodEnough, jobOf, lineup, perturbed, scopeOf, scoringJudges } from "./model-quality-criteria.mjs";
+import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 
 const ATTENTION = "encounter.attention@1";
 const thread = (id, name, activity) => ({
@@ -94,4 +95,15 @@ test("every compared model is scored by the same judges, never by a rival alone"
     "a candidate was held to more judges than the model it is compared with");
   assert.deepEqual(scoringJudges(["gpt-5.6-sol"], candidates, "@cf/google/gemma-4-26b-a4b-it"), ["gpt-5.6-sol"],
     "with no independent judge, a model lost the judges that read it");
+});
+
+test("a job without criteria of its own is judged by its own instructions, as the Thread that answered", () => {
+  const plan = jobOf("interior.flight-plan@1");
+  assert.ok(plan, "a World job could not be judged at all");
+  assert.ok(plan.readable.includes(promptFor("interior.flight-plan").text), "the job's own instructions were not the rule");
+  const input = { thread:{ threadId:"thr_h", name:"Habiba" }, currentSituation:{ activity:"reading" } };
+  const [item] = plan.items(input, { stops:[{ activity:"Walk to the library", placeRef:"plc_1" }] });
+  assert.deepEqual(item.source, { thread:{ name:"Habiba" } }, "the answer was not attributed to the Thread that gave it");
+  assert.ok(item.text.includes("Walk to the library") && !item.text.includes("plc_1"), "the answer was not shown in its own words");
+  assert.equal(jobOf("no.such-job@1"), null, "an unknown job was judged");
 });

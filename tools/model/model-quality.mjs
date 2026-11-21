@@ -21,6 +21,7 @@ import { loadDeploymentManifest, resolveServiceDeployment } from "../deployment/
 import { reasoningIntegrationFor, selectReasoningIntegration } from "../../infra/deployments/integration-selection.mjs";
 import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
+import { CERTIFICATIONS_PATH, EMPTY_CERTIFICATIONS, recordCertifications } from "../../infra/deployments/model-certifications.mjs";
 import { judgesFor } from "./model-judges.mjs";
 import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, scopeOf, scoringJudges } from "./model-quality-criteria.mjs";
 import { agreement, readReview, readVerdicts, REVIEW_KIND, testReading } from "../../apps/admin-dashboard/model-quality-review.mjs";
@@ -197,6 +198,7 @@ async function main() {
     result.goodEnough = goodEnough(options.prompt, { defects: result.defects, invented: every("invented", true), gains,
       correct: scorers.map((name) => attributed[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]), chance,
       invariant: decided.length === 0 ? null : invariant, alarms: result.alarms, acceptable: result.acceptable });
+    result.scoredBy = scorers;
     report.models.push(result);
 
     console.log(`\n${model}${result.tooFew ? " — too few cases to decide" : ""}`);
@@ -265,6 +267,20 @@ async function main() {
     console.log(`judge ${model}: ${errors.length} verdicts failed, e.g. ${errors[0]}`);
   }
   await writeFile(join(out, `quality-${options.prompt}-${stamp}.json`), JSON.stringify(report, null, 2));
+  // Certifications: which models this job may think with, at this prompt version.
+  const certificationsPath = join(repoRoot, CERTIFICATIONS_PATH);
+  const record = await readFile(certificationsPath, "utf8").then(JSON.parse, () => EMPTY_CERTIFICATIONS);
+  const rate = ([k, n]) => n === 0 ? null : { share: Math.round(k / n * 1000) / 1000, of: n };
+  await writeFile(certificationsPath, JSON.stringify(recordCertifications(record, report.models.map((m) => ({
+    prompt: options.prompt, promptVersion: prompt.version,
+    provider: options.models.find((item) => item.model === m.model).provider, model: m.model,
+    verdict: m.tooFew ? "undecided" : m.goodEnough.overall,
+    tests: Object.fromEntries(m.goodEnough.tests.map((test) => [test.test, test.verdict])),
+    acceptable: rate(m.acceptable), scoredBy: m.scoredBy, nothingChosen: rate(m.nothingRate),
+    costPer1000Calls: m.costPerCall === null ? null : Math.round(m.costPerCall * 1000 * 100) / 100,
+    requests: m.answered, failed: m.failed, certifiedAt: stamp.slice(0, 10), evidence: `quality-${options.prompt}-${stamp}.json`,
+  }))), null, 2) + "\n");
+  console.log(`certifications: ${CERTIFICATIONS_PATH} updated (${report.models.map((m) => `${m.model} ${m.tooFew ? "undecided" : m.goodEnough.overall}`).join(", ")}); commit it`);
   console.log(`\njudges spent ≈ $${judgeCost.toFixed(2)} this run (cached verdicts are free)`);
   console.log(`evidence: .fibre/model-quality/ — open review-${reviewId}.json in Admin › Model Quality to review blind`);
 }
