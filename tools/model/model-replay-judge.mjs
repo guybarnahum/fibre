@@ -17,6 +17,8 @@ export function decisionOf(prompt, output) {
   // Whether anything happens at all is a decision; what happens is text.
   if (id === "encounter.attention" || id.startsWith("world.")) return output.outcome ?? null;
   if (id === "contact.decision") return `${output.decision}:${output.recipientPartyId ?? ""}`;
+  // A reflection's decision: whether it keeps a memory, and what was new to it.
+  if (id === "experience.consolidation") return `${output.memory?.outcome ?? "none"}:${output.engagement ?? "none"}`;
   if (id === "body.interoception") {
     return (output.states ?? []).map((state) => `${state.domain}:${state.dimension}`).sort().join(",") || "none";
   }

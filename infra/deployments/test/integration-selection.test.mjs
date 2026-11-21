@@ -165,7 +165,7 @@ test("Thread-private requests are captured for replay only for the depths explic
     log:(line) => lines.push(JSON.parse(line)) });
   await capturing.invoke(request("deep"));
   await capturing.invoke(request("gate"));
-  const captured = lines.filter((line) => line.event === "model-capture");
+  const captured = lines.filter((line) => line.event === "model-capture").map((line) => ({ ...line, ...JSON.parse(line.capture) }));
   assert.deepEqual(captured.map((line) => [line.depth, line.input.memory, line.output.outcome]),
     [["gate", "a private recollection", "noticed"]], "capture did not keep exactly the named depth");
 });

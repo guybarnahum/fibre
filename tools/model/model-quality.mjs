@@ -45,7 +45,7 @@ function args(argv) {
     else throw new Error(`unknown option ${name}`);
   }
   if (!options.prompt || jobOf(options.prompt) === null) {
-    throw new Error("usage: model:quality -- --prompt <gate job> [--models openai:<model>,google:<model>,cloudflare:<@cf model>] [--judges claude-opus-5-5,gpt-5.6-sol] [--fresh <model,...>]");
+    throw new Error("usage: model:quality -- --prompt <job> [--models openai:<model>,google:<model>,cloudflare:<@cf model>] [--judges claude-opus-5-5,gpt-5.6-sol] [--fresh <model,...>]");
   }
   options.models = options.models.map((item) => {
     const [provider, model] = item.includes(":") ? item.split(":", 2) : ["openai", item];

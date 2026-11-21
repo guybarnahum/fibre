@@ -45,6 +45,16 @@ test("answers that break a job's rules are defects", () => {
   const there = { potentialObservers: [{ threadId: "thr_h" }] };
   assert.ok(world.defects(there, { outcome: "changed", occurrenceText: "A cart rolls past.", potentialObserverThreadIds: ["thr_z"] }).length > 0,
     "an event perceived by someone who was not there passed");
+  const reflection = jobOf("experience.consolidation@8");
+  const lived = { people: [{ personRef: "thr_k", name: "Kadir" }], interests: [{ interestRef: "int_1" }] };
+  const quiet = { journalEntry: null, memory: { outcome: "not_remembered" }, afterthoughts: [], stances: [], interests: [],
+    moments: [], regard: [], engagement: "nothing_new", newToIt: null };
+  assert.deepEqual(reflection.defects(lived, quiet), [], "a quiet reflection was a defect");
+  assert.ok(reflection.nothing(quiet), "a reflection that kept nothing was not read as quiet");
+  assert.ok(reflection.defects(lived, { ...quiet, regard: [{ personRef: "thr_z", act: "credited", by: "them", account: "x" }] }).length > 0,
+    "regard from someone who was not there passed");
+  assert.ok(reflection.defects(lived, { ...quiet, memory: { outcome: "retained", rememberedContent: null } }).length > 0,
+    "a memory kept without a recollection passed");
 });
 
 test("a day that ignores what is said to a Thread, or is busy at every turn, raises an alarm", () => {

@@ -217,24 +217,22 @@ function promptPrefix(request) {
   return PREFIX_CHARS.map((chars) => text.length < chars ? null : short(text.slice(0, chars)));
 }
 
-// Replay capture: for jobs of the named depths (staging, opt-in, temporary),
-// one extra line carries the full input, schema and answer so a candidate
-// model can later be judged on exactly the same requests. Thread-private
-// content: operator evidence only, never committed.
+// Replay capture: for jobs of the named depths (staging, opt-in), one extra line carries the full input, schema and
+// answer so a candidate model can later be judged on exactly the same
+// requests. The record travels as one JSON string, so a log store that
+// indexes fields keeps it whole. Thread-private content: operator evidence
+// only, never committed.
 const CAPTURE_MAX_CHARS = 60000;
 function captureLine(request, provenance, output) {
-  const line = JSON.stringify({
-    event: "model-capture",
-    kind: String(request?.clientRequestId ?? "unknown").replace(/_[0-9a-f]{16,}$/u, ""),
-    prompt: request?.promptRef ?? null,
-    depth: request?.depth ?? null,
-    scope: typeof request?.cacheKey === "string" ? short(request.cacheKey) : null,
-    modelId: provenance?.modelId ?? null,
-    input: request?.input ?? null,
-    responseSchema: request?.responseSchema ?? null,
-    output: output ?? null,
-  });
-  return line.length > CAPTURE_MAX_CHARS ? null : line;
+  const kind = String(request?.clientRequestId ?? "unknown").replace(/_[0-9a-f]{16,}$/u, "");
+  const capture = JSON.stringify({ input: request?.input ?? null, responseSchema: request?.responseSchema ?? null,
+    output: output ?? null });
+  const head = { kind, prompt: request?.promptRef ?? null, depth: request?.depth ?? null,
+    scope: typeof request?.cacheKey === "string" ? short(request.cacheKey) : null, modelId: provenance?.modelId ?? null };
+  // Too long to keep whole: say so, so a missing job is not mistaken for a quiet one.
+  return capture.length > CAPTURE_MAX_CHARS
+    ? JSON.stringify({ event: "model-capture-skipped", ...head, chars: capture.length })
+    : JSON.stringify({ event: "model-capture", ...head, capture });
 }
 
 export function meteredReasoningIntegration(adapter, { port, log = console.log, captureDepths = [] } = {}) {
@@ -280,10 +278,7 @@ export function meteredReasoningIntegration(adapter, { port, log = console.log, 
         throw error;
       } finally {
         report(request, startedAt, result?.provenance, result === undefined ? "failed" : "completed", failure);
-        if (result !== undefined && capturing.has(request?.depth)) {
-          const line = captureLine(request, result.provenance, result.output);
-          if (line !== null) log(line);
-        }
+        if (result !== undefined && capturing.has(request?.depth)) log(captureLine(request, result.provenance, result.output));
       }
     },
     ...(typeof adapter.streamExpression !== "function" ? {} : {

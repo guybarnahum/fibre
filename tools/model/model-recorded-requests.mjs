@@ -1,5 +1,5 @@
 // Recorded requests of one cognitive job (`model-capture` events kept by
-// infra:measure), and what answering them costs. Shared by model:replay and
+// infra:measure or model:captures), and what answering them costs. Shared by model:replay and
 // model:quality. Evidence is Thread-private and never committed.
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -28,8 +28,10 @@ export async function captures(directory, promptId) {
   let stale = 0;
   for (const name of (await readdir(directory)).filter((file) => file.endsWith(".json")).sort()) {
     const evidence = JSON.parse(await readFile(join(directory, name), "utf8"));
-    for (const event of evidence.events ?? []) {
-      if (event.event !== "model-capture" || String(event.prompt).split("@")[0] !== promptId) continue;
+    for (const recorded of evidence.events ?? []) {
+      if (recorded.event !== "model-capture" || String(recorded.prompt).split("@")[0] !== promptId) continue;
+      // Since November 21 the request travels as one JSON string.
+      const event = typeof recorded.capture === "string" ? { ...recorded, ...JSON.parse(recorded.capture) } : recorded;
       // A request recorded under an earlier prompt version is not this job any more.
       if (event.prompt !== `${current.id}@${current.version}`) { stale += 1; continue; }
       const key = createHash("sha256").update(JSON.stringify(event.input)).digest("hex");

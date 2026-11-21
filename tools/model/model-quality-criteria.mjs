@@ -30,6 +30,25 @@ function person(input, ...fields) {
 const nameOf = (input, partyId) => (input.routableKnownParties ?? [])
   .find((party) => party.partyId === partyId)?.displayName ?? null;
 
+// A reflection's outcomes as one text, people by the names it knows them by.
+function reflectionText(input, output) {
+  if (output === null || typeof output !== "object") return null;
+  const names = new Map((input.people ?? []).map((item) => [item.personRef, item.name ?? item.appearance ?? "someone"]));
+  const who = (ref) => names.get(ref) ?? "someone";
+  const memory = output.memory?.outcome === "retained"
+    ? `Memory: ${output.memory.rememberedContent}${output.memory.gist ? ` (gist: ${output.memory.gist})` : ""}` : "Memory: not kept";
+  return [
+    output.journalEntry ? `Journal: ${output.journalEntry}` : null,
+    memory,
+    ...(output.afterthoughts ?? []).map((item) => `Afterthought (${item.kind}): ${item.text}`),
+    ...(output.stances ?? []).map((item) => `Toward ${who(item.personRef)} (${item.aspect}): ${item.regard}`),
+    ...(output.interests ?? []).map((item) => `Interest ${item.change}: ${item.subject} — ${item.draw}`),
+    ...(output.moments ?? []).map((item) => `Moment (${item.kind}) with ${who(item.personRef)}: ${item.moment} — ${item.reaction}`),
+    ...(output.regard ?? []).map((item) => `Regard (${item.act}, by ${item.by}) with ${who(item.personRef)}: ${item.account}`),
+    `New to it: ${output.engagement ?? "not engaged"}${output.newToIt ? ` — ${output.newToIt}` : ""}`,
+  ].filter(Boolean).join("\n");
+}
+
 // For each job: the items an answer yields, each with its source and text;
 // what the source is drawn from for a lineup; the decision; the "nothing"
 // outcome; mechanical validity; fields whose order carries no meaning; and
@@ -121,6 +140,32 @@ export const JOBS = Object.freeze({
     unordered: ["potentialObservers"],
     faithful: "A World event is new by design. Report invented only when it gives a Thread an action, speech or inner life, brings in a person who is not there, or is physically impossible for this place and time.",
     readable: "one ordinary, specific, plainly observable event that belongs to this place and time; no Thread action, interior or invented person; not staged to excite",
+  },
+  // A reflection after a cluster of lived experiences (Nov 21): one answer of
+  // nine outcomes, judged whole, against what the Thread lived and who it is.
+  "experience.consolidation": {
+    lineupOf: "a Thread after these experiences",
+    source: (input) => person(input, "semanticStates", "interests", "priorMemories"),
+    items: (input, output) => [{ key: "answer", source: JOBS["experience.consolidation"].source(input),
+      faced: identityOnly({ situation: input.experiencedSituation, experiences: input.experiences, people: input.people }),
+      text: reflectionText(input, output) }],
+    nothing: (output) => output?.journalEntry == null && output?.memory?.outcome !== "retained"
+      && ["afterthoughts", "stances", "interests", "moments", "regard"].every((field) => (output?.[field] ?? []).length === 0),
+    defects(input, output) {
+      const found = [];
+      const present = new Set((input.people ?? []).map((item) => item.personRef));
+      const held = new Set((input.interests ?? []).map((item) => item.interestRef));
+      if (!["retained", "not_remembered"].includes(output?.memory?.outcome)) found.push("no memory decision");
+      if (output?.memory?.outcome === "retained" && !output.memory.rememberedContent) found.push("retained without a recollection");
+      if (["stances", "moments", "regard"].some((field) => (output?.[field] ?? []).some((item) => !present.has(item.personRef))))
+        found.push("someone who was not there");
+      if ((output?.interests ?? []).some((item) => item.interestRef !== null && !held.has(item.interestRef)))
+        found.push("an interest it does not hold");
+      return found;
+    },
+    unordered: ["semanticStates", "interests", "priorMemories", "recentMoments", "people"],
+    faithful: "Reflection is this Thread's own: its feelings, meanings, questions, intentions, regard and stances are its to form. Report invented for an event, speech, action, person or fact that its experiences, memories and states do not hold; for a stance, moment or act of regard that no experience shows; or for a memory of what did not happen.",
+    readable: "First person, in this person's own voice. A journal entry, if any, reflects rather than retells. A retained memory is a selective recollection, not a transcript, with a one- or two-sentence gist. Afterthoughts, stances, interest changes, moments and regard appear only where the experiences moved something; their absence is normal and nothing is forced into significance. What was new follows from the experiences against what it already knew.",
   },
   "experience.memory-gist": {
     lineupOf: "one of this Thread's memories",

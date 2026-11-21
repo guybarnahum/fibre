@@ -96,6 +96,7 @@ world-kernel:
 - **Routing:** every call carries its prompt id. `routedReasoningIntegration` sends it to the job's integration when one is named, else to the port's.
 - **Moving a job** to another model is therefore one line of configuration, and no code names a provider. A job's credentials are read only when that job first thinks.
 - **Choosing:** jobs are moved one at a time, after `model:quality` on recorded requests, by the accepted rule: quality within noise of the best first, then quality per dollar.
+- **Recorded requests:** on staging, the World's integration records every job's full request and answer (`captureDepths: [gate, deep]`) as one `model-capture` log line, Thread-private and never committed. `npm run model:captures -- --env staging --hours 24` gathers them from Workers Logs (a token with Workers Observability read) into `.fibre/infra-measure/`, so a job that comes a few times an hour, such as a reflection, can be judged on a day's real requests. A request too long to log whole is counted as `model-capture-skipped`, never cut.
 - **Fair judging:** every compared model is scored by the same judges, those that read every candidate. No judge reads its own model's answers, so a judge that is also a candidate is shown but does not score its rivals; otherwise a cheaper model would be held to more judges than the reference.
 
 **Workers AI** (`provider: cloudflare`, `integrations/ai/reasoning/cloudflare.mjs`):

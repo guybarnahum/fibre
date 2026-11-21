@@ -48,8 +48,11 @@ integrations:
       reasoningEffort: none
       deferredServiceTier: flex
       cacheMode: explicit
+      # Every job is recorded for replay, so each prompt can be certified
+      # for cheaper models (model:captures, model:quality; Nov 21).
       captureDepths:
         - gate
+        - deep
     secrets:
       apiKey: OPENAI_API_KEY
   # Workers AI candidates for the World's jobs, beside it on Cloudflare.
