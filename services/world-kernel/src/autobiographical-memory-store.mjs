@@ -299,6 +299,23 @@ export class AutobiographicalMemoryStore {
       changedAt:row.changed_at})]));
   }
 
+  // The memories that came back to mind in a span, newest first: drawn on by
+  // the Thread's own cognition (recalled) or brought back by a cue, with the
+  // experiences each one holds. A memory counts at its latest return only.
+  listRecalledMemories(threadId,{since,until,limit=16}={}){
+    if(typeof threadId!=="string"||!since||!until)throw new TypeError("recalled memories need a Thread and a span");
+    if(!Number.isSafeInteger(limit)||limit<1||limit>32)throw new TypeError("recalled memories must be bounded");
+    return Object.freeze(this.#database.prepare(`
+      SELECT a.memory_id,a.touched_at,json_extract(r.record_json,'$.eventRefs') AS event_refs
+      FROM thread_memory_availability a
+      JOIN autobiographical_memory_current_heads h ON h.memory_id=a.memory_id
+      JOIN autobiographical_memory_records r ON r.memory_id=h.memory_id AND r.revision=h.revision
+      WHERE a.thread_id=? AND a.reason IN ('recalled','cue') AND a.touched_at>=? AND a.touched_at<=?
+      ORDER BY a.touched_at DESC LIMIT ?
+    `).all(threadId,since,until,limit).map(row=>Object.freeze({memoryId:row.memory_id,at:row.touched_at,
+      eventRefs:Object.freeze(JSON.parse(row.event_refs??"[]"))})));
+  }
+
   // Availability changes only by use (recalled), time unused (faded) or a cue.
   setMemoryAvailability({threadId,memoryId,level,touchedAt,reason,cueRef=null,changedAt}){
     if(this.#readOnly)throw new AutobiographicalMemoryConflictError("read-only memory store cannot write");

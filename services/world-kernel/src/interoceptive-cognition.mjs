@@ -266,13 +266,17 @@ const HURT=Object.freeze([
   [1.01,"What they did still hurts deeply."],
 ]);
 const REVIVED="This brings back the last time they hurt you.";
-// Missing a bonded person while apart, by what this Body longs for; and the
-// relief of seeing them again, in proportion to how much they were missed.
+// Missing a bonded person while apart, by what this Body longs for, up to
+// the ache of a deep bond; that a memory of them has brought them back to
+// mind; and the joy of seeing them again, in proportion to the bond and to
+// how much they were missed.
 const LONGING=Object.freeze([
   [0.15,"You have been missing them a little."],
   [0.4,"You miss them."],
-  [1.01,"You miss them a great deal."],
+  [0.65,"You miss them a great deal."],
+  [1.01,"Missing them is an ache that does not let up."],
 ]);
+const REMINDED="They have been on your mind.";
 const LONGS_FOR=Object.freeze({
   caregiver:"You miss the way they look after you.",
   reciprocal_contact:"You miss hearing from them.",
@@ -281,8 +285,8 @@ const LONGS_FOR=Object.freeze({
 const REUNION=Object.freeze([
   [0.05,null],
   [0.2,"It is good to see them again."],
-  [0.5,"It is good to see them again; you have missed them."],
-  [1.01,"Seeing them again is a joy; you have missed them a great deal."],
+  [0.5,"It is a joy to see them again."],
+  [1.01,"Seeing them again is a great joy; you have missed them."],
 ]);
 
 // Status (ADR-0037): where a person stands with this Body, the sting of a
@@ -363,6 +367,7 @@ export function feltTowardPeople(regulationFrame){
       const line=band(item.attained?REUNION:LONGING,item.pressure);
       if(line!==null)add(item,line);
       if(!item.attained&&LONGS_FOR[item.inheritedDirection])add(item,LONGS_FOR[item.inheritedDirection]);
+      if(item.reminded)add(item,REMINDED);
     }
     if(item.family==="exploration"&&item.inheritedDirection==="people")
       add(item,band(item.catchingUp?CATCHING_UP:CURIOSITY,item.pressure));

@@ -13,8 +13,10 @@ export const BODY_STATES=Object.freeze([
     note:"below zero: it holds itself higher than it is treated (frustration)"}),
 ]);
 
-// Toward each of the people it lived most with.
+// Toward each of the people it lived most with, and those it misses.
 export const PERSON_STATES=Object.freeze([
+  Object.freeze({key:"longing",baselineKey:"longingBaseline",label:"Missing",range:[0,1],events:"recalled",
+    note:"dashed: its baseline, rising over days apart to the bond; ticks: a memory of them came back to mind"}),
   Object.freeze({key:"trust",label:"Trust",range:[0,1]}),
   Object.freeze({key:"hurt",label:"Hurt",range:[0,1]}),
   Object.freeze({key:"knowing",label:"Knowing",range:[0,1]}),

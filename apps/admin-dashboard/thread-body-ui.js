@@ -69,13 +69,16 @@ function renderBody(body){
         const values=body.series.map(point=>point.people?.[person.threadId]?.[state.key]??null);
         const cell=el("td");
         cell.append(el("strong",null,fixed(values.at(-1))),
-          spark(values,{range:state.range,from,to,ticks:(body.events?.regard??[])
-            .filter(event=>event.person===person.threadId)}));
+          spark(values,{range:state.range,from,to,
+            ticks:state.events==="recalled"
+              ?(body.events?.recalled??[]).filter(event=>event.people.includes(person.threadId))
+              :(body.events?.regard??[]).filter(event=>event.person===person.threadId),
+            baseline:state.baselineKey?body.series.map(point=>point.people?.[person.threadId]?.[state.baselineKey]??null):null}));
         row.append(cell);
       }
       table.append(row);
     }
-    view.append(el("h4",null,"Toward the people it lived most with"),table);
+    view.append(el("h4",null,"Toward the people it lived most with, and those it misses"),table);
   }
   const genes=el("details","thread-data-section");
   const rows=geneticsRows(body.genetics);

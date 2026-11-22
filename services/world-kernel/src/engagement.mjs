@@ -16,6 +16,9 @@ export const RECORDED_READINGS=Object.freeze([...ENGAGEMENT_READINGS,"absorbed",
 // new, and eases less than one absorbing hour once did.
 const WEIGHT=Object.freeze({new:-0.5,some_new:0.3,nothing_new:1,
   absorbed:-1,engaged:0,going_through_motions:0.5,weary:1});
+// A reading in which something took its mind (new to it, or absorbing before
+// November 20): what eases weariness, and for a while missing someone.
+export const tookItsMind=(reading)=>(WEIGHT[reading]??0)<0;
 const WEARINESS_HALF_LIFE_HOURS=12;
 const WEARINESS_SCALE=2;
 const RECENT_MS=2*86_400_000;

@@ -352,7 +352,7 @@ Pending responses expose durable local Birth Center state immediately and never 
 
 The Thread Observatory has a **Body** section, read only when an operator presses *Show the Body* (`/api/threads/:id/observatory?view=body`, [ADR-0038](../../docs/decisions/ADR-0038-body-levels.md)). It shows:
 - the social Body over the last day, every two hours: battery, weariness, self-status, and the self-view gap, with the events that moved them;
-- toward the six people the Thread lived most with: trust, hurt, knowing, bond, and held and treated place;
+- toward the six people the Thread lived most with, and up to four more it has relations with: missing (its baseline dashed, ticks when a memory of them came back to mind), trust, hurt, knowing, bond, and held and treated place;
 - the words the Thread reads of its Body now;
 - its 18 inherited urges with every position.
 

@@ -299,6 +299,8 @@ function normalizeBonds(value) {
       personRef: nonEmpty(`${name}.personRef`, person.personRef),
       bond: unit(`${name}.bond`, person.bond),
       longing: unit(`${name}.longing`, person.longing),
+      joy: person.joy === undefined ? 0 : unit(`${name}.joy`, person.joy),
+      reminded: person.reminded === true,
       present: person.present,
       evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, person.evidenceRefs),
     };
@@ -603,20 +605,20 @@ function basalDrives(percept, profile) {
     }), ...(person.hurt > 0 ? {hurt:person.hurt} : {}), ...(person.revived ? {revived:true} : {})});
   }
 
-  // Missing a person this Thread is bonded to: longing while apart, and its
-  // relief when they are here again (attained), in proportion to how much
-  // they were missed. A stranger is never missed.
+  // Missing a person this Thread is bonded to: longing while apart, and the
+  // joy of relief when they are here again (attained), in proportion to the
+  // bond and to how much they were missed. A stranger is never missed.
   for (const person of percept.bonds) {
-    const longing = person.longing * profile.sensitivity.social;
-    drives.push(drive({
+    const felt = (person.present ? person.joy : person.longing) * profile.sensitivity.social;
+    drives.push({...drive({
       family:"attachment_proximity",
       targetRef:`person:${person.personRef}`,
       orientation:"approach",
-      pressure:longing,
-      urgency:longing,
-      attained:person.present && person.longing > 0,
+      pressure:felt,
+      urgency:felt,
+      attained:person.present && person.joy > 0,
       evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
-    }));
+    }), ...(person.reminded && !person.present ? {reminded:true} : {})});
   }
 
   // A place among others (ADR-0037). Toward oneself: frustration when the

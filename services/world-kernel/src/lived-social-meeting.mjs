@@ -920,7 +920,7 @@ export function createSocialMeetingService({
         thread:initiator.thread,
         livedNowStore,
         currentSituation:initiator.situation,
-        experienceStore,asOf:boundedVenueDiscovery?input.at:initiator.situation.establishedAt,
+        experienceStore,memoryStore,asOf:boundedVenueDiscovery?input.at:initiator.situation.establishedAt,
         perceivedPeople:opportunities.flatMap(opportunity=>{
           const person=discoveredById.get(opportunity.actorRef);
           return person===undefined?[]:[{threadId:person.thread.threadId,evidenceRef:person.situation.situationId}];

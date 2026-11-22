@@ -96,6 +96,32 @@ The design and plan are in the project (`claude/body-levels-design.md`, `claude/
 
 **The Body panel** shows frustration over the day, with its baseline dashed beneath it.
 
+## B3 as built (November 13): missing someone
+
+Guy: "grows and levels off at some baseline depending on the bond. A deep bond may cause suffering. Any bond causes joy (proportional to the bond?) when relief arrives."
+
+**Missing someone is a Body level** (`longingOf`, `social-body.mjs`):
+- **Baseline:** `bond × (1 − 2^(−days apart / 3))²`. It rises over the first days apart and levels off at the bond, with no settling into fond memory. A light bond is missed faintly for as long as they are apart; a deep one aches. Apart means not in each other's presence, except for a Body whose attachment is to the exchange (`reciprocal_contact`), which any message resets, as before.
+- **Spikes,** counting only what happened since they parted; several within an hour count as one moment:
+  - a memory of time with them comes back to mind: `+0.4 × bond`. That means the Thread's own cognition drew on it (`recalled`), or a cue brought it back. The memory's experiences are matched to those shared with the person (`listRecalledMemories` on the memory store, `listSharedExperienceRefs`);
+  - something took its mind (a `new` engagement reading, or `absorbed` before S5b was repaired): `−0.2 × bond`;
+  - a message between them, for a Body that longs for their presence: `−0.5 × bond`.
+- **Fade:** half in 6 hours, scaled by the `attachment_proximity` locus's persistence, back to the baseline. The level stays within 0 and 1.
+
+**Joy at relief** (`reunionJoy`), when they are here again: `bond × (1 − 2^(−days apart)) × (0.5 + 0.5 × longing / bond)`.
+- Every bond brings joy, in proportion to it, and up to twice that after a long absence.
+- The middle factor is a refinement of the approved formula. Gladness at seeing someone again needs some time apart: hardly any an hour after parting, half after a day. Without it, every bonded person met twice in an afternoon would be a joy.
+- The attachment drive's attained pressure is now this joy rather than the longing. Salience's reunion anchor reads it unchanged, so a bonded person met after a day is now worth considering, at any bond.
+
+**Felt in words:**
+- missing, up to "Missing them is an ache that does not let up" at a deep plateau;
+- "They have been on your mind" while a memory of them is still fresh;
+- reunion graded by joy: "It is good to see them again" / "It is a joy to see them again" / "Seeing them again is a great joy; you have missed them".
+
+Longing reaches cognition where it did before: contact decisions (toward everyone the Thread could write to or go over to), people perceived at a venue, and live turns. A live turn uses the longing as the conversation began, without the spikes.
+
+**The Body panel** adds the people the Thread has relations with, up to four beyond the six it lived most with. For each it shows missing over the day, the baseline dashed beneath it, and ticks when a memory of them came back to mind.
+
 ## Status of what this excludes
 
 | Capability | Status | Extension path |
@@ -103,5 +129,9 @@ The design and plan are in the project (`claude/body-levels-design.md`, `claude/
 | Physical tiredness and sleep debt | deferred | the `rest` and `energy` families on the component, once embodiment feeds them |
 | A baseline-rate gene for families other than standing | deferred | a library position when staging shows the difference matters |
 | Panel history beyond a day, or for many Threads at once | deferred | the same derivation over a wider window, bounded |
+| Reminders other than memories: their place, their book, their name in talk | deferred | the same spike from a perceived cue, once perception names the person it recalls |
+| Joy at a message from someone missed | deferred | a reunion-joy spike in the reading of an incoming message |
+| Missing parents and caregivers who are not live Threads | deferred | the same level toward a household relation, once family persons are World parties |
+| Every return of a memory to mind (only its latest is kept) | deferred | an availability history, if staging shows recalls cluster |
 
 No permanent constraint.

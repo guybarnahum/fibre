@@ -12,6 +12,7 @@ import { createExperienceConsolidationProcess } from "../src/lived-experience-co
 import { createEncounterVisualization } from "../src/lived-encounter-visualization.mjs";
 import { selectDevelopedSelfEvidence } from "../src/interior-cognition.mjs";
 import { recallMemories,reviewMemoryAvailability } from "../src/memory-availability.mjs";
+import { missingMoments } from "../src/social-body.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -95,6 +96,9 @@ test("unused memories fade, anchored ones stay, and meeting someone again brings
 
     recallMemories({memoryStore:memory,threadId:SELF,memoryIds:[withNoor.memoryId],at:later});
     assert.ok(inMind("background").includes(withNoor.memoryId),"a recalled memory did not come back to mind");
+    const apart=missingMoments({experienceStore:experience,memoryStore:memory,threadId:SELF,at:at(20*DAY+1)});
+    assert.deepEqual([apart.remindersOf(NOOR),apart.remindersOf(SELA)],[[later],[]],
+      "a memory of Noor coming back to mind did not bring her to mind, or brought someone else");
   }finally{
     semantic.close();memory.close();experience.close();world.close();
     rmSync(directory,{recursive:true,force:true});

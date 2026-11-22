@@ -309,7 +309,7 @@ export function createThreadContactProcess({
       }));
       // How the Body takes each Thread it could reach: at ease or guarded,
       // missing them or with them here.
-      const toward=feltTowardPeople(bodyTowardPeople({thread,experienceStore,asOf:contactAt,
+      const toward=feltTowardPeople(bodyTowardPeople({thread,experienceStore,memoryStore,asOf:contactAt,
         people:candidates.filter(candidate=>candidate.recipientKind==="thread")
           .map(candidate=>({threadId:candidate.partyId,evidenceRef:candidate.relationRef??candidate.partyId,
             present:typeof candidate.here==="string"}))}));

@@ -271,16 +271,21 @@ function bodyThreadObservatory(runtime,threadId){
   if(thread===null)return null;
   const experience=openLivedExperienceInspectionStore(runtime.worldStorage);
   const livedNow=openLivedNowInspectionStore(runtime.worldStorage);
+  const memory=openAutobiographicalMemoryInspectionStore(runtime.worldStorage);
+  const situatedLife=openSituatedLifeInspectionStore(runtime.worldStorage);
   try{
     const at=new Date().toISOString();
-    const body=bodyObservatory({thread,experienceStore:experience,at,
+    // The Threads it has relations with, whom it may be missing.
+    const apart=situatedLife.listCurrentLifeRelations(threadId)
+      .filter(relation=>relation.relatedParty?.kind==="thread").map(relation=>relation.relatedParty.partyId);
+    const body=bodyObservatory({thread,experienceStore:experience,memoryStore:memory,at,apart,
       nameOf:(id)=>runtime.worldStore.getThread(id,{required:false})?.identity?.name??null});
     const currentSituation=livedNow.getCurrentSituation(threadId);
     // What the Thread reads of its social Body now, in its own words.
     const felt=currentSituation===null?[]:[...feltSocialBody(livedRegulationForLivedHistory({
-      thread,livedNowStore:livedNow,currentSituation,experienceStore:experience,asOf:at}))];
+      thread,livedNowStore:livedNow,currentSituation,experienceStore:experience,memoryStore:memory,asOf:at}))];
     return Object.freeze({threadId,body:{...body,felt}});
-  }finally{experience.close();livedNow.close();}
+  }finally{experience.close();livedNow.close();memory.close();situatedLife.close();}
 }
 
 // The default operator view needs present life, not a lifetime dossier.

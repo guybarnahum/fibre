@@ -12,7 +12,7 @@ import {
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 import { wearinessOf } from "./engagement.mjs";
-import { bondOf, conversationDepletion, expectedRegard, longingOf, regardOf, regardShown, selfStanding,
+import { bondOf, conversationDepletion, expectedRegard, longingOf, missingMoments, regardOf, regardShown, reunionJoy, selfStanding,
   SLIGHT_GAP, stingHalfLife,
   socialEnergyEvidence } from "./social-body.mjs";
 
@@ -274,7 +274,7 @@ function locusOf(thread,family){
 // The loci the social Body reads, for an operator's view of it.
 export function socialBodyLoci(thread){
   return Object.freeze({trust:locusOf(thread,"trust"),standing:locusOf(thread,"standing"),
-    exploration:locusOf(thread,"exploration")});
+    exploration:locusOf(thread,"exploration"),attachment:locusOf(thread,"attachment_proximity")});
 }
 const trustLocus=(thread)=>locusOf(thread,"trust");
 const standingLocus=(thread)=>locusOf(thread,"standing");
@@ -345,17 +345,25 @@ function standingFrame({self=null,people=null}){
 const UNKNOWN_NOW_ABOVE=0.5;
 const unknownNow=(regard)=>(1-regard.knowing)+0.5*regard.staleness;
 const rounded=(value)=>Math.round(value*1e6)/1e6;
-function peoplePercept({thread,people=[],experienceStore,at,known=null,self=null}){
+function peoplePercept({thread,people=[],experienceStore,memoryStore=null,at,known=null,self=null}){
   const regards=people.slice(0,4).filter(person=>person.threadId!==thread.threadId).map(person=>({person,
     regard:known??regardWithDoors({thread,otherThreadId:person.threadId,experienceStore,at})}));
   if(regards.length===0)return null;
   const attachment=locusOf(thread,"attachment_proximity");
+  let apart=null;
   const bonds=regards.map(({person,regard})=>{
     const bond=bondOf({regard,doors:regard.doors??[]});
-    return {personRef:person.threadId,bond,present:person.present!==false,
-      longing:longingOf({bond,regard,orientation:attachment?.orientation??null,persistence:attachment?.persistence??0}),
+    if(bond===0)return null;
+    apart??=experienceStore?missingMoments({experienceStore,memoryStore,threadId:thread.threadId,at}):null;
+    const longing=longingOf({bond,regard,orientation:attachment?.orientation??null,
+      persistence:attachment?.persistence??0,at,absorbed:apart?.absorbed??[],
+      reminders:apart?.remindersOf(person.threadId)??[]});
+    const present=person.present!==false;
+    return {personRef:person.threadId,bond,present,longing:longing.level,
+      ...(present?{joy:reunionJoy({bond,regard,longing:longing.level})}:{}),
+      ...(!present&&longing.reminded?{reminded:true}:{}),
       evidenceRefs:[person.evidenceRef]};
-  }).filter(item=>item.bond>0);
+  }).filter(item=>item!==null);
   const standing=standingPercept({regards,bonds,self,at,standingLocus:standingLocus(thread)});
   const unfamiliarPeople=regards.filter(({regard})=>unknownNow(regard)>UNKNOWN_NOW_ABOVE)
     .map(({person,regard})=>({personRef:person.threadId,unfamiliarity:rounded(1-regard.knowing),
@@ -378,7 +386,7 @@ function peoplePercept({thread,people=[],experienceStore,at,known=null,self=null
 // One evidence-driven Body projection for planning and social attention.
 // No extra model call, time tick, or family-specific consumer path.
 export function livedRegulationForLivedHistory({
-  thread,livedNowStore,currentSituation,experienceStore=null,
+  thread,livedNowStore,currentSituation,experienceStore=null,memoryStore=null,
   asOf=currentSituation?.establishedAt,perceivedPeople=[],
 }) {
   if(currentSituation===null)return null;
@@ -407,7 +415,7 @@ export function livedRegulationForLivedHistory({
   const self=experienceStore===null?null:selfOf({thread,experienceStore,at:asOf});
   const weariness=experienceStore===null?0:wearyOf({thread,experienceStore,at:asOf});
   const people=experienceStore===null||perceivedPeople.length===0?null:peoplePercept({
-    thread,people:perceivedPeople,experienceStore,at:asOf,self,
+    thread,people:perceivedPeople,experienceStore,memoryStore,at:asOf,self,
   });
   if(!continuity.grounded&&contact===null&&socialEnergy===null&&people===null&&self?.gap==null
     &&weariness===0)return null;
@@ -476,9 +484,9 @@ export function socialBodyBeforeTalk({thread,otherThreadId,experienceStore,asOf}
 
 // How this Thread's Body takes the people it perceives now: how far it
 // trusts each, and curiosity toward anyone it hardly knows.
-export function bodyTowardPeople({thread,people,experienceStore,asOf}){
+export function bodyTowardPeople({thread,people,experienceStore,memoryStore=null,asOf}){
   const self=selfOf({thread,experienceStore,at:asOf});
-  const percept=peoplePercept({thread,people,experienceStore,at:asOf,self});
+  const percept=peoplePercept({thread,people,experienceStore,memoryStore,at:asOf,self});
   if(percept===null)return null;
   const {standingPeople,urgeTriggers,...rest}=percept;
   return evaluateIntrinsicRegulation({

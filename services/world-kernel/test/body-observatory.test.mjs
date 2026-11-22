@@ -6,7 +6,7 @@ import { regardOf, selfStanding, socialEnergyEvidence } from "../src/social-body
 import { wearinessOf } from "../src/engagement.mjs";
 
 const AT = "2026-11-14T12:00:00.000Z";
-const SELF = "thr_body_self", FRIEND = "thr_body_friend";
+const SELF = "thr_body_self", FRIEND = "thr_body_friend", AWAY = "thr_body_away";
 const hoursAgo = (hours) => new Date(Date.parse(AT) - hours * 3_600_000).toISOString();
 
 // A World's records for one Thread over two days, answering each query the
@@ -15,6 +15,9 @@ function world() {
   const reads = new Map();
   const count = (name) => reads.set(name, (reads.get(name) ?? 0) + 1);
   const contacts = Array.from({ length:12 }, (_, i) => ({ at:hoursAgo(44 - i * 4), kind:"conversation", turns:6 }));
+  // A close friend unseen for ten days, and a memory of a walk with them that came back to mind.
+  const away = Array.from({ length:12 }, (_, i) => ({ at:hoursAgo(24 * (10 + 3 * i)), kind:"conversation", turns:12 }));
+  const recalled = [{ memoryId:"mem_walk", at:hoursAgo(3), eventRefs:["exp_walk"] }];
   const exposures = contacts.map((contact, i) => ({ kind:"conversation", ref:`story_${i}`, at:contact.at, turns:6,
     otherThreadId:FRIEND }));
   const regard = Array.from({ length:10 }, (_, i) => ({ regardId:`reg_${i}`, personThreadId:FRIEND,
@@ -23,15 +26,20 @@ function world() {
     at:hoursAgo(30 - i * 3) }));
   const newest = (items, field) => [...items].sort((a, b) => b[field].localeCompare(a[field]));
   return { reads, store:{
-    listSharedContact:(t, o, { before, limit }) => { count("contact"); return newest(contacts.filter((c) => c.at < before), "at").slice(0, limit); },
-    listPairActs:() => { count("acts"); return []; },
-    listPerceivedRegard:(t, o, { before, limit }) => { count("regard"); return newest(regard.filter((r) => r.asOf < before), "asOf").slice(0, limit); },
+    listSharedContact:(t, o, { before, limit }) => { count(`contact:${o}`);
+      return newest((o === AWAY ? away : contacts).filter((c) => c.at < before), "at").slice(0, limit); },
+    listSharedExperienceRefs:(t, o) => { count(`shared:${o}`); return o === AWAY ? ["exp_walk"] : []; },
+    listRecalledMemories:(t, { since, until, limit }) => { count("recalled");
+      return recalled.filter((m) => m.at >= since && m.at <= until).slice(0, limit); },
+    listPairActs:(t, o) => { count(`acts:${o}`); return []; },
+    listPerceivedRegard:(t, o, { before, limit }) => { count(`regard:${o}`);
+      return newest(regard.filter((r) => r.personThreadId === o && r.asOf < before), "asOf").slice(0, limit); },
     listRecentPerceivedRegard:(t, { before, limit }) => { count("recent"); return newest(regard.filter((r) => r.asOf < before), "asOf").slice(0, limit); },
     listSocialExposures:(t, { since, until, limit }) => { count("exposures");
       return newest(exposures.filter((e) => e.at >= since && e.at <= until), "at").slice(0, limit); },
     listEngagementReadings:(t, { since, until, limit }) => { count("readings");
       return newest(readings.filter((r) => r.at >= since && r.at < until), "at").slice(0, limit); },
-    listOpenDoors:() => { count("doors"); return ["conversation", "contact"]; },
+    listOpenDoors:(t, o) => { count(`doors:${o}`); return ["conversation", "contact", "time"]; },
   } };
 }
 
@@ -50,12 +58,18 @@ test("the Body panel shows the Body as it was at each moment of the day, from on
       socialEnergyEvidence({ threadId:SELF, experienceStore:store, asOf:at }), `the battery differed at ${at}`);
   }
   const panelReads = world();
-  const body = bodyObservatory({ thread:{ threadId:SELF, genome:{ urgeProjection:[] } }, experienceStore:panelReads.store, at:AT });
+  const body = bodyObservatory({ thread:{ threadId:SELF, genome:{ urgeProjection:[] } }, experienceStore:panelReads.store,
+    memoryStore:panelReads.store, apart:[AWAY], at:AT });
   assert.equal(body.series.length, 13);
   assert.ok(body.people.some((person) => person.threadId === FRIEND), "the person it lived most with is missing");
   assert.ok(new Set(body.series.map((point) => point.battery)).size > 3, "the day's battery did not move with its talk");
   const friend = (point) => point.people[FRIEND];
   assert.ok(friend(body.series.at(-1)).knowing > friend(body.series[0]).knowing && friend(body.series.at(-1)).trust > 0,
     "knowing and trust toward the friend were not shown as lived");
+  const missed = (point) => point.people[AWAY];
+  assert.ok(missed(body.series.at(-1)).longing > missed(body.series.at(-1)).longingBaseline
+    && missed(body.series[0]).longing === missed(body.series[0]).longingBaseline,
+    "a friend apart was not shown missed, or the memory of them was felt before it came back");
+  assert.deepEqual(body.events.recalled.map((item) => item.people), [[AWAY]], "the memory was not tied to the friend it holds");
   assert.ok([...panelReads.reads.values()].every((n) => n === 1), "the panel read the same records more than once");
 });

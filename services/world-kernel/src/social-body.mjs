@@ -5,6 +5,7 @@
 // result through its own urge loci and decides for itself what to do.
 
 import { bodyLevel, DAY_MS, fade, HOUR_MS, inheritedHalfLife } from "#core/src/body-level.mjs";
+import { tookItsMind } from "./engagement.mjs";
 
 const days=(from,to)=>(Date.parse(to)-Date.parse(from))/DAY_MS;
 
@@ -298,7 +299,9 @@ export function regardOf({experienceStore,threadId,otherThreadId,at,trustLocus=n
       .reduce((when,act)=>when===null||act.occurredAt>when?act.occurredAt:when,null),
     lately:Object.freeze(regard.filter(act=>act.by==="them"&&days(act.at,at)<=STING_DAYS).slice(0,3)),
     apartDays:last===null?null:rounded(days(last,at)),
-    apartInPersonDays:lastInPerson===null?null:rounded(days(lastInPerson,at))});
+    apartInPersonDays:lastInPerson===null?null:rounded(days(lastInPerson,at)),
+    messagedAt:Object.freeze(contacts.filter(contact=>contact.kind==="message"
+      &&(lastInPerson===null||contact.at>lastInPerson)).map(contact=>contact.at))});
 }
 
 // The bond (ADR-0036 R2): how much a person has come to matter to this Body,
@@ -313,18 +316,63 @@ export function bondOf({regard,doors}){
   return rounded(regard.knowing*regard.trust*opened);
 }
 
-// Longing for a bonded person: barely there the next day, it grows over the
-// first week apart and then, for all but the deepest bond, settles into fond
-// memory, more slowly the more persistent this Body's attachment locus
-// (persistence already scaled by inherited spread). Apart means not in each
-// other's presence, except for a Body whose attachment is to the exchange
-// itself, which a message answers.
-export function longingOf({bond,regard,orientation=null,persistence=0}){
-  const apart=orientation==="reciprocal_contact"?regard.apartDays:regard.apartInPersonDays;
+// Missing a bonded person (body levels B3, Guy, November 13): a baseline
+// that rises over the first days apart and levels off at the bond, so a
+// light bond is missed faintly and a deep one aches for as long as they are
+// apart. Apart means not in each other's presence, except for a Body whose
+// attachment is to the exchange itself, which a message answers.
+// On it, since they parted: a memory of time with them coming back to mind
+// brings them back; something new or absorbing elsewhere takes the mind off them;
+// for a Body that longs for their presence, a message relieves part of it.
+// Each fades back to the baseline, more slowly the more persistent this
+// Body's attachment locus (persistence already scaled by inherited spread).
+const MISSING_HALF_LIFE_MS=6*HOUR_MS;
+const REMINDED=0.4,ABSORBED=-0.2,MESSAGED=-0.5;
+const NO_LONGING=Object.freeze({level:0,baseline:0,reminded:false});
+export function longingOf({bond,regard,orientation=null,persistence=0,at=null,reminders=[],absorbed=[]}){
+  const reciprocal=orientation==="reciprocal_contact";
+  const apart=reciprocal?regard.apartDays:regard.apartInPersonDays;
+  if(bond===0||apart===null)return NO_LONGING;
+  const baseline=bond*(1-2**(-apart/3))**2;
+  if(at===null)return Object.freeze({level:rounded(baseline),baseline:rounded(baseline),reminded:false});
+  const parted=Date.parse(at)-apart*DAY_MS;
+  const since=(times,size)=>times.filter(when=>Date.parse(when)>parted).map(when=>({at:when,size:size*bond}));
+  const reminded=since(reminders,REMINDED);
+  const {level}=bodyLevel({at,baseline:{given:baseline},bound:{min:0,max:1},
+    halfLife:inheritedHalfLife(MISSING_HALF_LIFE_MS,persistence),
+    events:[...reminded,...since(absorbed,ABSORBED),...(reciprocal?[]:since(regard.messagedAt??[],MESSAGED))]});
+  return Object.freeze({level:rounded(level),baseline:rounded(baseline),
+    reminded:reminded.some(event=>fade(event.size,Date.parse(at)-Date.parse(event.at),
+      inheritedHalfLife(MISSING_HALF_LIFE_MS,persistence))>0.1*bond)});
+}
+
+// The joy of being with a bonded person again (B3): every bond brings it, in
+// proportion to the bond, and up to twice that after a long absence missed.
+// Gladness at seeing them again needs some time apart first: hardly any an
+// hour after parting, half within a day.
+export function reunionJoy({bond,regard,longing}){
+  const apart=regard.apartInPersonDays??regard.apartDays;
   if(bond===0||apart===null)return 0;
-  const rise=(1-2**(-apart/3))**2;
-  const settle=2**(-Math.max(0,apart-7)*(1-bond)/(21*2**(2*persistence)));
-  return rounded(bond*rise*settle);
+  return rounded(Math.min(1,bond*(1-2**(-apart))*(0.5+0.5*longing/bond)));
+}
+
+// Moments apart that bear on missing someone, from the last two days: when
+// a memory of time with a person came back to mind (its own cognition drew
+// on it, or a cue brought it back), and when something absorbed it. Several
+// within an hour are one moment. Read once for everyone it is bonded to.
+const MISSING_WINDOW_MS=2*DAY_MS;
+const moments=(times)=>[...times].sort().reverse()
+  .filter((when,index,all)=>index===0||Date.parse(all[index-1])-Date.parse(when)>=HOUR_MS);
+export function missingMoments({experienceStore,memoryStore=null,threadId,at}){
+  const since=new Date(Date.parse(at)-MISSING_WINDOW_MS).toISOString();
+  const absorbed=moments((experienceStore?.listEngagementReadings?.(threadId,{since,until:at,limit:96})??[])
+    .filter(item=>tookItsMind(item.reading)).map(item=>item.at));
+  const recalled=memoryStore?.listRecalledMemories?.(threadId,{since,until:at})??[];
+  return Object.freeze({absorbed,remindersOf:(personThreadId)=>{
+    if(recalled.length===0)return [];
+    const shared=new Set(experienceStore.listSharedExperienceRefs?.(threadId,personThreadId,{before:at,limit:64})??[]);
+    return moments(recalled.filter(memory=>memory.eventRefs.some(ref=>shared.has(ref))).map(memory=>memory.at));
+  }});
 }
 
 // What one turn of talk (or one message) with a person costs this Body.
