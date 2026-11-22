@@ -29,11 +29,17 @@ export function decodeMeaning(encoded){
   return unit(Array.from(text,char=>{const byte=char.charCodeAt(0);return byte>127?byte-256:byte;}));
 }
 
-// How much one exchange repeats earlier ones: the mean of its three closest,
-// 0 new ground, 1 the same said again.
-export function meaningSameness(vector,earlier){
-  if(earlier.length===0)return 0;
+// How close one exchange comes to earlier ones: the mean cosine of its three
+// closest (the raw measure, logged so LOW and HIGH can be set from staging).
+export function nearestMeaning(vector,earlier){
+  if(earlier.length===0)return null;
   const closest=earlier.map(other=>cosine(vector,other)).sort((a,b)=>b-a).slice(0,NEAREST);
-  const mean=closest.reduce((sum,value)=>sum+value,0)/closest.length;
+  return Math.round(closest.reduce((sum,value)=>sum+value,0)/closest.length*1e6)/1e6;
+}
+
+// How much one exchange repeats earlier ones: 0 new ground, 1 the same said again.
+export function meaningSameness(vector,earlier){
+  const mean=nearestMeaning(vector,earlier);
+  if(mean===null)return 0;
   return Math.round(Math.min(1,Math.max(0,(mean-LOW)/(HIGH-LOW)))*1e6)/1e6;
 }

@@ -5,7 +5,7 @@
 // port, and kept a week as a derived index of public words: never memory,
 // never shown to the Thread. Without the port, shared words are the measure.
 import { repetitionOf, recentExchanges, sameGround } from "./engagement.mjs";
-import { encodeMeaning, meaningSameness, unit } from "./meaning-vectors.mjs";
+import { encodeMeaning, meaningSameness, nearestMeaning, unit } from "./meaning-vectors.mjs";
 
 export function createExchangeMeaning({embedder=null,experienceStore,log=null}={}){
   const measured=embedder!==null&&typeof embedder?.embed==="function"
@@ -24,13 +24,15 @@ export function createExchangeMeaning({embedder=null,experienceStore,log=null}={
     return {current:vectors.slice(0,texts.length).map(unit),earlier};
   }
 
-  // The words for an exchange, with the measure behind them.
+  // The words for an exchange, with the measure behind them. The log carries
+  // the raw closeness and where it came from, never the words.
   async function judged(threadId,work,fallback){
     if(!measured)return fallback();
     const startedAt=Date.now();
     try{
-      const ground=await work();
-      log?.(JSON.stringify({event:"meaning-call",threadId,outcome:"completed",elapsedMs:Date.now()-startedAt}));
+      const {ground,cosine,kind}=await work();
+      log?.(JSON.stringify({event:"meaning-call",threadId,outcome:"completed",kind,cosine,
+        elapsedMs:Date.now()-startedAt}));
       return ground;
     }catch(error){
       log?.(JSON.stringify({event:"meaning-call",threadId,outcome:"failed",elapsedMs:Date.now()-startedAt,
@@ -50,7 +52,8 @@ export function createExchangeMeaning({embedder=null,experienceStore,log=null}={
       if(exchanges.length===0)return null;
       return judged(threadId,async()=>{
         const {current,earlier}=await meaningsOf([text],exchanges);
-        return sameGround(meaningSameness(current[0],earlier),{measure:"meaning"});
+        return {ground:sameGround(meaningSameness(current[0],earlier),{measure:"meaning"}),
+          cosine:nearestMeaning(current[0],earlier),kind:"exchange"};
       },words);
     },
     // A conversation under way: against this Thread's earlier exchanges, and
@@ -72,7 +75,9 @@ export function createExchangeMeaning({embedder=null,experienceStore,log=null}={
         const {current,earlier}=await meaningsOf(tail===null?[text]:[text,tail,head],recent);
         const against=meaningSameness(current[0],earlier);
         const circling=tail===null?0:meaningSameness(current[1],[current[2]]);
-        return sameGround(Math.max(against,circling),{measure:"meaning"});
+        return {ground:sameGround(Math.max(against,circling),{measure:"meaning"}),
+          cosine:Math.max(nearestMeaning(current[0],earlier)??0,tail===null?0:nearestMeaning(current[1],[current[2]])),
+          kind:"conversation"};
       },words);
     },
   });
