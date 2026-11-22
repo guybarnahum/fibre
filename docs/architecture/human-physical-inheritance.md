@@ -198,7 +198,7 @@ The final text-only causality rerun showed that family profiles now resolve to c
 
 Family-profile authoring requires larger naming pools and atomic language values; harmless duplicate candidates are normalized locally before semantic admission. The Lab separately reports semantic projection compression and runs a 10,000-birth model-free probe of the production family sampler so small-cohort sampling noise is not mistaken for weighting drift. The separate deterministic family experiment remains the evidence boundary for same-parent sibling resemblance, mixed parentage and multigenerational transmission; a shared family-origin profile is not a biological family. Calibration changes require a specific observed failure rather than demographic quota matching.
 
-Population/appearance calibration is **reopened**. The 2026-09-27 Li Jing staging migration was the specific observed failure that invalidated the earlier closeout: the migration/reconciliation machinery worked, but the resulting genome-derived portrait did not preserve a coherent East Asian physical phenotype. The current appearance-model work is therefore provisional until the calibration tranche passes. See [Physical appearance model calibration and migration plan](../validation/physical-appearance-calibration-plan.md).
+Population/appearance calibration is **reopened**. The 2026-09-27 Li Jing staging migration was the specific observed failure that invalidated the earlier closeout: the migration/reconciliation machinery worked, but the resulting genome-derived portrait did not preserve a coherent East Asian physical phenotype. The current appearance-model work is therefore provisional until the calibration tranche passes. See Physical appearance model calibration and migration plan *(archived in Git at 690b3f0)*.
 
 ### Existing Thread Appearance Repair — active
 
@@ -212,7 +212,7 @@ A current physical genome cannot be replaced merely to restyle a person. A **ver
 
 The 2026-09-27 staging run proved the migration mechanics and exact replay behavior but also falsified the then-current appearance model: Li Jing's operator-confirmed East Asian ancestry produced a generic White-looking portrait after both migration and unchanged-spec re-rendering. That result is retained as failure evidence; it is not appearance-quality acceptance.
 
-The active repair/calibration sequence is recorded in [Physical appearance model calibration and migration plan](../validation/physical-appearance-calibration-plan.md). The current `physical-genome-v0.2` work on `main` is provisional and must not be deployed as an accepted appearance model until Slices 1-5 pass.
+The active repair/calibration sequence is recorded in Physical appearance model calibration and migration plan *(archived in Git at 690b3f0)*. The current `physical-genome-v0.2` work on `main` is provisional and must not be deployed as an accepted appearance model until Slices 1-5 pass.
 
 ### Population Realism Acceptance — reopened
 

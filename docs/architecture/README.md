@@ -36,7 +36,7 @@ Read with:
 
 - [`storage-model.md`](storage-model.md) — authorities, replay and atomicity;
 - [`infrastructure-driver.md`](infrastructure-driver.md) — provider-neutral capability ports;
-- [`../state/infra-pure.md`](../state/infra-pure.md) — **live adoption/debt workstream**, including triggers and stop conditions;
+- infra-pure *(archived in Git at 690b3f0)* — **live adoption/debt workstream**, including triggers and stop conditions;
 - [`thread-migration-repair-recovery.md`](thread-migration-repair-recovery.md) — evidence, provenance and quarantine rules for migration/repair/recovery;
 - [`cloud-e2e-closure-plan.md`](cloud-e2e-closure-plan.md) — retained G/H public cloud birth and minimum recovery result; empty-environment rebuild remains an unverified separate proof.
 

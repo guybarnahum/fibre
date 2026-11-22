@@ -1,62 +1,9 @@
 # Fibre state documents
 
-What is true about Fibre right now.
+Three live files own what is true about Fibre right now:
 
-State documents are current operational and project truth and are expected to change as accepted work lands. Updating current state must not erase the historical record of how Fibre arrived there.
+1. **[`public-progress.json`](public-progress.json)** (companion: [`public-progress.md`](public-progress.md), schema: [`public-progress.schema.json`](public-progress.schema.json)) — Canonical external truth in two layers (plain English first, accurate mechanism and limitation second). Consumed by public surfaces; external claims may never exceed it.
+2. **[`current-state.md`](current-state.md)** — Engineering truth by capability, evidence level (`Source`, `Deployed`, `Observed`, `Standing`), and causal maturity.
+3. **[`current-priorities.md`](current-priorities.md)** — Active execution tracks (Social life and Model efficiency) and immediate sequencing.
 
-## Public progress
-
-**Canonical machine-readable source:** [`public-progress.json`](public-progress.json)  
-**Human-readable companion:** [`public-progress.md`](public-progress.md)  
-**Schema:** [`public-progress.schema.json`](public-progress.schema.json)
-
-Use this when the question is:
-
-> What has Fibre actually achieved, what has only been shown working, what are we working on, and what do we explicitly not have yet?
-
-Every public claim has two layers:
-
-1. **Simple English** — understandable by a teenager with no Fibre background.
-2. **More accurate description** — the precise mechanism, validation boundary and important limitation.
-
-The simple layer may remove jargon. It may not remove uncertainty, hide a failed experiment, or make the claim stronger than the accurate layer.
-
-This is the contract intended for `insidefibre.com` and other public renderers. It distinguishes generated artifacts from living/validated Threads and distinguishes live Thread parents from household caregivers and synthetic genetic ancestors.
-
-The public-progress contract is currently one evolving canonical contract. Do not create compatibility versions until a real external consumer requires a frozen historical shape.
-
-## Technical current state
-
-[`current-state.md`](current-state.md)
-
-Use this for architecture, milestone posture, persistence surfaces, causal standing and technical boundaries. It may use Fibre-specific terminology that is inappropriate as the primary public explanation.
-
-## Current engineering priorities
-
-[`current-priorities.md`](current-priorities.md)
-
-Use this for the immediate execution sequence, current experimental constraints, blockers and rules for what maintainers may or may not do next.
-
-## Infra-pure workstream
-
-[`infra-pure.md`](infra-pure.md)
-
-Use this as the single live status page for provider-neutral infrastructure adoption: what is already clean, what provider debt remains, the concrete trigger for reopening each item, and the stop condition that returns work to the Fibre organism. Durable infrastructure rules remain in architecture/ADRs; this page owns current execution truth.
-
-## Thread preservation and migration
-
-[`thread-preservation-and-migration.md`](thread-preservation-and-migration.md)
-
-Use this for the accepted plan to preserve Threads across Fibre software/schema generations: immediate staging retention, immutable archive-before-migration, the rule to migrate state rather than rewrite history, and the small post-M2 operator path for verified restore/migration and coordinated cleanup. It is a post-M2 follow-on, not an additional M2 closure gate.
-
-## Future capability map
-
-[`future-capability-map.md`](future-capability-map.md)
-
-Use this to preserve promising future product, service and capability boundaries without keeping empty implementation directories in the repository. A listed capability is design intent, not current architecture; recreate the implementation namespace only when real code, operations or an accepted authority boundary needs it.
-
-## Rule
-
-These documents are different views of the same project, not separate authorities.
-
-If a public statement would overstate the technical evidence, **the public statement must be weakened**. If engineering progress materially changes what Fibre has achieved, `public-progress.json` and its Markdown companion should be updated as part of recording that milestone boundary rather than left for a later website rewrite.
+Older workstream status logs (`infra-pure.md`, `future-capability-map.md`, `thread-preservation-and-migration.md`, `unresolved-decisions.md`) are archived in Git history (`690b3f0`) per [ADR-0016](../decisions/ADR-0016-repository-retention.md).

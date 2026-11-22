@@ -356,7 +356,7 @@ The first 2026-09-27 Li Jing staging run proved the migration/replay machinery b
 
 Slices 1-5 subsequently validated the calibrated `physical-genome-v0.2` model in Population Lab, and a second live Li Jing staging run proved the versioned authority upgrade itself: durable operator ancestry evidence was reused unchanged, v0.1 upgraded to v0.2, a new anatomy-first canonical specification/root was admitted, Presentation converged, and FID revision 4 superseded revision 3. Final diagnosis reports v0.2 plus Embodiment-owned canonical visual authority. Direct inspection of that migrated portrait remains the final live visual-quality acceptance step.
 
-The active sequence is [Physical appearance model calibration and migration plan](../validation/physical-appearance-calibration-plan.md).
+The active sequence is Physical appearance model calibration and migration plan *(archived in Git at 690b3f0)*.
 
 
 ## Operator appearance commands

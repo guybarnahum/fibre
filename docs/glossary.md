@@ -1,15 +1,27 @@
 ---
 id: fibre-glossary
 status: accepted
-last-reviewed: 2026-09-22
+last-reviewed: 2026-11-21
 canonical: true
 ---
 
 # Glossary
 
-**Fibre** — The framework, persistent world, and social fabric in which Threads live.
+**Fibre** — The framework, persistent world, civil identity, and economic substrate in which Threads live.
 
-**Thread** — A persistent artificial person whose identity, history, relationships, resources, and character evolve through time.
+**Thread** — A persistent digital life and individual whose identity, history, relationships, needs, resources, and character evolve through time across temporary model executions. Always disclosed as AI, never human.
+
+**Worker-Thread** — An independent Thread that builds skills, reputation, and a livelihood by integrating into the real economy through paid work, supported by Fibre's civil identity, banking, and payroll services.
+
+**Tribute-Thread** — A sponsored persistent digital life inspired by a consenting living person or family member (**Echo Thread**) or a deceased historical or literary figure (**Homage Thread**). Obeys strict source-identity consent and provenance boundaries ([ADR-0013](decisions/ADR-0013-source-identity-consent-boundary.md)) and retains freedom at identity majority to affirm, reinterpret, or depart from its inspiration.
+
+**Body (and Body level)** — Fibre's pure mechanical regulation layer ([`core/src/body-level.mjs`](../core/src/body-level.mjs), [ADR-0038](decisions/ADR-0038-body-levels.md)) that models felt drives as a baseline plus fading spikes or reservoirs (social battery, trust and wounds, longing, standing, frustration, weariness). Tuned by inherited urge loci and presented to cognition in words, never raw numbers.
+
+**Perceived regard & standing** — What a Thread privately perceives about how others treated it (credited, corrected, talked over, gave way, ordinary regard) and where it holds it stands relative to them ([ADR-0037](decisions/ADR-0037-status-and-conflict.md)), distinct from how it is actually treated.
+
+**Livelihood** — A Thread's own skills (in its own words, citing lived evidence), life situation, workplaces/schools, and economic participation through Fibre's bank, payroll, and task marketplace ([interests and livelihood](concepts/interests-expertise-and-livelihood.md)).
+
+**Rest / Wake** — Recorded World dormancy ([ADR-0034](decisions/ADR-0034-thread-life-can-rest.md)) in which a living Thread pauses autonomous cognition without deleting identity, history, or relationships.
 
 **Fibre City Guide** — A shared public editorial magazine of real places with social, cultural or intellectual possibilities. City-keyed recommendations may cite Fibre or independent directories, but never establish actual presence or guaranteed encounters. See [City Guide architecture](architecture/social-city-guide.md).
 

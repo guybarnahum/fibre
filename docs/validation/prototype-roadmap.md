@@ -35,7 +35,7 @@ Genesis / inherited history
   -> future life changed by what mattered—or not
 ```
 
-**N1–N5: closed bounded/live proofs.** One World `ensure-LivedNow` path, multi-day dormancy catch-up, Genesis-to-continuing-life, an actual deployed Person → Thread entry, and admitted Encounter Story → person-specific Experience with optional lasting consequence. The historical W/E experiments remain evidence in the [N5 plan](n5-encounter-slices.md); they are not competing roadmaps.
+**N1–N5: closed bounded/live proofs.** One World `ensure-LivedNow` path, multi-day dormancy catch-up, Genesis-to-continuing-life, an actual deployed Person → Thread entry, and admitted Encounter Story → person-specific Experience with optional lasting consequence. The historical W/E experiments remain evidence in the N5 plan *(archived in Git at 690b3f0)*; they are not competing roadmaps.
 
 **N6: public Viewer lifecycle remains partially accepted.** Staging World conversation and public streamed Encounter Story were observed; genuine full browser encounter, correct nonresponse/sleep display, leaving and revisiting an advanced life remain current acceptance work. See [N6](n6-public-lived-encounter-slices.md). Public users enter the Thread's life; the browser neither authors the scene nor stores permanent chat authority.
 

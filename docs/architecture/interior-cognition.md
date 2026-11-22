@@ -684,7 +684,7 @@ Interior Cognition should remain one compact, replaceable component. Domain code
 
 This makes it practical to A/B test new cognition profiles against the incumbent without rewriting Flight Plan, social, dignity or reflection domains.
 
-The evaluation contract is [Interior Cognition evaluation](../validation/interior-cognition-evaluation.md). It deliberately keeps quality and compute separate rather than inventing one composite score.
+The evaluation contract is Interior Cognition evaluation *(archived in Git at 690b3f0)*. It deliberately keeps quality and compute separate rather than inventing one composite score.
 
 The architecture is stable; implementation profile choices are experimental.
 
@@ -715,7 +715,7 @@ The 2026-09-21 E5 staging diagnostics exposed that gap directly: the staging coh
 
 The read-only staging baseline is now complete. It found that the staging cohort already has differentiated autobiographical remembered meaning and relationship history even though the published shell is neutral and semantic state is empty. Therefore the next implementation step is not to make Commons more persuasive or generate more biography. It is to prove the compact Interior Cognition component can compose bounded authoritative developed-self evidence into present judgment. Richer organismic/regulatory expression and endogenous semantic-state formation remain part of the architecture, but they are not prerequisites for proving that already-lived experience can bend current thought.
 
-See [Interior Cognition staging baseline](../validation/interior-cognition-baseline.md).
+See Interior Cognition staging baseline *(archived in Git at 690b3f0)*.
 
 ## Anti-patterns
 

@@ -1,45 +1,42 @@
 # Contributing to Fibre
 
-Fibre is currently a private concept and prototype project.
+Fibre is currently a private research and product repository (**All rights reserved**). Contributors and AI agents must follow [`AGENTS.md`](AGENTS.md).
 
-## Change types
+## Validation
 
-- **Concept:** modifies what Fibre or a Thread means.
-- **Architecture:** changes the laws, boundaries, or storage/runtime model.
-- **Experiment:** tests a falsifiable behavioral hypothesis.
-- **Implementation:** adds or changes production-oriented code.
-- **Artifact:** improves human-visible documentation or demonstrations.
+During development, run focused tests:
 
-## Pull request checklist
+```bash
+npm run test:focused -- core/test/body-level.test.mjs
+```
 
-- Which accepted concept does this implement or change?
-- Which invariant supports or conflicts with it?
-- Which canonical scenario demonstrates it?
-- What observable behavior should change?
-- What human-inspectable artifact demonstrates it?
-- What drift risk does it introduce?
-- Which ADR records the durable decision?
+At slice completion, run **only** the single repository validation command:
 
-Answer what applies; a change that only touches wording or tooling will answer little of it.
+```bash
+npm run slice:validate
+```
 
-A change the **Vision and ambition guard** in [`AGENTS.md`](AGENTS.md) covers must also satisfy that guard and answer the [fidelity and ambition questions](docs/foundations/invariants.md#required-proposal-and-release-questions).
+Do not stack `npm run check`, `npm run test:all`, and `npm run validate` after one another — `slice:validate` already checks includes, prompts, TypeScript build, the full test suite, context packs, repository links, World seed, and deployment manifests.
 
-## Development versioning
+## Test discipline ("Less is more")
 
-Fibre is still in active development. Do not preserve obsolete executable versions by default.
+- Tests must prove **Fibre semantics** (identity, history, consent, agency, continuity, authority, recovery), not brittle implementation trivia (exact prose fragments, hardcoded commit SHAs, HTTP plumbing, or DOM snapshots).
+- Prefer one thematic invariant proof over several narrow helper assertions.
+- Follow [`docs/validation/test-lifecycle-best-practice.md`](docs/validation/test-lifecycle-best-practice.md) when classifying tests as permanent, regression, or milestone-scoped.
 
-- Prefer one current implementation. If no deployed or persisted data requires compatibility, replace or rename the implementation instead of adding another `v2`/`v3` compatibility branch.
-- Keep parallel executable versions only when a real compatibility boundary exists: persisted data, an external wire/API contract, a migration that must run across versions, or another explicitly supported consumer.
-- Frozen experiments may keep versioned artifacts, digests, protocols, and review packets so the evidence remains attributable. That does **not** require current runtime code to reconstruct or execute an obsolete experiment byte-for-byte.
-- When an experiment or recovery path is retired, remove its executable CLI/runner/compatibility layer unless a current tool still depends on it. Preserve the result/failure evidence instead.
-- Consolidate tests onto the current invariant or regression class rather than retaining exact compatibility tests for undeployed development history.
+## Change checklist
 
-A version label used to identify evidence is not, by itself, a reason to keep a second implementation alive.
+For changes in scope of the **Vision and ambition guard** ([`AGENTS.md`](AGENTS.md)):
 
-## Test lifecycle
+1. Which Fibre capability does this prove or advance?
+2. Which invariant supports or constrains it?
+3. What observable behavior or future possibility changes (not merely stored/prompted)?
+4. Which capabilities are deferred, and where are they recorded?
+5. Which ADR records any durable decision?
+6. Is `npm run slice:validate` green with zero secret/private-state leaks?
 
-When adding or materially changing non-trivial tests, classify their intended lifecycle as **permanent**, **regression**, or **milestone** when that lifecycle is not already obvious. Milestone-scoped tests remain active while the milestone is open; the marker exists so they can be explicitly deleted, consolidated, or promoted when the milestone closes rather than accumulating indefinitely.
+## Development versioning & retention
 
-See [`docs/validation/test-lifecycle-best-practice.md`](docs/validation/test-lifecycle-best-practice.md) for the metadata convention, classification guidance, and milestone-closeout procedure.
-
-Never treat a compelling LLM-generated proposal as accepted merely because it is well written.
+- Prefer one current implementation; do not keep obsolete `v2`/`v3` branches without a real persisted-data or wire-compatibility boundary.
+- Follow [ADR-0016](docs/decisions/ADR-0016-repository-retention.md): `HEAD` describes current Fibre; Git history is the archive. Remove superseded milestone logs rather than letting them accumulate.
+- Never treat a compelling LLM-generated proposal as accepted merely because it is well written.

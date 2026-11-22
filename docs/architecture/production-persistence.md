@@ -164,7 +164,7 @@ Representative proofs exist for:
 - World reconciliation retry state through semantic World state;
 - private Journal entry/profile authority in World state, with Markdown derived on read rather than stored as a mutable object.
 
-The **current adoption status, remaining provider debt, triggers and stop conditions** are intentionally isolated in [Infra-pure state and workstream](../state/infra-pure.md). Do not add live backlog/history here; this document owns the durable persistence rule.
+The **current adoption status, remaining provider debt, triggers and stop conditions** are intentionally isolated in Infra-pure state and workstream *(archived in Git at 690b3f0)*. Do not add live backlog/history here; this document owns the durable persistence rule.
 
 ## No-new-bypasses rule
 

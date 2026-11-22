@@ -505,7 +505,7 @@ For ordered streams or transactional authorities, a migration must have exactly 
 
 Presentation was the first substantial consumer, but InfraDriver is now used across Presentation, Asset Generator, World, Birth Center and selected control-plane work. The abstraction has therefore moved beyond its original proof stage.
 
-This document owns the **capability semantics and guarantee vocabulary**, not a migration backlog. Current adoption, remaining provider-specific seams and the trigger for addressing each one are tracked in [Infra-pure state and workstream](../state/infra-pure.md).
+This document owns the **capability semantics and guarantee vocabulary**, not a migration backlog. Current adoption, remaining provider-specific seams and the trigger for addressing each one are tracked in Infra-pure state and workstream *(archived in Git at 690b3f0)*.
 
 The standing adoption rule is:
 

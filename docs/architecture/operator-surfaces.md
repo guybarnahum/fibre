@@ -178,7 +178,7 @@ situations, selects an admitted moment and shows a linked Flight Plan
 purpose only where exact plan/situation evidence matches. The old
 Causal Trail presentation has been removed from Activity; Raw
 Activity remains for operations, retries and errors. Four slices are
-specified in [Life Observatory slices](../validation/life-observatory-slices.md).
+specified in Life Observatory slices *(archived in Git at 690b3f0)*.
 Slices 2–4 remain unimplemented. No new Thread/Genesis/World authority is created.
 Decision-time **Causal Witness** capture for Flight Plans and social
 choices is proposed as the smallest missing durable provenance,
@@ -211,7 +211,7 @@ The read-only World-events section derives enacted scene changes and admitted ob
 
 Simple in-page World events / Encounters / Journal / Memories links keep those surfaces discoverable. **Copy Thread Observatory** includes a bounded World scene/occurrence view, outward Encounter Story beats, World journal-entry records, the existing journal projection and current Memories; copying is an explicit operator choice. No new World read API, persistence, polling, inference, timeline authority or requirement to journal. A public decline/defer without an Encounter Story may remain absent from this historical projection; use request receipts/Activity to inspect it without pretending the visitor's speech became an accepted historical encounter.
 
-**2026-10-09 source checkpoint:** this additive projection is committed on `main`, awaiting Guy's focused/full CLI validation and staging-only Admin deployment. The latest public Viewer staging observation involved a refusal and disappearance of an ephemeral transcript, not a proven World-history deletion. See [current priorities](../state/current-priorities.md) and the [Meet / Encounter audit](../validation/meet-encounter-run-path-audit.md).
+**2026-10-09 source checkpoint:** this additive projection is committed on `main`, awaiting Guy's focused/full CLI validation and staging-only Admin deployment. The latest public Viewer staging observation involved a refusal and disappearance of an ephemeral transcript, not a proven World-history deletion. See [current priorities](../state/current-priorities.md) and the Meet / Encounter audit *(archived in Git at 690b3f0)*.
 
 ## Public status
 

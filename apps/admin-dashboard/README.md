@@ -281,7 +281,7 @@ recorded Life Timeline displays those facts and World Events can link
 an admitted Story to each person's separate view. Historical witnesses
 not previously captured remain unknown. The Admin and World Kernel
 require new deployment; this is not yet staging-accepted.
-See [four-slice plan](../../docs/validation/life-observatory-slices.md).
+See four-slice plan *(archived in Git at 690b3f0)*.
 This source is not yet a browser-accepted result.
 
 ## Operator evidence

@@ -326,7 +326,7 @@ from authority; no on-demand LLM-generated explanation of causality.
   cross-Service copy of private narratives into Activity Log.
 
 **Four implementation slices** are owned by
-[Life Observatory slices](../validation/life-observatory-slices.md):
+Life Observatory slices *(archived in Git at 690b3f0)*:
 
 1. **Navigation & Recent Life (source implementation, validation pending):**
    dedicated Life & Causes route, bounded current-only enacted timeline

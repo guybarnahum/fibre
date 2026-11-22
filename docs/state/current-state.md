@@ -33,7 +33,7 @@ The accepted [Constitution](../foundations/constitution.md), [Thirteen Principle
 | Persistent identity, appraisal, Genesis childhood and causal foundation (M1, #33–#40) | Standing (bounded) | Closed proofs; their outcomes are summarised in [Genesis compiler contract](../architecture/genesis-compiler-contract.md) and [Genesis childhood and birth](../architecture/thread-genesis-childhood-birth.md). Not a claim of mature personhood. |
 | Birth Center as the single birth authority; place/era population shaping parents ([ADR-0031](../decisions/ADR-0031-birth-center-single-birth-authority.md), [ADR-0032](../decisions/ADR-0032-place-population-parental-origins.md)) | Observed | Births in London, Manchester, Hilo and Aswan completed through World and Presentation (October 29–30). Later Admin and preflight corrections are source unless re-observed. |
 | Remote birth → World → canonical media → FIN/FID → public Presentation | Observed (bounded) | Minimum deployed, retry and recovery proof; a reconstructed empty environment is not verified ([cloud record](../architecture/cloud-e2e-closure-plan.md)). |
-| Physical inheritance, Human Appearance, reviewed calibration and affected-Thread migration | Observed | Tranche A closed October 5; global realism remains experimental ([Human Appearance](../architecture/human-appearance.md), [calibration plan](../validation/physical-appearance-calibration-plan.md)). |
+| Physical inheritance, Human Appearance, reviewed calibration and affected-Thread migration | Observed | Tranche A closed October 5; global realism remains experimental ([Human Appearance](../architecture/human-appearance.md), calibration plan *(archived in Git at 690b3f0)*). |
 | Inherited urges v2 (13 families) tuning the shared Body ([ADR-0030](../decisions/ADR-0030-inherited-urges.md)) | Deployed | `social_contact`, `exploration`, `presence` and (from S2) `social_energy` are enabled by policy. |
 | The social Body: library v4 adds `social_energy` and `trust`; late expression gives every Thread the loci of families it never expressed, from its own genome ([ADR-0036](../decisions/ADR-0036-social-body.md)) | Deployed | All 88 non-retired staging Threads expressed their missing loci on November 9. |
 | The social battery and familiarity in conversation and messages; `PAUSE:` and lulls; guard at 24 (ADR-0036 S2) | Observed | November 10: messages fell from 55 a day to one; contact decisions cite the felt body; conversations end on their own, often with a pause. Trust (S3) is still a species baseline. |
@@ -95,7 +95,7 @@ The accepted [Constitution](../foundations/constitution.md), [Thirteen Principle
 - [Attraction and orientation](../concepts/attraction-and-orientation.md) — inherited felt pull and lived self-understanding, held apart; adults only.
 - [Interests, felt expertise and livelihood](../concepts/interests-expertise-and-livelihood.md) — fascinations, feedback-weighted felt expertise, kindred minds as an emergent effect, showing and paid work, and a Thread's own judgement of its social life.
 - The time, place, confidence, care, romance and commitment relationship doors.
-- Mature society and economy, live-Thread reproduction, institutions, continued physical embodiment and human browser voice ([future capabilities](future-capability-map.md)).
+- Mature society and economy, live-Thread reproduction, institutions, continued physical embodiment and human browser voice (future capabilities *(archived in Git at 690b3f0)*).
 
 ## Known limits
 

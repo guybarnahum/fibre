@@ -446,6 +446,6 @@ This proposal deliberately preserves:
 - different species profiles with different exploration regulation;
 - individuals who legitimately prefer low novelty or solitude.
 
-See [Developmental exploration implementation slices](../validation/developmental-exploration-slices.md).
+See Developmental exploration implementation slices *(archived in Git at 690b3f0)*.
 
-The accepted X0 source inspection is [X0 developmental exploration causal-gap baseline](../validation/developmental-exploration-x0-baseline.md). X0 adds no runtime behavior; it identifies the exact missing edge from grounded exploration regulation/interoception into the existing `lived_planning` concern.
+The accepted X0 source inspection is X0 developmental exploration causal-gap baseline *(archived in Git at 690b3f0)*. X0 adds no runtime behavior; it identifies the exact missing edge from grounded exploration regulation/interoception into the existing `lived_planning` concern.

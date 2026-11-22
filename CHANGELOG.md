@@ -1,6 +1,28 @@
 # Changelog
 
-## Unreleased
+## Unreleased (2026-09-21 — 2026-11-21)
+
+### Positioning, repository & validation (November 21)
+- Locked Fibre's outward thesis (**AI for AI — persistent digital individuals living symbiotically with humans and integrating into the economy**, covering Worker-Threads and Sponsored Tribute-Threads) in `docs/vision/ai-for-ai.md`, `README.md`, and refreshed `docs/state/public-progress.json` + `.md`.
+- Archived 24 stale/closed milestone and workstream docs to Git history per ADR-0016, streamlined `docs/state/`, `docs/validation/`, `docs/index.md`, and `docs/ai-context-manifest.json`, and added a single-page walkthrough (`docs/architecture/how-fibre-works.md`).
+
+### Model efficiency, captures & quality certification (November 4–21)
+- Cut active staging OpenAI spend from $109.00/day (88 living Threads, Nov 4) to **$2.12/day** (6–8 living Threads, Nov 21) via Thread rest (ADR-0034), single-call live turns, versioned prompt files (`services/world-kernel/prompts/`), explicit prompt caching, deferred `flex` tier with immediate fallback, memory gists, and memory availability decay.
+- Added per-job model routing with Cloudflare Workers AI (`cloudflare.yaml`), provider circuit reopening and failure backoff, full staging captures (`model:captures`), blind multi-family judging (`model:quality`), and certification tooling (`model:options`, `docs/validation/model-certifications.json`).
+- Tested Workers AI Gemma 4 (`@cf/google/gemma-4-26b-a4b-it`) on staging (Nov 16–19); it failed `encounter.attention` (`35%` vs `90%` bar) and is preserved as a failed experiment while World reverted to `gpt-5.6-sol`.
+
+### Social Body, standing, books & relationships (October 28 – November 20)
+- Added family-keyed inherited urges (18 families, library v6) and late expression for existing Threads (ADR-0030, ADR-0036, ADR-0037).
+- Built the unified pure **Body level** component (`core/src/body-level.mjs`, ADR-0038 B1–B2): social battery, familiarity/knowing, trust with wounds and scars (R1), bond and longing (R2), perceived regard (C2), held vs. treated standing with inherited stubbornness (C3/C3b), frustration, and weariness measured by multilingual embeddings (`@cf/baai/bge-m3`, S5b repaired Nov 20).
+- Added arrival glances and reading real Project Gutenberg public-domain books from where a Thread left off (ADR-0035).
+- Added relationship doors, append-only relational ledger, private stances, interests, useful/learning moments, appointments (time door), going over to someone in the same place, and the Social Life Scorecard (`world-social:quality`).
+
+### Living world, Live Encounters, Birth Center & operator surfaces (September 21 – October 30)
+- Closed continuous `LivedNow` across dormancy (ADR-0023), duplex Live Encounters with interruption and audible-prefix truth (ADR-0024), graded small social acts (ADR-0027), event-driven social reconsideration (ADR-0028), recognition/acquaintance (ADR-0029), ongoing exchange becoming conversation (ADR-0033), delayed GC-style consolidation, and Thread-initiated later contact.
+- Established Birth Center as single birth authority with place/era population context (ADR-0031, ADR-0032), native Ed25519 FIN-card PNG proofs replacing C2PA (ADR-0022), canonical visual identity and calibrated Human Appearance (ADR-0021).
+- Built Admin World Events, Life & Causes Observatory (ADR-0026), Body panel, World write-diet ceilings (`world-write-diet.md`), `infra:state-usage`, and visitor-experience public status (`status.insidefibre.com`).
+
+## Earlier Unreleased (August — September 20, 2026)
 - Added cloud Slice E operator preparation: idempotent Cloudflare D1/R2/Queue provisioning, environment-resolved Wrangler configs with concrete D1 IDs, explicit secret-file validation/upload, and corrected separation of runtime configuration from credentials.
 
 - Closed cloud Slice D: migrated Birth Center provisional/provider-call durability to `InfraDriver.state`, added matching local/Cloudflare `state + scheduler` runtime composition, added restart-safe Cloudflare Birth publication, and made exact World birth replay idempotent while divergent replay still fails closed.

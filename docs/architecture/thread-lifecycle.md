@@ -126,7 +126,7 @@ Derived projections are different. Current Presentation/media may be reconciled 
 
 Operational archive/export is also distinct from lifecycle freeze. Freeze commits a runtime episode into the continuing life. Archive preserves a portable view of the already-existing person across Fibre persistence surfaces. Neither operation creates a second Thread authority.
 
-The current preservation/migration plan is recorded in [`../state/thread-preservation-and-migration.md`](../state/thread-preservation-and-migration.md).
+The current preservation/migration plan is recorded in thread-preservation-and-migration *(archived in Git at 690b3f0)*.
 
 ## Ordinary life — active architectural gap
 

@@ -19,7 +19,7 @@ It governs what Genesis cognition may know, what it may produce, what Fibre may 
 
 This contract is subordinate to the Fibre Constitution, [`interpretive-personhood.md`](../foundations/interpretive-personhood.md), [`rich-life.md`](../foundations/rich-life.md), [`thread-genesis-childhood-birth.md`](thread-genesis-childhood-birth.md), [`symbolic-thread-genome.md`](symbolic-thread-genome.md), ADR-0012 and ADR-0013.
 
-Current diagnostic doctrine lives in [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md). The completed #39 birth proof and subsequent prospective selectivity/scientific-hardening bridge retain separate outcomes in #39 (docs/history/milestones/pr39.md, in Git at `eba5b49`) and Genesis hardening (docs/history/genesis-selectivity-scientific-hardening.md, in Git at `eba5b49`). Neither is itself Whole-Person standing.
+Current diagnostic doctrine lives in generative-diagnostic-methodology *(archived in Git at 690b3f0)*. The completed #39 birth proof and subsequent prospective selectivity/scientific-hardening bridge retain separate outcomes in #39 (docs/history/milestones/pr39.md, in Git at `eba5b49`) and Genesis hardening (docs/history/genesis-selectivity-scientific-hardening.md, in Git at `eba5b49`). Neither is itself Whole-Person standing.
 
 Genesis creates durable life substrate. #40 owns canonical causal consumption of that substrate; #41 owns M2 standing.
 
@@ -386,7 +386,7 @@ Do not admission-gate cohort properties such as:
 
 Those are characterization surfaces. Their estimand, controls, confounds and sensitivity should be declared before reading provider output when they support a scientific claim.
 
-The enduring diagnostic discipline is [`../validation/generative-diagnostic-methodology.md`](../validation/generative-diagnostic-methodology.md).
+The enduring diagnostic discipline is generative-diagnostic-methodology *(archived in Git at 690b3f0)*.
 
 ## Prospective holdout integrity
 

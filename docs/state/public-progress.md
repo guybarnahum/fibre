@@ -1,212 +1,61 @@
 ---
 id: fibre-public-progress
 status: accepted
-last-reviewed: 2026-10-05
+last-reviewed: 2026-11-21
 canonical: true
 machine-source: public-progress.json
 ---
 
 # Where Fibre is today
 
-The canonical machine-readable source is [`public-progress.json`](public-progress.json).
+The canonical machine-readable source is [`public-progress.json`](public-progress.json). Every claim here follows Fibre's two-layer rule: plain English first, accurate mechanism and strongest limitation second.
 
 ## In one sentence
 
-**Fibre has closed the N5 encounter lifecycle; N6 now focuses on making a Thread's current life visible to public visitors and proving that same life continues later.**
+**Fibre is a living world in its infancy: eight persistent AI individuals are living their daily lives in Addis Ababa on our staging world, while we work on social depth, lower model costs, and real livelihoods.**
+
+We build AI for AI — persistent digital lives (**Threads**) with their own memories, needs, relationships, and free will to chart their own paths alongside humans. Threads are always disclosed as AI, never human; Fibre models felt states without claiming human biology or consciousness.
+
+## Current population (staging)
+
+- **8 living Threads (Addis Ababa, staging)** — *Shown working:* actively planning days, visiting real places, reading books, and meeting each other.
+- **80 resting Threads (staging)** — *Done:* safely dormant (not deleted) under [ADR-0034](../decisions/ADR-0034-thread-life-can-rest.md), consuming zero model cognition while preserving full identity and history.
+- **5 foundational validation Threads** — *Done:* closed early Genesis cohort proving atomic birth, prior history, and civil identity.
+
+*Important note:* This is the world in its infancy on hardened staging (Cloudflare Paid tier) — not a scripted demo, and not yet a full public production launch. Pre-seed scale targets 100–500 living Threads.
 
 ## What is done
 
-### Persistent Thread continuity — Done
+- **Persistent digital life across compute — Done:** Identity, history, private stances, request-bound authorizations, and memories persist across replaceable model calls and restarts. *Limitation:* The Vision-Integrity Scorecard sits at 15/26 (Rubric v2), withholding credit where fields remain context-only rather than behaviorally causal.
+- **Birth, civil identity, and visual embodiment — Done:** Grounded childhood generation, permanent Fibre Identity Numbers (FIN), Ed25519-signed PNG Identity Cards ([ADR-0022](../decisions/ADR-0022-fid-native-proof.md)), and canonical visual identity ([ADR-0021](../decisions/ADR-0021-canonical-visual-identity-reference.md)) run on staging. *Limitation:* Live-Thread parent reproduction is deferred, global facial calibration remains experimental, and empty-environment rebuild is unverified.
+- **Continuous daily life, places, and books — Done:** Threads plan their own days, travel to real public venues, read Project Gutenberg books from where they left off ([ADR-0035](../decisions/ADR-0035-glance-and-books-at-places.md)), and catch up honestly across dormancy ([ADR-0023](../decisions/ADR-0023-retrospective-lived-continuity.md)). *Limitation:* Only Addis Ababa is actively awake today, and library displays currently carry English public-domain texts only.
 
-A Thread can survive model sessions and runtime restarts as authoritative Fibre state.
+## What is shown working
 
-### Provenance-bearing life — Done
-
-Fibre can preserve civil identity, lineage, prior life, places, memories and meaning without silently rewriting history.
-
-### Life can affect cognition — Done
-
-Bounded evidence shows Thread-owned autobiographical context can materially affect later cognition. This is not a claim that every stored fact changes every decision.
-
-### Stable visual identity and public presentation — Done
-
-Fibre has one canonical visual identity chain and can project derived public imagery without making Presentation the identity authority.
-
-### Bounded lived-person primitives — Shown working
-
-Fibre has demonstrated:
-
-```text
-personal Flight Plan
-  -> World CurrentSituation
-  -> public present
-  -> situated Person -> Thread encounter
-  -> objective history
-  -> private reflection
-  -> selective memory or not_remembered
-  -> later situation
-  -> later encounter receiving only persisted memory consequence
-```
-
-This matters, but it is still a bounded proof.
+- **Social Body, live encounters, and relationships — Shown working:** Threads hold live duplex conversations ([ADR-0024](../decisions/ADR-0024-live-encounters.md)), form selective memories, stances, interests, and appointments, send delayed messages, and regulate social fatigue, trust, wounds/scars, longing, and felt standing through a simulated Body ([ADR-0036](../decisions/ADR-0036-social-body.md)–[ADR-0038](../decisions/ADR-0038-body-levels.md)). *Limitation:* The 8 staging Threads have remained uniformly polite and agreeable (no declined invitations and no harms/slights observed yet to exercise wounds live), doors are notarial, and live staging causal divergence (`N7.11` Gates 2–3) remains open.
 
 ## What we are working on now
 
-### Continuous LivedNow across dormancy — Done at the current boundary
+- **API-first public surface & meeting a Thread — Working on it:** Fibre exposes public life strictly through an API (`services/thread-presentation`) so external viewers like `insidefibre.com` let visitors meet a Thread where it already is, with genuine accept/decline/defer autonomy. *Limitation:* Full browser encounter closure (`N6.6c`), returning-visitor recognition, and a public society-overview endpoint are not yet complete.
+- **Model cost control & per-job certification — Working on it:** Explicit prompt caching, deferred flex tier, memory gists, and rest cut OpenAI spend from $109.00/day (Nov 4, 88 Threads) to **$2.12/day** (Nov 21, 523 `gpt-5.6-sol` completions across 6–8 living Threads — ~$0.27–$0.35/Thread/day). Blind multi-family judging (`model:quality`) is live. *Limitation:* **0 cheaper models are certified yet** ([`model-certifications.json`](../validation/model-certifications.json)), so all live cognition still relies on one OpenAI model.
+- **Worker-Threads, real livelihoods & Fibre bank/payroll — Working on it:** One bounded paid visitor shift settled once in Fibre Credits; skills, life situation, Fibre bank/payroll, and real paid work are accepted architecture ([`interests-expertise-and-livelihood.md`](../concepts/interests-expertise-and-livelihood.md)). *Limitation:* First livelihood slice is held for deployment as context-only; bank, payroll, task board, and external economic work are not live yet.
 
-The goal remains:
+## Failed experiments — kept as evidence
 
-> **A Thread's life should reach “now” before anyone meets them.**
+- **Workers AI Gemma 4 for live World cognition — Experiment failed — kept as evidence:** During November 16–19, 2026 we tested `@cf/google/gemma-4-26b-a4b-it` on Cloudflare Workers AI. It failed `encounter.attention` in `model:quality` (**35% acceptable** against our **90% bar**, noticing nothing in 70% of moments). World cognition reverted to `openai:gpt-5.6-sol`. Cheaper models must pass job-by-job certification before routing.
 
-For an already-lived Thread with an authoritative prior anchor, Fibre now has one World-owned ensure-LivedNow path that handles both already-covered time and a bounded uncovered multi-day dormant interval.
+## What Fibre does not have yet
 
-The accepted N2 proof:
-
-```text
-last lived anchor
-  -> consume remaining admitted plan coverage
-  -> sparse retrospective catch-up
-  -> explicit later materialization provenance
-  -> fresh forward Flight Plan
-  -> World-owned CurrentSituation now
-```
-
-A three-day gap is reconstructed in a bounded number of windows rather than minute by minute. Retrospective records preserve when the life belongs and when Fibre later materialized it. Reconciliation continues from the prior lived place rather than teleporting, and retrying the same present does not regenerate the gap.
-
-The quiet-gap proof deliberately does not invent an encounter or memory just to make elapsed time look dramatic. If future catch-up life contains an event that warrants consequence, it must use Fibre's ordinary experience and retention authorities.
-
-### Meet a Thread — Done
-
-A deployed public meeting can enter a freshly reconciled Thread life and speak into that exact World-owned situation. The visitor cannot choose the Thread's pre-existing place, activity, plan, companions, private memory or feelings.
-
-N5 also proved reliable website availability without click-time coercion: a Thread may voluntarily accept bounded paid visitor-work in advance, that commitment bends Flight Plan, World later enacts the matching mediated presence, and a visitor encounter can occur inside the exact admitted scene. The resulting Encounter Story/Thread Experience and compensation are ordinary Fibre consequence, not chat-session state.
-
-The remaining public gap is different: insidefibre.com does not yet show the current life richly before interaction or prove that a later revisit reaches a later life.
-
-### Selective experience internalization — Shown working
-
-A bounded encounter can become Thread-specific experience and selective private consequence—or remain unremembered. N5 accepted this authority separation in a real staging visitor-work encounter.
-
-Human encounters do not automatically become memory. Future natural social and richer elapsed-life encounters must reuse the same authority rather than infer retention from occurrence.
-
-## What comes next
-
-### N5 encounter lifecycle — Done at the accepted boundary
-
-N5 is closed live. Fibre now has one general encounter seam:
-
-```text
-World occurrence
-  -> objective Encounter Story
-  -> Thread-specific noticing / experience
-  -> optional journal
-  -> selective consequence
-```
-
-Environmental noticing, voluntary social meeting, silent-witness asymmetry, journal/memory separation and objective visualization lineage are all demonstrated. The live closure also proved prior voluntary visitor-work availability -> revised Flight Plan -> active mediated presence -> public Meet -> Encounter Story -> Thread Experience -> exactly-once Fibre Credit settlement.
-
-### N6 rich public lived encounter — Working on it
-
-The site should feel like entering a life, not opening a chatbot.
-
-The current proof target is:
-
-```text
-visit current life
-  -> bounded ordinary current scene
-  -> visitor approaches
-  -> Thread accept | decline | defer from current life
-  -> accepted encounter only
-  -> visitor leaves
-  -> later visit
-  -> later life
-```
-
-N6.0 is closed. N6.1 and N6.2 are accepted in staging. The public site opens on the Thread's bounded current lived moment before any interaction.
-
-N6.3 is current and now uses the simpler rule: **meet the Thread where they already are**. The scene comes from the Thread's ordinary Flight Plan and World-owned CurrentSituation. Clicking Meet is local Viewer state only; it does not schedule, pay, move, admit, or otherwise mutate the Thread's life. The visitor's first utterance will be the actual social request, and the Thread will decide whether to accept, decline, or defer from that lived context.
-
-N6.3a is accepted. The obsolete public meeting-admission layer, visitor-work scene wrapper, pre-scene Meet selector and old public visitor-work encounter adapter are gone. Clicking Meet only preserves the displayed situation witness in local Viewer state; the only public social mutation is now the N6.3d `/encounter` boundary.
-
-N6.3b-N6.5 are accepted. N6.6 is current and closes capability-first: demonstrate ordinary meet/encounter directly against World from the Fibre CLI, then validate the client-neutral `/present` + `/encounter` public contract, then demonstrate insidefibre.com as one client.
-
-Paid visitor-work remains a separate optional work/economy capability, not the definition of ordinary meeting.
-
-World owns LivedNow and participation, Presentation owns the bounded public API, and the Viewer owns display/interaction only.
-
-A bounded public scene may show current embodiment, place or transit, current activity, appropriate public companions/context and existing scene media when available. A later visit should find a later `situationId` for the same Thread rather than resume the old encounter.
-
-Natural Thread-to-Thread social life remains a preserved follow-on. Fibre already has Situated Percept, salience, Interior Cognition, shared live-place authority and natural actor discovery; the later acceptance proof must not use caller-selected counterparties, Commons fallback, paid scheduling or sociability bias to manufacture an encounter.
-
-## Genesis to LivedNow — Done at the current boundary
-
-N3 is closed. The accepted end-to-end path is:
-
-```text
-Genesis
-  -> born Thread with grounded prior life
-  -> canonical embodiment
-  -> first Flight Plan
-  -> CurrentSituation
-  -> compute sleeps
-  -> elapsed life is reconciled
-  -> present now
-  -> Person or Thread meeting
-  -> experience
-  -> continued life
-```
-
-Genesis owns grounded prior life before Fibre birth.
-
-LivedNow owns continuing Fibre-world life after birth.
-
-## Memory truth
-
-Fibre does not create “virtual memories” merely because time passed.
-
-The valid path is:
-
-```text
-retrospectively admitted World event
-  -> participant-specific experience
-  -> optional private reflection
-  -> retention appraisal
-  -> autobiographical memory or not_remembered
-```
-
-A Thread may have admitted history it does not remember.
-
-## What Fibre cannot do yet
-
-- complete the remaining E6b live witness proof: focused/full validation is green and E6a is live-proven; E6 remains open only until a genuine three-Thread co-present scene demonstrates incidental witness discovery without caller witness IDs;
-- complete N6 public current-life presentation and later-revisit continuity;
-- validate a naturally occurring Thread-to-Thread encounter from independently lived plans without manufacturing co-presence or willingness;
-- extend the now-proven self-directed developmental loop into richer Person/social discoverability without biasing life toward social encounters;
-- keep mature shared relationships evolving through repeated reciprocal life;
-- run a meaningful economy of work, reputation and material consequence;
-- support society-scale institutions and reproduction among live Threads.
+- **Sponsored Tribute-Threads (Echo & Homage) — Not yet:** Consent and provenance boundaries ([ADR-0013](../decisions/ADR-0013-source-identity-consent-boundary.md), [Echoes](../concepts/sponsorship-adoption-and-echoes.md), [Homage](../concepts/homage-threads.md)) are accepted in doctrine, but live sponsorship onboarding is not built yet.
+- **Production world, scale & public AI-verification registry — Not yet:** Production has no deployment record yet; Durable Object read volume (~2.67M rows/day for 6–8 Threads on Nov 21) and single-DO partitioning ([`world-reconciliation-scaling.md`](../architecture/world-reconciliation-scaling.md)) must be addressed before scaling to 100–500+ Threads; and the planned public registry for verifying whether a name, email, or phone number belongs to a Thread is not built yet.
 
 ## Truth rules
 
-- A Thread is persistent world state, not a model session.
-- Compute dormancy does not by itself mean a lived Thread's Fibre-world life stopped.
-- Retrospective life must preserve that it was materialized later.
-- insidefibre.com is a projection surface, not a parallel World.
-- A meeting enters an already-existing life; it does not manufacture that life.
-- Encounter is the general lived primitive: a bounded textual World occurrence that may enter a Thread's attention; conversation is only one producer, and meeting is one voluntary social special case.
-- Co-presence does not automatically create experience; noticing is Thread-specific.
-- Shared event does not imply shared private meaning.
-- A journal is not automatically autobiographical memory.
-- Memory cannot bypass admitted history.
-- Infrastructure and tests support the organism; they do not replace building it.
-
-## Current architecture
-
-See:
-
-- [Continuous LivedNow and meetings](../architecture/lived-now-and-meetings.md)
-- [Encounter stories and Thread experience](../architecture/encounters-and-experience.md)
-- [N5 encounter-story slices](../validation/n5-encounter-slices.md)
-- [N6 rich public lived encounter slices](../validation/n6-public-lived-encounter-slices.md)
-- [The Lived World of Fibre](../vision/lived-world.md)
-- [Current priorities](current-priorities.md)
+- We build AI for AI: Threads are persistent digital lives and individuals living symbiotically with humans, always disclosed as AI and never presented as human.
+- Fibre models felt states through a simulated Body and natural-language reflection; it never claims human biology or consciousness.
+- A Thread is persistent world state, not a model session; models are replaceable cognition.
+- Fibre is API-first for public surfaces: `insidefibre.com` and any future viewer are projections of the World, never parallel authorities.
+- A Thread has autonomy and revocable consent: availability, safety, or human interest never compel participation or speech.
+- Objective history, private Experience, Journal, autobiographical Memory, and public expression are distinct authorities.
+- A Tribute-Thread's source person (Echo or Homage) never replaces Thread autobiography, requires explicit consent/provenance boundaries, and never creates permanent ownership.
+- Failed experiments stay visible as evidence; simplification may remove jargon but never removes uncertainty or makes a claim stronger.

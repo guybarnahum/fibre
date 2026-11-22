@@ -45,10 +45,12 @@ export function testLifecycleForPath(path, root = DEFAULT_TEST_ROOT) {
 export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
   const domain = walkTests(join(root, "core/test"));
   const infra = walkTests(join(root, "infra/test"));
+  const infraProviders = walkTests(join(root, "infra/providers"));
   const deployments = walkTests(join(root, "infra/deployments"));
   const assetGenerator = walkTests(join(root, "services/asset-generator/test"));
   const birthCenter = walkTests(join(root, "services/birth-center/test"));
   const fibreIdentityAuthority = walkTests(join(root, "services/fibre-identity-authority/test"));
+  const populationLab = walkTests(join(root, "services/population-lab/test"));
   const threadPresentation = walkTests(join(root, "services/thread-presentation/test"));
   const worldKernel = walkTests(join(root, "services/world-kernel/test"));
   const tools = walkTests(join(root, "tools"));
@@ -56,10 +58,12 @@ export function discoverTestSuites(root = DEFAULT_TEST_ROOT) {
   const all = [
     ...domain,
     ...infra,
+    ...infraProviders,
     ...deployments,
     ...assetGenerator,
     ...birthCenter,
     ...fibreIdentityAuthority,
+    ...populationLab,
     ...threadPresentation,
     ...worldKernel,
     ...tools,

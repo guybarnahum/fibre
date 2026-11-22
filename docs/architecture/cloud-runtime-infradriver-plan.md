@@ -13,7 +13,7 @@ Use:
 
 - [Production persistence](production-persistence.md) for the durable provider-neutral persistence rule;
 - [InfraDriver](infrastructure-driver.md) for capability contracts and guarantees;
-- [Infra-pure state and workstream](../state/infra-pure.md) for **current adoption, remaining debt, triggers and next actions**;
+- Infra-pure state and workstream *(archived in Git at 690b3f0)* for **current adoption, remaining debt, triggers and next actions**;
 - [Cloud E2E closure](cloud-e2e-closure-plan.md) for retained cloud acceptance evidence;
 - [`infra/README.md`](../../infra/README.md) for the current repository/deployment boundary.
 

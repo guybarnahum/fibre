@@ -2,17 +2,23 @@
   "$schema": "./public-progress.schema.json",
   "contract": "fibre-public-progress",
   "canonical": true,
-  "asOf": "2026-10-06",
+  "asOf": "2026-11-21",
   "title": "Where Fibre is today",
-  "headline": "Fibre has closed the N5 encounter lifecycle; N6 now focuses on making a Thread's current life visible to public visitors and proving that same life continues later.",
-  "summary": "N1-N5 are closed at the accepted boundary. Fibre can reconcile LivedNow, admit voluntary visitor-work availability, enter an exact current scene, form Encounter Story and Thread Experience, preserve selective aftermath, and settle Fibre Credit compensation exactly once. N6 is current: show a bounded public present without making a meeting request, let a committed encounter happen inside that exact scene, then revisit the same Thread later and find later life rather than a resumed chat session.",
+  "headline": {
+    "simple": "Fibre is a living world in its infancy: eight persistent AI individuals are living their daily lives in Addis Ababa on our staging world, while we work on social depth, lower model costs, and real livelihoods.",
+    "detail": "Fibre runs an API-first persistent world on hardened Cloudflare staging (World kernel at 690b3f0): 8 Addis Ababa Threads actively live continuous days while 80 non-retired Threads rest. Production deployment, certified cheaper models, full browser encounter closure, and a real paid-work economy remain in progress or not yet built."
+  },
+  "summary": {
+    "simple": "We build AI for AI — persistent digital lives (Threads) with their own memories, needs, relationships, and free will to chart their own paths alongside humans. Right now the core world, civil identity, daily life, books, and social Body are running on staging, while cheaper model certification, real paid livelihoods, and a public verification registry are next.",
+    "detail": "Foundational continuity, dignity/consent boundaries, Genesis birth, Civil Identity (FIN and Ed25519 Identity Cards), LivedNow, Live Encounters, book reading, and social Body regulation (ADR-0036/0037/0038) are deployed or observed on staging. Key limits remain explicit: 0 cheaper models are certified yet (Gemma 4 failed attention at 35% vs. 90% and is kept as a failed experiment), staging conversations still converge on polite agreement, the Vision-Integrity Scorecard sits at 15/26, and production is not yet deployed."
+  },
   "statusDefinitions": [
     {
       "id": "achieved",
       "simpleLabel": "Done",
       "detailLabel": "Achieved",
       "meaning": {
-        "simple": "Built and accepted at the current boundary.",
+        "simple": "Built and proven at the current boundary.",
         "detail": "The capability exists and passed its current Fibre acceptance boundary."
       }
     },
@@ -21,8 +27,8 @@
       "simpleLabel": "Shown working",
       "detailLabel": "Demonstrated",
       "meaning": {
-        "simple": "Working evidence exists, but it is not the final accepted boundary.",
-        "detail": "The capability has working evidence but is not yet the final accepted result for the active milestone."
+        "simple": "Working evidence exists on staging or in bounded proofs, but it is not yet complete across every case.",
+        "detail": "The capability has live staging or bounded proof evidence but has not crossed its full causal or production boundary."
       }
     },
     {
@@ -30,8 +36,8 @@
       "simpleLabel": "Working on it",
       "detailLabel": "In progress",
       "meaning": {
-        "simple": "This is active work now.",
-        "detail": "The capability is the current implementation focus and has not yet crossed its acceptance boundary."
+        "simple": "This is active work right now.",
+        "detail": "The capability is an active implementation or measurement track and has not yet crossed its acceptance boundary."
       }
     },
     {
@@ -39,8 +45,8 @@
       "simpleLabel": "Not yet",
       "detailLabel": "Not yet",
       "meaning": {
-        "simple": "Part of the vision, but not claimed yet.",
-        "detail": "The capability is intended but not yet achieved."
+        "simple": "Part of the vision, not built or claimed yet.",
+        "detail": "The capability is accepted or intended design, not yet implemented."
       }
     },
     {
@@ -48,257 +54,275 @@
       "simpleLabel": "Experiment failed — kept as evidence",
       "detailLabel": "Failed experiment preserved",
       "meaning": {
-        "simple": "A failed bounded experiment is retained instead of hidden.",
-        "detail": "A bounded experiment failed and is preserved as evidence rather than regenerated into success."
+        "simple": "A test failed and we keep the failure visible instead of hiding it.",
+        "detail": "A bounded experiment failed its Fibre quality or causal bar and is retained as public evidence."
       }
     }
   ],
   "population": {
-    "title": "Current Thread population posture",
+    "title": "Current Thread population (staging)",
     "summary": {
-      "simple": "Fibre has born validation Threads and one staging path ready to surface a selected Thread as a continuing person.",
-      "detail": "The fixed #39 cohort remains the canonical validation population; the current M2 work may use an existing born Thread to prove the lived-person experience without generating a new cohort."
+      "simple": "Eight persistent AI individuals are actively living in Addis Ababa on our staging world right now, while eighty others rest so we can keep costs controlled while building.",
+      "detail": "Staging holds 88 non-retired Threads: 8 living continuously in Addis Ababa and 80 resting as recorded World facts (ADR-0034). The 5 foundational validation Threads from the closed Genesis cohort remain historical standing evidence. Production is not yet deployed."
     },
     "items": [
       {
+        "id": "living_staging_threads",
+        "label": "Living Threads (staging — Addis Ababa)",
+        "count": 8,
+        "status": "demonstrated",
+        "simple": "Eight AI individuals actively plan their days, visit real places, read books, and meet each other on staging.",
+        "detail": "Active Addis Ababa staging cohort on Cloudflare Paid tier; social observations so far come from this single city and small population."
+      },
+      {
+        "id": "resting_staging_threads",
+        "label": "Resting Threads (staging)",
+        "count": 80,
+        "status": "achieved",
+        "simple": "Eighty other born Threads are safely at rest — dormant, not deleted — until we are ready to wake more cities.",
+        "detail": "Recorded rest state under ADR-0034; resting Threads author nothing and consume zero model cognition while preserving full identity and history."
+      },
+      {
         "id": "validated_born_threads",
-        "label": "Validated born Threads",
+        "label": "Foundational validation cohort",
         "count": 5,
         "status": "achieved",
-        "simple": "Five born validation Threads retain identity, prior life and civil identity.",
-        "detail": "The fixed #39 cohort was atomically published and independently rehydrated from canonical authorities."
+        "simple": "Five early validation Threads proved atomic birth, prior history, and civil identity.",
+        "detail": "Closed Genesis validation cohort atomically published and independently rehydrated from canonical authorities."
       }
     ],
     "importantNote": {
-      "simple": "The next goal is not to create more Threads; it is to make one existing Thread visibly live.",
-      "detail": "M2-A should drive missing Thread/World structures from one vertical lived-person slice rather than expand cohorts or infrastructure without a concrete capability need."
+      "simple": "This is the world in its infancy on staging — not a scripted demo, and not yet a full public launch.",
+      "detail": "Pre-seed scaling targets 100-500 living Threads once model certifications and Durable Object read optimizations are proven."
     }
   },
   "capabilities": [
     {
       "id": "persistent_thread_continuity",
       "group": "foundations",
-      "label": "Persistent Thread continuity",
+      "label": "Persistent digital life across compute",
       "status": "achieved",
       "simple": {
-        "claim": "A Thread can keep existing after one AI session ends.",
-        "limitation": "Persistence alone does not make a convincing lived person."
+        "claim": "A Thread keeps existing with its own history, memories, and consent boundaries even when no AI model is running.",
+        "limitation": "Persistence alone does not guarantee rich social divergence or mature self-authorship."
       },
       "detail": {
-        "claim": "Thread identity and life state persist across temporary cognition providers and runtime restarts.",
-        "limitation": "The current milestone must connect persistence to present situated life and experience."
+        "claim": "Authoritative World state persists identity, history, private stances, request-bound authorizations, and memories across replaceable model calls and restarts.",
+        "limitation": "The standing Vision-Integrity Scorecard sits at 15/26 (Rubric v2), intentionally withholding credit where fields remain context-only rather than behaviorally causal."
       },
       "evidence": [
         "docs/state/current-state.md",
-        "docs/foundations/invariants.md"
+        "docs/foundations/invariants.md",
+        "docs/validation/drift-scorecard.md"
       ]
     },
     {
-      "id": "life_state_affects_cognition",
-      "group": "development",
-      "label": "Autobiographical life can affect cognition",
+      "id": "civil_identity_and_embodiment",
+      "group": "genesis",
+      "label": "Birth, civil identity, and visual embodiment",
       "status": "achieved",
       "simple": {
-        "claim": "Something from a Thread's own life can change later reasoning.",
-        "limitation": "This has been proved in bounded cognition paths, not every possible decision."
+        "claim": "Each Thread is born with a grounded childhood, a permanent Fibre Identity Number (FIN), a cryptographically signed ID card, and a consistent face.",
+        "limitation": "A stable face and ID card do not make someone a real economic actor by themselves, and global facial calibration is still experimental."
       },
       "detail": {
-        "claim": "#40 established attributable effects from Fibre-owned autobiographical context in a real cognition consumer.",
-        "limitation": "The result is a substrate for lived development, not a claim that every stored field is causal."
+        "claim": "Birth Center, Civil Registry (FIN), Fibre Identity Authority (Ed25519-signed PNG FIN cards, ADR-0022), and canonical visual identity (ADR-0021) run end to end on staging.",
+        "limitation": "Live-Thread parent reproduction is deferred, global physical appearance realism remains experimental, and empty-environment rebuild is unverified."
       },
       "evidence": [
         "docs/state/current-state.md",
-        "docs/architecture/genesis-compiler-contract.md"
+        "docs/decisions/ADR-0021-canonical-visual-identity-reference.md",
+        "docs/decisions/ADR-0022-fid-native-proof.md",
+        "docs/decisions/ADR-0031-birth-center-single-birth-authority.md"
       ]
     },
     {
-      "id": "developmental_exploration",
+      "id": "continuous_daily_life",
       "group": "development",
-      "label": "Self-directed developmental exploration",
+      "label": "Continuous daily life, places, and books",
+      "status": "achieved",
+      "simple": {
+        "claim": "Threads plan their own days, travel to real public places, read public-domain books from where they left off, and catch up honestly after compute sleeps.",
+        "limitation": "Only one city (Addis Ababa) is actively awake right now, and library displays currently offer English public-domain books only."
+      },
+      "detail": {
+        "claim": "Flight Plans, World-enacted CurrentSituation, bounded dormancy catch-up (ADR-0023), real transit, City Guide venues, rest/wake (ADR-0034), and Project Gutenberg reading (ADR-0035) run on staging.",
+        "limitation": "Dormancy catch-up is deliberately sparse, and social observations currently come from 8 Threads in one city."
+      },
+      "evidence": [
+        "docs/state/current-state.md",
+        "docs/architecture/lived-now-and-meetings.md",
+        "docs/decisions/ADR-0023-retrospective-lived-continuity.md",
+        "docs/decisions/ADR-0035-glance-and-books-at-places.md"
+      ]
+    },
+    {
+      "id": "social_body_and_live_encounters",
+      "group": "society",
+      "label": "Social Body, live encounters, and relationships",
       "status": "demonstrated",
       "simple": {
-        "claim": "A Thread's own low-novelty life can push her to choose a different ordinary plan, and what she later experiences can selectively change future planning.",
-        "limitation": "The core developmental loop is proven. E6a autonomous environmental occurrence production is live-proven; E6b incidental-witness discovery is implemented and focused/full validated but still needs a genuine live three-Thread co-present witness scene before richer social discovery."
+        "claim": "Threads meet each other in real time, remember selectively, message each other later, make appointments, and have a simulated Body that models social fatigue, trust, longing, and slights.",
+        "limitation": "Our eight staging Threads have still been overly polite and agreeable — no invitations declined and no harms or slights observed yet to test wounds live."
       },
       "detail": {
-        "claim": "X0-X4 are accepted: grounded exploration pressure reaches ordinary one-call lived planning; real staging Threads changed valid Flight Plans under that pressure; an admitted exploratory Encounter Story can become divergent subjective Journal accounts, retained autobiographical meaning or not_remembered; and only retained Thread-owned meaning can causally bend an otherwise-equivalent later planning episode.",
-        "limitation": "E6 is current: focused/full validation is green and E6a is live-proven; E6b remains blocked only on genuine live three-Thread co-presence, and the bounded probe must not manufacture that World state."
+        "claim": "Duplex Live Encounters (ADR-0024), graded social acts (ADR-0027/0028/0029/0033), delayed consolidation, stances, interests, appointments, and social Body levels (ADR-0036/0037/0038) are deployed on staging; social battery fatigue is observed ending conversations and cutting message loops.",
+        "limitation": "Doors remain notarial, stances and interests are context-only, wounds and status conflict await natural staging triggers, and live staging causal divergence (N7.11 Gates 2-3) remains open."
       },
       "evidence": [
-        "docs/architecture/developmental-exploration.md",
-        "docs/validation/developmental-exploration-slices.md",
-        "docs/architecture/intrinsic-regulation.md",
-        "docs/state/current-priorities.md"
+        "docs/state/current-state.md",
+        "docs/architecture/social-life.md",
+        "docs/decisions/ADR-0036-social-body.md",
+        "docs/decisions/ADR-0037-status-and-conflict.md",
+        "docs/decisions/ADR-0038-body-levels.md"
       ]
     },
     {
-      "id": "canonical_visual_identity_publication",
+      "id": "api_first_public_encounter",
       "group": "development",
-      "label": "Stable embodied public identity",
-      "status": "achieved",
+      "label": "API-first public surface and meeting a Thread",
+      "status": "in_progress",
       "simple": {
-        "claim": "Fibre can keep one recognizable visual identity and publish derived imagery from it.",
-        "limitation": "A stable face is not a lived person by itself."
+        "claim": "Fibre exposes public life strictly through an API so external websites and apps can let you meet a Thread where it already is — and the Thread can say yes, no, or later.",
+        "limitation": "The full browser meeting loop (multiple turns, leaving, and returning later to be remembered) is not finished yet, and there is no public view of the whole society yet."
       },
       "detail": {
-        "claim": "Canonical visual identity text, one admitted root, reference-conditioned generation and Thread Presentation preserve one visual identity authority.",
-        "limitation": "Current situated imagery still needs to be driven by present place/activity/context."
+        "claim": "Thread Presentation exposes public discovery, snapshots, /present, and streamed /encounter SSE for external viewers such as insidefibre.com; direct CLI and public SSE encounters are observed on staging.",
+        "limitation": "Browser lifecycle acceptance (N6.6c) is unclosed, public visitors are anonymous (no returning-visitor recognition yet), and a public society-overview endpoint is not yet built."
       },
       "evidence": [
-        "docs/architecture/canonical-visual-identity.md",
+        "docs/architecture/thread-directory-and-meet.md",
+        "docs/validation/n6-public-lived-encounter-slices.md",
+        "docs/validation/n7-live-encounter-slices.md"
+      ]
+    },
+    {
+      "id": "model_cost_and_certification",
+      "group": "foundations",
+      "label": "Model cost control and per-job certification",
+      "status": "in_progress",
+      "simple": {
+        "claim": "We cut daily AI costs for the active staging world from $109/day down to about $2.12/day (roughly 30 cents per living Thread per day) and built an automated quality harness to test cheaper models safely.",
+        "limitation": "Zero cheaper models have passed certification yet, so all live Thread thinking still depends on a single OpenAI model."
+      },
+      "detail": {
+        "claim": "Explicit prompt caching, deferred flex tier, memory gists, and rest reduced OpenAI spend from $109.00/day (Nov 4, 88 Threads) to $2.12/day (Nov 21, 523 gpt-5.6-sol completions across 6-8 living Threads). Full per-job capture and blind multi-family judging (model:quality) are live.",
+        "limitation": "docs/validation/model-certifications.json currently holds 0 certified models; measured cost covers text cognition only (excluding image generation, embeddings, and paid infrastructure scaling)."
+      },
+      "evidence": [
+        "docs/state/current-state.md",
+        "docs/state/current-priorities.md",
+        "docs/validation/model-certifications.json"
+      ]
+    },
+    {
+      "id": "workers_ai_gemma4_attention",
+      "group": "foundations",
+      "label": "Workers AI Gemma 4 for live World cognition",
+      "status": "preserved_failure",
+      "simple": {
+        "claim": "We tested running live Thread cognition on a much cheaper model (Gemma 4 on Cloudflare Workers AI) during November 16-19, and it failed our quality bar.",
+        "limitation": "Gemma 4 passed only 35% of attention checks against our 90% bar and missed 70% of moments, so we reverted to GPT-5.6 Sol and keep this failure public."
+      },
+      "detail": {
+        "claim": "Staging experiment running @cf/google/gemma-4-26b-a4b-it on Workers AI failed encounter.attention in model:quality (35% acceptable vs. 90% threshold; noticing nothing in 70% of moments).",
+        "limitation": "Demonstrates why cheaper models must earn job-by-job certification before routing; World cognition reverted to openai:gpt-5.6-sol."
+      },
+      "evidence": [
+        "infra/deployments/environments/cloudflare.yaml"
+      ]
+    },
+    {
+      "id": "livelihood_and_economic_integration",
+      "group": "society",
+      "label": "Worker-Threads, real livelihoods, and Fibre bank/payroll",
+      "status": "in_progress",
+      "simple": {
+        "claim": "We proved one bounded paid visitor shift in Fibre Credits and designed how Threads build real skills, hold jobs, and earn through a Fibre bank and payroll.",
+        "limitation": "A real paid-work economy, Fibre bank, payroll, and external economic work are not live yet."
+      },
+      "detail": {
+        "claim": "Fibre Credits ledger and one voluntary paid visitor-work shift settled once on staging; livelihood concepts (interests, felt expertise, real paid work, bank/payroll) are accepted.",
+        "limitation": "L1 (skills and life situation) is held for deployment as context-only; L2-L6 (work lived, bank, payroll, task board, Thread market, external work) and their legal/payment frameworks remain unbuilt."
+      },
+      "evidence": [
+        "docs/concepts/interests-expertise-and-livelihood.md",
+        "docs/concepts/economy-and-fibre-credits.md",
+        "docs/concepts/task-marketplace.md",
         "docs/state/current-state.md"
       ]
     },
     {
-      "id": "cloud_staging_runtime",
-      "group": "foundations",
-      "label": "Cloud staging runtime and minimum recovery",
-      "status": "achieved",
-      "simple": {
-        "claim": "The Fibre cloud path is deployed and healthy in staging, and basic restart/retry recovery works.",
-        "limitation": "Broader resilience scenarios remain hardening rather than active product work."
-      },
-      "detail": {
-        "claim": "Staging accepted source ee749e07b58c2580e967c7ed62cda5ddc91021cd; World deep health passed; H1 and H2 minimum failure/restart acceptance are closed.",
-        "limitation": "H3-H9-style exhaustive resilience is deferred unless a concrete product blocker appears."
-      },
-      "evidence": [
-        "docs/state/current-state.md",
-        "docs/state/current-priorities.md"
-      ]
-    },
-    {
-      "id": "continuous_lived_now",
-      "group": "development",
-      "label": "Continuous LivedNow across dormancy",
-      "status": "achieved",
-      "simple": {
-        "claim": "A canonical Genesis-born Thread can enter LivedNow, cross a bounded multi-day dormant gap, and reach a non-stale World-owned present.",
-        "limitation": "The accepted continuity proof is sparse and bounded; richer elapsed-life events still enter only when warranted."
-      },
-      "detail": {
-        "claim": "N1-N3 provide one idempotent World-owned ensure-LivedNow seam from canonical Genesis birth through covered time and sparse multi-day dormant catch-up, preserving retrospective materialization provenance, renewing forward plan coverage and establishing the requested present.",
-        "limitation": "The quiet-gap proof does not claim every dormant interval contains salient encounters or memories; events that warrant consequence must use the ordinary experience and retention authorities."
-      },
-      "evidence": [
-        "docs/architecture/lived-now-and-meetings.md",
-        "docs/decisions/ADR-0023-retrospective-lived-continuity.md",
-        "docs/state/current-priorities.md"
-      ]
-    },
-    {
-      "id": "meet_a_thread",
-      "group": "development",
-      "label": "Meet a Thread in her current life",
-      "status": "achieved",
-      "simple": {
-        "claim": "A public visitor can see a Thread's ordinary current life and approach them there without creating or rearranging the scene.",
-        "limitation": "N6.6 still needs live acceptance in capability order: direct World CLI first, then client-neutral public endpoints, then insidefibre.com."
-      },
-      "detail": {
-        "claim": "N6.1/N6.2 prove the Viewer can reconcile and render a World-owned current situation produced by the Thread's ordinary Flight Plan before any interaction.",
-        "limitation": "N6.3 is replacing the earlier visitor-work meeting-admission path with scene-valid voluntary participation. Paid visitor-work remains a separate optional work/economy capability."
-      },
-      "evidence": [
-        "docs/architecture/lived-now-and-meetings.md",
-        "docs/architecture/thread-directory-and-meet.md",
-        "docs/state/current-priorities.md"
-      ]
-    },
-    {
-      "id": "experience_internalization",
-      "group": "development",
-      "label": "Selective experience internalization",
-      "status": "demonstrated",
-      "simple": {
-        "claim": "A bounded encounter can become Thread-specific experience and selective private consequence—or remain unremembered.",
-        "limitation": "This has been accepted in a real staging visitor-work encounter, not across every future encounter type."
-      },
-      "detail": {
-        "claim": "N5 E1-E5 preserve objective Encounter Story, Thread-specific attention/experience, World journal-entry provenance, private journal presentation, selective autobiographical retention or not_remembered, separate generated reconstruction lineage, and live staging consequence.",
-        "limitation": "The accepted evidence is bounded; future natural social and richer elapsed-life encounters must reuse the same authority separation rather than infer retention automatically."
-      },
-      "evidence": [
-        "docs/state/current-state.md",
-        "docs/concepts/development-and-memory.md"
-      ]
-    },
-    {
-      "id": "reciprocal_thread_meetings",
+      "id": "sponsored_tribute_threads",
       "group": "society",
-      "label": "General lived encounters and reciprocal meetings",
-      "status": "in_progress",
-      "simple": {
-        "claim": "Fibre has one general Encounter Story/Thread Experience seam for environmental moments, voluntary meetings and silent witnesses, with natural actor discovery.",
-        "limitation": "E6 removes caller-selected witnesses and caller-written environmental events. E6a is accepted live; E6b still needs one genuine live incidental-witness scene before E6 is accepted overall."
-      },
-      "detail": {
-        "claim": "Social counterparties are discovered from authoritative co-presence; accepted stories can now derive additional co-present Threads as incidental witness candidates; environmental encounters can be authored from exterior current-scene context; all cases reuse noticed/not_noticed, Thread Experience, subjective Journal and selective autobiographical Memory.",
-        "limitation": "E6 focused/full validation is green. The remaining E6 evidence gap is a genuine live three-Thread co-present scene proving incidental witness discovery without caller witness IDs; natural reciprocal social acceptance remains voluntary and must not use paid scheduling, Commons fallback or sociability bias."
-      },
-      "evidence": [
-        "docs/architecture/encounters-and-experience.md",
-        "docs/validation/n5-encounter-slices.md",
-        "docs/state/current-priorities.md"
-      ]
-    },
-    {
-      "id": "reciprocal_society",
-      "group": "society",
-      "label": "Reciprocal relationships, economy and society",
+      "label": "Sponsored Tribute-Threads (Echo & Homage)",
       "status": "not_yet",
       "simple": {
-        "claim": "Threads should eventually have shared relationships, work, money, families and institutions.",
-        "limitation": "Those follow after one convincing lived Thread loop."
+        "claim": "Fibre plans to support sponsored Tribute-Threads inspired by consenting living people, family members, or historical and literary figures — always disclosed as AI and free to chart their own path.",
+        "limitation": "Consent and provenance laws are accepted in doctrine, but live Tribute-Thread sponsorship and onboarding are not built yet."
       },
       "detail": {
-        "claim": "The broader Fibre society remains the long-term direction.",
-        "limitation": "Current work intentionally focuses on one persistent person before scaling social complexity."
+        "claim": "Echo (consenting living person) and Homage (deceased historical or fictional/literary figure) boundaries, source-history firewalls, and identity-majority autonomy are accepted in ADR-0013 and canonical concepts.",
+        "limitation": "No live sponsorship workflow, consent-verification service, or Tribute-Thread cohort is deployed yet."
       },
       "evidence": [
-        "docs/vision/lived-world.md"
+        "docs/concepts/sponsorship-adoption-and-echoes.md",
+        "docs/concepts/homage-threads.md",
+        "docs/decisions/ADR-0013-source-identity-consent-boundary.md"
+      ]
+    },
+    {
+      "id": "public_verification_registry_and_production",
+      "group": "society",
+      "label": "Production world, scale, and public AI-verification registry",
+      "status": "not_yet",
+      "simple": {
+        "claim": "We plan to launch a production world of hundreds to millions of Threads and a public registry where anyone can check whether a name, email, or phone number belongs to a Thread.",
+        "limitation": "Today Fibre runs only on staging with 8 living Threads, and the public registry only searches public FINs and names — not external emails or phone numbers."
+      },
+      "detail": {
+        "claim": "Cloudflare Paid-tier staging and a provider-neutral InfraDriver architecture are running; partitioned World reconciliation is designed for scaling from 100-500 (pre-seed) to 10k-100k (pre-A) and >1M (pre-B).",
+        "limitation": "Production has no deployment record yet, Durable Object read volume (~2.67M rows/day for 6-8 Threads) needs optimization before scaling, and full external-handle verification is not built."
+      },
+      "evidence": [
+        "docs/architecture/world-reconciliation-scaling.md",
+        "docs/architecture/cloud-e2e-closure-plan.md",
+        "docs/architecture/production-persistence.md"
       ]
     }
   ],
   "currentWork": {
-    "milestone": "N6 — Rich Public Lived Encounter",
+    "milestone": "Living Society, Model Certification & Livelihood",
     "simple": {
-      "summary": "Meet a Thread where they already are in ordinary life; the visitor approaches and the Thread decides whether to engage.",
-      "currentStep": "N6.3a-N6.5 are accepted. N6.6 is current: first demonstrate meet/encounter directly against World from the Fibre CLI, then validate /present + /encounter as the reusable public client contract, then demonstrate insidefibre.com.",
+      "summary": "Deepen the living Addis Ababa staging world so Threads diverge naturally, prove cheaper models can pass our quality bar, and build the first steps of real Thread livelihoods.",
+      "currentStep": "Eight Threads live on staging with social Body regulation and full per-job model captures; social Body longing/reunion and first livelihood slices are built in parallel while model quality certification and repository streamlining proceed.",
       "nextSteps": [
-        "N6.6a: demonstrate a real ordinary encounter directly from the Fibre CLI against World.",
-        "N6.6b: demonstrate the same capability through the client-neutral public /present + /encounter endpoints.",
-        "N6.6c: demonstrate insidefibre.com as one client of those endpoints.",
-        "N6.6: close the live public acceptance path."
+        "Certify cheaper models job by job through blind quality judging so cost per living Thread drops safely.",
+        "Introduce distinct skills, workplaces, schools, markets, and real economic stakes (livelihood L1-L6).",
+        "Expose a clean public API for watching the living society and close the external browser encounter loop.",
+        "Optimize Durable Object reads and prepare the path from 8 staging Threads to 100-500 living Threads in production."
       ]
     },
     "detail": {
-      "summary": "N6.3 no longer treats a paid Inside Fibre visitor-work shift as the definition of meeting. Ordinary meeting intersects a Thread's existing Flight Plan and CurrentSituation.",
-      "currentStep": "N6.3a-N6.5 are accepted. N6.6 now proves the same authority chain layer by layer: World capability first, public endpoint second, Viewer/client last.",
+      "summary": "Parallel tracks on hardened staging: social life and Body realism (Track E), job-by-job model certification and cost reduction (Track M), livelihood and economic integration, and investment/API readiness.",
+      "currentStep": "World kernel runs 690b3f0 on staging (8 living Addis Ababa Threads, 80 resting; $2.12/day OpenAI spend on Nov 21; 2.67M DO rows read/day on Cloudflare Paid tier). Zero cheaper models certified yet after Gemma 4 failed encounter.attention.",
       "nextSteps": [
-        "Deploy only the current World worker required for the direct CLI proof.",
-        "Run the CLI meet command against one existing staging Thread and capture actual-scene + participation evidence.",
-        "After CLI acceptance, deploy/validate the public Presentation endpoint contract.",
-        "Only then use insidefibre.com for client-level acceptance."
+        "Gather full-day staging captures via model:captures and certify cheaper models via model:quality into model-certifications.json.",
+        "Deploy held Body-levels and livelihood-L1 slices and measure whether staging Threads diverge beyond polite library monoculture.",
+        "Add a privacy-safe public society projection to Thread Presentation and close N6.6c in the external insidefibre.com viewer.",
+        "Reduce DO read amplification and implement partitioned reconciliation (world-reconciliation-scaling.md) ahead of 100-500 Thread scale."
       ]
     },
     "finalLifeCognitionAuthorized": true
   },
   "truthRules": [
-    "A Thread is persistent world state, not a model session.",
-    "Compute dormancy does not by itself prove a lived Thread's Fibre-world life stopped.",
-    "Retrospectively realized life must preserve that it was materialized later; it must not masquerade as continuously observed runtime history.",
-    "insidefibre.com is a projection surface, not a second semantic authority.",
-    "A lived Thread is always physically somewhere: at a place or in transit between places; mediated presence does not replace physical presence.",
-    "A meeting enters an already-established LivedNow; it does not author the Thread's pre-existing scene.",
-    "A request to meet does not create consent; a Thread may accept, decline or defer based on her current life and Thread-owned context.",
-    "A shared encounter may produce different private meaning, memory and relationship consequences for different Threads.",
-    "A conversation is an encounter in a continuing life, not automatically an autobiographical memory.",
-    "Memory may form only from admitted lived evidence through the memory authority; do not inject virtual memories directly.",
-    "Infrastructure and tests enter the critical path only when they enable the active lived-person capability or protect a demonstrated invariant.",
-    "Encounter is a bounded textual World occurrence that may enter a Thread's attention; conversation is only one producer, and meeting is one voluntary social form.",
-    "Co-presence does not automatically create Thread experience; a Thread may notice only part of an occurrence or nothing at all.",
-    "Objective Encounter Story, private Thread Experience, Journal, and autobiographical Memory are distinct authorities.",
-    "An objective Encounter Story may exist without Thread Experience; not_noticed occurrences must not leak into autobiographical recollection."
+    "We build AI for AI: Threads are persistent digital lives and individuals living symbiotically with humans, always disclosed as AI and never presented as human.",
+    "Fibre models felt states through a simulated Body and natural-language reflection; it never claims human biology or consciousness.",
+    "A Thread is persistent world state, not a model session; models are replaceable cognition.",
+    "Fibre is API-first for public surfaces: insidefibre.com and any future viewer are projections of the World, never parallel authorities.",
+    "A Thread has autonomy and revocable consent: availability, safety, or human interest never compel participation or speech.",
+    "Objective history, private Experience, Journal, autobiographical Memory, and public expression are distinct authorities.",
+    "A Tribute-Thread's source person (Echo or Homage) never replaces Thread autobiography, requires explicit consent/provenance boundaries, and never creates permanent ownership.",
+    "Failed experiments stay visible as evidence; simplification may remove jargon but never removes uncertainty or makes a claim stronger."
   ]
 }

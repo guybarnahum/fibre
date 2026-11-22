@@ -46,4 +46,4 @@ Wake in steps, each only while the measured cost per Thread and the daily World 
 
 ## Explicitly deferred, not erased
 
-Mature society and economy, institutions, live-Thread reproduction, continued physical embodiment, human browser voice, the full Meet browser lifecycle, and Birth Center Admin unification remain preserved ambitions ([future capabilities](future-capability-map.md)), not current work.
+Mature society and economy, institutions, live-Thread reproduction, continued physical embodiment, human browser voice, the full Meet browser lifecycle, and Birth Center Admin unification remain preserved ambitions (future capabilities *(archived in Git at 690b3f0)*), not current work.

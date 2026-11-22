@@ -81,7 +81,7 @@ A newly admitted modern Thread must carry a mappable canonical birthplace: the h
 ### Individual birth chronology
 
 Ordinary modern Genesis selects a request-specific birthday in the UTC window
-`[requestedAt − 23 calendar years, requestedAt − 22 calendar years)`.
+`requestedAt − 23 calendar years, requestedAt − 22 calendar years)`.
 The subject's developmental chronology ends on the 22nd UTC-calendar birthday,
 not after the durable request time. Cached place and family authoring can be
 reused, but the WorldSpec temporal bounds are **rebuilt for each birth** so the
@@ -228,7 +228,7 @@ This remains a follow-on after the current M2 closure, but it is part of **Genes
 8. **Distribution test** — retain approximately 50/50 female/male assignment across a large deterministic birth sample without a central population quota.
 9. **Legacy rule** — old Threads lacking sex must not be backfilled by guessing from portrait, name, pronouns or stereotypes. Preserve the missing legacy fact unless authoritative evidence or an explicit migration decision exists.
 
-The durable follow-on is also tracked in [`../state/future-capability-map.md`](../state/future-capability-map.md). Legacy handling follows [`../state/thread-preservation-and-migration.md`](../state/thread-preservation-and-migration.md).
+The durable follow-on is also tracked in [`../state/future-capability-map.md` *(archived in Git at 690b3f0)*. Legacy handling follows thread-preservation-and-migration *(archived in Git at 690b3f0)*.
 
 ## Origin families
 

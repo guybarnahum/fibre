@@ -6,7 +6,7 @@ It does **not** own Fibre semantics. Thread identity, history, memory, birth, ci
 
 The production persistence rule remains [`../docs/architecture/production-persistence.md`](../docs/architecture/production-persistence.md): every persistent production state or byte object used as durable state by a Fibre service crosses a provider-neutral `InfraDriver` capability.
 
-The live implementation/adoption state is [`../docs/state/infra-pure.md`](../docs/state/infra-pure.md). Durable rules remain in [production persistence](../docs/architecture/production-persistence.md) and [InfraDriver](../docs/architecture/infrastructure-driver.md). Local and cloud runtimes use the same semantic architecture; only provider adapters and deployment wiring may differ.
+The live implementation/adoption state is infra-pure *(archived in Git at 690b3f0)*. Durable rules remain in [production persistence](../docs/architecture/production-persistence.md) and [InfraDriver](../docs/architecture/infrastructure-driver.md). Local and cloud runtimes use the same semantic architecture; only provider adapters and deployment wiring may differ.
 
 ## Shape
 
@@ -104,7 +104,7 @@ Provider-native bucket keys, database IDs, Durable Object IDs, ARNs, region IDs 
 
 The representative persistence and scheduling boundary is now proven and adopted across the main World/Birth/Presentation paths. In particular, authoritative World state, World scheduling/retry state, Birth Center durable invocation state and private Journal authority no longer rely on service-level SQLite/filesystem/R2 bypasses.
 
-Remaining portability debt is deliberately trigger-driven rather than a cleanup mandate. Some internal service calls still use fetch-shaped/Worker-binding transport, and Cloudflare queue consumers still use provider-native acknowledgement/retry. The exact current state, triggers and stop conditions live in [Infra-pure state and workstream](../docs/state/infra-pure.md).
+Remaining portability debt is deliberately trigger-driven rather than a cleanup mandate. Some internal service calls still use fetch-shaped/Worker-binding transport, and Cloudflare queue consumers still use provider-native acknowledgement/retry. The exact current state, triggers and stop conditions live in Infra-pure state and workstream *(archived in Git at 690b3f0)*.
 
 Disposable `.fibre/` development state, tests and repository fixtures remain outside the production persistence rule.
 
@@ -118,7 +118,7 @@ Infrastructure resource bindings, application secrets and deployment credentials
 - Secret-upload tooling must require an explicit caller-supplied input file path. `.env` may be passed explicitly, but it is not read implicitly by default.
 - Secret tooling reports missing secret names and status only and must never print secret values.
 
-See [Infra-pure state and workstream](../docs/state/infra-pure.md) for current provider-neutral adoption/debt and [Cloud E2E closure](../docs/architecture/cloud-e2e-closure-plan.md) for retained deployment acceptance evidence.
+See Infra-pure state and workstream *(archived in Git at 690b3f0)* for current provider-neutral adoption/debt and [Cloud E2E closure](../docs/architecture/cloud-e2e-closure-plan.md) for retained deployment acceptance evidence.
 
 ## Development rule
 

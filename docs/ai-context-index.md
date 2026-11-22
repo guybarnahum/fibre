@@ -1,185 +1,30 @@
 # Fibre AI context index
 
-Use this index to load only the context needed for a task.
+Load only the context needed for your task. Generated packs (`npm run context-pack` → `artifacts/generated/`) are disposable build artifacts, never canonical truth.
 
-## Machine-readable profiles
+## Agent quick start
 
-[`ai-context-manifest.json`](ai-context-manifest.json) is the canonical source for AI context selection. Run `npm run context-pack` to generate bounded non-canonical packs under `artifacts/generated/`.
+1. **Read the rules:** [`AGENTS.md`](../AGENTS.md) and [`CLAUDE.md`](../CLAUDE.md).
+2. **Read current truth:** [`vision/ai-for-ai.md`](vision/ai-for-ai.md), [`state/current-state.md`](state/current-state.md), [`state/current-priorities.md`](state/current-priorities.md), and [`state/public-progress.json`](state/public-progress.json) (ceiling for all outward claims).
+3. **Understand the flow:** [`architecture/how-fibre-works.md`](architecture/how-fibre-works.md).
+4. **Validate once at slice completion:** run **only** `npm run slice:validate` (use `npm run test:focused -- <file>` while iterating). Never stack `check`, `test:all`, and `validate`.
+5. **Never:** put live Thread data, `.fibre/` contents, or `.env` values in Git or public text; claim stored/prompted fields are behaviorally causal; turn Fibre into a generic workflow/chatbot framework; or include `#` comments in paste-ready `zsh` commands for Guy.
 
-Profiles follow evidence lifecycle:
+## Context profiles ([`ai-context-manifest.json`](ai-context-manifest.json))
 
-- `core` — bounded current doctrine, lived-world vision and M2 context; N7 validation detail is linked below for task-specific reading;
-- `request-processing` — appraisal, authorization, disclosure, affect and response behavior built on `core`;
-- `social-life` — how Threads notice, approach, talk with, remember and come to regard one another, built on `core`;
-- `full` — broad current context plus selected historical/sealed evidence with continuing explanatory value.
+| Profile | Use for |
+|---|---|
+| `core` | General Fibre work: doctrine, vision, current state, architecture overview, persistence, and anti-drift rules. |
+| `request-processing` | Dignity appraisal, request-bound authorization, disclosure strategy, and structured obligations. |
+| `social-life` | Encounters, live conversation, books, Body levels, urges, stances, interests, appointments, and livelihood. |
+| `full` | Broad cross-domain reviews or onboarding. |
 
-Profiles are **curated bounded working sets**, not an index of every accepted canonical document. Canonical status means a document is authoritative for its subject; profile membership means that document is useful enough to include in a particular bounded AI context. Adding a canonical document does not by itself require adding it to a profile or block runtime deployment.
+Profiles are curated working sets, not an index of every canonical doc.
 
-Use the smallest profile sufficient for the task. Historical milestone/gate material explains why current rules exist; it does not override current state or roadmap authority.
+## Task routing
 
-## Understand Fibre now
-
-Start with:
-
-1. `foundations/constitution.md`
-2. `foundations/principles.md`
-3. `foundations/invariants.md`
-4. `foundations/interpretive-personhood.md`
-5. `foundations/rich-life.md`
-6. `vision/lived-world.md`
-7. `state/current-state.md`
-8. `state/current-priorities.md`
-9. `validation/n6-public-lived-encounter-slices.md`
-10. `validation/n7-live-encounter-slices.md`
-11. `architecture/live-encounters.md`
-12. `architecture/intrinsic-regulation.md`
-13. `architecture/situated-perception-and-salience.md`
-14. `architecture/interior-cognition.md`
-15. `decisions/ADR-0020-vision-led-development-discipline.md`
-16. the relevant architecture/ADR for the task
-
-For implementation agents, also read repository-root `AGENTS.md` and the relevant subsystem README/contract.
-
-## Current work
-
-What Fibre can do now, by capability and evidence level, is [`state/current-state.md`](state/current-state.md); the two active tracks — social life and model efficiency — are in [`state/current-priorities.md`](state/current-priorities.md).
-
-For social-life work, start with [`architecture/social-life.md`](architecture/social-life.md) — the whole flow, its measures and where the accepted social concepts attach — or load the `social-life` profile.
-
-For model-efficiency work, load the prompt rules in `AGENTS.md`, `services/world-kernel/prompts/README.md` and [`operations/world-write-diet.md`](operations/world-write-diet.md).
-
-When making an encounter real exposes a missing life primitive, build that primitive generally in World/LivedNow rather than faking it in a viewer or hard-coding it to dialogue.
-
-## Intrinsic regulation, emotions and needs
-
-Load together when working on drives, affect, motivation, movement pressure, attachment/proximity or semantic feeling:
-
-- `architecture/intrinsic-regulation.md`
-- `architecture/regulation-drive-extensions.md` — accepted plan, Body extension and causal proof still open ([ADR-0025](decisions/ADR-0025-extensible-body-regulation.md))
-- `architecture/interior-cognition.md`
-- `concepts/emotions-and-needs.md`
-- `architecture/thread-lifecycle.md`
-- `architecture/system-overview.md`
-- `decisions/ADR-0012-semantic-meaning-over-derived-categories.md`
-
-Key distinctions:
-
-```text
-regulatory drive  != semantic need
-intrinsic affect  != semantic emotion
-presence pressure != relationship meaning
-mechanical state may be numeric
-meaning-bearing state remains natural-language-first
-```
-
-Mechanical regulator output may enter cognition only through a bounded private interoceptive projection, never as a pre-authored emotion verdict or hidden instruction.
-
-Presence targets may be places, people, mediated settings, activities or obligations. A Thread may seek proximity or distance; `parent`, `partner` and `friend` roles do not determine polarity.
-
-## Lived world, age and development
-
-Load together when working on present life, childhood, aging, plans or encounters:
-
-- `vision/lived-world.md`
-- `architecture/intrinsic-regulation.md`
-- `architecture/situated-perception-and-salience.md`
-- `architecture/thread-lifecycle-accounting.md`
-- `architecture/developmental-continuity-and-past-selves.md`
-- `architecture/thread-directory-and-meet.md`
-- `architecture/encounters-and-experience.md`
-- `architecture/identity-embodiment-contract.md`
-- `concepts/development-and-memory.md`
-- `concepts/emotions-and-needs.md`
-- `concepts/families-couples-and-reproduction.md`
-
-```text
-Fibre birth != biological age zero
-lifecycle status != developmental age
-personal Flight Plan != enacted life
-caregiver care plan != dependent person's own will
-presence != geography only
-history != memory != meaning
-```
-
-Development changes affordances and agency relative to care; it is not a rigid maturity ladder or numeric personality progression.
-
-## Genesis and prior life
-
-Use Genesis documents when the task concerns how a Thread arrives with a particular past:
-
-- `architecture/thread-genesis-childhood-birth.md`
-- `architecture/genesis-compiler-contract.md`
-- `architecture/genesis-durable-development.md`
-- `architecture/symbolic-thread-genome.md`
-- `architecture/genesis-memory-meaning-integration.md`
-- `architecture/genesis-origin-source-integrity.md`
-- `architecture/genesis-rich-life-intellectual-formation.md`
-- `validation/generative-diagnostic-methodology.md`
-
-Genesis provides grounded developmental history. It does not by itself prove ongoing post-birth life or intrinsic regulation.
-
-## Identity, embodiment and visual continuity
-
-Load together:
-
-- `architecture/identity-embodiment-contract.md`
-- `architecture/canonical-visual-identity.md`
-- `architecture/thread-birth-presentation-data-flow.md`
-- `architecture/fibre-identity-card.md`
-- `decisions/ADR-0021-canonical-visual-identity-reference.md`
-- `decisions/ADR-0013-source-identity-consent-boundary.md`
-
-Age changes depiction; it does not mint a new identity.
-
-## Thread Editor and public encounter
-
-For Thread discovery/inspection/meeting:
-
-- `architecture/thread-directory-and-meet.md`
-- `architecture/operator-surfaces.md`
-- `apps/thread-editor/README.md`
-- `architecture/thread-presentation-contract.md`
-- `vision/lived-world.md`
-- `architecture/intrinsic-regulation.md`
-
-Thread Editor is an authorized causal inspection lens. insidefibre.com is a public encounter surface. Neither owns current situation, plans, drives or semantic feelings.
-
-## Runtime and persistence
-
-- `architecture/system-overview.md`
-- `architecture/world-kernel.md`
-- `architecture/thread-lifecycle.md`
-- `architecture/storage-model.md`
-- `architecture/production-persistence.md`
-- `architecture/infrastructure-driver.md`
-- `state/infra-pure.md` — live InfraDriver adoption/debt/triggers
-- `decisions/ADR-0017-provider-neutral-production-persistence.md`
-- `decisions/ADR-0020-vision-led-development-discipline.md`
-
-Provider-neutral persistence remains mandatory for authoritative production state. Durable rules live in architecture/ADRs; current infra-pure status and trigger-based debt live in `state/infra-pure.md`. Infrastructure is not an independent completion program.
-
-## Request, consent and expression
-
-- `concepts/interiority-and-expression.md`
-- `concepts/dignity.md`
-- `concepts/emotions-and-needs.md`
-- `architecture/interest-mediated-expression.md`
-- `architecture/request-participation.md`
-- `architecture/prompt-synthesis.md`
-- `decisions/ADR-0009-dignity-gates-participation.md`
-- `decisions/ADR-0010-interior-exterior-boundary.md`
-
-## Work, relationships and society
-
-- `concepts/families-couples-and-reproduction.md`
-- `concepts/economy-and-fibre-credits.md`
-- `concepts/task-marketplace.md`
-- `concepts/welfare-dormancy-and-retirement.md`
-- `concepts/institutions-and-governance.md`
-- `validation/prototype-roadmap.md`
-
-## Challenge a proposal
-
-At minimum load the Constitution, Principles, Invariants, `vision/lived-world.md`, `state/current-state.md`, `state/current-priorities.md`, `architecture/intrinsic-regulation.md`, ADR-0020 and the relevant architecture.
-
-Challenge whether the proposal makes the person's lived control loop more causal and load-bearing, preserves one authority per semantic fact, and avoids replacing semantic meaning with derived control labels.
+- **Social life & Body:** [`architecture/social-life.md`](architecture/social-life.md), [`decisions/ADR-0036-social-body.md`](decisions/ADR-0036-social-body.md), [`decisions/ADR-0037-status-and-conflict.md`](decisions/ADR-0037-status-and-conflict.md), [`decisions/ADR-0038-body-levels.md`](decisions/ADR-0038-body-levels.md), [`concepts/interests-expertise-and-livelihood.md`](concepts/interests-expertise-and-livelihood.md).
+- **Model efficiency & prompts:** `AGENTS.md` prompt rules, [`services/world-kernel/prompts/README.md`](../services/world-kernel/prompts/README.md), [`operations/world-write-diet.md`](operations/world-write-diet.md), [`validation/model-certifications.json`](validation/model-certifications.json).
+- **Genesis, identity & embodiment:** [`architecture/genesis-compiler-contract.md`](architecture/genesis-compiler-contract.md), [`architecture/canonical-visual-identity.md`](architecture/canonical-visual-identity.md), [`architecture/fibre-identity-card.md`](architecture/fibre-identity-card.md), [`decisions/ADR-0013-source-identity-consent-boundary.md`](decisions/ADR-0013-source-identity-consent-boundary.md), [`decisions/ADR-0022-fid-native-proof.md`](decisions/ADR-0022-fid-native-proof.md).
+- **Runtime, persistence & API:** [`architecture/production-persistence.md`](architecture/production-persistence.md), [`architecture/infrastructure-driver.md`](architecture/infrastructure-driver.md), [`architecture/world-reconciliation-scaling.md`](architecture/world-reconciliation-scaling.md), [`architecture/thread-presentation-contract.md`](architecture/thread-presentation-contract.md), [`architecture/operator-surfaces.md`](architecture/operator-surfaces.md).
+- **Adversarial review:** Remember in Fibre, "adversarial" means **vision-effectiveness** (trying to falsify whether identity, history, and drives actually bend behavior), not generic security-only review. Start with [`foundations/invariants.md`](foundations/invariants.md), [`validation/drift-scorecard.md`](validation/drift-scorecard.md), and [`validation/thread-differential-gate.md`](validation/thread-differential-gate.md).

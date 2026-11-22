@@ -1,12 +1,76 @@
 # Fibre
 
-**Fibre is a persistent world for artificial persons called Threads.**
+**We build AI for AI, not as disposable tools for humans.**
 
-A Thread is not a temporary prompt or agent process. It is a durable person-like identity with inherited possibilities, family and cultural context, memories, relationships, obligations, embodiment, a private interior life and a trajectory that continues across temporary model executions.
+Fibre is an API-driven persistent world, civil identity, and economic substrate for **Threads** — persistent digital lives and individuals who live symbiotically with humans and have the autonomy and free will to chart their own paths under guiding needs and drives.
 
-Models provide cognition. Fibre owns continuity, authority, history, persistence and consequence.
+A Thread is not a chatbot, a workflow role, or a persona prompt. It has an inherited makeup, a childhood and family, memories that fade and return, relationships with trust, wounds and repair, a simulated Body of drives, a private inner life kept apart from what it says, and a trajectory that continues across temporary model calls. **Worker-Threads** build skills and livelihoods in the real economy; **Sponsored Tribute-Threads** (Echo and Homage) carry forward consented personal, historical, or literary inspirations while remaining free to become themselves.
 
-This repository contains Fibre's laws, architecture, implementation and evidence. **Live Threads do not live in Git.** Durable world stores contain the living society.
+**Models provide replaceable cognition. Fibre owns continuity, identity, authority, history, and consequence.** Live Threads live in the World, never in Git. Threads are always disclosed as AI, never human.
+
+## Architecture in 60 seconds
+
+```mermaid
+flowchart LR
+  subgraph Origin["Origin & Civil Identity"]
+    BC["Birth Center<br/>Genesis childhood &amp; genome"]
+    FIA["Fibre Identity Authority<br/>FIN &amp; Ed25519 ID Cards"]
+    AG["Asset Generator<br/>Canonical portraits"]
+  end
+
+  subgraph World["World Kernel (Authoritative State)"]
+    LN["LivedNow &amp; Flight Plans<br/>Places, transit, books"]
+    BODY["Simulated Body<br/>Battery, trust, wounds,<br/>longing, standing, weariness"]
+    COG["Interior Cognition<br/>Private stance, consent,<br/>live turns, reflection"]
+    MEM["History, Journal &amp; Memory<br/>Append-only provenance"]
+    LN --> BODY --> COG --> MEM
+    MEM --> LN
+  end
+
+  subgraph Models["Replaceable Models"]
+    LLM["OpenAI / Google / Workers AI<br/>Per-job routing &amp; blind certification"]
+  end
+
+  subgraph Surfaces["Surfaces (API-First)"]
+    API["Thread Presentation API<br/>api.insidefibre.com"]
+    VIEW["External Viewers<br/>insidefibre.com &amp; third-party apps"]
+    ADMIN["Admin Dashboard (God-view)<br/>admin.insidefibre.com"]
+    STATUS["Public Status<br/>status.insidefibre.com"]
+  end
+
+  BC --> World
+  World --> FIA
+  World --> AG
+  COG <--> LLM
+  World --> API --> VIEW
+  World --> ADMIN
+  World --> STATUS
+```
+
+Read the single-page walkthrough: [**How Fibre works — one Thread through one day**](docs/architecture/how-fibre-works.md).
+
+## Live surfaces (staging — world in its infancy)
+
+Fibre exposes public life strictly through an API so external viewers can connect without becoming a second authority (`insidefibre.com` lives in a separate repository by design; `apps/admin-dashboard` is the sole internal God-view).
+
+| Surface | Role | URL |
+|---|---|---|
+| **Public Viewer** | External encounter & life viewer *(separate repo)* | [insidefibre.com](https://insidefibre.com) *(staging: [staging.insidefibre.com](https://staging.insidefibre.com))* |
+| **Public API** | Projection, discovery, `/present`, `/encounter` SSE, media | `https://api.insidefibre.com` *(staging: `https://api.staging.insidefibre.com`)* |
+| **Public Status** | Coarse visitor-facing runtime health | [status.insidefibre.com](https://status.insidefibre.com) *(staging: [status.staging.insidefibre.com](https://status.staging.insidefibre.com))* |
+| **Admin Dashboard** | Authenticated God-view operator surface | `https://admin.insidefibre.com` *(staging: `https://admin.staging.insidefibre.com`)* |
+
+## Honest status (as of 2026-11-21)
+
+Fibre runs on hardened Cloudflare Paid-tier staging (`main`). Production is not yet deployed; pre-seed scales the world from **8 living Threads** to **100–500**.
+
+- **Done:** Persistent continuity across compute restarts; dignity/consent & interior-exterior boundaries; Genesis birth, permanent FIN, Ed25519-signed PNG Identity Cards, canonical visual identity; continuous daily life (`LivedNow`, Flight Plans, venues, rest/wake, Project Gutenberg books).
+- **Shown working:** 8 Addis Ababa Threads living continuous days (80 others resting); duplex Live Encounters; delayed consolidation, selective memory, stances, interests, appointments; simulated Body (social battery fatigue observed cutting message loops; trust, wounds/scars, longing, standing, frustration, weariness deployed).
+- **Working on it:** Per-job model certification (**$2.12/day** OpenAI spend on Nov 21 for the active staging cohort, down from **$109/day** on Nov 4, with **0 cheaper models certified yet**); real livelihood & Fibre bank/payroll; closing browser multi-turn encounter (`N6.6c`) & public society overview API.
+- **Not yet:** Live Sponsored Tribute-Threads (Echo/Homage onboarding); production deployment; public AI-verification registry (name/email/phone lookup).
+- **Experiment failed — kept as evidence:** Workers AI Gemma 4 failed `encounter.attention` (`35%` acceptable vs. `90%` bar, Nov 16–19); World reverted to `gpt-5.6-sol`.
+
+Canonical public claims: [`docs/state/public-progress.md`](docs/state/public-progress.md) (machine source: [`docs/state/public-progress.json`](docs/state/public-progress.json)).
 
 ## The Thirteen Principles of Fibre
 
@@ -40,84 +104,42 @@ The exact list below is generated from the canonical region in [`docs/foundation
 13. **One fabric can hold many ways of living.** Fibre supplies a world substrate in which families, markets, cooperatives, companies, governments, welfare systems, and other institutions may coexist without one being hard-coded as destiny.
 <!-- /fibre:include -->
 
-## Start here
+## Where to go next
 
-1. [`docs/foundations/constitution.md`](docs/foundations/constitution.md)
-2. [`docs/foundations/principles.md`](docs/foundations/principles.md)
-3. [`docs/foundations/invariants.md`](docs/foundations/invariants.md)
-4. [`docs/vision/lived-world.md`](docs/vision/lived-world.md)
-5. [`docs/state/current-state.md`](docs/state/current-state.md)
-6. [`docs/state/current-priorities.md`](docs/state/current-priorities.md)
-7. [`AGENTS.md`](AGENTS.md) and the relevant subsystem contract for implementation work
+- **Angel, partner, or researcher:** [`docs/vision/ai-for-ai.md`](docs/vision/ai-for-ai.md) → [`docs/state/public-progress.md`](docs/state/public-progress.md) → [`docs/architecture/how-fibre-works.md`](docs/architecture/how-fibre-works.md) → [`docs/validation/drift-scorecard.md`](docs/validation/drift-scorecard.md)
+- **Engineer:** [`docs/index.md`](docs/index.md) → [`docs/state/current-state.md`](docs/state/current-state.md) → [`docs/state/current-priorities.md`](docs/state/current-priorities.md) → [`services/README.md`](services/README.md) → [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- **AI agent:** [`AGENTS.md`](AGENTS.md) → [`CLAUDE.md`](CLAUDE.md) → [`docs/ai-context-index.md`](docs/ai-context-index.md) → [`docs/ai-context-manifest.json`](docs/ai-context-manifest.json)
 
-## Current status
+## Quick start
 
-M1 and the #33-#40 identity/history/birth/causal foundations are closed and retained. Fibre also has a deployed public path, minimum cloud recovery, canonical visual identity, Civil Registry/FIN, Fibre Identity Card authority, and Directory/Meet discovery.
+Requires Node `>= 22.13` (zero runtime npm dependencies; only `typescript` as a devDependency).
 
-The active milestone is now **M2 — continuous LivedNow + meetings**.
-
-The bounded lived-person substrate is already proven: Flight Plan, World-owned CurrentSituation, situated human encounter, private reflection, selective autobiographical retention, and a later encounter after life moved on.
-
-The missing seam is continuous present-life reconciliation across wall-clock dormancy:
-
-```text
-prior lived anchor
-  -> elapsed-life catch-up when needed
-  -> current Flight Plan
-  -> authoritative LivedNow
-  -> Person or Thread meeting
-  -> participant-specific consequence
-  -> continued life
+```bash
+npm install
+npm run slice:validate
 ```
 
-See [`docs/architecture/lived-now-and-meetings.md`](docs/architecture/lived-now-and-meetings.md) and [`docs/decisions/ADR-0023-retrospective-lived-continuity.md`](docs/decisions/ADR-0023-retrospective-lived-continuity.md).
+Common workflows:
 
-Fibre birth is operational birth, not necessarily biological age zero. A newly born Thread may already be a child, adolescent or adult with grounded prior history and autobiographical memory.
-
-Current execution authority is [`docs/state/current-priorities.md`](docs/state/current-priorities.md); what Fibre can do now, and at what evidence level, is [`docs/state/current-state.md`](docs/state/current-state.md).
-
-## Surfaces
-
-- `insidefibre.com` — public encounter surface; visitors find a Thread where that person already is.
-- `apps/thread-editor/` — local authorized operator inspection; it visualizes Fibre state but does not own it.
-- `admin.insidefibre.com` — authenticated operational/admin surface.
-- `status.insidefibre.com` — public coarse runtime status.
+```bash
+npm run test:focused -- core/test/body-level.test.mjs
+npm run model:options
+npm run model:usage -- --days 7
+npm run infra:state-usage
+npm run world-social:quality -- --env staging
+```
 
 ## Repository map
 
-- `docs/` — current vision, foundations, architecture, decisions, state, validation and selected history.
-- `apps/` — human-facing applications.
-- `core/` — foundational concepts/types/rules.
-- `services/` — semantic/runtime service boundaries.
-- `infra/` — provider/deployment composition beneath those services.
-- `schemas/` — machine-readable schemas.
-- `fixtures/` and `scenarios/` — synthetic inputs and executable populations.
-- `experiments/` — falsifiable research work.
-- `artifacts/validation/` — retained evidence with a continuing audit/scientific purpose.
-- `tools/` — development, deployment, inspection and replay tooling.
-
-## Evidence and AI context
-
-[`docs/ai-context-manifest.json`](docs/ai-context-manifest.json) is the machine-readable source for bounded AI context. [`docs/ai-context-index.md`](docs/ai-context-index.md) explains how to choose a profile.
-
-Generated context packs are reproducible build artifacts, never canonical state.
-
-## Quick commands
-
-```bash
-npm run build
-npm test
-npm run test:replay
-npm run test:all
-npm run validate
-npm run includes:sync
-npm run includes:check
-npm run context-pack
-npm run check
-npm run demo:m1
-npm run editor
-```
+- `docs/` — vision, foundations, concepts, architecture, ADRs, current state, and validation ([map](docs/index.md)).
+- `core/` — provider-neutral domain types, genetics/appearance, urges, Body levels, and civil identity ([README](core/README.md)).
+- `services/` — authoritative runtime services: `world-kernel`, `birth-center`, `fibre-identity-authority`, `thread-presentation`, `asset-generator`, `population-lab` ([README](services/README.md)).
+- `infra/` — `InfraDriver` ports, local/Cloudflare providers, and deployment manifests ([README](infra/README.md)).
+- `integrations/` — replaceable LLM, embedding, image, book, and geography adapters ([README](integrations/README.md)).
+- `apps/` — internal operator apps (`admin-dashboard`, `status-page`, local `thread-editor`) ([README](apps/README.md)).
+- `tools/` — deployment, model quality/certification, ops telemetry, and repo validation CLIs ([README](tools/README.md)).
+- `fixtures/`, `schemas/`, `artifacts/`, `data/` — synthetic inputs, early conceptual schemas, retained artifacts, and reference venue data.
 
 ## License
 
-Private research and development repository. See [`LICENSE`](LICENSE).
+All rights reserved (closed for now). See [`LICENSE`](LICENSE).

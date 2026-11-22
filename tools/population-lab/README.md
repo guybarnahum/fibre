@@ -92,7 +92,7 @@ A useful calibration pass has three complementary parts rather than one score:
 2. Run the deterministic family-inheritance experiment below to inspect same-parent siblings, mixed parentage, and second-generation transmission. A family-origin profile is not itself a biological family, so ordinary population cohorts must not be used as evidence for sibling resemblance.
 3. Run a small visual cohort or the family renderer fidelity experiment and inspect the contact sheet. Renderer fidelity cannot be established from semantic phenotype statistics alone.
 
-No demographic percentage is a pass/fail quota. Calibration changes require a specific observed failure mode; the broad founder coefficients remain experimental priors. Physical/population calibration is currently reopened by the Li Jing appearance failure; follow [the active calibration plan](../../docs/validation/physical-appearance-calibration-plan.md).
+No demographic percentage is a pass/fail quota. Calibration changes require a specific observed failure mode; the broad founder coefficients remain experimental priors. Physical/population calibration is currently reopened by the Li Jing appearance failure; follow the active calibration plan *(archived in Git at 690b3f0)*.
 
 ## Family inheritance experiment
 
