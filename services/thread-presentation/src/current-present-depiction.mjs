@@ -27,7 +27,7 @@ function presentBrief(present, targetAgeYears, selectedReferences = []) {
     description: [
       "Generated current-scene reconstruction for a public Thread presentation.",
       `The Thread is ${sceneLocation(present.location)}.`,
-      `Current activity: ${present.activity}`,
+      `What can be seen of what it is doing: ${present.outwardActivity ?? "nothing in particular"}.`,
       ...(present.reason === null ? [] : [`Observed situation context: ${present.reason}`]),
       ...(present.mediatedContext === null ? [] : [`Mediated presence: ${present.mediatedContext}`]),
       people,

@@ -378,8 +378,15 @@ const atLeast = (test, [k, n], bar) => {
 };
 
 // Mean paired gain (with the answer − without it, each averaged over judges).
-function gainAtLeast(test, gains, bar) {
+// When what was faced alone already shows whose answer it is (a reflection
+// on its own experiences, say), the answer cannot show it any better: the
+// test cannot be measured there, and says so rather than failing.
+const SHOWN_WITHOUT_ANSWER = 0.9;
+function gainAtLeast(test, gains, bar, unaided = null) {
   if (gains.length === 0) return { test, verdict: "n/a", value: null, bar };
+  if (unaided !== null && unaided[1] > 0 && unaided[0] / unaided[1] >= SHOWN_WITHOUT_ANSWER) {
+    return { test, verdict: "n/a", value: null, bar, detail: "what it faced already shows whose answer it is" };
+  }
   const n = gains.length, m = gains.reduce((a, b) => a + b, 0) / n;
   const sd = Math.sqrt(gains.reduce((a, b) => a + (b - m) ** 2, 0) / Math.max(1, n - 1));
   const half = Z * sd / Math.sqrt(n);
@@ -387,6 +394,7 @@ function gainAtLeast(test, gains, bar) {
 }
 
 // measures: defects [k,n]; invented [k,n]; gains [number]; correct [k,n];
+// unaided [k,n] (sources picked from what was faced alone);
 // chance; invariant [k,n] or null; alarms [string]; acceptable [k,n].
 export function goodEnough(prompt, measures, bars = BARS) {
   const gist = String(prompt).startsWith("experience.memory-gist");
@@ -395,7 +403,7 @@ export function goodEnough(prompt, measures, bars = BARS) {
     atMost("valid: nothing invented", measures.invented, bars.invented),
     gist
       ? atLeast("attributable to its own memory", measures.correct, Math.min(1, bars.chanceMultiple * (measures.chance ?? 0.1)))
-      : gainAtLeast("attributable: the answer shows who (or where)", measures.gains, bars.gain),
+      : gainAtLeast("attributable: the answer shows who (or where)", measures.gains, bars.gain, measures.unaided ?? null),
     measures.invariant === null ? { test: "invariant", verdict: "n/a", value: null, bar: bars.invariant }
       : atLeast("invariant", measures.invariant, bars.invariant),
     { test: "credible day", verdict: measures.alarms.length > 0 ? "fail" : "pass", value: null, bar: null,

@@ -77,7 +77,8 @@ test("A4 public present is a lossy scene, not a serialization of private current
     phase: "at_place",
     location: { kind: "place", placeRef: placeEpisodeRevisionRef(publicPlace) },
     mediatedContext: "Private family Zoom room",
-    activity: "Sketching the boats moving through the harbor.",
+    activity: "Sketching the boats moving through the harbor, to settle my mind before the call.",
+    outwardActivity: "sketching",
     reason: "A required caregiver plan governs this moment and contains private care context.",
     participantRefs: [publicFriend.relatedParty.partyId, privateCaregiver.relatedParty.partyId],
     evidenceRefs: ["evt_private_world_evidence_001"],
@@ -100,7 +101,7 @@ test("A4 public present is a lossy scene, not a serialization of private current
   });
 
   assert.deepEqual(present, {
-    presentVersion: "thread-public-present-v0.1",
+    presentVersion: "thread-public-present-v0.2",
     situationId: situation.situationId,
     establishedAt: situation.establishedAt,
     phase: "at_place",
@@ -109,7 +110,7 @@ test("A4 public present is a lossy scene, not a serialization of private current
       place: { displayName: "Harbor café", region: "Haifa District" },
     },
     mediatedContext: null,
-    activity: "Sketching the boats moving through the harbor.",
+    outwardActivity: "sketching",
     reason: null,
     participants: ["Ari Vale"],
     depictionMediaId: `media_present_${situation.situationId}`,
@@ -117,6 +118,7 @@ test("A4 public present is a lossy scene, not a serialization of private current
 
   const publicJson = JSON.stringify(present);
   for (const privateValue of [
+    "to settle my mind before the call",
     "Private family Zoom room",
     "required caregiver plan",
     "Maya's mother",
@@ -184,4 +186,18 @@ test("private residence has a public city, never a published street address",()=
   });
   assert.equal(hidden.location.place,null,
     "hidden residence inherited an older public place disclosure");
+});
+
+test("a Thread at a real public venue is shown there by name, and nothing of its intention", () => {
+  const present = projectCurrentSituationPresent({
+    currentSituation:{ situationId:"sit_public_venue_001", threadId:"thr_public_venue", establishedAt:"2026-11-22T09:00:00Z",
+      phase:"at_place", location:{ kind:"place", placeRef:"wpl_library" }, mediatedContext:null,
+      activity:"Read, and decide whether to apply to the course", outwardActivity:"reading", reason:"x", participantRefs:[],
+      evidenceRefs:["evt_1"], sourcePlanRefs:["lplan_1"], resolution:{ kind:"personal_plan", conflict:false, observedDivergence:false,
+        governingPlanRef:"lplan_1", constrainedPlanRef:null, summary:"x" }, provenance:"world_enacted" },
+    publicVenue:{ displayName:"Abrehot Library", locality:"Addis Ababa" },
+  });
+  assert.deepEqual(present.location, { kind:"place", place:{ displayName:"Abrehot Library", region:"Addis Ababa" } });
+  assert.equal(present.outwardActivity, "reading");
+  assert.equal(JSON.stringify(present).includes("decide whether to apply"), false, "the Thread's intention reached the public present");
 });

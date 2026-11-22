@@ -10,6 +10,7 @@ import { openEmbodimentInspectionStore } from "#services/world-kernel/src/embodi
 import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace } from "#services/world-kernel/src/current-thread-location.mjs";
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import {readWorldEventOverview} from "#services/world-kernel/src/world-event-observatory.mjs";
+import {readPublicSociety} from "#services/world-kernel/src/public-society.mjs";
 import { openLivedNowStore,openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { auditLivedContinuity } from "#services/world-kernel/src/lived-now-boundary.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
@@ -738,6 +739,22 @@ export class FibreWorldDurableObject extends DurableObject {
         if(error instanceof TypeError)
           return Response.json({error:{code:"INVALID_AUDIT_REQUEST",message:error.message}},
             {status:400});
+        throw error;
+      }
+    }
+    // For Presentation's public society view: which of its public Threads rest,
+    // and who met whom at a public venue lately (no words, nothing private).
+    if(url.pathname==="/internal/public-society"){
+      if(request.method!=="POST")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
+      if(!privateOperatorAuthorized(request,this.env)){
+        return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
+      }
+      try{
+        const input=await request.json();
+        return Response.json(readPublicSociety(this.worldStorage,{threadIds:input?.threadIds}));
+      }catch(error){
+        if(error instanceof TypeError||error instanceof SyntaxError)
+          return Response.json({error:"INVALID_PUBLIC_SOCIETY_REQUEST",message:error.message},{status:400});
         throw error;
       }
     }

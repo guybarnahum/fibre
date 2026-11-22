@@ -116,6 +116,32 @@ GET /api/society/now
 
 ---
 
+### K1 as built (Claude, November 22, 2026) — differences from the agreed shape
+The route, the contract name, the top-level shape and every privacy boundary above are as agreed.
+
+**Different from the agreed shape:**
+- **Omitted for now, because the public present does not carry them:**
+  - `placeId`, `kind`, `countryCode` and `timeZone` on cities and venues;
+  - `fin` and `wakefulness` on Threads.
+
+  `portraitObjectRef` is the Thread's portrait thumbnail from discovery. Adding any of the omitted fields means widening the public present contract; ask, and Claude will add it there first.
+- **City grouping:**
+  - A venue's `locality` is its city.
+  - A Thread at a place with no public name (a home, an unnamed stop) is listed in `unnamedPlaceThreads` of the city it is in. That is the city, never the place.
+  - A Thread in transit is grouped under its destination's city, when public.
+- **Venues:** only a real public venue is named: an admitted City Guide venue, or a Genesis place bound to a physical venue.
+- **Visibility:**
+  - Listed: Threads the presentation catalog marks public, with `lifecycleStatus === "active"` and a life that is not resting.
+  - Resting public Threads count toward `restingCount` only.
+- **`recentPublicEncounters`:**
+  - Covers the last 24 hours, at most 24 entries.
+  - An encounter counts only when at least two public Threads themselves spoke or acted in its Story. A happening several merely witnessed does not, nor a visitor meeting, nor one with a Thread that is not public.
+  - `placeDisplayName` and `locality` are null unless every participant was at the same public venue.
+- **The public present (`/present`)** is now `thread-public-present-v0.2`:
+  - it carries `outwardActivity`, never `activity`, and names a public venue;
+  - presents recorded under v0.1 are read back with `outwardActivity: null` and no `activity`, on every public read path (current present, discovery, events and the websocket replay).
+- **Caching and access:** cached 15 seconds at the edge. CORS is `VIEWER_ORIGIN` only; any other `Origin` gets 403. Any query parameter gets 400.
+
 ## K2 — Minimal Opt-In Returning-Visitor Identity Witness (`POST /api/threads/:threadId/encounter`)
 
 **Status:** Accepted as written; Claude builds after `K1`.

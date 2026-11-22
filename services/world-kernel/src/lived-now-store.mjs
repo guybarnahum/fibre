@@ -40,7 +40,7 @@ import {
 import {
   admitWorldPublicPlace,admitWorldPrivatePlace,createLiveWorldGeographyTables,
   listDiscoverableWorldPublicPlaces,setWorldPublicPlaceDiscovery,setWorldPublicPlaceAppearance,
-  getWorldPrivatePlace,getWorldPublicPlace,getWorldPlaceEntity,
+  getWorldPrivatePlace,getWorldPublicPlace,getWorldPlaceEntity,publicVenueOf,
   listKnownWorldPlaces,listLocalWorldPublicPlaces,resolveWorldPlace,coarseWorldPlace,
   learnWorldPublicPlace,listKnownWorldPublicPlaces,
 } from "./live-world-geography.mjs";
@@ -738,6 +738,10 @@ export class LivedNowStore {
     return listLocalWorldPublicPlaces(this.#database,{
       locality:privatePlace.locality,countryCode:privatePlace.countryCode,limit,
     });
+  }
+
+  publicVenue(threadId,placeRef){
+    return publicVenueOf(this.#database,threadId,placeRef);
   }
 
   coarseCurrentPlace(threadId,placeRef){

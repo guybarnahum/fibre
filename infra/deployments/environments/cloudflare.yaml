@@ -76,7 +76,8 @@ integrations:
     config:
       model: "@cf/google/gemma-4-26b-a4b-it"
       binding: AI
-      maxOutputTokens: 4096
+      # The room model:quality gives a candidate; a job routed here keeps it.
+      maxOutputTokens: 8000
       temperature: 0.3
       captureDepths:
         - gate

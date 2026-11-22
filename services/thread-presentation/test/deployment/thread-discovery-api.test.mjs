@@ -175,7 +175,9 @@ test("Thread roster reads current identity and presence without reopening snapsh
   const roster = await response.json();
   assert.equal(roster.threads[0].displayName, bundle.presentation.subject.displayName);
   assert.equal(roster.threads[0].currentPresent.payload.location.place.displayName, "Harbor café");
-  assert.equal(roster.threads[0].currentPresent.payload.activity, "Sketching the boats");
+  // A present recorded before v0.2 carried the private intention; it is read without it.
+  assert.equal(roster.threads[0].currentPresent.payload.activity, undefined, "a private intention reached the public roster");
+  assert.equal(roster.threads[0].currentPresent.payload.outwardActivity, null);
 });
 
 test("snapshot witness stays on the current Presentation projection", async () => {

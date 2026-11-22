@@ -27,6 +27,7 @@ import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, sc
 import { agreement, readReview, readVerdicts, REVIEW_KIND, testReading } from "../../apps/admin-dashboard/model-quality-review.mjs";
 
 const MIN_CASES = 30;
+const CANDIDATE_OUTPUT_TOKENS = 8000;
 const REVIEW_ANSWERS = 30;
 
 function args(argv) {
@@ -81,8 +82,11 @@ async function main() {
   const base = resolveServiceDeployment(manifest, "world-kernel").integrations.encounter;
   const adapters = new Map();
   const adapterFor = (model, provider = "openai") => {
+    // A candidate gets room for the whole answer: a reflection runs long, and
+    // an answer cut off at a small default limit says nothing of the model.
     if (!adapters.has(model)) adapters.set(model, selectReasoningIntegration(
-      reasoningIntegrationFor(provider, model, provider === base.provider ? base.config : {}), { environment: process.env }));
+      reasoningIntegrationFor(provider, model, provider === base.provider ? base.config : { maxOutputTokens: CANDIDATE_OUTPUT_TOKENS }),
+      { environment: process.env }));
     return adapters.get(model);
   };
   const judges = judgesFor(options.judges, { environment: process.env, adapterFor: (model) => adapterFor(model) });
@@ -197,6 +201,7 @@ async function main() {
     };
     result.goodEnough = goodEnough(options.prompt, { defects: result.defects, invented: every("invented", true), gains,
       correct: scorers.map((name) => attributed[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]), chance,
+      unaided: scorers.map((name) => unaided[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]),
       invariant: decided.length === 0 ? null : invariant, alarms: result.alarms, acceptable: result.acceptable });
     result.scoredBy = scorers;
     report.models.push(result);

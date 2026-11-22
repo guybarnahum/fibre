@@ -217,6 +217,15 @@ function publicPlaceFromRow(row,db){
   });
 }
 
+// The public name of a place, when it is a real public venue: an admitted
+// City Guide venue, or a Genesis place this Thread's life binds to a physical
+// venue. Anything else (a home, an unverified place a Thread named) has none.
+export function publicVenueOf(db,threadId,placeRef){
+  const venue=getWorldPublicPlace(db,placeRef)?.physicalVenue
+    ??resolveLiveWorldPlace(db,threadId,placeRef)?.physicalVenue??null;
+  return venue===null?null:Object.freeze({displayName:venue.displayName,locality:venue.locality});
+}
+
 // Public venues this Thread has been told of (for example, as a place to meet).
 // Knowing a venue is not being there.
 export function learnWorldPublicPlace(db,threadId,placeRef){

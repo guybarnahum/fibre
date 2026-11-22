@@ -23,11 +23,15 @@ export function createLivedNowPublicationService({
       ?livedNowStore.coarseCurrentPlace?.(
         situation.threadId,situation.location.placeRef,
       ):undefined;
+    // A real public venue is named; nothing else that World knows of the place.
+    const publicVenue=situation.location?.kind==="place"
+      ?livedNowStore.publicVenue?.(situation.threadId,situation.location.placeRef)??null:null;
     const present = projectCurrentSituationPresent({
       currentSituation: situation,
       placeEpisodes: situatedLifeStore.listCurrentPlaceEpisodes(situation.threadId),
       lifeRelations: situatedLifeStore.listCurrentLifeRelations(situation.threadId),
       coarsePlace,
+      publicVenue,
     });
     const publication = await presentationPublisher.publishCurrentPresent({
       threadId: situation.threadId,

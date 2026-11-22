@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { publicPresentPayload } from "fibre/thread-presentation/current-present";
 
 const STREAM_TAG = "presentation-stream";
 
@@ -246,7 +247,13 @@ export class FibrePresentationChannelDurableObject extends DurableObject {
        ORDER BY sequence ASC`,
       after,
     ).toArray();
-    for (const row of replay) server.send(frame(row.sequence, JSON.parse(row.value_json)));
+    // Replayed history is read as the public may read it: a present recorded
+    // before v0.2 without the private intention it carried.
+    for (const row of replay) {
+      const event = JSON.parse(row.value_json);
+      server.send(frame(row.sequence, event?.kind === "present.updated"
+        ? { ...event, payload: publicPresentPayload(event.payload) } : event));
+    }
     server.send(JSON.stringify({
       type: "stream.ready",
       cursor: meta.current_sequence,

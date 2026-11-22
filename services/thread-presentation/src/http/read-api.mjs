@@ -8,6 +8,12 @@ import {
   publicThreadDirectoryEntry,
 } from "#services/thread-presentation/src/thread-directory.mjs";
 import { normalizeThreadPresentationEvent } from "fibre/world-kernel/thread-presentation-contracts";
+import { publicPresentPayload } from "../current-present-projector.mjs";
+
+// A present event as the public may read it (see publicPresentPayload).
+function publicEvent(event) {
+  return event?.kind === "present.updated" ? { ...event, payload: publicPresentPayload(event.payload) } : event;
+}
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 const PRESENTATION_CHANNEL_PREFIX = "presentation:";
@@ -66,7 +72,7 @@ function presentFromProjection(record, channelId, threadId) {
       || event.sequence !== record.sequence) {
       return null;
     }
-    return event;
+    return publicEvent(event);
   } catch {
     return null;
   }
@@ -379,7 +385,7 @@ export function createPresentationReadApi({
           if (!Number.isSafeInteger(after) || after < 0 || !Number.isSafeInteger(limit) || limit < 1 || limit > 1000) {
             return json({ error: "invalid_cursor" }, { status: 400, headers: cors });
           }
-          const events = await presentationServer.readEvents({ channelId, after, limit });
+          const events = (await presentationServer.readEvents({ channelId, after, limit })).map(publicEvent);
           const head = await presentationServer.getHead(channelId);
           return json({ channelId, after, head: head.sequence, events }, { headers: { ...cors, "Cache-Control": "no-store" } });
         }

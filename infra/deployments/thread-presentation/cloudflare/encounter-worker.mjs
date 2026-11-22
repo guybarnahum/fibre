@@ -2,6 +2,7 @@ import { createCloudflareInfraDriver } from "#infra/providers/cloudflare";
 import baseWorker, { FibreAdminLiveDurableObject, FibrePresentationChannelDurableObject } from "./worker.mjs";
 import { createCloudflareActivityRecorder } from "../../cloudflare-activity.mjs";
 import { createPublicCurrentLifeApi } from "#services/thread-presentation/src/http/current-life-api.mjs";
+import { createPublicSocietyApi } from "#services/thread-presentation/src/public-society.mjs";
 
 export { FibreAdminLiveDurableObject, FibrePresentationChannelDurableObject };
 
@@ -135,6 +136,35 @@ function worldVisitorEncounter(env, activityRecorder, threadId, input) {
   );
 }
 
+// Every public Thread with its current public present, read through the
+// public discovery route itself so nothing more is exposed than it exposes.
+async function listPublicThreads(env, ctx) {
+  const threads = [];
+  let cursor = null;
+  for (let page = 0; page < 3; page += 1) {
+    const url = new URL("https://presentation.internal/api/threads");
+    url.searchParams.set("limit", "200");
+    if (cursor !== null) url.searchParams.set("cursor", cursor);
+    const response = await baseWorker.fetch(new Request(url), env, ctx);
+    if (!response.ok) throw new Error(`public Thread discovery failed with HTTP ${response.status}`);
+    const body = await response.json();
+    threads.push(...body.threads);
+    cursor = body.nextCursor;
+    if (cursor === null) break;
+  }
+  return threads;
+}
+
+async function readWorldSociety(env, threadIds) {
+  const response = await binding(env, "WORLD_KERNEL").fetch(new Request("https://world-kernel.internal/internal/public-society", {
+    method:"POST",
+    headers:{ "content-type":"application/json", "x-fibre-private-token":env.FIBRE_PRIVATE_TOKEN },
+    body:JSON.stringify({ threadIds }),
+  }));
+  if (!response.ok) throw new Error(`World public society failed with HTTP ${response.status}`);
+  return response.json();
+}
+
 async function infraHealth(env) {
   const health = await createCloudflareInfraDriver({
     objectBucket:env.PRESENTATION_OBJECTS,
@@ -180,6 +210,25 @@ export default {
     });
     const currentLifeResponse=await currentLifeApi.fetch(request);
     if(currentLifeResponse!==null)return currentLifeResponse;
+
+    // The society view is shared by every viewer: kept 15 seconds at this edge,
+    // so a busy home page reads the World once, not once per visitor.
+    const societyCache=url.pathname==="/api/society/now"&&request.method==="GET"&&typeof caches!=="undefined"
+      ?{store:caches.default,key:new Request(`https://presentation.internal/society-now?origin=${encodeURIComponent(request.headers.get("Origin")??"")}`)}:null;
+    if(societyCache!==null){
+      const hit=await societyCache.store.match(societyCache.key);
+      if(hit)return hit;
+    }
+    const societyResponse=await createPublicSocietyApi({
+      viewerOrigin:env.VIEWER_ORIGIN??null,
+      environment:env.FIBRE_ACTIVITY_ENV??null,
+      listPublicThreads:()=>listPublicThreads(env,ctx),
+      readWorldSociety:(threadIds)=>readWorldSociety(env,threadIds),
+    }).fetch(request);
+    if(societyResponse!==null){
+      if(societyCache!==null&&societyResponse.ok)ctx.waitUntil(societyCache.store.put(societyCache.key,societyResponse.clone()));
+      return societyResponse;
+    }
 
     return baseWorker.fetch(request, env, ctx);
   },

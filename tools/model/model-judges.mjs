@@ -32,12 +32,15 @@ const unbounded = (schema) => JSON.parse(JSON.stringify(schema, (key, value) =>
 
 // Claude through the Messages API, shaped like a Fibre reasoning adapter so
 // the operator smoke checks exactly the path the judges use.
+const RETRIES = 5;
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export function createClaudeAdapter({ model, apiKey, fetchImpl = globalThis.fetch, timeoutMs = 180_000 }) {
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set in .env");
   return {
     model,
     async invoke({ systemPrompt, input, responseSchema }) {
-      const response = await fetchImpl(ANTHROPIC_URL, {
+      const request = () => fetchImpl(ANTHROPIC_URL, {
         method: "POST",
         headers: { "content-type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
         body: JSON.stringify({
@@ -47,6 +50,14 @@ export function createClaudeAdapter({ model, apiKey, fetchImpl = globalThis.fetc
         }),
         signal: AbortSignal.timeout(timeoutMs),
       });
+      // A rate limit or an overload is waited out, as the API asks, rather than
+      // counted as a verdict the judge could not give.
+      let response = await request();
+      for (let attempt = 1; (response.status === 429 || response.status === 529) && attempt <= RETRIES; attempt += 1) {
+        const asked = Number(response.headers?.get?.("retry-after"));
+        await wait(Number.isFinite(asked) && asked > 0 ? asked * 1000 : 15_000 * attempt);
+        response = await request();
+      }
       const body = await response.json();
       if (!response.ok) throw new Error(`${model} ${response.status}: ${body?.error?.message ?? "error"}`);
       const text = body.content?.find((block) => block.type === "text")?.text;

@@ -115,6 +115,11 @@ function normalizePayload(kind, payload) {
     assertNonEmpty("presentation event.payload.snapshotDigest", payload.snapshotDigest);
     assertId("presentation event.payload.objectRef", payload.objectRef);
   } else if (kind === "present.updated") {
+    // v0.1 carried the private intention as activity; v0.2 only what is seen.
+    const prior = payload.presentVersion === "thread-public-present-v0.1";
+    if (!prior && payload.presentVersion !== "thread-public-present-v0.2") {
+      throw new TypeError(`unsupported public present version ${payload.presentVersion}`);
+    }
     assertExactKeys("presentation event.payload", payload, [
       "presentVersion",
       "situationId",
@@ -122,14 +127,11 @@ function normalizePayload(kind, payload) {
       "phase",
       "location",
       "mediatedContext",
-      "activity",
+      prior ? "activity" : "outwardActivity",
       "reason",
       "participants",
       "depictionMediaId",
     ]);
-    if (payload.presentVersion !== "thread-public-present-v0.1") {
-      throw new TypeError(`unsupported public present version ${payload.presentVersion}`);
-    }
     assertId("presentation event.payload.situationId", payload.situationId);
     assertIsoTimestamp("presentation event.payload.establishedAt", payload.establishedAt);
     if (!["at_place", "in_transit"].includes(payload.phase)) {
@@ -143,7 +145,8 @@ function normalizePayload(kind, payload) {
       throw new TypeError("in-transit public present requires a transit location");
     }
     nullableText("presentation event.payload.mediatedContext", payload.mediatedContext);
-    assertNonEmpty("presentation event.payload.activity", payload.activity);
+    if (prior) assertNonEmpty("presentation event.payload.activity", payload.activity);
+    else nullableText("presentation event.payload.outwardActivity", payload.outwardActivity);
     nullableText("presentation event.payload.reason", payload.reason);
     presentParticipants(payload.participants);
     assertId("presentation event.payload.depictionMediaId", payload.depictionMediaId);
