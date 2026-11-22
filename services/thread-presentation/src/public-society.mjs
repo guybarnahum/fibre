@@ -1,5 +1,6 @@
 // The society now, for the public (K1, November 22, 2026): where each living
-// public Thread is and what can be seen of it, from its own public present;
+// public Thread is and what can be seen of it, from its public present as
+// World projects it now (a Thread's channel holds only what its last visitor saw);
 // who rests, counted only; and who met whom at a public venue lately, without
 // a word of what was said. No model call on read. Shape agreed with the site
 // in docs/investment/claude-handoff-k1-k4.md.
@@ -29,15 +30,16 @@ export const bornThreads = (threads) => threads.filter((thread) => !NOT_IN_THE_W
 
 export function composeSocietyNow({ threads, world, asOf, environment = null }) {
   const resting = new Set(world?.resting ?? []);
+  const presents = new Map((world?.presents ?? []).map((item) => [item.threadId, item.present]));
   const born = bornThreads(threads);
-  const living = born.filter((thread) => !resting.has(thread.threadId) && thread.currentPresent?.payload);
+  const living = born.filter((thread) => !resting.has(thread.threadId) && presents.has(thread.threadId));
   const cities = new Map();
   const city = (locality) => {
     if (!cities.has(locality)) cities.set(locality, { locality, venues: new Map(), inTransitThreads: [], unnamedPlaceThreads: [] });
     return cities.get(locality);
   };
   for (const thread of living) {
-    const payload = thread.currentPresent.payload;
+    const payload = presents.get(thread.threadId);
     if (payload.phase === "in_transit") {
       const to = payload.location?.to ?? null, from = payload.location?.from ?? null;
       city(cityOf(to) ?? cityOf(from)).inTransitThreads.push(person(thread, payload));

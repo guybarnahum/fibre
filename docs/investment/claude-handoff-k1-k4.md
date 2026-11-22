@@ -131,7 +131,7 @@ The route, the contract name, the top-level shape and every privacy boundary abo
   - A Thread in transit is grouped under its destination's city, when public.
 - **Venues:** only a real public venue is named: an admitted City Guide venue, or a Genesis place bound to a physical venue.
 - **Visibility:**
-  - Listed: Threads the presentation catalog marks public, with `lifecycleStatus === "active"` and a life that is not resting.
+  - Listed: Threads the presentation catalog marks public, born and not retired, whose life is not resting and for whom World has a current situation. Where each one is and what it is doing come from World as of the request, not from the last present a visitor opened.
   - Resting public Threads count toward `restingCount` only.
 - **`recentPublicEncounters`:**
   - Covers the last 24 hours, at most 24 entries.
@@ -140,7 +140,7 @@ The route, the contract name, the top-level shape and every privacy boundary abo
 - **The public present (`/present`)** is now `thread-public-present-v0.2`:
   - it carries `outwardActivity`, never `activity`, and names a public venue;
   - presents recorded under v0.1 are read back with `outwardActivity: null` and no `activity`, on every public read path (current present, discovery, events and the websocket replay).
-- **Caching and access:** cached 15 seconds at the edge. CORS is `VIEWER_ORIGIN` only; any other `Origin` gets 403. Any query parameter gets 400.
+- **Caching and access:** one shared copy is kept 15 seconds at the edge; browsers get `Cache-Control: no-cache`, so they always ask again. CORS is `VIEWER_ORIGIN` only; any other `Origin` gets 403. Any query parameter gets 400.
 
 ## K2 — Minimal Opt-In Returning-Visitor Identity Witness (`POST /api/threads/:threadId/encounter`)
 

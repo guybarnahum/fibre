@@ -23,6 +23,7 @@ import {
   LivedNowConflictError,
   openLivedNowStore,
 } from "../src/lived-now-store.mjs";
+import { readPublicSociety } from "../src/public-society.mjs";
 import {
   lifeRelationId,
   placeEpisodeId,
@@ -515,6 +516,11 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
     assert.deepEqual(first.evidenceRefs, [life.sourceEvent]);
     assert.deepEqual(first.sourcePlanRefs, [personal.planId]);
     lived.close();
+    const society=readPublicSociety(localWorldStateStorage(databasePath),
+      {threadIds:[life.thread.threadId],now:"2026-09-10T05:05:00Z"});
+    assert.equal(society.presents[0]?.present.situationId,first.situationId,
+      "the public society did not show where a living Thread is now");
+    assert.equal(JSON.stringify(society).includes("Home in Haifa"),false,"the public society named a private home");
 
     lived = openLivedNowStore(localWorldStateStorage(databasePath));
     assert.deepEqual(lived.getCurrentSituation(life.thread.threadId), first);

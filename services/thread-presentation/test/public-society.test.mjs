@@ -2,12 +2,16 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { composeSocietyNow, createPublicSocietyApi } from "../src/public-society.mjs";
 
-const present = (situationId, payload) => ({ kind:"present.updated", payload:{ presentVersion:"thread-public-present-v0.2",
+const present = (situationId, payload) => ({ presentVersion:"thread-public-present-v0.2",
   situationId, establishedAt:"2026-11-22T09:00:00.000Z", mediatedContext:null, reason:null, participants:[],
-  depictionMediaId:`media_present_${situationId}`, ...payload } });
+  depictionMediaId:`media_present_${situationId}`, ...payload });
 const library = { kind:"place", place:{ displayName:"Abrehot Library", region:"Addis Ababa" } };
+// What the Thread's channel last showed a visitor, weeks ago; World's present is now.
+const STALE = { kind:"present.updated", payload:present("sit_september", { phase:"at_place",
+  location:{ kind:"place", place:{ displayName:"Unity Park", region:"Addis Ababa" } }, outwardActivity:"walking" }) };
 const thread = (threadId, displayName, payload, lifecycleStatus = "frozen") => ({ threadId, displayName, lifecycleStatus,
-  portraitThumbnailObjectRef:`obj_${threadId}`, currentPresent:payload === null ? null : present(`sit_${threadId}`, payload) });
+  portraitThumbnailObjectRef:`obj_${threadId}`, currentPresent:STALE,
+  now:payload === null ? null : present(`sit_${threadId}`, payload) });
 const THREADS = [
   thread("thr_habiba", "Habiba", { phase:"at_place", location:library, outwardActivity:"reading" }),
   thread("thr_kadir", "Kadir", { phase:"at_place", location:library, outwardActivity:"taking notes" }),
@@ -22,6 +26,8 @@ const THREADS = [
   thread("thr_unplaced", "Born, not yet placed", null),
 ];
 const WORLD = { asOf:"2026-11-22T10:00:00.000Z", resting:["thr_resting"],
+  presents:THREADS.filter((item) => item.now !== null && item.threadId !== "thr_resting")
+    .map((item) => ({ threadId:item.threadId, present:item.now })),
   meetings:[{ encounterStoryId:"story_talk", occurredAt:"2026-11-22T09:30:00.000Z", threadIds:["thr_habiba", "thr_kadir"],
     place:{ displayName:"Abrehot Library", locality:"Addis Ababa" } }] };
 
@@ -33,7 +39,7 @@ test("the public society shows where living Threads are and what can be seen of 
   assert.deepEqual(listed.map((item) => item.threadId).sort(), ["thr_bontu", "thr_dormant", "thr_habiba", "thr_kadir", "thr_nathan"],
     "a living Thread between moments went missing, or a resting, unborn or retired one was listed as living");
   assert.deepEqual(society.population, { livingPublicCount:5, restingCount:1 });
-  assert.deepEqual(addis.venues.map((venue) => venue.displayName), ["Abrehot Library"], "a home was shown as a venue");
+  assert.deepEqual(addis.venues.map((venue) => venue.displayName), ["Abrehot Library"], "a home was shown as a venue, or a visitor's weeks-old present stood in for now");
   assert.deepEqual(addis.venues[0].presentThreads.find((item) => item.threadId === "thr_habiba").coPresentThreadIds, ["thr_kadir", "thr_dormant"],
     "who is there together was lost");
   assert.equal(addis.unnamedPlaceThreads[0].threadId, "thr_bontu", "a place with no public name was guessed at");
@@ -41,10 +47,10 @@ test("the public society shows where living Threads are and what can be seen of 
 });
 
 test("nothing private crosses into the public society view, and nothing said in a meeting", async () => {
-  const leaky = [{ ...THREADS[0], currentPresent:{ kind:"present.updated", payload:{ ...THREADS[0].currentPresent.payload,
-    activity:"Read and study, wondering whether to tell Kadir about my exam" } } }];
+  const leaky = { ...WORLD, presents:[{ threadId:"thr_habiba", present:{ ...THREADS[0].now,
+    activity:"Read and study, wondering whether to tell Kadir about my exam" } }] };
   const api = createPublicSocietyApi({ viewerOrigin:"https://insidefibre.com",
-    listPublicThreads:async () => leaky, readWorldSociety:async () => WORLD });
+    listPublicThreads:async () => THREADS, readWorldSociety:async () => leaky });
   const response = await api.fetch(new Request("https://presentation.example/api/society/now", { headers:{ Origin:"https://insidefibre.com" } }));
   const text = await response.text();
   assert.equal(response.status, 200);

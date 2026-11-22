@@ -10,6 +10,7 @@ const venueOf = (_threadId, placeRef) => placeRef === "wpl_library" ? { displayN
 
 test("World tells the public who met whom at a public venue, and who rests among the Threads it shows, nothing more", () => {
   const society = projectPublicSociety({ now:"2026-11-22T10:00:00.000Z", venueOf,
+    presentOf:(threadId) => threadId === "thr_kadir" ? null : { situationId:`sit_${threadId}`, outwardActivity:"reading" },
     threadIds:["thr_habiba", "thr_kadir", "thr_resting"], resting:["thr_resting", "thr_not_shown"],
     rows:[
       row("story_talk", "thr_habiba", ["thr_habiba", "thr_kadir"]), row("story_talk", "thr_kadir", ["thr_habiba", "thr_kadir"]),
@@ -19,6 +20,8 @@ test("World tells the public who met whom at a public venue, and who rests among
       row("story_home", "thr_habiba", ["thr_habiba", "thr_kadir"], "per:home"), row("story_home", "thr_kadir", ["thr_habiba", "thr_kadir"], "per:home"),
     ] });
   assert.deepEqual(society.resting, ["thr_resting"], "a Thread not shown publicly was disclosed as resting");
+  assert.deepEqual(society.presents.map((item) => item.threadId), ["thr_habiba"],
+    "a resting Thread, or one World has no current situation for, was given a present");
   assert.deepEqual(society.meetings.map((meeting) => [meeting.threadIds.join("+"), meeting.place?.displayName ?? null]),
     [["thr_habiba+thr_kadir", "Abrehot Library"], ["thr_habiba+thr_kadir", null]],
     "a witnessed happening, a visitor, or someone not shown counted as a public meeting, or a home was named");

@@ -6,6 +6,21 @@ function requireMethod(owner, name) {
   }
 }
 
+// What anyone may see of a Thread's current situation. World may know the
+// exact private home; the viewer sees only its independently grounded
+// city/country, never an address or coordinates. A real public venue is
+// named; nothing else that World knows of the place.
+export function projectLivedPresent({ livedNowStore, situatedLifeStore, situation }) {
+  const placeRef = situation.location?.kind === "place" ? situation.location.placeRef : null;
+  return projectCurrentSituationPresent({
+    currentSituation: situation,
+    placeEpisodes: situatedLifeStore.listCurrentPlaceEpisodes(situation.threadId),
+    lifeRelations: situatedLifeStore.listCurrentLifeRelations(situation.threadId),
+    coarsePlace: placeRef === null ? undefined : livedNowStore.coarseCurrentPlace?.(situation.threadId, placeRef),
+    publicVenue: placeRef === null ? null : livedNowStore.publicVenue?.(situation.threadId, placeRef) ?? null,
+  });
+}
+
 export function createLivedNowPublicationService({
   livedNowStore,
   situatedLifeStore,
@@ -17,22 +32,7 @@ export function createLivedNowPublicationService({
   requireMethod(presentationPublisher, "publishCurrentPresent");
 
   async function publishCurrentSituation(situation) {
-    // World may know the exact private home; the viewer sees only its
-    // independently grounded city/country, never an address or coordinates.
-    const coarsePlace=situation.location?.kind==="place"
-      ?livedNowStore.coarseCurrentPlace?.(
-        situation.threadId,situation.location.placeRef,
-      ):undefined;
-    // A real public venue is named; nothing else that World knows of the place.
-    const publicVenue=situation.location?.kind==="place"
-      ?livedNowStore.publicVenue?.(situation.threadId,situation.location.placeRef)??null:null;
-    const present = projectCurrentSituationPresent({
-      currentSituation: situation,
-      placeEpisodes: situatedLifeStore.listCurrentPlaceEpisodes(situation.threadId),
-      lifeRelations: situatedLifeStore.listCurrentLifeRelations(situation.threadId),
-      coarsePlace,
-      publicVenue,
-    });
+    const present = projectLivedPresent({ livedNowStore, situatedLifeStore, situation });
     const publication = await presentationPublisher.publishCurrentPresent({
       threadId: situation.threadId,
       present,
