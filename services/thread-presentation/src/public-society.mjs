@@ -22,18 +22,22 @@ function person(thread, payload) {
 const cityOf = (place) => place === null ? null
   : place.region ?? place.displayName.split(",")[0].trim();
 
+// Born and not retired. "active" is only the moment a Thread is thinking;
+// between moments a living Thread is frozen or dormant.
+const NOT_IN_THE_WORLD = new Set(["genesis_candidate", "retired"]);
+export const bornThreads = (threads) => threads.filter((thread) => !NOT_IN_THE_WORLD.has(thread.lifecycleStatus));
+
 export function composeSocietyNow({ threads, world, asOf, environment = null }) {
   const resting = new Set(world?.resting ?? []);
-  const active = threads.filter((thread) => thread.lifecycleStatus === "active");
-  const living = active.filter((thread) => !resting.has(thread.threadId));
+  const born = bornThreads(threads);
+  const living = born.filter((thread) => !resting.has(thread.threadId) && thread.currentPresent?.payload);
   const cities = new Map();
   const city = (locality) => {
     if (!cities.has(locality)) cities.set(locality, { locality, venues: new Map(), inTransitThreads: [], unnamedPlaceThreads: [] });
     return cities.get(locality);
   };
   for (const thread of living) {
-    const payload = thread.currentPresent?.payload ?? null;
-    if (payload === null) continue;
+    const payload = thread.currentPresent.payload;
     if (payload.phase === "in_transit") {
       const to = payload.location?.to ?? null, from = payload.location?.from ?? null;
       city(cityOf(to) ?? cityOf(from)).inTransitThreads.push(person(thread, payload));
@@ -53,7 +57,7 @@ export function composeSocietyNow({ threads, world, asOf, environment = null }) 
     contract: PUBLIC_SOCIETY_NOW_VERSION,
     asOf,
     environment,
-    population: { livingPublicCount: living.length, restingCount: active.length - living.length },
+    population: { livingPublicCount: living.length, restingCount: born.filter((thread) => resting.has(thread.threadId)).length },
     cities: [...cities.values()].map((entry) => ({ locality: entry.locality,
       venues: [...entry.venues.values()].map((venue) => ({ ...venue,
         presentThreads: venue.presentThreads.map((item) => ({ ...item,
@@ -71,7 +75,8 @@ export function composeSocietyNow({ threads, world, asOf, environment = null }) 
 }
 
 // GET /api/society/now: the public Threads and their presents from the
-// catalog, what World adds, composed and briefly cached.
+// catalog, what World adds, composed. Browsers always ask again; the edge
+// keeps one shared copy briefly (the worker's own cache).
 export function createPublicSocietyApi({ listPublicThreads, readWorldSociety, viewerOrigin = null, environment = null }) {
   if (typeof listPublicThreads !== "function" || typeof readWorldSociety !== "function") {
     throw new TypeError("public society API requires listPublicThreads and readWorldSociety");
@@ -87,9 +92,9 @@ export function createPublicSocietyApi({ listPublicThreads, readWorldSociety, vi
       if (request.method !== "GET") return Response.json({ error: "method_not_allowed" }, { status: 405, headers: cors });
       if ([...url.searchParams.keys()].length > 0) return Response.json({ error: "invalid_request" }, { status: 400, headers: cors });
       const threads = await listPublicThreads();
-      const world = await readWorldSociety(threads.filter((thread) => thread.lifecycleStatus === "active").map((thread) => thread.threadId));
+      const world = await readWorldSociety(bornThreads(threads).map((thread) => thread.threadId));
       return Response.json(composeSocietyNow({ threads, world, asOf: world?.asOf ?? new Date().toISOString(), environment }), {
-        headers: { ...cors, "Cache-Control": "public, max-age=15, stale-while-revalidate=30" },
+        headers: { ...cors, "Cache-Control": "no-cache" },
       });
     },
   });

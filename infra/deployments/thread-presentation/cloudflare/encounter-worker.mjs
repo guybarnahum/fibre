@@ -212,12 +212,13 @@ export default {
     if(currentLifeResponse!==null)return currentLifeResponse;
 
     // The society view is shared by every viewer: kept 15 seconds at this edge,
-    // so a busy home page reads the World once, not once per visitor.
+    // so a busy home page reads the World once, not once per visitor. Browsers
+    // get no-cache, since the zone stretches any short browser max-age to hours.
     const societyCache=url.pathname==="/api/society/now"&&request.method==="GET"&&typeof caches!=="undefined"
       ?{store:caches.default,key:new Request(`https://presentation.internal/society-now?origin=${encodeURIComponent(request.headers.get("Origin")??"")}`)}:null;
     if(societyCache!==null){
       const hit=await societyCache.store.match(societyCache.key);
-      if(hit)return hit;
+      if(hit){const fresh=new Response(hit.body,hit);fresh.headers.set("Cache-Control","no-cache");return fresh;}
     }
     const societyResponse=await createPublicSocietyApi({
       viewerOrigin:env.VIEWER_ORIGIN??null,
@@ -226,7 +227,11 @@ export default {
       readWorldSociety:(threadIds)=>readWorldSociety(env,threadIds),
     }).fetch(request);
     if(societyResponse!==null){
-      if(societyCache!==null&&societyResponse.ok)ctx.waitUntil(societyCache.store.put(societyCache.key,societyResponse.clone()));
+      if(societyCache!==null&&societyResponse.ok){
+        const kept=new Response(societyResponse.clone().body,societyResponse);
+        kept.headers.set("Cache-Control","public, max-age=15");
+        ctx.waitUntil(societyCache.store.put(societyCache.key,kept));
+      }
       return societyResponse;
     }
 

@@ -6,7 +6,7 @@ const present = (situationId, payload) => ({ kind:"present.updated", payload:{ p
   situationId, establishedAt:"2026-11-22T09:00:00.000Z", mediatedContext:null, reason:null, participants:[],
   depictionMediaId:`media_present_${situationId}`, ...payload } });
 const library = { kind:"place", place:{ displayName:"Abrehot Library", region:"Addis Ababa" } };
-const thread = (threadId, displayName, payload, lifecycleStatus = "active") => ({ threadId, displayName, lifecycleStatus,
+const thread = (threadId, displayName, payload, lifecycleStatus = "frozen") => ({ threadId, displayName, lifecycleStatus,
   portraitThumbnailObjectRef:`obj_${threadId}`, currentPresent:payload === null ? null : present(`sit_${threadId}`, payload) });
 const THREADS = [
   thread("thr_habiba", "Habiba", { phase:"at_place", location:library, outwardActivity:"reading" }),
@@ -16,7 +16,10 @@ const THREADS = [
   thread("thr_nathan", "Nathan", { phase:"in_transit", location:{ kind:"transit", from:null, to:library.place, progress:0.5 },
     outwardActivity:"walking" }),
   thread("thr_resting", "Resting", { phase:"at_place", location:library, outwardActivity:"reading" }),
-  thread("thr_candidate", "Not yet born", null, "genesis_candidate"),
+  thread("thr_dormant", "Between moments", { phase:"at_place", location:library, outwardActivity:"reading" }, "dormant"),
+  thread("thr_candidate", "Not yet born", { phase:"at_place", location:library, outwardActivity:"reading" }, "genesis_candidate"),
+  thread("thr_retired", "Retired", { phase:"at_place", location:library, outwardActivity:"reading" }, "retired"),
+  thread("thr_unplaced", "Born, not yet placed", null),
 ];
 const WORLD = { asOf:"2026-11-22T10:00:00.000Z", resting:["thr_resting"],
   meetings:[{ encounterStoryId:"story_talk", occurredAt:"2026-11-22T09:30:00.000Z", threadIds:["thr_habiba", "thr_kadir"],
@@ -27,11 +30,11 @@ test("the public society shows where living Threads are and what can be seen of 
   const [addis] = society.cities;
   const listed = [...addis.venues.flatMap((venue) => venue.presentThreads), ...addis.inTransitThreads, ...addis.unnamedPlaceThreads];
   assert.deepEqual(society.cities.map((city) => city.locality), ["Addis Ababa"]);
-  assert.deepEqual(listed.map((item) => item.threadId).sort(), ["thr_bontu", "thr_habiba", "thr_kadir", "thr_nathan"],
-    "a resting or unborn Thread was listed as living");
-  assert.deepEqual(society.population, { livingPublicCount:4, restingCount:1 });
+  assert.deepEqual(listed.map((item) => item.threadId).sort(), ["thr_bontu", "thr_dormant", "thr_habiba", "thr_kadir", "thr_nathan"],
+    "a living Thread between moments went missing, or a resting, unborn or retired one was listed as living");
+  assert.deepEqual(society.population, { livingPublicCount:5, restingCount:1 });
   assert.deepEqual(addis.venues.map((venue) => venue.displayName), ["Abrehot Library"], "a home was shown as a venue");
-  assert.deepEqual(addis.venues[0].presentThreads.find((item) => item.threadId === "thr_habiba").coPresentThreadIds, ["thr_kadir"],
+  assert.deepEqual(addis.venues[0].presentThreads.find((item) => item.threadId === "thr_habiba").coPresentThreadIds, ["thr_kadir", "thr_dormant"],
     "who is there together was lost");
   assert.equal(addis.unnamedPlaceThreads[0].threadId, "thr_bontu", "a place with no public name was guessed at");
   assert.deepEqual(society.recentPublicEncounters[0].participantNames, ["Habiba", "Kadir"]);
