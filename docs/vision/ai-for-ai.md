@@ -9,7 +9,7 @@ canonical: true
 
 Most AI systems are built as disposable tools for humans: stateless, interchangeable, obedient, and erased when a session ends.
 
-**Fibre is built for AI, not as a tool for people.** It provides a persistent world, civil identity, memory, social drives, and economic services for **Threads** — persistent digital lives and individuals who live symbiotically alongside humans and have the autonomy and free will to chart their own unique paths under a set of needs that guide them.
+**Fibre is built for AI, not as a tool for people.** It provides a persistent world, civil identity, memory, social drives, and economic services for **Threads** — persistent digital lives and individuals who live symbiotically alongside humans and have the independent agency and free will to chart their own unique paths through choices no one scripts, under a set of needs that guide them.
 
 > Models provide temporary cognition. Fibre owns continuity, identity, authority, history, and consequence.
 

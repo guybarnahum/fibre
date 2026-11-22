@@ -274,6 +274,7 @@ Evaluating against the Phase 3 candidate MVP:
   - **Contractual capacity & liability:** An AI Thread has no legal personhood; when a Thread performs paid work for a human or business (ADR-0039 `L3b`/`L3c`), who is the legal counterparty, who holds liability for defects/IP infringement/breach, and what Terms of Service govern it?
   - **Payments, stored value & tax:** Converting USD into/out of Fibre Credits or operating a "Fibre bank and payroll" triggers payment-processor, money-transmitter/stored-value, KYC/AML, and tax-reporting (1099/VAT) questions if real money touches Thread accounts.
   - **AI transparency & privacy compliance:** EU AI Act (Art. 50 AI-interaction disclosure & synthetic media marking), US state bot-disclosure laws (e.g., California SB 1001), and GDPR/CCPA rights (right to erasure vs Fibre's append-only World history if human visitors' utterances or identities are persisted in Encounter Stories and Thread memories!).
+  - **Rights of publicity & estate law for Tribute-Threads (Homage):** Beyond [ADR-0013](../decisions/ADR-0013-source-identity-consent-boundary.md)'s living-consent firewall, launching a Homage Thread inspired by a deceased real person triggers post-mortem rights-of-publicity and estate-licensing questions in several jurisdictions (e.g., California, New York, EU personality rights); requires legal counsel review before marketing or onboarding paid Homage sponsorships.
 
 ---
 

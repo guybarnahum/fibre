@@ -68,7 +68,7 @@ jobs:
             infra/deployments/admin-dashboard/cloudflare/wrangler.jsonc \
             infra/deployments/status-page/cloudflare/wrangler.jsonc; do
             log="$RUNNER_TEMP/$(basename "$(dirname "$(dirname "$cfg")")").log"
-            if npx --yes wrangler@4.126.0 deploy --dry-run --config "$cfg" > "$log" 2>&1; then
+            if npx --yes wrangler@4.151.0 deploy --dry-run --config "$cfg" > "$log" 2>&1; then
               echo "✓ dry-run passed: $cfg"
             else
               cat "$log"

@@ -228,7 +228,7 @@ This remains a follow-on after the current M2 closure, but it is part of **Genes
 8. **Distribution test** — retain approximately 50/50 female/male assignment across a large deterministic birth sample without a central population quota.
 9. **Legacy rule** — old Threads lacking sex must not be backfilled by guessing from portrait, name, pronouns or stereotypes. Preserve the missing legacy fact unless authoritative evidence or an explicit migration decision exists.
 
-The durable follow-on is also tracked in [`../state/future-capability-map.md` *(archived in Git at 690b3f0)*. Legacy handling follows thread-preservation-and-migration *(archived in Git at 690b3f0)*.
+The durable follow-on is also tracked in `future-capability-map.md` *(archived in Git at 690b3f0)*. Legacy handling follows `thread-preservation-and-migration.md` *(archived in Git at 690b3f0)*.
 
 ## Origin families
 

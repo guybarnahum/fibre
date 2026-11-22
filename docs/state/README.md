@@ -6,4 +6,4 @@ Three live files own what is true about Fibre right now:
 2. **[`current-state.md`](current-state.md)** — Engineering truth by capability, evidence level (`Source`, `Deployed`, `Observed`, `Standing`), and causal maturity.
 3. **[`current-priorities.md`](current-priorities.md)** — Active execution tracks (Social life and Model efficiency) and immediate sequencing.
 
-Older workstream status logs (`infra-pure.md`, `future-capability-map.md`, `thread-preservation-and-migration.md`, `unresolved-decisions.md`) are archived in Git history (`690b3f0`) per [ADR-0016](../decisions/ADR-0016-repository-retention.md).
+Older workstream status logs (`infra-pure`, `future-capability-map`, `thread-preservation-and-migration`, `unresolved-decisions`) are archived in Git history at `690b3f0` per [ADR-0016](../decisions/ADR-0016-repository-retention.md).
