@@ -747,7 +747,29 @@ export class LivedNowStore {
   coarseCurrentPlace(threadId,placeRef){
     const privatePlace=this.getPrivatePlace(threadId,placeRef);
     // undefined: no World disclosure authority; null: explicitly hidden.
-    return privatePlace===null?undefined:coarseWorldPlace(privatePlace);
+    if(privatePlace!==null)return coarseWorldPlace(privatePlace);
+    // No home on record: the city World already discloses for this Thread's
+    // own Genesis context (a sibling place admitted at city level), the same
+    // rule the Thread directory uses. A hidden sibling discloses nothing.
+    const city=this.#genesisContextCity(threadId,placeRef);
+    return city===null?undefined:Object.freeze({displayName:`${city.city}, ${city.country}`,region:null});
+  }
+
+  #genesisContextCity(threadId,placeRef){
+    const row=this.#database.prepare(`
+      SELECT p.record_json,p.record_digest,e.record_digest AS witness_digest
+      FROM situated_evidence_witnesses e
+      JOIN place_episode_records p
+        ON p.thread_id=e.thread_id AND p.episode_id=e.source_id AND p.revision=e.revision
+      WHERE e.thread_id=? AND e.reference=? AND e.witness_kind='place_episode_revision'
+    `).get(threadId,placeRef);
+    const episode=row===undefined?null
+      :placeEpisodeEvidence(placeRef,row.record_json,row.record_digest,row.witness_digest);
+    const worldPlace=this.getWorldPlace(threadId,placeRef,{required:false});
+    if(!isModernGenesisPlace(episode)&&!isModernGenesisWorldPlace(worldPlace))return null;
+    return genesisContextLocations(episode===null?[]:[episode],this.listLocatedGenesisContexts([threadId]),
+      {worldPlaces:worldPlace===null?[]:[worldPlace],threadId})
+      .find(item=>item.placeRef===placeRef)?.geography??null;
   }
 
   currentLocationTimeZone(threadId){

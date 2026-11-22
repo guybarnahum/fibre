@@ -24,6 +24,7 @@ import {
   openLivedNowStore,
 } from "../src/lived-now-store.mjs";
 import { readPublicSociety } from "../src/public-society.mjs";
+import { admitWorldPrivatePlace } from "../src/live-world-geography.mjs";
 import {
   lifeRelationId,
   placeEpisodeId,
@@ -131,6 +132,52 @@ function seedLife(databasePath) {
     parentRef: lifeRelationRevisionRef(parent),
   };
 }
+
+test("a home's city is public when World already discloses it through the Thread's own Genesis context, never when that context is hidden",async()=>{
+  await withDatabase(async databasePath=>{
+    const thread=childThread();
+    const world=openWorldStore(localWorldStateStorage(databasePath));
+    world.seedThread(thread);
+    world.close();
+    const database=new DatabaseSync(databasePath,{enableForeignKeyConstraints:true});
+    const sourceEvent=database.prepare(
+      "SELECT event_id FROM thread_events WHERE thread_id=? AND event_type='THREAD_SEEDED'",
+    ).get(thread.threadId).event_id;
+    database.close();
+    const situated=openSituatedLifeStore(localWorldStateStorage(databasePath));
+    const genesisPlace=(seed,kind)=>placeEpisodeRevisionRef(situated.recordPlaceEpisode({
+      episodeId:placeEpisodeId({thread:thread.threadId,place:`${seed}-${kind}`}),revision:1,threadId:thread.threadId,
+      episodeKind:"formative_presence",
+      place:{placeId:`place_modern_${seed}_${kind}`,displayName:`An ordinary ${kind} place`,
+        countryCode:null,region:null,locality:null,precision:"unspecified"},
+      startAt:"2024-08-01T00:00:00Z",endAt:null,sourceReferences:[sourceEvent],
+      visibility:"private",provenance:"genesis_created",recordedAt:"2026-09-10T05:01:00Z",
+    }));
+    const home=genesisPlace("4572b13ec97a","home"),transit=genesisPlace("4572b13ec97a","transit");
+    const hiddenHome=genesisPlace("97e4cb643db2","home"),hiddenTransit=genesisPlace("97e4cb643db2","transit");
+    situated.close();
+    const lived=openLivedNowStore(localWorldStateStorage(databasePath));
+    // Each sibling was located while the Thread was there; only the attestations matter here.
+    const admit=(placeRef,publicGranularity)=>{
+      const db=new DatabaseSync(databasePath,{enableForeignKeyConstraints:true});
+      try{admitWorldPrivatePlace(db,{
+        threadId:thread.threadId,placeRef,specificPlace:"A known place",streetAddress:null,
+        locality:"Addis Ababa",country:"Ethiopia",countryCode:"ET",lat:null,long:null,
+        timeZone:"Africa/Addis_Ababa",evidenceRef:"operator_birth_city_default:"+thread.threadId,publicGranularity,
+      });}finally{db.close();}
+    };
+    try{
+      assert.equal(lived.coarseCurrentPlace(thread.threadId,home),undefined,
+        "a city was named with nothing in World to disclose it");
+      admit(transit,"city");
+      admit(hiddenTransit,"hidden");
+      assert.deepEqual(lived.coarseCurrentPlace(thread.threadId,home),{displayName:"Addis Ababa, Ethiopia",region:null},
+        "a home whose city World already discloses stayed without one in public");
+      assert.equal(lived.coarseCurrentPlace(thread.threadId,hiddenHome),undefined,
+        "a hidden sibling's city escaped into public view");
+    }finally{lived.close();}
+  });
+});
 
 test("Thread chooses a previously unknown place; World remembers it without inventing a visit",async()=>{
   await withDatabase(async databasePath=>{
