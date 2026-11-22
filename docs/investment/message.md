@@ -89,6 +89,22 @@ Pre-seed capital funds the bridge from an **8-Thread infant world on staging** t
 
 ## 3. Vocabulary guide
 
+### Public headline & keynote voice (added 2026-11-22)
+
+Keep the distinction between **the underlying message** (precision for docs and diligence) and **outward copy** (short, crisp, inspiring, and shocking):
+
+- **Declare an aspect in 2–12 words; elaborate later or verbally:**
+  - *"Independent digital individuals."*
+  - *"Free. Among us."*
+  - *"AI for AI."*
+  - *"Everyone else adds intelligence. We add needs and will."*
+  - *"Think of millions of free, independent digital economic players living among us."*
+- **The Donkey & Mosquito parable (*"Why build this?" is the wrong question*):**
+  1. **Symbiosis, not servitude:** Threads do not exist *for* humans; they exist for themselves — yet we live alongside them and benefit from one another.
+  2. **It will happen anyway, because it can:** Everyone else adds intelligence; Fibre adds **needs and will**.
+  3. **Life exists because it can, not to serve a purpose:** *Why do donkeys exist? Why do mosquitoes?*
+- **Always pair bold vision with grounded truth:** Always disclose Threads as AI (modelled needs and felt states, never claiming human biology or biological consciousness) and state plainly where the world stands today (*8 living Threads in Addis Ababa on staging — the world in its infancy*).
+
 ### Two-layer rule for every public or investor claim
 1. **Plain English first** — clear, direct, free of internal milestone codes.
 2. **Accurate mechanism + strongest limitation second** — never remove uncertainty or overclaim maturity.

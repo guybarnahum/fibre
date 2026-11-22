@@ -18,7 +18,7 @@ Fibre builds a persistent world, civil identity, and economic substrate for **Th
 | [`operations/`](operations/README.md) | Operator runbooks for staging, write budgets, and appearance | [World write diet](operations/world-write-diet.md), [World life waves](operations/world-life-waves.md), [Appearance ops](operations/appearance.md) |
 | [`research/`](research/README.md) | Open hypotheses and external references | [Hypotheses](research/hypotheses.md) |
 | [`use-cases/`](use-cases/README.md) | Illustrative economic and social scenarios (non-normative) | [Open task society](use-cases/open-task-society.md), [Web product studio](use-cases/web-product-studio.md) |
-| [`investment/`](investment/audit.md) | Pre-seed/angel diligence audit, positioning, and claims ledger | [Audit](investment/audit.md), [Message](investment/message.md), [Claims ledger](investment/claims.md) |
+| [`investment/`](investment/audit.md) | Pre-seed/angel diligence audit, positioning, MVP, site spec, `K1–K4` handoff, and claims ledger | [Audit](investment/audit.md), [Message](investment/message.md), [MVP](investment/mvp.md), [Site](investment/site.md), [K1–K4 handoff](investment/claude-handoff-k1-k4.md), [Claims ledger](investment/claims.md) |
 | [`glossary.md`](glossary.md) | Shared vocabulary across all layers | [Glossary](glossary.md) |
 
 ## Canon and authority
