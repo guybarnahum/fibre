@@ -1,4 +1,98 @@
 {
   "version": 1,
-  "certifications": []
+  "certifications": [
+    {
+      "prompt": "experience.consolidation",
+      "promptVersion": 8,
+      "provider": "cloudflare",
+      "model": "@cf/google/gemma-4-26b-a4b-it",
+      "verdict": "undecided",
+      "tests": {
+        "valid: no broken rules": "fail",
+        "valid: nothing invented": "undecided",
+        "attributable: the answer shows who (or where)": "n/a",
+        "invariant": "fail",
+        "credible day": "pass",
+        "acceptable": "fail"
+      },
+      "acceptable": {
+        "share": 0.556,
+        "of": 9
+      },
+      "scoredBy": [
+        "claude-opus-5-5"
+      ],
+      "nothingChosen": {
+        "share": 0,
+        "of": 9
+      },
+      "costPer1000Calls": 1.07,
+      "requests": 9,
+      "failed": 27,
+      "certifiedAt": "2026-11-22",
+      "evidence": "quality-experience.consolidation-2026-11-22T23-55-19.790Z.json"
+    },
+    {
+      "prompt": "experience.consolidation",
+      "promptVersion": 8,
+      "provider": "google",
+      "model": "gemini-3.6-flash",
+      "verdict": "undecided",
+      "tests": {
+        "valid: no broken rules": "undecided",
+        "valid: nothing invented": "undecided",
+        "attributable: the answer shows who (or where)": "n/a",
+        "invariant": "pass",
+        "credible day": "pass",
+        "acceptable": "undecided"
+      },
+      "acceptable": {
+        "share": 0.944,
+        "of": 18
+      },
+      "scoredBy": [
+        "claude-opus-5-5"
+      ],
+      "nothingChosen": {
+        "share": 0.211,
+        "of": 19
+      },
+      "costPer1000Calls": 5.9,
+      "requests": 19,
+      "failed": 17,
+      "certifiedAt": "2026-11-22",
+      "evidence": "quality-experience.consolidation-2026-11-22T23-55-19.790Z.json"
+    },
+    {
+      "prompt": "experience.consolidation",
+      "promptVersion": 8,
+      "provider": "openai",
+      "model": "gpt-5.6-sol",
+      "verdict": "undecided",
+      "tests": {
+        "valid: no broken rules": "undecided",
+        "valid: nothing invented": "undecided",
+        "attributable: the answer shows who (or where)": "n/a",
+        "invariant": "undecided",
+        "credible day": "pass",
+        "acceptable": "undecided"
+      },
+      "acceptable": {
+        "share": 0.944,
+        "of": 36
+      },
+      "scoredBy": [
+        "claude-opus-5-5"
+      ],
+      "nothingChosen": {
+        "share": 0.028,
+        "of": 36
+      },
+      "costPer1000Calls": 22.51,
+      "requests": 36,
+      "failed": 0,
+      "certifiedAt": "2026-11-22",
+      "evidence": "quality-experience.consolidation-2026-11-22T23-55-19.790Z.json"
+    }
+  ]
 }
