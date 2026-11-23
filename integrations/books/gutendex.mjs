@@ -33,11 +33,14 @@ export function publicDomainWork(entry) {
 }
 
 // One page (up to 32 works) of the public-domain catalogue in a language.
-export async function listPublicDomainWorks({ page, language = "en", fetchImpl = globalThis.fetch } = {}) {
+export async function listPublicDomainWorks({ page, language = "en", topic = null, fetchImpl = globalThis.fetch } = {}) {
   if (!Number.isSafeInteger(page) || page < 1) throw new TypeError("catalogue page must be a positive integer");
   if (!/^[a-z]{2,3}$/u.test(language)) throw new TypeError("catalogue language must be a language code");
+  if (topic !== null && !/^[a-z][a-z ]{1,40}$/u.test(topic)) throw new TypeError("catalogue topic must be a plain word");
   const url = new URL(GUTENDEX_URL);
   url.searchParams.set("languages", language);
+  // A shelf by subject: works whose subjects or bookshelves name the topic.
+  if (topic !== null) url.searchParams.set("topic", topic);
   url.searchParams.set("copyright", "false");
   url.searchParams.set("page", String(page));
   const response = await fetchImpl(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(20_000) });

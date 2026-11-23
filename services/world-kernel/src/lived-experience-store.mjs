@@ -2927,6 +2927,20 @@ export class LivedExperienceStore {
         position:row.position,work:Object.freeze(JSON.parse(row.work_json))})));
   }
 
+  // Books others read here lately and put back: what is on the returns cart.
+  listVenueReturns(venueRef,{since,exceptThreadId,limit=4}){
+    assertId("returns venue",venueRef);
+    assertIsoTimestamp("returns since",since);
+    assertId("returns reader",exceptThreadId);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>8)throw new TypeError("a returns cart is short");
+    return Object.freeze(this.#database.prepare(`SELECT h.* FROM venue_holdings h
+      WHERE h.venue_ref=? AND h.holding_ref IN (SELECT r.holding_ref FROM thread_readings r
+        WHERE r.thread_id<>? AND r.last_read_at>=?)
+      ORDER BY h.holding_ref LIMIT ?`).all(venueRef,exceptThreadId,since,limit)
+      .map(row=>Object.freeze({holdingRef:row.holding_ref,venueRef:row.venue_ref,section:row.section,
+        position:row.position,work:Object.freeze(JSON.parse(row.work_json))})));
+  }
+
   getVenueHolding(holdingRef){
     assertId("holding",holdingRef);
     const row=this.#database.prepare("SELECT * FROM venue_holdings WHERE holding_ref=?").get(holdingRef);

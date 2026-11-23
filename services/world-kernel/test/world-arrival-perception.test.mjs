@@ -11,7 +11,7 @@ import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs"
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import {evaluateSalience} from "../src/salience-gate.mjs";
 import {embodimentSpecificationDigest} from "../src/embodiment-domain.mjs";
-import {booksToContinueAt,displayHoldings,glanceItems,readHolding} from "../src/scene-glance.mjs";
+import {booksToContinueAt,booksWithinReach,displayHoldings,glanceItems,LIBRARY_SHELVES,readHolding} from "../src/scene-glance.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -457,7 +457,7 @@ test("a glance looks over everything before taking one thing up: the rest is see
     const livedNowStore={...ctx.livedNowStore,getWorldPlace:()=>({affordances:["Reading"],
       physicalVenue:{ref:"venue_verified_cafe",displayName:"An attested library"}})};
     store.enqueueArrivalPerception({...work,witnesses:work.witnesses.slice(0,1)});
-    const glances=[];
+    const glances=[],bodies=[];
     const process=createWorldArrivalPerception({
       experienceStore:store,livedNowStore,catalogue:{async listWorks(){return WORKS;}},
       worldReader:{getThread:id=>structuredClone(threads.get(id)??null)},
@@ -467,6 +467,7 @@ test("a glance looks over everything before taking one thing up: the rest is see
         if(!input.glance)return {output:{outcome:"not_noticed",experienceText:null,passedReason:"Reading."},
           provenance:{provider:"fixture",modelId:"attention"}};
         glances.push(input.glance);
+        bodies.push(input.body);
         // The arriver takes up the last book in the list.
         const focus=input.glance.items.findLastIndex(item=>item.kind==="book");
         return {output:{focus,experienceText:"The worn spine pulls me in; I take it down.",
@@ -475,9 +476,10 @@ test("a glance looks over everything before taking one thing up: the rest is see
       now:()=>AT,
     });
     assert.equal((await process.runOnce()).failed,0,"the arrival glance did not settle");
+    assert.ok(Array.isArray(bodies[0]),"the Body never reached the moment of choosing");
     const [seen]=glances;
-    assert.deepEqual(seen.items.map(item=>item.kind).sort(),["book","book","book","person"],
-      "the glance did not hold the books within reach and the person present");
+    assert.deepEqual(seen.items.map(item=>item.kind).sort(),["book","book","person"],
+      "the glance did not hold the books within reach (the display and the shelf passed) and the person present");
     const glance=store.getThreadGlance(ids[0],work.situationId);
     const book=glance.items[glance.focus];
     const story=store.listEncounterStories(ids[0]).find(item=>item.encounterId===glance.focusEncounterRef);
@@ -562,7 +564,7 @@ test("different visits find different books from the same kept shelf, and a glan
   const people=[{kind:"person",ref:"thr_a",text:"A woman is reading."},{kind:"person",ref:"thr_b",text:"A man is writing."}];
   const visits=["2026-10-18T14:00:00.000Z","2026-10-19T09:00:00.000Z","2026-10-20T11:30:00.000Z"]
     .map(at=>glanceItems({people,holdings,venueRef:"venue_library",at}));
-  assert.ok(visits.every(items=>items.length<=5),"a glance was longer than a glance");
+  assert.ok(visits.every(items=>items.length<=6),"a glance was longer than a glance");
   assert.ok(new Set(visits.map(items=>items.filter(item=>item.kind==="book").map(item=>item.ref).sort().join())).size>1,
     "every visit found the same books on the table");
 });
@@ -591,4 +593,38 @@ test("late inspection retains arrival truth without inventing old psychology",as
     assert.equal(store.nextSocialOpportunityAt(),null,
       "late arrival fabricated a present-day social opportunity");
   }finally{ctx.close();}
+});
+
+test("a library offers books by chance: a weekly display, the shelf a walk passes, and what others put back, never chosen by interest",async()=>{
+  const sections=new Map();
+  const store={
+    listVenueHoldings:(venueRef,section)=>sections.get(`${venueRef}/${section}`)??[],
+    recordVenueHoldings:({venueRef,section,works})=>{
+      const held=works.map((work,position)=>({holdingRef:`hld_${section}_${position}`,venueRef,section,position,work}));
+      sections.set(`${venueRef}/${section}`,held);return held;
+    },
+    listVenueReturns:({},{exceptThreadId})=>exceptThreadId==="thr_kadir"
+      ?[{holdingRef:"hld_returned",venueRef:"venue_library",section:"shelf:science",position:0,
+        work:{...WORKS[0],sourceId:"returned",title:"Habiba's book on the stars"}}]:[],
+  };
+  const asked=[];
+  const catalogue={async listWorks(query){asked.push(query);
+    return WORKS.map((work,index)=>({...work,sourceId:`${query.topic??"display"}-${query.page}-${index}`,
+      title:`${query.topic??"display"} ${index}`}));}};
+  const reach=(threadId,at)=>booksWithinReach({venueRef:"venue_library",threadId,catalogue,experienceStore:store,at});
+  const monday=await reach("thr_kadir","2026-11-23T10:00:00.000Z");
+  assert.ok(LIBRARY_SHELVES.some(shelf=>monday.shelf.name===shelf.name),"no shelf was passed");
+  assert.equal(monday.returns[0]?.work.title,"Habiba's book on the stars","what another Thread read here did not reach the returns cart");
+  const habiba=await reach("thr_habiba","2026-11-23T10:00:00.000Z");
+  assert.deepEqual(habiba.shelf.holdings.map(item=>item.holdingRef),monday.shelf.holdings.map(item=>item.holdingRef),
+    "two Threads on the same walk were offered different shelves: reach followed the person, not the place and moment");
+  const nextWeek=await reach("thr_kadir","2026-11-30T10:00:00.000Z");
+  assert.notDeepEqual(nextWeek.display.map(item=>item.work.sourceId),monday.display.map(item=>item.work.sourceId),
+    "the display did not change from one week to the next");
+  const walks=await Promise.all(Array.from({length:24},(_,hour)=>reach("thr_kadir",`2026-11-23T${String(hour).padStart(2,"0")}:00:00.000Z`)));
+  assert.ok(new Set(walks.map(walk=>walk.shelf.name)).size>=6,"walks through the library passed too few kinds of shelf");
+  const items=glanceItems({venueRef:"venue_library",at:"2026-11-23T10:00:00.000Z",holdings:monday.display,
+    shelf:monday.shelf,returns:monday.returns});
+  assert.deepEqual(items.map(item=>item.where).sort(),["on the display table",`on the ${monday.shelf.name} shelf you are walking past`,
+    "on the returns cart"].sort(),"a glance did not hold one book from each place within reach");
 });

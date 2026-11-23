@@ -11,9 +11,22 @@ import { queueThreadExperienceConsolidation } from "./lived-experience-consolida
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import { assertPlainObject, canonicalJson, sha256 } from "./persistence-common.mjs";
 
-const DISPLAY="display";
-const BOOKS_IN_REACH=3;
-const MAX_ITEMS=5;
+const DAY_MS=86_400_000;
+// A library's shelves by subject (W1): each filled once from the public-domain
+// catalogue the first time anyone passes it, and then kept. Which catalogue
+// page fills a shelf is World's, fixed by the venue, so libraries differ.
+export const LIBRARY_SHELVES=Object.freeze([
+  {topic:"adventure",name:"adventure"},{topic:"science",name:"science"},
+  {topic:"technology",name:"technology"},{topic:"history",name:"history"},
+  {topic:"religion",name:"religion"},{topic:"philosophy",name:"philosophy"},
+  {topic:"poetry",name:"poetry"},{topic:"children",name:"children's books"},
+  {topic:"humor",name:"humour"},{topic:"travel",name:"travel"},
+  {topic:"art",name:"art"},{topic:"detective",name:"mysteries"},
+].map(Object.freeze));
+const SHELF_PAGES=4;
+const RETURNS_DAYS=7;
+const BOOKS_IN_REACH=4;
+const MAX_ITEMS=6;
 const CATALOGUE_PAGES=60;
 
 // A venue whose admitted affordances include reading has shelves.
@@ -21,30 +34,51 @@ export function holdsBooks(place){
   return typeof place?.physicalVenue?.ref==="string"&&(place.affordances??[]).includes("Reading");
 }
 
-// The display table near the entrance, filled once from the public-domain
-// catalogue and then kept. Which catalogue page a venue shows is World's,
-// fixed by the venue. If the catalogue cannot be reached, the shelf stays
-// unfilled and nothing is invented; a later visitor fills it.
-export async function displayHoldings({venueRef,catalogue,experienceStore,at,warn=console.warn}){
-  const held=experienceStore.listVenueHoldings(venueRef,DISPLAY);
+// Fill a section once from the catalogue and keep it. If the catalogue cannot
+// be reached, the section stays unfilled and nothing is invented; a later
+// visitor fills it.
+async function sectionHoldings({venueRef,section,query,catalogue,experienceStore,at,warn}){
+  const held=experienceStore.listVenueHoldings(venueRef,section);
   if(held.length>0||catalogue===null)return held;
-  const page=1+Number.parseInt(sha256(venueRef).slice(0,8),16)%CATALOGUE_PAGES;
   let works;
-  try{works=await catalogue.listWorks({page,language:"en"});}
+  try{works=await catalogue.listWorks({...query,language:"en"});}
   catch(error){
-    warn(JSON.stringify({event:"venue-holdings-unavailable",venueRef,
+    warn(JSON.stringify({event:"venue-holdings-unavailable",venueRef,section,
       message:String(error?.message??error).slice(0,160)}));
     return held;
   }
-  return works.length===0?held:experienceStore.recordVenueHoldings({venueRef,section:DISPLAY,
-    works:works.slice(0,32),at});
+  return works.length===0?held:experienceStore.recordVenueHoldings({venueRef,section,works:works.slice(0,32),at});
+}
+
+const pick=(seed,count)=>Number.parseInt(sha256(canonicalJson(seed)).slice(0,8),16)%count;
+const weekOf=(at)=>Math.floor(Date.parse(at)/(7*DAY_MS));
+
+// The display table near the entrance: set anew each week from across the
+// catalogue, as a librarian would, by the venue and the week.
+export async function displayHoldings({venueRef,catalogue,experienceStore,at,warn=console.warn}){
+  const week=weekOf(at);
+  return sectionHoldings({venueRef,section:`display:week-${week}`,query:{page:1+pick([venueRef,week],CATALOGUE_PAGES)},
+    catalogue,experienceStore,at,warn});
+}
+
+// What is within reach on one visit (W1): the week's display, the one shelf
+// this walk happens to pass (by the venue and the moment, never by what the
+// Thread cares about), and the returns cart of books others read here lately.
+export async function booksWithinReach({venueRef,threadId,catalogue,experienceStore,at,warn=console.warn}){
+  const display=await displayHoldings({venueRef,catalogue,experienceStore,at,warn});
+  const shelf=LIBRARY_SHELVES[pick([venueRef,at,"shelf"],LIBRARY_SHELVES.length)];
+  const shelved=await sectionHoldings({venueRef,section:`shelf:${shelf.topic}`,
+    query:{page:1+pick([venueRef,shelf.topic],SHELF_PAGES),topic:shelf.topic},catalogue,experienceStore,at,warn});
+  const returns=experienceStore.listVenueReturns?.(venueRef,{exceptThreadId:threadId,
+    since:new Date(Date.parse(at)-RETURNS_DAYS*DAY_MS).toISOString()})??[];
+  return Object.freeze({display,shelf:Object.freeze({name:shelf.name,holdings:shelved}),returns});
 }
 
 const order=(seed,key)=>sha256(canonicalJson([seed,key]));
 const author=(work)=>work.authors.map(item=>item.name).join(" and ")||"an unknown author";
 
-function bookItem(holding){
-  return {kind:"book",ref:holding.holdingRef,where:"on the display table",
+function bookItem(holding,where="on the display table"){
+  return {kind:"book",ref:holding.holdingRef,where,
     title:holding.work.title,by:author(holding.work),about:holding.work.subjects.slice(0,3)};
 }
 
@@ -82,24 +116,37 @@ export function bookInHand({experienceStore,threadId,venueRef,at}){
   return held===undefined?null:Object.freeze({title:held.holding.work.title,by:author(held.holding.work)});
 }
 
-// World's list for one entered scene: up to three books within reach from the
-// display (which ones, by the scene and the moment) and the people present,
-// interleaved where the eye falls. A book this Thread has been reading here
-// is among them, where it left it: its own history, not a preference.
-export function glanceItems({people=[],holdings=[],venueRef,at,ownBooks=[]}){
+// World's list for one entered scene: a book from each place within reach
+// (the display, the shelf this walk passes, the returns cart; which ones, by
+// the scene and the moment) and the people present, interleaved where the eye
+// falls. A book this Thread has been reading here is among them, where it
+// left it: its own history, not a preference.
+export function glanceItems({people=[],holdings=[],shelf=null,returns=[],venueRef,at,ownBooks=[]}){
   const seed=[venueRef,at];
   const own=ownBooks.filter(holding=>holding.venueRef===venueRef).slice(0,1);
-  const sampled=[...holdings].filter(holding=>!own.some(item=>item.holdingRef===holding.holdingRef))
+  const taken=new Set(own.map(item=>item.work?.sourceId??item.holdingRef));
+  const one=(list,where)=>{
+    const choice=[...list].filter(holding=>!taken.has(holding.work?.sourceId??holding.holdingRef))
+      .sort((a,b)=>order(seed,a.holdingRef).localeCompare(order(seed,b.holdingRef)))[0];
+    if(choice===undefined)return [];
+    taken.add(choice.work?.sourceId??choice.holdingRef);
+    return [bookItem(choice,where)];
+  };
+  const found=[...one(holdings,"on the display table"),
+    ...(shelf===null?[]:one(shelf.holdings,`on the ${shelf.name} shelf you are walking past`)),
+    ...one(returns,"on the returns cart")];
+  // Without a shelf or returns, the display offers what it can within reach.
+  const more=shelf===null&&returns.length===0?[...holdings].filter(holding=>!taken.has(holding.work?.sourceId??holding.holdingRef))
     .sort((a,b)=>order(seed,a.holdingRef).localeCompare(order(seed,b.holdingRef)))
-    .slice(0,BOOKS_IN_REACH-own.length);
+    .slice(0,BOOKS_IN_REACH-own.length-found.length).map(holding=>bookItem(holding)):[];
   const books=[...own.map(holding=>({...bookItem(holding),
     yours:"You have been reading this and meant to go on; it is where you left it."})),
-  ...sampled.map(bookItem)];
+  ...found,...more].slice(0,BOOKS_IN_REACH);
   return [...people.slice(0,MAX_ITEMS-books.length),...books]
     .sort((a,b)=>order(seed,a.ref).localeCompare(order(seed,b.ref)));
 }
 
-export async function appraiseGlance({thread,situation,venueName,items,semanticStates=[],memories=[],modelAdapter}){
+export async function appraiseGlance({thread,situation,venueName,items,semanticStates=[],memories=[],body=[],modelAdapter}){
   assertPlainObject("glance Thread",thread);
   const input={
     thread:{
@@ -115,6 +162,7 @@ export async function appraiseGlance({thread,situation,venueName,items,semanticS
     autobiographicalMemories:[...memories].slice(0,6).map(memory=>({memoryId:memory.memoryId,
       ...memoryInMind(memory)})),
     currentSituation:situationInMind(situation,{placeName:venueName}),
+    body:[...body],
     glance:{arrivedAt:venueName,items:items.map(({ref,...seen},index)=>({index,...seen}))},
   };
   const invocation=await modelAdapter.invoke({

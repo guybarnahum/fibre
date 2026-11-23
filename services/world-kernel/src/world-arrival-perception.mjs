@@ -1,11 +1,11 @@
 import {admitEncounterAttention,recognitionFor} from "./lived-encounter-attention.mjs";
-import {admitGlance,appraiseGlance,bookInHand,booksInProgress,displayHoldings,glanceItems,holdsBooks,readHolding}
+import {admitGlance,appraiseGlance,bookInHand,booksInProgress,booksWithinReach,glanceItems,holdsBooks,readHolding}
   from "./scene-glance.mjs";
 import {createEncounterVisualization} from "./lived-encounter-visualization.mjs";
 import {assertIsoTimestamp} from "./persistence-common.mjs";
 import {observablePerson} from "./world-observable-person.mjs";
-import {bodyTowardPeople} from "./lived-now-regulation.mjs";
-import {feltTowardPeople} from "./interoceptive-cognition.mjs";
+import {bodyTowardPeople,livedRegulationForLivedHistory} from "./lived-now-regulation.mjs";
+import {feltSocialBody,feltTowardPeople} from "./interoceptive-cognition.mjs";
 
 const FRESH_ATTENTION_MS=60*60_000;
 
@@ -64,9 +64,12 @@ export function createWorldArrivalPerception({
           // attention using present-day private state. Its objective World
           // story remains inspectable, with attention not_appraised.
           const fresh=Date.parse(at)-Date.parse(obligation.dueAt)<=FRESH_ATTENTION_MS;
-          // Books on the display table are there whether or not anyone else is.
-          const holdings=eligible&&fresh&&holdsBooks(place)
-            ?await displayHoldings({venueRef:obligation.venueRef,catalogue,experienceStore,at}):[];
+          // Books within reach are there whether or not anyone else is: the
+          // week's display, the shelf this walk passes, the returns cart.
+          const reach=eligible&&fresh&&holdsBooks(place)
+            ?await booksWithinReach({venueRef:obligation.venueRef,threadId:arrival.threadId,catalogue,experienceStore,at})
+            :null;
+          const holdings=reach===null?[]:[...reach.display,...reach.shelf.holdings,...reach.returns];
           const describe=situation=>{
             const identity=worldReader.getThread(situation.threadId,{
               required:false,
@@ -163,7 +166,8 @@ export function createWorldArrivalPerception({
             const curious=feltTowardPeople(bodyTowardPeople({thread:arrivingThread,experienceStore,
               asOf:obligation.dueAt,people:witnesses.map(situation=>({threadId:situation.threadId,
                 evidenceRef:situation.situationId}))}));
-            const items=glanceItems({venueRef:obligation.venueRef,at:obligation.dueAt,holdings,
+            const items=glanceItems({venueRef:obligation.venueRef,at:obligation.dueAt,
+              holdings:reach?.display??[],shelf:reach?.shelf??null,returns:reach?.returns??[],
               ownBooks:booksInProgress({experienceStore,threadId:arrival.threadId}).map(item=>item.holding),
               people:witnesses.map(situation=>{
                 const known=knownAs(situation.threadId);
@@ -175,8 +179,12 @@ export function createWorldArrivalPerception({
             const memories=memoryStore.listCurrentMemories(arrival.threadId,{inMind:"background",
               limit:6,newestFirst:true,
             }).filter(m=>Date.parse(m.asOf)<=Date.parse(obligation.dueAt));
+            // The Body at the moment of choosing: weariness of the same and
+            // what it would welcome instead, company wanted (W1). Felt, not an order.
+            const body=feltSocialBody(livedRegulationForLivedHistory({thread:arrivingThread,livedNowStore,
+              currentSituation:arrival,experienceStore,asOf:obligation.dueAt}));
             const appraisal=await appraiseGlance({thread:arrivingThread,situation:arrival,venueName,items,
-              semanticStates,memories,modelAdapter});
+              semanticStates,memories,body,modelAdapter});
             await admitGlance({thread:arrivingThread,situation:arrival,arrivalStory:encounter,items,appraisal,
               describeSelf:describe(arrival),experienceStore,onExperienceQueued});
             // Having taken a book down, it opens it and reads.
