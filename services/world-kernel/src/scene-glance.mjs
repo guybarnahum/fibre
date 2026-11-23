@@ -10,6 +10,7 @@ import { promptRequest } from "./cognition-prompts.mjs";
 import { queueThreadExperienceConsolidation } from "./lived-experience-consolidation-queue.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
 import { assertPlainObject, canonicalJson, sha256 } from "./persistence-common.mjs";
+import { learningFromReading } from "./knowledge.mjs";
 
 const DAY_MS=86_400_000;
 // A library's shelves by subject (W1): each filled once from the public-domain
@@ -288,6 +289,12 @@ export async function readHolding({thread,situation,holdingRef,describeSelf,cata
     await queueThreadExperienceConsolidation({experienceStore,experienceRecord:attention.experience,
       queuedAt:at,onQueued:onExperienceQueued});
   }
+  // What it came to know (ADR-0041 W2): a subject new to it, or a step
+  // further in what it held, as World fact; the Body feels it.
+  const learned=learningFromReading({held:experienceStore.subjectsHeld?.(thread.threadId,{until:at})??new Map(),
+    work:holding.work,continuing:prior!==null});
+  if(learned!==null)experienceStore.recordKnowledge?.({threadId:thread.threadId,learning:learned.learning,
+    subjects:learned.subjects,sourceKind:"book",sourceRef:workRef,at});
   return experienceStore.recordThreadReading({threadId:thread.threadId,workRef,holdingRef,title:book.title,
     nextByte:passage.nextByte,status:passage.nextByte===null?"finished":output.keepReading===true?"reading":"set_aside",at});
 }

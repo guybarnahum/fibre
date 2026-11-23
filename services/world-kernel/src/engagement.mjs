@@ -98,10 +98,14 @@ function habituationEvents({experienceStore,threadId,at}){
 export function wearinessLevel({experienceStore,threadId,at,persistence=0}){
   const readings=experienceStore?.listEngagementReadings?.(threadId,{
     since:new Date(Date.parse(at)-RECENT_MS).toISOString(),until:at})??[];
+  // A subject new to it, met in a book, eases it as something new in talk does (ADR-0041 W2).
+  const discoveries=(experienceStore?.listLearning?.(threadId,{since:new Date(Date.parse(at)-RECENT_MS).toISOString(),until:at})??[])
+    .filter(item=>item.learning==="discovery");
   const halfLife=inheritedHalfLife(WEARINESS_HALF_LIFE_HOURS*HOUR_MS,persistence);
   const level=bodyLevel({at,
     events:[...habituationEvents({experienceStore,threadId,at}),
-      ...readings.filter(item=>WEIGHT[item.reading]!==undefined).map(item=>({at:item.at,size:WEIGHT[item.reading]}))],
+      ...readings.filter(item=>WEIGHT[item.reading]!==undefined).map(item=>({at:item.at,size:WEIGHT[item.reading]})),
+      ...discoveries.map(item=>({at:item.at,size:WEIGHT.new}))],
     halfLife,baseline:{accumulate:{share:0,halfLife}},bound:{saturate:WEARINESS_SCALE}});
   const saturated=(value)=>1-2**(-Math.max(0,value)/WEARINESS_SCALE);
   return Object.freeze({level:Math.round(level.level*1e6)/1e6,baseline:Math.round(saturated(level.baseline)*1e6)/1e6});

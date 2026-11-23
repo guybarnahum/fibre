@@ -12,6 +12,7 @@ import {
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 import { wearinessOf } from "./engagement.mjs";
+import { learningLevels, learningSince } from "./knowledge.mjs";
 import { bondOf, conversationDepletion, expectedRegard, longingOf, missingMoments, regardOf, regardShown, reunionJoy, selfStanding,
   SLIGHT_GAP, stingHalfLife,
   socialEnergyEvidence } from "./social-body.mjs";
@@ -268,6 +269,7 @@ function locusOf(thread,family){
   const gene=(thread.genome?.urgeProjection??[]).find(item=>item.family===family)??null;
   return gene===null?null:{orientation:gene.orientation,
     persistence:(gene.positions?.persistence??0)*organismPolicy.inheritedSpread,
+    gain:(gene.positions?.gain??0)*organismPolicy.inheritedSpread,
     selfRegard:(gene.positions?.selfRegard??0)*organismPolicy.inheritedSpread,
     stubbornness:(gene.positions?.stubbornness??0)*organismPolicy.inheritedSpread};
 }
@@ -417,9 +419,15 @@ export function livedRegulationForLivedHistory({
   const people=experienceStore===null||perceivedPeople.length===0?null:peoplePercept({
     thread,people:perceivedPeople,experienceStore,memoryStore,at:asOf,self,
   });
+  // What learning lately did for it (ADR-0041 W2): the joy of discovery and
+  // the glow of competence, as its genome feels them.
+  const learning=typeof experienceStore?.listLearning!=="function"?null:learningLevels({at:asOf,
+    events:experienceStore.listLearning(thread.threadId,{since:learningSince(asOf),until:asOf}),
+    exploration:locusOf(thread,"exploration"),mastery:locusOf(thread,"mastery_itch")});
+  const learned=learning!==null&&(learning.discovery>0||learning.competence>0)?learning:null;
   if(!continuity.grounded&&contact===null&&socialEnergy===null&&people===null&&self?.gap==null
-    &&weariness===0)return null;
-  return evaluateIntrinsicRegulation({
+    &&weariness===0)return learned===null?null:Object.freeze({drives:Object.freeze([]),learning:learned});
+  const frame=evaluateIntrinsicRegulation({
     perceptFrame:{
       asOf,
       evidenceRefs:[...new Set([
@@ -444,6 +452,7 @@ export function livedRegulationForLivedHistory({
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
   });
+  return learned===null?frame:Object.freeze({...frame,learning:learned});
 }
 
 // The social Body during a live conversation: the battery where it stood

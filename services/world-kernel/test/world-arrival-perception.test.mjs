@@ -515,6 +515,10 @@ test("a Thread reads the actual pages from where it stopped, and its place in th
     assert.equal(seen[1].where,"where you left off","a returning reader was told it was starting over");
     assert.deepEqual([first.nextByte,second.nextByte,second.status],[900,1800,"reading"],
       "the reader's place in the book was not kept");
+    assert.equal(ctx.store.subjectsHeld(ctx.ids[0]).get("subject 0")?.encounters,2,
+      "what the Thread came to know from the book is not World fact");
+    assert.deepEqual(ctx.store.listLearning(ctx.ids[0],{since:AT,until:"2026-10-20T00:00:00.000Z"}).map(item=>item.learning),
+      ["discovery","depth"],"a first meeting with a subject was not a discovery, or going on with the book not a step deeper");
   }finally{ctx.close();}
 });
 

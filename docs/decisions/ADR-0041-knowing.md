@@ -48,8 +48,8 @@ Nothing is labelled. Width and depth are measured for observation only, never sh
 | Slice | What | Status |
 |---|---|---|
 | W1 | A real library; the Body in the glance | Built |
-| W2 | Learning felt (discovery, competence); knowledge items | next |
-| W3 | Teaching and closeness credits; the two pulls to tell; writing for company | after W2 |
+| W2 | Learning felt (discovery, competence); what a Thread knows as World fact | Built |
+| W3 | Teaching and closeness credits; the two pulls to tell; writing for company | next |
 | W4 | Width and depth in livelihood | with L2 |
 | W5 | Width and depth to visitors | with K2 |
 

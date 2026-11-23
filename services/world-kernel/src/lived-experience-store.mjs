@@ -2800,6 +2800,46 @@ export class LivedExperienceStore {
   }
 
   // Its own readings in a window, newest first.
+  // What a Thread came to know from one encounter (ADR-0041): a row per
+  // subject, kept once per source and subject.
+  recordKnowledge({threadId,learning,subjects,sourceKind,sourceRef,at}){
+    assertId("knowledge threadId",threadId);
+    if(!["discovery","depth"].includes(learning))throw new TypeError("learning is a discovery or a step deeper");
+    if(!["book","heard"].includes(sourceKind))throw new TypeError("knowledge comes from a book or from someone");
+    assertNonEmpty("knowledge source",sourceRef);
+    assertIsoTimestamp("knowledge at",at);
+    if(!Array.isArray(subjects)||subjects.length<1||subjects.length>6)throw new TypeError("knowledge names a few subjects");
+    const insert=this.#database.prepare(`INSERT INTO thread_knowledge_events
+      (knowledge_id,thread_id,subject_key,subject,learning,source_kind,source_ref,at)
+      VALUES (?,?,?,?,?,?,?,?) ON CONFLICT(knowledge_id) DO NOTHING`);
+    this.#database.transaction(()=>{for(const {key,subject} of subjects){
+      assertNonEmpty("knowledge subject",subject);
+      insert.run(`know_${sha256(canonicalJson([threadId,key,sourceKind,sourceRef,at])).slice(0,40)}`,
+        threadId,key,subject,learning,sourceKind,sourceRef,at);
+    }});
+  }
+
+  // Each subject this Thread holds, with how often it met it and when first.
+  subjectsHeld(threadId,{until=null}={}){
+    assertId("knowledge threadId",threadId);
+    if(until!==null)assertIsoTimestamp("knowledge until",until);
+    return new Map(this.#database.prepare(`SELECT subject_key,MIN(subject) AS subject,COUNT(*) AS encounters,
+      MIN(at) AS first_at,MAX(at) AS last_at FROM thread_knowledge_events
+      WHERE thread_id=? AND (? IS NULL OR at<?) GROUP BY subject_key ORDER BY first_at`)
+      .all(threadId,until,until).map(row=>[row.subject_key,Object.freeze({subject:row.subject,
+        encounters:row.encounters,firstAt:row.first_at,lastAt:row.last_at})]));
+  }
+
+  // Learning lived lately, for the Body: one entry per encounter and kind.
+  listLearning(threadId,{since,until}){
+    assertId("knowledge threadId",threadId);
+    assertIsoTimestamp("knowledge since",since);
+    assertIsoTimestamp("knowledge until",until);
+    return Object.freeze(this.#database.prepare(`SELECT DISTINCT learning,source_ref AS sourceRef,at
+      FROM thread_knowledge_events WHERE thread_id=? AND at>=? AND at<=? ORDER BY at`)
+      .all(threadId,since,until).map(row=>Object.freeze({...row})));
+  }
+
   listEngagementReadings(threadId,{since,until,limit=48}={}){
     assertId("engagement threadId",threadId);
     assertIsoTimestamp("engagement since",since);

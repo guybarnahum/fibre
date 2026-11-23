@@ -1,4 +1,5 @@
 import { promptRequest } from "./cognition-prompts.mjs";
+import { feltLearning } from "./knowledge.mjs";
 import {
   assertId,
   assertIsoTimestamp,
@@ -403,5 +404,7 @@ export function feltSocialBody(regulationFrame){
     lines.push(band(HUNGER,hunger.pressure));
     if(SEEKS[hunger.inheritedDirection])lines.push(SEEKS[hunger.inheritedDirection]);
   }
+  // What learning lately did for it (ADR-0041 W2).
+  lines.push(...feltLearning(regulationFrame.learning));
   return lines;
 }

@@ -467,6 +467,28 @@ export function createLivedExperienceTables(database) {
     ) STRICT;
     CREATE INDEX IF NOT EXISTS thread_glances_by_thread
       ON thread_glances(thread_id,occurred_at);
+    -- What a Thread has come to know (ADR-0041): each subject it met, how
+    -- (a book read, later something heard from someone), and whether it was
+    -- new to it or a step further in what it held. Append-only.
+    CREATE TABLE IF NOT EXISTS thread_knowledge_events (
+      knowledge_id TEXT PRIMARY KEY,
+      thread_id TEXT NOT NULL,
+      subject_key TEXT NOT NULL CHECK (length(subject_key) BETWEEN 1 AND 120),
+      subject TEXT NOT NULL CHECK (length(subject) BETWEEN 1 AND 120),
+      learning TEXT NOT NULL CHECK (learning IN ('discovery','depth')),
+      source_kind TEXT NOT NULL CHECK (source_kind IN ('book','heard')),
+      source_ref TEXT NOT NULL,
+      at TEXT NOT NULL,
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS idx_thread_knowledge_thread ON thread_knowledge_events(thread_id,at);
+    CREATE TRIGGER IF NOT EXISTS thread_knowledge_events_no_update
+      BEFORE UPDATE ON thread_knowledge_events
+      BEGIN SELECT RAISE(ABORT,'thread_knowledge_events is append-only'); END;
+    CREATE TRIGGER IF NOT EXISTS thread_knowledge_events_no_delete
+      BEFORE DELETE ON thread_knowledge_events
+      BEGIN SELECT RAISE(ABORT,'thread_knowledge_events is append-only'); END;
+
     -- Where a Thread is in a book it has read from: its own place, kept so it
     -- can come back, and whether it means to.
     CREATE TABLE IF NOT EXISTS thread_readings (

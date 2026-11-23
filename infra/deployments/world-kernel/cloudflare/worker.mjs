@@ -12,6 +12,7 @@ import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/l
 import {readWorldEventOverview} from "#services/world-kernel/src/world-event-observatory.mjs";
 import {readPublicSociety} from "#services/world-kernel/src/public-society.mjs";
 import {openInformationDisclosureStore} from "#services/world-kernel/src/information-disclosure-store.mjs";
+import {knowledgeMeasures} from "#services/world-kernel/src/knowledge.mjs";
 import { openLivedNowStore,openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { auditLivedContinuity } from "#services/world-kernel/src/lived-now-boundary.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
@@ -287,7 +288,12 @@ function bodyThreadObservatory(runtime,threadId){
     // What the Thread reads of its social Body now, in its own words.
     const felt=currentSituation===null?[]:[...feltSocialBody(livedRegulationForLivedHistory({
       thread,livedNowStore:livedNow,currentSituation,experienceStore:experience,memoryStore:memory,asOf:at}))];
-    return Object.freeze({threadId,body:{...body,felt}});
+    // What it has come to know (ADR-0041), for the operator only: subjects
+    // held with how often met, and width and depth as measures.
+    const held=experience.subjectsHeld(threadId);
+    const knowledge={measures:knowledgeMeasures(held),
+      subjects:[...held.values()].sort((a,b)=>b.encounters-a.encounters).slice(0,40)};
+    return Object.freeze({threadId,body:{...body,felt,knowledge}});
   }finally{experience.close();livedNow.close();memory.close();situatedLife.close();}
 }
 

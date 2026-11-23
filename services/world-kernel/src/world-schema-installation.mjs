@@ -111,7 +111,7 @@ export function installWorldSchemas(storage,{deploymentGitSha="local",schemaDige
       "live_world_contexts","live_world_source_places",
       "thread_life_rest","thread_life_rest_events",
       "relationship_ledger","relationship_doors",
-      "information_disclosure_records",
+      "information_disclosure_records","thread_knowledge_events",
     ]){
       database.prepare(`SELECT 1 FROM "${name}" LIMIT 1`).get();
     }
