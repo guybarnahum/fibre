@@ -331,6 +331,8 @@ const HUNGRY=Object.freeze({
 const HUNGRY_ANY="Nothing new has come your way for a while; you are hungry for something new.";
 const LIFTED=Object.freeze([[0.1,null],[0.35,"Something new you came across has lifted you."],
   [1.01,"Discovering something new has lit you up."]]);
+const SHARE="Something has lifted you; you want to tell someone about it.";
+const PROMISING="They tend to bring you something new.";
 // Mastery (ADR-0041): the satisfaction of going deeper.
 const GLOW=Object.freeze([[0.15,null],[0.5,"Going further in what you know gives you a quiet satisfaction."],
   [1.01,"Getting deeper into something you know is deeply satisfying right now."]]);
@@ -386,7 +388,8 @@ export function feltTowardPeople(regulationFrame){
       if(!item.attained&&LONGS_FOR[item.inheritedDirection])add(item,LONGS_FOR[item.inheritedDirection]);
       if(item.reminded)add(item,REMINDED);
     }
-    if(item.family==="exploration"&&item.inheritedDirection==="people")
+    if(item.family==="exploration"&&item.promising&&["people","ideas"].includes(item.inheritedDirection))add(item,PROMISING);
+    else if(item.family==="exploration"&&item.inheritedDirection==="people")
       add(item,band(item.catchingUp?CATCHING_UP:CURIOSITY,item.pressure));
   }
   return felt;
@@ -415,6 +418,9 @@ export function feltSocialBody(regulationFrame){
   const weary=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="self:weariness"
     &&item.felt!==false&&item.pressure>0)??null;
   if(weary!==null)lines.push(WEARY[weary.inheritedDirection]??WEARY_ANY);
+  // Good news seeks company (ADR-0041).
+  if(regulationFrame.drives.some(item=>item.family==="social_contact"&&item.targetRef==="self:share"
+    &&item.felt!==false&&item.pressure>0))lines.push(SHARE);
   const novelty=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="world:novelty")??null;
   if(novelty?.attained){
     const lifted=band(LIFTED,novelty.progressError);
@@ -433,7 +439,8 @@ export function feltSocialBody(regulationFrame){
     &&item.pressure>0&&regulationFrame.unfinishedTitles?.[item.targetRef]).sort((a,b)=>b.pressure-a.pressure).slice(0,2)){
     lines.push((UNFINISHED[itch.inheritedDirection]??UNFINISHED_ANY)(regulationFrame.unfinishedTitles[itch.targetRef]));
   }
-  const hunger=felt("social_contact");
+  const hunger=regulationFrame.drives.find(item=>item.family==="social_contact"&&item.targetRef==="self:connection"
+    &&item.felt!==false&&item.pressure>0)??null;
   if(hunger!==null){
     lines.push(band(HUNGER,hunger.pressure));
     if(SEEKS[hunger.inheritedDirection])lines.push(SEEKS[hunger.inheritedDirection]);

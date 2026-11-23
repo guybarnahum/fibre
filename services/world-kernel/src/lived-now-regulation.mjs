@@ -344,6 +344,7 @@ function standingFrame({self=null,people=null}){
 // while apart and its relief on seeing them (a person is present unless
 // marked otherwise, as a party one might write to is not).
 const UNKNOWN_NOW_ABOVE=0.5;
+const PROMISE_ABOVE=0.1;
 const unknownNow=(regard)=>(1-regard.knowing)+0.5*regard.staleness;
 const rounded=(value)=>Math.round(value*1e6)/1e6;
 function peoplePercept({thread,people=[],experienceStore,memoryStore=null,at,known=null,self=null}){
@@ -366,9 +367,11 @@ function peoplePercept({thread,people=[],experienceStore,memoryStore=null,at,kno
       evidenceRefs:[person.evidenceRef]};
   }).filter(item=>item!==null);
   const standing=standingPercept({regards,bonds,self,at,standingLocus:standingLocus(thread)});
-  const unfamiliarPeople=regards.filter(({regard})=>unknownNow(regard)>UNKNOWN_NOW_ABOVE)
+  // Someone new, someone known whose life has moved on, or someone who lately
+  // brought it something new (ADR-0041): each interesting in their own right.
+  const unfamiliarPeople=regards.filter(({regard})=>unknownNow(regard)>UNKNOWN_NOW_ABOVE||(regard.promise??0)>=PROMISE_ABOVE)
     .map(({person,regard})=>({personRef:person.threadId,unfamiliarity:rounded(1-regard.knowing),
-      staleness:regard.staleness,evidenceRefs:[person.evidenceRef]}));
+      staleness:regard.staleness,...((regard.promise??0)>0?{promise:regard.promise}:{}),evidenceRefs:[person.evidenceRef]}));
   return {
     evidenceRefs:[...new Set(regards.map(({person})=>person.evidenceRef))],
     trust:regards.map(({person,regard})=>({personRef:person.threadId,trust:regard.trust,

@@ -46,6 +46,7 @@ Architecture documents above own the durable rules. The live infra-pure workstre
 
 - [`temporal-world-reuse.md`](temporal-world-reuse.md) records reusable `PlaceSpec`, temporal `WorldSlice`, and Thread-specific `ThreadWorldContext` direction.
 - [`runtime-activity-log.md`](runtime-activity-log.md) proposes a small non-authoritative Activity Log for operational visibility.
+- [`public-ai-verification-registry.md`](public-ai-verification-registry.md) proposes the public AI-verification registry (`FIN`, [ADR-0022](../decisions/ADR-0022-fid-native-proof.md) FIN Card PNG proofs, and future `L3c` exact-handle verification) extending FIA and [ADR-0040](../decisions/ADR-0040-disclosure.md).
 
 Forward documents do not claim deferred mechanisms are implemented or authoritative.
 

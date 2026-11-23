@@ -45,12 +45,14 @@ Guy (Nov 23):
    Felt words are read from the drives, like every other urge's. They reach the glance, contact decisions and the Flight Plan's interoception, which already knows where each book in progress is kept.
 5. **Knowledge and interests are World fact,** as information items in the disclosure ledger. Who knows which subject, how it came, and who learned from whom are recorded.
 6. **Teaching and closeness are emergent, never mechanisms** (Guy, November 23). They arise from low-level social regulation through one primitive, **affective association**: what a Body felt in someone's company becomes part of how it takes them.
-   - **What counts:** talks with them it read as new (or somewhat new) warm it toward them; talks that brought nothing new cool it a little; being credited or asked for advice by them warms it.
-   - **How it fades:** over days, as its inherited attachment persistence makes it.
+   - **What counts:** each talk is felt as a whole, as people remember one: by its best moment and how it ended (peak and end), from the Thread's own reading of each turn. A talk that brought something new is warm; one that brought nothing new is a little cool. Being credited or asked for advice by them warms it for a while.
+   - **How it settles:** each talk moves its sense of them part of the way toward how that talk felt (the shared level component's tracked baseline), so warmth is what talks with them tend to be. An old friend stays warm between visits; a friend whose talks bring nothing new cools a little, never into a stranger. The more persistent its inherited attachment, the more slowly one talk moves it. The warmth of being valued fades over days.
    - **How it acts:** it deepens or thins the bond, which the existing attachment, longing and reunion drives read. Trust is left to kept and broken faith.
+   - **Promise:** how much they lately brought it something new, fading over days. The existing `exploration` pull toward a person, until now only for someone new or long unseen, also counts it, so someone who brings something new stays interesting however well known, felt as "they tend to bring you something new".
+   - **Good news seeks company:** a fresh lift, from something new or from going deeper, raises the existing `social_contact` urge as a pull toward someone to tell (`self:share`), as strong at its height as the hunger for company and shaped by the same genome. Whom is the bond's and warmth's to decide; whether to tell, and how much, what foresight imagines (D2).
 
    From this:
-   - **Teaching emerges.** The hearer's lift in the teller's company becomes warmth, so it seeks the teller out and, in its own reflection, credits them or asks their advice. The teller's standing is satisfied by being valued, and that satisfaction warms it toward the hearer, so it tells again.
+   - **Teaching emerges.** A lift makes the learner want to tell someone. The hearer's lift in the teller's company becomes warmth and promise, so it seeks the teller out and, in its own reflection, credits them or asks their advice. The teller's standing is satisfied by being valued, and that satisfaction warms it toward the hearer, so it tells again.
    - **Closeness emerges.** Two Threads who keep bringing each other something new, or going deeper together, warm toward each other both ways.
 
    No World rule turns a reading into credit, and no Thread is told what another lacks.
@@ -64,7 +66,7 @@ Nothing is labelled. Width and depth are measured for observation only, never sh
 | W1 | A real library; the Body in the glance | Built |
 | W2 | Learning felt (discovery, competence); what a Thread knows as World fact | Built |
 | W2b | Learning through the existing urges: measured novelty for `exploration` (hunger or lift), competence and the unfinished-book itch for `mastery_itch` | Built |
-| W3a | Affective association (the primitive teaching and closeness emerge from); conversation feels learning | Built |
+| W3a | Affective association (the primitive teaching and closeness emerge from): talks felt by peak and end, settling as expectation; promise; good news seeks company; conversation feels learning | Built |
 | W3b | A subject passing in talk as World fact (heard from whom, by meaning); writing to someone with no insight to share | next |
 | W4 | Width and depth in livelihood | with L2 |
 | W5 | Width and depth to visitors | with K2 |

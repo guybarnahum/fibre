@@ -2846,7 +2846,7 @@ export class LivedExperienceStore {
     assertIsoTimestamp("engagement until",until);
     if(!Number.isSafeInteger(limit)||limit<1||limit>96)throw new TypeError("engagement readings must be bounded");
     return Object.freeze(this.#database.prepare(`
-      SELECT reading,source_kind AS sourceKind,at,note FROM thread_engagement_readings
+      SELECT reading,source_kind AS sourceKind,source_ref AS sourceRef,at,note FROM thread_engagement_readings
       WHERE thread_id=? AND at>=? AND at<? ORDER BY at DESC LIMIT ?
     `).all(threadId,since,until,limit).map(row=>Object.freeze({...row})));
   }

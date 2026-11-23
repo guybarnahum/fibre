@@ -143,7 +143,7 @@ export function socialNeedBandReached({
   const regulation=livedRegulationForLivedHistory({
     thread,livedNowStore,currentSituation:situation,experienceStore,asOf:at,
   });
-  return (regulation?.drives.find(d=>d.family==="social_contact")
+  return (regulation?.drives.find(d=>d.family==="social_contact"&&d.targetRef==="self:connection")
     ?.pressure??0)>=band;
 }
 

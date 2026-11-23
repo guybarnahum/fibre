@@ -118,7 +118,7 @@ function livedTrust({contacts,acts,at,weights,pace}){
     revived:revivedAt!==null&&days(revivedAt,at)<=REVIVED_FOR_DAYS};
 }
 
-const NO_ONE=Object.freeze({knowing:0,staleness:0,trust:0,warmth:0,hurt:0,revived:false,status:0,treated:0,expectedFrom:0,lately:Object.freeze([]),
+const NO_ONE=Object.freeze({knowing:0,staleness:0,trust:0,warmth:0,promise:0,hurt:0,revived:false,status:0,treated:0,expectedFrom:0,lately:Object.freeze([]),
   refusedAt:null,
   apartDays:null,apartInPersonDays:null});
 
@@ -268,26 +268,48 @@ export function selfStanding({experienceStore,threadId,at,standingLocus=null}){
 const rounded=(value)=>Math.round(value*1e6)/1e6;
 
 // Affective association (ADR-0041 W3): what this Body felt in someone's
-// company becomes part of how it takes them. A talk with them it read as new
-// (a lift), or somewhat new, warms it toward them; one that brought it
-// nothing new cools it a little; being credited or asked for advice by them
-// warms it too. It fades over days, more slowly the more persistent its
-// inherited attachment. Hurts are trust's, not counted again here. This is
-// conditioning, not a judgment: who it seeks out again, who it teaches, whom
-// it feels kindred with, all follow from it through the bond.
-const WARMTH_HALF_LIFE_MS=7*DAY_MS;
+// company becomes part of how it takes them. A talk is felt as a whole, as
+// people remember one: by its best moment and how it ended (peak and end),
+// from its own readings of each turn. Each talk moves its sense of them part
+// of the way toward how that talk felt, so it comes to expect of them what
+// talks with them tend to be: warm for one who brings something new, a little
+// cool for one who never does, and an old friend stays warm between visits.
+// The more persistent its inherited attachment, the more slowly one talk
+// moves it. Being credited or asked for advice by them warms it too, for a
+// while. Hurts are trust's, not counted again here. Promise is the newness
+// alone: they lately brought it something new, which keeps them interesting
+// to a Body hungry for it. This is conditioning, not a judgment: who it
+// seeks out, teaches or feels kindred with follows from it.
+const WARMTH_RATE=0.4;
+const VALUED_HALF_LIFE_MS=7*DAY_MS;
+const PROMISE_HALF_LIFE_MS=3*DAY_MS;
 const FELT_WITH=Object.freeze({new:1,some_new:0.5,nothing_new:-0.3});
-const VALUED_BY=Object.freeze({credited:0.5,asked_advice:0.5});
-export function warmthOf({experienceStore,threadId,contacts,regard,at,attachmentLocus=null}){
+const VALUED_BY=Object.freeze({credited:0.3,asked_advice:0.3});
+const turnOf=(reading)=>Number(String(reading.sourceRef??"").split(":").at(-1))||0;
+function talksFelt({experienceStore,threadId,contacts,at}){
   const together=new Set(contacts.filter(contact=>contact.kind!=="message").map(contact=>contact.at));
-  if(together.size===0&&regard.length===0)return 0;
+  if(together.size===0)return [];
   const since=[...together].reduce((first,when)=>when<first?when:first,at);
-  const felt=together.size===0?[]:(experienceStore.listEngagementReadings?.(threadId,{since,until:at,limit:96})??[])
-    .filter(item=>item.sourceKind==="turn"&&together.has(item.at)&&FELT_WITH[item.reading]!==undefined)
-    .map(item=>({at:item.at,size:FELT_WITH[item.reading]}));
+  const byTalk=new Map();
+  for(const item of experienceStore.listEngagementReadings?.(threadId,{since,until:at,limit:96})??[]){
+    if(item.sourceKind!=="turn"||!together.has(item.at)||FELT_WITH[item.reading]===undefined)continue;
+    byTalk.set(item.at,[...(byTalk.get(item.at)??[]),item]);
+  }
+  return [...byTalk].map(([when,readings])=>{
+    const peak=Math.max(...readings.map(item=>FELT_WITH[item.reading]));
+    const end=FELT_WITH[readings.reduce((last,item)=>turnOf(item)>=turnOf(last)?item:last).reading];
+    return {at:when,peak,tone:(peak+end)/2};
+  });
+}
+export function warmthOf({experienceStore,threadId,contacts,regard,at,attachmentLocus=null}){
+  const talks=talksFelt({experienceStore,threadId,contacts,at});
   const valued=regard.filter(act=>act.by==="them"&&VALUED_BY[act.act]).map(act=>({at:act.at,size:VALUED_BY[act.act]}));
-  return rounded(bodyLevel({at,events:[...felt,...valued],bound:{min:-1,max:1},
-    halfLife:inheritedHalfLife(WARMTH_HALF_LIFE_MS,attachmentLocus?.persistence??0)}).level);
+  const rate=WARMTH_RATE*2**(-(attachmentLocus?.persistence??0));
+  const warmth=bodyLevel({at,events:[...talks.map(talk=>({at:talk.at,value:talk.tone})),...valued],
+    baseline:{track:{rate}},halfLife:VALUED_HALF_LIFE_MS,bound:{min:-1,max:1}}).level;
+  const promise=bodyLevel({at,events:talks.filter(talk=>talk.peak>0).map(talk=>({at:talk.at,size:talk.peak})),
+    halfLife:PROMISE_HALF_LIFE_MS,bound:{saturate:1}}).level;
+  return Object.freeze({warmth:rounded(warmth),promise:rounded(promise)});
 }
 
 // How this Thread's Body regards another person, from the lived contact and
@@ -312,7 +334,7 @@ export function regardOf({experienceStore,threadId,otherThreadId,at,trustLocus=n
     pace:2**(2*(trustLocus?.persistence??0))});
   return Object.freeze({knowing:rounded(knowing),staleness:rounded(knowing*(1-current)),
     trust:rounded(lived.trust),hurt:rounded(lived.hurt),revived:lived.revived,
-    warmth:warmthOf({experienceStore,threadId,contacts,regard,at,attachmentLocus}),
+    ...warmthOf({experienceStore,threadId,contacts,regard,at,attachmentLocus}),
     status:rounded(heldOf(treatedOf(regard,standingLocus?.orientation??null),standingLocus)),
     treated:rounded(treatedOf(regard,standingLocus?.orientation??null)),
     // What it held before the last day's acts: what those acts were judged

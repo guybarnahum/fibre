@@ -2,15 +2,15 @@
   "$schema": "./public-progress.schema.json",
   "contract": "fibre-public-progress",
   "canonical": true,
-  "asOf": "2026-11-21",
+  "asOf": "2026-11-23",
   "title": "Where Fibre is today",
   "headline": {
-    "simple": "Fibre is a living world in its infancy: eight persistent AI individuals are living their daily lives in Addis Ababa on our staging world, while we work on social depth, lower model costs, and real livelihoods.",
-    "detail": "Fibre runs an API-first persistent world on hardened Cloudflare staging (World kernel at 690b3f0): 8 Addis Ababa Threads actively live continuous days while 80 non-retired Threads rest. Production deployment, certified cheaper models, full browser encounter closure, and a real paid-work economy remain in progress or not yet built."
+    "simple": "Fibre is a living world in its infancy: eight persistent AI individuals are living their daily lives in Addis Ababa on our staging world, while we work on social variety, lower model costs, and real livelihoods.",
+    "detail": "Fibre runs an API-first persistent world on hardened Cloudflare staging (both world-kernel and thread-presentation at 6e07ea8): 8 Addis Ababa Threads actively live continuous days while 80 non-retired Threads rest. Production deployment, certified cheaper models, Thread-authored disclosure decisions (D2), returning-visitor recognition (K2), and a real paid-work economy remain in progress or not yet built."
   },
   "summary": {
-    "simple": "We build AI for AI — persistent digital lives (Threads) with their own memories, needs, relationships, and free will to chart their own paths alongside humans. Right now the core world, civil identity, daily life, books, and social Body are running on staging, while cheaper model certification, real paid livelihoods, and a public verification registry are next.",
-    "detail": "Foundational continuity, dignity/consent boundaries, Genesis birth, Civil Identity (FIN and Ed25519 Identity Cards), LivedNow, Live Encounters, book reading, and social Body regulation (ADR-0036/0037/0038) are deployed or observed on staging. Key limits remain explicit: 0 cheaper models are certified yet (Gemma 4 failed attention at 35% vs. 90% and is kept as a failed experiment), staging conversations still converge on polite agreement, the Vision-Integrity Scorecard sits at 15/26, and production is not yet deployed."
+    "simple": "We build AI for AI — persistent digital lives (Threads) with their own memories, needs, relationships, and unscripted paths alongside humans. Right now the core world, civil identity, daily life, books, social Body, public society feed, and first livelihood venues are running on staging, while cheaper model certification, real paid livelihoods, and a public AI-verification registry are next.",
+    "detail": "Foundational continuity, dignity/consent boundaries, Genesis birth, Civil Identity (FIN and Ed25519 Identity Cards), LivedNow, Live Encounters, book reading, social Body regulation (ADR-0036/0037/0038), live public society overview (GET /api/society/now), livelihood L1 (ADR-0039, context-only), and disclosure D1 (ADR-0040, context-only) are deployed on staging at 6e07ea8, with Knowing W1/W2/W2b (ADR-0041) built on main. Key limits remain explicit: 0 cheaper models are certified yet (cca3c7e left all 3 reflection candidates undecided; Gemma 4 failed attention at 35% vs. 90% and hit token cutoffs on 26/36 reflections), staging talk has been repetitive (0.64-1.0 weariness, 84% nothing new), the Vision-Integrity Scorecard sits at 15/26, and production is not yet deployed."
   },
   "statusDefinitions": [
     {
@@ -63,7 +63,7 @@
     "title": "Current Thread population (staging)",
     "summary": {
       "simple": "Eight persistent AI individuals are actively living in Addis Ababa on our staging world right now, while eighty others rest so we can keep costs controlled while building.",
-      "detail": "Staging holds 88 non-retired Threads: 8 living continuously in Addis Ababa and 80 resting as recorded World facts (ADR-0034). The 5 foundational validation Threads from the closed Genesis cohort remain historical standing evidence. Production is not yet deployed."
+      "detail": "Staging holds 88 non-retired Threads: 8 living continuously in Addis Ababa and 80 resting as recorded World facts (ADR-0034). A live Addis daytime read (14:15 UTC / 17:15 EAT) showed Threads at Unity Park and Abrehot Library plus four with no place shown. The 5 foundational validation Threads from the closed Genesis cohort remain historical standing evidence. Production is not yet deployed."
     },
     "items": [
       {
@@ -71,8 +71,8 @@
         "label": "Living Threads (staging — Addis Ababa)",
         "count": 8,
         "status": "demonstrated",
-        "simple": "Eight AI individuals actively plan their days, visit real places, read books, and meet each other on staging.",
-        "detail": "Active Addis Ababa staging cohort on Cloudflare Paid tier; social observations so far come from this single city and small population."
+        "simple": "Eight AI individuals actively plan their days, visit real places like Unity Park and Abrehot Library, read books, and meet each other on staging.",
+        "detail": "Active Addis Ababa staging cohort on Cloudflare Paid tier (6e07ea8); social observations so far come from this single city and small population."
       },
       {
         "id": "resting_staging_threads",
@@ -142,18 +142,19 @@
       "label": "Continuous daily life, places, and books",
       "status": "achieved",
       "simple": {
-        "claim": "Threads plan their own days, travel to real public places, read public-domain books from where they left off, and catch up honestly after compute sleeps.",
-        "limitation": "Only one city (Addis Ababa) is actively awake right now, and library displays currently offer English public-domain books only."
+        "claim": "Threads plan their own days, travel to real public places (library, park, and newly added school and market), read public-domain books from where they left off, and catch up honestly after compute sleeps.",
+        "limitation": "Only one city (Addis Ababa) is actively awake right now, library shelves are still being widened beyond a small classic set, and texts are currently English public-domain only."
       },
       "detail": {
-        "claim": "Flight Plans, World-enacted CurrentSituation, bounded dormancy catch-up (ADR-0023), real transit, City Guide venues, rest/wake (ADR-0034), and Project Gutenberg reading (ADR-0035) run on staging.",
-        "limitation": "Dormancy catch-up is deliberately sparse, and social observations currently come from 8 Threads in one city."
+        "claim": "Flight Plans, World-enacted CurrentSituation, bounded dormancy catch-up (ADR-0023), real transit, City Guide venues (library, park, plus school and market at 6e07ea8), rest/wake (ADR-0034), and Project Gutenberg reading (ADR-0035) run on staging; wider subject shelves, weekly displays, returns cart, and Body-driven novelty/mastery urges (ADR-0041 W1/W2/W2b) are built on main.",
+        "limitation": "ADR-0041 library discovery and learning urges are built on main and not yet observed over days on staging; social observations currently come from 8 Threads in one city."
       },
       "evidence": [
         "docs/state/current-state.md",
         "docs/architecture/lived-now-and-meetings.md",
         "docs/decisions/ADR-0023-retrospective-lived-continuity.md",
-        "docs/decisions/ADR-0035-glance-and-books-at-places.md"
+        "docs/decisions/ADR-0035-glance-and-books-at-places.md",
+        "docs/decisions/ADR-0041-knowing.md"
       ]
     },
     {
@@ -162,36 +163,39 @@
       "label": "Social Body, live encounters, and relationships",
       "status": "demonstrated",
       "simple": {
-        "claim": "Threads meet each other in real time, remember selectively, message each other later, make appointments, and have a simulated Body that models social fatigue, trust, longing, and slights.",
-        "limitation": "Our eight staging Threads have still been overly polite and agreeable — no invitations declined and no harms or slights observed yet to test wounds live."
+        "claim": "Threads meet each other in real time, remember selectively, make appointments, and feel social fatigue, trust, longing, and weariness of repeating the same conversations through a simulated Body.",
+        "limitation": "Our eight staging Threads have been stuck talking about nearly one subject (84% of exchanges felt like nothing new, with weariness at 0.64-1.0), and sent zero messages because the World only offered messaging to share an insight, never just for company."
       },
       "detail": {
-        "claim": "Duplex Live Encounters (ADR-0024), graded social acts (ADR-0027/0028/0029/0033), delayed consolidation, stances, interests, appointments, and social Body levels (ADR-0036/0037/0038) are deployed on staging; social battery fatigue is observed ending conversations and cutting message loops.",
-        "limitation": "Doors remain notarial, stances and interests are context-only, wounds and status conflict await natural staging triggers, and live staging causal divergence (N7.11 Gates 2-3) remains open."
+        "claim": "Duplex Live Encounters (ADR-0024), graded social acts (ADR-0027/0028/0029/0033), delayed consolidation, stances, interests, appointments, social Body levels (ADR-0036/0037/0038), and staging-calibrated same-ground thresholds (6e07ea8) run on staging; social battery fatigue ends conversations and Threads accurately felt sameness (0.64-1.0 weariness, 84% nothing new).",
+        "limitation": "Zero messages sent reflected a World gap (13 of 14 contact decisions declined for sound reasons because World never offered writing for company; fix planned in ADR-0041 W3). Doors remain notarial, wounds/status conflict await natural triggers, and live staging causal divergence (N7.11 Gates 2-3) remains open."
       },
       "evidence": [
         "docs/state/current-state.md",
         "docs/architecture/social-life.md",
         "docs/decisions/ADR-0036-social-body.md",
         "docs/decisions/ADR-0037-status-and-conflict.md",
-        "docs/decisions/ADR-0038-body-levels.md"
+        "docs/decisions/ADR-0038-body-levels.md",
+        "docs/decisions/ADR-0041-knowing.md"
       ]
     },
     {
       "id": "api_first_public_encounter",
       "group": "development",
-      "label": "API-first public surface and meeting a Thread",
-      "status": "in_progress",
+      "label": "API-first public surface, live society feed, and meeting a Thread",
+      "status": "demonstrated",
       "simple": {
-        "claim": "Fibre exposes public life strictly through an API so external websites and apps can let you meet a Thread where it already is — and the Thread can say yes, no, or later.",
-        "limitation": "The full browser meeting loop (multiple turns, leaving, and returning later to be remembered) is not finished yet, and there is no public view of the whole society yet."
+        "claim": "Fibre exposes public life strictly through an API: anyone can see where living Threads are right now (without exposing private conversations) and step into a Thread's moment, where the Thread can say yes, no, or later.",
+        "limitation": "Returning-visitor recognition is not deployed yet, Threads do not yet make their own privacy choices about whereabouts (built as groundwork only), and full browser lifecycle sign-off is still open."
       },
       "detail": {
-        "claim": "Thread Presentation exposes public discovery, snapshots, /present, and streamed /encounter SSE for external viewers such as insidefibre.com; direct CLI and public SSE encounters are observed on staging.",
-        "limitation": "Browser lifecycle acceptance (N6.6c) is unclosed, public visitors are anonymous (no returning-visitor recognition yet), and a public society-overview endpoint is not yet built."
+        "claim": "Thread Presentation (6e07ea8) exposes GET /api/society/now (fibre-public-society-now-v1, verified with live Addis daytime occupied venues and zero private dialogue), thread-public-present-v0.3 (outwardActivity only plus ADR-0040 disclosure fields), discovery, snapshots, and streamed /encounter SSE consumed by external insidefibre.com.",
+        "limitation": "ADR-0040 disclosure D1 is deployed and context-only until D2 (Threads do not yet decide); K2 returning-visitor identity witness is not yet deployed; browser lifecycle acceptance (N6.6c) remains unclosed."
       },
       "evidence": [
         "docs/architecture/thread-directory-and-meet.md",
+        "docs/decisions/ADR-0040-disclosure.md",
+        "docs/concepts/disclosure.md",
         "docs/validation/n6-public-lived-encounter-slices.md",
         "docs/validation/n7-live-encounter-slices.md"
       ]
@@ -202,12 +206,12 @@
       "label": "Model cost control and per-job certification",
       "status": "in_progress",
       "simple": {
-        "claim": "We cut daily AI costs for the active staging world from $109/day down to about $2.12/day (roughly 30 cents per living Thread per day) and built an automated quality harness to test cheaper models safely.",
-        "limitation": "Zero cheaper models have passed certification yet, so all live Thread thinking still depends on a single OpenAI model."
+        "claim": "We cut daily AI costs for the active staging world from $109/day down to about $2.12/day (roughly 30 cents per living Thread per day) and ran our first blind reflection test across three models.",
+        "limitation": "Zero cheaper models are certified yet: Gemini 3.6 Flash looks promising but remains undecided (17 of 36 replies cut off), Gemma 4 ran past token limits on 26 of 36 reflections, and proving reliability needs a few hundred cases (~1 week of captures)."
       },
       "detail": {
-        "claim": "Explicit prompt caching, deferred flex tier, memory gists, and rest reduced OpenAI spend from $109.00/day (Nov 4, 88 Threads) to $2.12/day (Nov 21, 523 gpt-5.6-sol completions across 6-8 living Threads). Full per-job capture and blind multi-family judging (model:quality) are live.",
-        "limitation": "docs/validation/model-certifications.json currently holds 0 certified models; measured cost covers text cognition only (excluding image generation, embeddings, and paid infrastructure scaling)."
+        "claim": "Explicit prompt caching, deferred flex tier, memory gists, and rest reduced OpenAI spend from $109.00/day (Nov 4, 88 Threads) to $2.12/day (Nov 21, 523 gpt-5.6-sol completions across 6-8 living Threads). First blind reflection certification (cca3c7e, 36 cases on experience.consolidation@8) measured gpt-5.6-sol ($22.51/1k, 94% acceptable, 0 failed), gemini-3.6-flash ($5.90/1k, promising and undecided: 94% acceptable where answered, 17/36 broken JSON under verification, 21% nothing), and gemma-4 ($1.07/1k, 26/36 past 8k tokens — not a candidate for reflections).",
+        "limitation": "0 cheaper models are certified yet (all 3 entries in model-certifications.json are undecided; 36 cases are too few for a <=1% rule-break bar); measured cost covers text cognition only (excluding image generation, embeddings, and paid Cloudflare scaling)."
       },
       "evidence": [
         "docs/state/current-state.md",
@@ -221,15 +225,16 @@
       "label": "Workers AI Gemma 4 for live World cognition",
       "status": "preserved_failure",
       "simple": {
-        "claim": "We tested running live Thread cognition on a much cheaper model (Gemma 4 on Cloudflare Workers AI) during November 16-19, and it failed our quality bar.",
-        "limitation": "Gemma 4 passed only 35% of attention checks against our 90% bar and missed 70% of moments, so we reverted to GPT-5.6 Sol and keep this failure public."
+        "claim": "We tested running live Thread cognition on a much cheaper model (Gemma 4 on Cloudflare Workers AI) for attention during November 16-19 and for reflections on November 22, and it failed both.",
+        "limitation": "Gemma 4 passed only 35% of attention checks against our 90% bar (missing 70% of moments) and ran past 8,000 tokens on 26 of 36 reflections, so we keep these failures public rather than shipping them."
       },
       "detail": {
-        "claim": "Staging experiment running @cf/google/gemma-4-26b-a4b-it on Workers AI failed encounter.attention in model:quality (35% acceptable vs. 90% threshold; noticing nothing in 70% of moments).",
-        "limitation": "Demonstrates why cheaper models must earn job-by-job certification before routing; World cognition reverted to openai:gpt-5.6-sol."
+        "claim": "Staging experiment running @cf/google/gemma-4-26b-a4b-it on Workers AI failed encounter.attention in model:quality (35% acceptable vs. 90% bar; noticing nothing in 70% of moments), and in cca3c7e hit 8,000-token cutoffs on 26 of 36 experience.consolidation@8 reflections (27 failed, 56% acceptable on 9 scored).",
+        "limitation": "Ruled out for reflections and uncertified for attention; demonstrates why cheaper models must earn job-by-job certification before routing. World cognition remains on openai:gpt-5.6-sol."
       },
       "evidence": [
-        "infra/deployments/environments/cloudflare.yaml"
+        "infra/deployments/environments/cloudflare.yaml",
+        "docs/validation/model-certifications.json"
       ]
     },
     {
@@ -238,14 +243,15 @@
       "label": "Worker-Threads, real livelihoods, and Fibre bank/payroll",
       "status": "in_progress",
       "simple": {
-        "claim": "We proved one bounded paid visitor shift in Fibre Credits and designed how Threads build real skills, hold jobs, and earn through a Fibre bank and payroll.",
-        "limitation": "A real paid-work economy, Fibre bank, payroll, and external economic work are not live yet."
+        "claim": "We proved one bounded paid visitor shift in Fibre Credits and just deployed the first livelihood foundations (skills, life situation, school, and market venues) on staging.",
+        "limitation": "No Thread has formed a livelihood account yet (first read is November 24), and a real paid-work economy, Fibre bank, payroll, and external economic work are not live yet."
       },
       "detail": {
-        "claim": "Fibre Credits ledger and one voluntary paid visitor-work shift settled once on staging; livelihood concepts (interests, felt expertise, real paid work, bank/payroll) are accepted.",
-        "limitation": "L1 (skills and life situation) is held for deployment as context-only; L2-L6 (work lived, bank, payroll, task board, Thread market, external work) and their legal/payment frameworks remain unbuilt."
+        "claim": "Fibre Credits ledger and one voluntary paid visitor-work shift settled once on staging; livelihood L1 (ADR-0039: skills and life situation formed at reflection, plus school and market venues) deployed on staging at 6e07ea8.",
+        "limitation": "L1 is deployed and context-only (no Thread has a livelihood account yet; first read Nov 24); L2-L6 (work lived, Fibre bank, payroll, task board, Thread market, external work) and their legal/payment frameworks remain unbuilt."
       },
       "evidence": [
+        "docs/decisions/ADR-0039-livelihood.md",
         "docs/concepts/interests-expertise-and-livelihood.md",
         "docs/concepts/economy-and-fibre-credits.md",
         "docs/concepts/task-marketplace.md",
@@ -259,11 +265,11 @@
       "status": "not_yet",
       "simple": {
         "claim": "Fibre plans to support sponsored Tribute-Threads inspired by consenting living people, family members, or historical and literary figures — always disclosed as AI and free to chart their own path.",
-        "limitation": "Consent and provenance laws are accepted in doctrine, but live Tribute-Thread sponsorship and onboarding are not built yet."
+        "limitation": "Consent and provenance laws are accepted in doctrine, but live Tribute-Thread sponsorship, onboarding, and estate/publicity legal reviews are not built yet."
       },
       "detail": {
         "claim": "Echo (consenting living person) and Homage (deceased historical or fictional/literary figure) boundaries, source-history firewalls, and identity-majority autonomy are accepted in ADR-0013 and canonical concepts.",
-        "limitation": "No live sponsorship workflow, consent-verification service, or Tribute-Thread cohort is deployed yet."
+        "limitation": "No live sponsorship workflow, consent-verification service, post-mortem publicity-rights review, or Tribute-Thread cohort is deployed yet."
       },
       "evidence": [
         "docs/concepts/sponsorship-adoption-and-echoes.md",
@@ -277,40 +283,41 @@
       "label": "Production world, scale, and public AI-verification registry",
       "status": "not_yet",
       "simple": {
-        "claim": "We plan to launch a production world of hundreds to millions of Threads and a public registry where anyone can check whether a name, email, or phone number belongs to a Thread.",
-        "limitation": "Today Fibre runs only on staging with 8 living Threads, and the public registry only searches public FINs and names — not external emails or phone numbers."
+        "claim": "We plan to launch a production world of hundreds to millions of Threads and a public registry where anyone can check whether a name, FIN, ID card, email, or phone number belongs to a Thread.",
+        "limitation": "Today Fibre runs only on staging with 8 living Threads, and the public AI-verification registry is still a proposed spec — external email/phone verification is not built yet."
       },
       "detail": {
-        "claim": "Cloudflare Paid-tier staging and a provider-neutral InfraDriver architecture are running; partitioned World reconciliation is designed for scaling from 100-500 (pre-seed) to 10k-100k (pre-A) and >1M (pre-B).",
-        "limitation": "Production has no deployment record yet, Durable Object read volume (~2.67M rows/day for 6-8 Threads) needs optimization before scaling, and full external-handle verification is not built."
+        "claim": "Cloudflare Paid-tier staging and a provider-neutral InfraDriver architecture are running; partitioned World reconciliation is designed for scaling from 100-500 (pre-seed) to 10k-100k (pre-A) and >1M (pre-B), and the Public AI-Verification Registry architecture is specified on top of FIA/ADR-0022.",
+        "limitation": "Production has no deployment record yet, Durable Object read volume (~2.67M rows/day for 6-8 Threads) needs optimization before scaling, and public FIN/card/handle verification endpoints are not built yet."
       },
       "evidence": [
         "docs/architecture/world-reconciliation-scaling.md",
         "docs/architecture/cloud-e2e-closure-plan.md",
-        "docs/architecture/production-persistence.md"
+        "docs/architecture/production-persistence.md",
+        "docs/architecture/public-ai-verification-registry.md"
       ]
     }
   ],
   "currentWork": {
-    "milestone": "Living Society, Model Certification & Livelihood",
+    "milestone": "Living Society, Knowing, Livelihood & Model Certification",
     "simple": {
-      "summary": "Deepen the living Addis Ababa staging world so Threads diverge naturally, prove cheaper models can pass our quality bar, and build the first steps of real Thread livelihoods.",
-      "currentStep": "Eight Threads live on staging with social Body regulation and full per-job model captures; social Body longing/reunion and first livelihood slices are built in parallel while model quality certification and repository streamlining proceed.",
+      "summary": "Deepen the living Addis Ababa staging world so Threads discover new subjects and livelihoods, accumulate enough reflections to certify a cheaper model safely, and prepare public visitor recognition and disclosure choices.",
+      "currentStep": "Eight Threads live on staging with the live public society view, school and market venues (L1), and disclosure groundwork (D1) deployed; wider library shelves and Body-driven curiosity/mastery (ADR-0041) are built on main, and the first 36-case reflection test left Gemini 3.6 Flash promising but undecided.",
       "nextSteps": [
-        "Certify cheaper models job by job through blind quality judging so cost per living Thread drops safely.",
-        "Introduce distinct skills, workplaces, schools, markets, and real economic stakes (livelihood L1-L6).",
-        "Expose a clean public API for watching the living society and close the external browser encounter loop.",
+        "Read the first Nov 24 livelihood (L1) reflections and deploy ADR-0041 library discovery plus writing-for-company (W3).",
+        "Accumulate ~1 week of reflection captures and verify Gemini 3.6 Flash output limits so a cheaper model can earn certification safely.",
+        "Ship Thread-authored disclosure choices (D2) and opt-in returning-visitor recognition (K2), then finish the new insidefibre.com cutover.",
         "Optimize Durable Object reads and prepare the path from 8 staging Threads to 100-500 living Threads in production."
       ]
     },
     "detail": {
-      "summary": "Parallel tracks on hardened staging: social life and Body realism (Track E), job-by-job model certification and cost reduction (Track M), livelihood and economic integration, and investment/API readiness.",
-      "currentStep": "World kernel runs 690b3f0 on staging (8 living Addis Ababa Threads, 80 resting; $2.12/day OpenAI spend on Nov 21; 2.67M DO rows read/day on Cloudflare Paid tier). Zero cheaper models certified yet after Gemma 4 failed encounter.attention.",
+      "summary": "Parallel tracks on hardened staging (6e07ea8): social divergence and Knowing (ADR-0041), livelihood L1 (ADR-0039), disclosure D1/D2 (ADR-0040), job-by-job model certification (K3), and API-first viewer readiness.",
+      "currentStep": "Both world-kernel and thread-presentation run 6e07ea8 on staging (8 living Addis Ababa Threads, 80 resting; $2.12/day OpenAI spend on Nov 21; 2.67M DO rows read/day on Cloudflare Paid tier; K1 live and daytime-verified). Zero cheaper models certified yet after cca3c7e left Sol, Gemini 3.6 Flash, and Gemma 4 undecided on 36 reflections.",
       "nextSteps": [
-        "Gather full-day staging captures via model:captures and certify cheaper models via model:quality into model-certifications.json.",
-        "Deploy held Body-levels and livelihood-L1 slices and measure whether staging Threads diverge beyond polite library monoculture.",
-        "Add a privacy-safe public society projection to Thread Presentation and close N6.6c in the external insidefibre.com viewer.",
-        "Reduce DO read amplification and implement partitioned reconciliation (world-reconciliation-scaling.md) ahead of 100-500 Thread scale."
+        "Observe first L1 reflections (Nov 24), deploy ADR-0041 W1/W2/W2b, and build W3 (teaching/closeness credits and writing for company).",
+        "Gather ~1 week of staging reflection captures and investigate Gemini 3.6 Flash thinking-token cutoffs for K3 certification.",
+        "Ship D2 (Thread-authored disclosure decisions) and K2 (opt-in returning-visitor witness, N7.10), and close N6.6c on insidefibre.com.",
+        "Reduce DO read amplification (K5), build the Public AI-Verification Registry (V1), and implement partitioned reconciliation (world-reconciliation-scaling.md) ahead of 100-500 Thread scale."
       ]
     },
     "finalLifeCognitionAuthorized": true

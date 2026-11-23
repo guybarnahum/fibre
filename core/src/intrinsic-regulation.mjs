@@ -168,6 +168,8 @@ function normalizeExploration(value = {}) {
         personRef: nonEmpty(`${name}.personRef`, person.personRef),
         unfamiliarity: unit(`${name}.unfamiliarity`, person.unfamiliarity),
         staleness: optionalUnit(`${name}.staleness`, person.staleness) ?? 0,
+        // How much they lately brought it something new (ADR-0041).
+        promise: optionalUnit(`${name}.promise`, person.promise) ?? 0,
         evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, person.evidenceRefs),
       };
     }),
@@ -621,6 +623,26 @@ function basalDrives(percept, profile) {
     }));
   }
 
+  // Good news seeks company (ADR-0041): a fresh lift, from something new or
+  // from going deeper, is a pull toward someone to tell, as strong at its
+  // height as the hunger for company. Whom is the bond's and warmth's to
+  // decide; whether to tell, and how much, what foresight imagines.
+  const noveltyFloor = species.explorationNoveltyFloor;
+  const lifted = Math.max(
+    exploration.novelty !== undefined && exploration.novelty > noveltyFloor ? (exploration.novelty - noveltyFloor) / (1 - noveltyFloor) : 0,
+    percept.mastery.competence);
+  if (lifted > 0) {
+    const share = 0.8 * lifted * profile.sensitivity.social;
+    drives.push(drive({
+      family:"social_contact",
+      targetRef:"self:share",
+      orientation:"approach",
+      pressure:share,
+      urgency:share,
+      evidenceRefs,
+    }));
+  }
+
   // Going deeper in what it knows has just satisfied it (ADR-0041): the
   // mastery urge attained, felt as how much.
   if (percept.mastery.competence > 0) {
@@ -641,9 +663,11 @@ function basalDrives(percept, profile) {
   // pull is a Body signal; whether it draws this Thread toward that person,
   // or toward new places, ideas or making, is its inherited orientation, and
   // whether it acts on it is its own.
+  // So, too, is someone who lately brought it something new (ADR-0041): the
+  // same appetite for the new, turned toward a person who feeds it.
   for (const person of exploration.unfamiliarPeople) {
     const unknown = Math.min(1, person.unfamiliarity + 0.5 * person.staleness);
-    const allure = 0.5 * unknown * profile.sensitivity.exploration;
+    const allure = 0.5 * Math.min(1, unknown + person.promise) * profile.sensitivity.exploration;
     drives.push({...drive({
       family:"exploration",
       targetRef:`person:${person.personRef}`,
@@ -651,7 +675,8 @@ function basalDrives(percept, profile) {
       pressure:allure,
       urgency:allure,
       evidenceRefs:[...new Set([...evidenceRefs,...person.evidenceRefs])],
-    }), ...(0.5 * person.staleness > person.unfamiliarity ? {catchingUp:true} : {})});
+    }), ...(person.promise > unknown ? {promising:true}
+      : 0.5 * person.staleness > person.unfamiliarity ? {catchingUp:true} : {})});
   }
 
   // Wariness: the harm still expected of a person, sharper the less they
