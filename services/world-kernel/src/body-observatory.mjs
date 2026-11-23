@@ -86,13 +86,13 @@ export function bodyObservatory({thread,experienceStore,memoryStore=null,at,name
       frustration:round(standing.frustration.level),frustrationBaseline:round(standing.frustration.baseline),
       people:Object.freeze(Object.fromEntries(people.map(person=>{
         const seen=regardOf({experienceStore:records,threadId,otherThreadId:person,at:instant,
-          trustLocus:loci.trust,standingLocus:loci.standing});
+          trustLocus:loci.trust,standingLocus:loci.standing,attachmentLocus:loci.attachment});
         const bond=bondOf({regard:seen,doors:records.listOpenDoors(threadId,person)});
         const longing=longingOf({bond,regard:seen,orientation:attachment?.orientation??null,
           persistence:attachment?.persistence??0,at:instant,absorbed:moments.absorbed,
           reminders:bond>0?moments.remindersOf(person):[]});
         return [person,Object.freeze({knowing:round(seen.knowing),staleness:round(seen.staleness),
-          trust:round(seen.trust),hurt:round(seen.hurt),held:round(seen.status),treated:round(seen.treated??0),
+          trust:round(seen.trust),warmth:round(seen.warmth),hurt:round(seen.hurt),held:round(seen.status),treated:round(seen.treated??0),
           bond:round(bond),longing:round(longing.level),longingBaseline:round(longing.baseline)})];
       }))),
     });
