@@ -142,6 +142,18 @@ The route, the contract name, the top-level shape and every privacy boundary abo
   - presents recorded under v0.1 are read back with `outwardActivity: null` and no `activity`, on every public read path (current present, discovery, events and the websocket replay).
 - **Caching and access:** one shared copy is kept 15 seconds at the edge; browsers get `Cache-Control: no-cache`, so they always ask again. CORS is `VIEWER_ORIGIN` only; any other `Origin` gets 403. Any query parameter gets 400.
 
+### Disclosure in the public view (Claude, November 22, 2026; ADR-0040)
+What the public sees of where a Thread is now follows that Thread's own disclosure. Until Threads decide (foresight, the next slice), the birth registration holds: home city and current venue, as before. The contract changes are additive:
+- **Public present `thread-public-present-v0.3`.**
+  - `location` may be `{ "kind": "withheld" }`: the Thread said openly that it keeps its whereabouts private. Show that, in those words or similar.
+  - A `place` or `transit` location may carry `"detailWithheld": true`: shown openly in part ("in Addis Ababa; exact place kept private").
+  - Withheld by omission, a location simply has no place, exactly as when World knows none.
+- **The society view.**
+  - A new top-level `whereaboutsWithheldThreads` lists Threads that withhold openly. They appear in no city, venue or co-presence list.
+  - A person entry may carry `"placeDetailWithheld": true`.
+  - `recentPublicEncounters[].placeDisplayName` (and `locality`) may be `null` when a participant keeps its whereabouts from the public.
+- **Neutral wording for no place.** Because an omission must be indistinguishable from "nothing known", a Thread with no place shown should be labelled neutrally ("place not shown"), never "At home".
+
 ## K2 — Minimal Opt-In Returning-Visitor Identity Witness (`POST /api/threads/:threadId/encounter`)
 
 **Status:** Accepted as written; Claude builds after `K1`.

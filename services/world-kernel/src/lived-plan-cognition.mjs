@@ -11,6 +11,7 @@ import {
 } from "./persistence-common.mjs";
 import { runInteriorCognition } from "./interior-cognition.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
+import { proposedPlace } from "./live-world-geography.mjs";
 import {
   livedPlanId,
   normalizeLivedPlan,
@@ -332,21 +333,6 @@ function infeasibleTravelBetween(previous,next,index){
   );
 }
 
-// A place name is a fleeting Thread-authored proposal, never durable
-// World authority. Every admitted Flight Plan still cites physical place refs.
-function proposedPlace(value){
-  const parts=typeof value==="string"?value.split(",").map(s=>s.trim()).filter(Boolean):[];
-  if(parts.length<2||parts.some(s=>s.length>120)
-    ||value.startsWith("wpl_")||value.startsWith("per:")){
-    throw new TypeError("new destination needs a place and country");
-  }
-  const country=parts.at(-1),city=parts.at(-2);
-  return {
-    name:parts.length===2?city:parts.slice(0,-2).join(", "),
-    kind:parts.length===2?"city":"place",city,country,
-  };
-}
-
 async function resolveNewPlaces({
   threadId,stops,startingPlaceRef,materializedAt,sourceStores,
   resolveDestinationGeography,availablePlaces,
@@ -450,6 +436,7 @@ export async function formPersonalLivedPlan({
   cityGuidePlaces = [],
   agreedAppointments = [],
   booksToContinue = [],
+  livelihood = null,
   resolveDestinationGeography = null,
   planningRejection = null,
   unobservedSince = null,
@@ -545,6 +532,8 @@ export async function formPersonalLivedPlan({
             ...(timeZone===null?{lastReadAt:item.lastReadAt}:{lastRead:localCivilMoment(item.lastReadAt,timeZone)}),
           })),
         }),
+        // What it is doing with its life now, and where those days are spent.
+        ...(livelihood === null ? {} : { livelihood:structuredClone(livelihood) }),
         ...(workCommitments.length === 0 ? {} : {
           requiredWorkCommitments:workCommitments.map((item) => structuredClone(item)),
         }),

@@ -26,6 +26,7 @@ import { createAutobiographicalMemoryTables } from "./autobiographical-memory-sc
 import { createLivedExperienceTables } from "./lived-experience-schema.mjs";
 import { createContactTables } from "./contact-schema.mjs";
 import { createThreadLifeRestTables } from "./thread-life-rest-schema.mjs";
+import { createInformationDisclosureTables } from "./information-disclosure-schema.mjs";
 import { createRelationshipTables } from "./relationship-schema.mjs";
 import {worldStateInitialization,recoverInterruptedEventTable} from "./world-state-storage.mjs";
 import {THREAD_EVENT_COLUMNS,createThreadEventsTable,indexThreadEventReferences,installThreadEventGuards,threadEventTableListsKinds} from "./thread-event-schema.mjs";
@@ -166,6 +167,7 @@ function createSchema(database) {
   createLivedExperienceTables(database);
   createContactTables(database);
   createThreadLifeRestTables(database);
+  createInformationDisclosureTables(database);
   createRelationshipTables(database);
   indexThreadEventReferences(database);
 }

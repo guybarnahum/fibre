@@ -9,6 +9,7 @@ import {
   formFormativeInterests,interestsInReflection,
 } from "./thread-interests.mjs";
 import {MOMENT_SCHEMA,admitMoments,momentsInReflection,normalizeMoments} from "./felt-expertise.mjs";
+import {formLivelihood} from "./thread-livelihood.mjs";
 import {REGARD_SCHEMA,admitRegard,normalizeRegard} from "./perceived-regard.mjs";
 import {ENGAGEMENT_READINGS,RECORDED_READINGS} from "./engagement.mjs";
 import {createExchangeMeaning} from "./exchange-meaning.mjs";
@@ -47,6 +48,13 @@ function requireMethod(name,value,method){
   if(!value||typeof value!=="object"||typeof value[method]!=="function"){
     throw new TypeError(`${name}.${method} is required`);
   }
+}
+
+// The places this Thread knows in its city: Genesis places the World admits,
+// places it has been to, and public venues it has been told of.
+function livelihoodPlaces(livedNowStore,threadId){
+  return [...(livedNowStore.ensureWorldPlaces?.(threadId)??[]),...(livedNowStore.listKnownPlaces?.(threadId)??[]),
+    ...(livedNowStore.listKnownPublicPlaces?.(threadId)??[])].slice(0,16);
 }
 
 function boundedMemories(memories){
@@ -557,6 +565,18 @@ export function createExperienceConsolidationProcess({
       if(interestsHeld){
         await formFormativeInterests({
           thread,memories:memoryStore.listCurrentMemories(consolidation.threadId),
+          experienceStore,modelAdapter,asOf:consolidation.startedAt,
+        });
+      }
+      // Likewise, once, what it can do and what it is doing with its life now.
+      if(typeof experienceStore.getCurrentLivelihood==="function"){
+        const places=livelihoodPlaces(livedNowStore,consolidation.threadId);
+        await formLivelihood({
+          thread,memories:memoryStore.listCurrentMemories(consolidation.threadId),
+          interests:interestsHeld?experienceStore.listCurrentInterests(consolidation.threadId):[],
+          relations:situatedLifeStore?.listCurrentLifeRelations?.(consolidation.threadId)??[],
+          places,city:places.map(place=>place.locality&&place.country?`${place.locality}, ${place.country}`:null)
+            .find(Boolean)??null,
           experienceStore,modelAdapter,asOf:consolidation.startedAt,
         });
       }

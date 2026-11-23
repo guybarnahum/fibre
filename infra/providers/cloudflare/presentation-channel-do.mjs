@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { publicPresentPayload } from "fibre/thread-presentation/current-present";
+import { normalizePublicWhereabouts, publicPresentPayload } from "fibre/thread-presentation/current-present";
 
 const STREAM_TAG = "presentation-stream";
 
@@ -248,11 +248,15 @@ export class FibrePresentationChannelDurableObject extends DurableObject {
       after,
     ).toArray();
     // Replayed history is read as the public may read it: a present recorded
-    // before v0.2 without the private intention it carried.
+    // before v0.2 without the private intention it carried, and no more of
+    // where the Thread was than the public knows now (set by the read API).
+    let whereabouts = null;
+    try { whereabouts = normalizePublicWhereabouts(JSON.parse(request.headers.get("x-fibre-public-whereabouts") ?? "null")); }
+    catch { whereabouts = null; }
     for (const row of replay) {
       const event = JSON.parse(row.value_json);
       server.send(frame(row.sequence, event?.kind === "present.updated"
-        ? { ...event, payload: publicPresentPayload(event.payload) } : event));
+        ? { ...event, payload: publicPresentPayload(event.payload, whereabouts) } : event));
     }
     server.send(JSON.stringify({
       type: "stream.ready",

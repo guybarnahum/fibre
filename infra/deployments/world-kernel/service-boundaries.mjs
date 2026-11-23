@@ -165,10 +165,10 @@ export function createThreadPresentationPublisher({
         "PRESENTATION_IDENTITY_PROJECTION_FAILED",
       );
     },
-    async publishCurrentPresent({ threadId, present }) {
+    async publishCurrentPresent({ threadId, present, publicWhereabouts = null }) {
       const body = await post(
         presentUrl,
-        { threadId, present },
+        { threadId, present, publicWhereabouts },
         "current present projection",
         "CURRENT_PRESENT_PUBLICATION_FAILED",
       );

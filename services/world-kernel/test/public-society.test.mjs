@@ -27,3 +27,16 @@ test("World tells the public who met whom at a public venue, and who rests among
     "a witnessed happening, a visitor, or someone not shown counted as a public meeting, or a home was named");
   assert.equal(JSON.stringify(society).includes("private words"), false, "words said reached the public view");
 });
+
+test("a meeting's place in public is no more precise than every participant let the public know", () => {
+  const meet = (whereaboutsOf) => projectPublicSociety({ now:"2026-11-22T10:00:00.000Z", venueOf, whereaboutsOf,
+    threadIds:["thr_habiba", "thr_kadir"], resting:[],
+    rows:[row("story_talk", "thr_habiba", ["thr_habiba", "thr_kadir"]), row("story_talk", "thr_kadir", ["thr_habiba", "thr_kadir"])] })
+    .meetings[0].place;
+  const now = (level) => ({ now:{ level, form:level === "venue" ? null : "opaque" } });
+  assert.equal(meet(() => null).displayName, "Abrehot Library");
+  assert.deepEqual(meet((id) => id === "thr_kadir" ? now("city") : now("venue")), { displayName:null, locality:"Addis Ababa" },
+    "a meeting named the venue of someone who shows the public only a city");
+  assert.equal(meet((id) => id === "thr_kadir" ? now(null) : now("venue")), null,
+    "a meeting placed someone who keeps its whereabouts from the public");
+});

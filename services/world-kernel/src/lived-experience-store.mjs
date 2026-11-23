@@ -2645,6 +2645,72 @@ export class LivedExperienceStore {
     });
   }
 
+  // A Thread's current skills: the latest revision of each not let go.
+  listCurrentSkills(threadId,{limit=6}={}){
+    assertId("skills threadId",threadId);
+    return this.#database.prepare(`
+      SELECT s.skill_id,s.revision,s.skill_json,s.evidence_refs_json,s.as_of
+      FROM thread_skills s
+      WHERE s.thread_id=? AND s.status='current' AND s.revision=(
+        SELECT MAX(revision) FROM thread_skills WHERE thread_id=s.thread_id AND skill_id=s.skill_id)
+      ORDER BY s.as_of DESC,s.skill_id LIMIT ?
+    `).all(threadId,limit).map(row=>Object.freeze({
+      skillId:row.skill_id,revision:row.revision,asOf:row.as_of,...JSON.parse(row.skill_json),
+      evidenceRefs:Object.freeze(JSON.parse(row.evidence_refs_json)),
+    }));
+  }
+
+  // One revision of one skill, once per source.
+  recordSkill({threadId,skillId,status="current",skill,evidenceRefs,formedBy,sourceRef,asOf}){
+    assertId("skill threadId",threadId);
+    assertId("skillId",skillId);
+    assertId("skill sourceRef",sourceRef);
+    assertIsoTimestamp("skill asOf",asOf);
+    if(!["current","let_go"].includes(status))throw new TypeError("skill status is invalid");
+    if(!Array.isArray(evidenceRefs)||evidenceRefs.length===0)
+      throw new TypeError("a skill rests on at least one memory or experience");
+    return this.#database.transaction(()=>{
+      const existing=this.#database.prepare(`SELECT revision FROM thread_skills
+        WHERE thread_id=? AND skill_id=? AND source_ref=?`).get(threadId,skillId,sourceRef);
+      if(existing!==undefined)return Object.freeze({skillId,revision:existing.revision,inserted:false});
+      const revision=(this.#database.prepare(`SELECT MAX(revision) AS r FROM thread_skills
+        WHERE thread_id=? AND skill_id=?`).get(threadId,skillId).r??0)+1;
+      this.#database.prepare(`INSERT INTO thread_skills(thread_id,skill_id,revision,status,skill_json,
+        evidence_refs_json,formed_by,source_ref,as_of) VALUES (?,?,?,?,?,?,?,?,?)`)
+        .run(threadId,skillId,revision,status,canonicalJson(skill),canonicalJson(evidenceRefs),formedBy,sourceRef,asOf);
+      return Object.freeze({skillId,revision,inserted:true});
+    });
+  }
+
+  // What a Thread is doing with its life now: its latest own account, or null.
+  getCurrentLivelihood(threadId){
+    assertId("livelihood threadId",threadId);
+    const row=this.#database.prepare(`SELECT revision,livelihood_json,evidence_refs_json,as_of
+      FROM thread_livelihood WHERE thread_id=? ORDER BY revision DESC LIMIT 1`).get(threadId);
+    return row===undefined?null:Object.freeze({revision:row.revision,asOf:row.as_of,
+      ...JSON.parse(row.livelihood_json),evidenceRefs:Object.freeze(JSON.parse(row.evidence_refs_json))});
+  }
+
+  // One revision of its account of its life, once per source.
+  recordLivelihood({threadId,livelihood,evidenceRefs,formedBy,sourceRef,asOf}){
+    assertId("livelihood threadId",threadId);
+    assertId("livelihood sourceRef",sourceRef);
+    assertIsoTimestamp("livelihood asOf",asOf);
+    if(!Array.isArray(evidenceRefs)||evidenceRefs.length===0)
+      throw new TypeError("a life situation rests on at least one memory or experience");
+    return this.#database.transaction(()=>{
+      const existing=this.#database.prepare(`SELECT revision FROM thread_livelihood
+        WHERE thread_id=? AND source_ref=?`).get(threadId,sourceRef);
+      if(existing!==undefined)return Object.freeze({revision:existing.revision,inserted:false});
+      const revision=(this.#database.prepare("SELECT MAX(revision) AS r FROM thread_livelihood WHERE thread_id=?")
+        .get(threadId).r??0)+1;
+      this.#database.prepare(`INSERT INTO thread_livelihood(thread_id,revision,livelihood_json,
+        evidence_refs_json,formed_by,source_ref,as_of) VALUES (?,?,?,?,?,?,?)`)
+        .run(threadId,revision,canonicalJson(livelihood),canonicalJson(evidenceRefs),formedBy,sourceRef,asOf);
+      return Object.freeze({revision,inserted:true});
+    });
+  }
+
   // A moment, once per reflection and position: a retried reflection adds nothing.
   recordSocialMoment({momentId,threadId,kind,personThreadId,interestId,moment,evidenceRefs,sourceRef,asOf}){
     assertId("moment id",momentId);

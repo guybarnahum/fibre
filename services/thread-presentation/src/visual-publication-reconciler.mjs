@@ -1,5 +1,6 @@
 import { THREAD_PRESENTATION_STREAM_VERSION } from "fibre/world-kernel/thread-presentation-contracts";
 import { planCurrentPresentDepiction } from "./current-present-depiction.mjs";
+import { normalizePublicWhereabouts } from "./current-present-projector.mjs";
 import { threadPresentationChannelId } from "./public-asset-resolver.mjs";
 import {readVisualAgeAnchorAdmissions} from "fibre/world-kernel/thread-presentation-contracts";
 
@@ -106,11 +107,15 @@ function suppliedEmbodimentReader(embodiment) {
   });
 }
 
-async function retainLatestPresent(catalog, channelId, event, channelRecord) {
+// The latest present, and what the public knows now of where the Thread is
+// (ADR-0040): every public read of this channel's history stays within it,
+// even when the knowledge changed without a new present.
+async function retainLatestPresent(catalog, channelId, event, channelRecord, publicWhereabouts) {
   const prior = channelRecord?.currentPresent;
-  if (Number.isSafeInteger(prior?.sequence) && prior.sequence > event.sequence) return prior;
-  const currentPresent = Object.freeze({ sequence:event.sequence, event });
-  await catalog.upsert(channelId, { ...channelRecord, currentPresent });
+  const newer = !(Number.isSafeInteger(prior?.sequence) && prior.sequence > event.sequence);
+  const currentPresent = newer ? Object.freeze({ sequence:event.sequence, event }) : prior;
+  await catalog.upsert(channelId, { ...channelRecord, currentPresent,
+    ...(publicWhereabouts === null ? {} : { publicWhereabouts }) });
   return currentPresent;
 }
 
@@ -119,7 +124,7 @@ async function publishCurrentPresent({
   presentationServer,
   selectProviderProfile,
   demandService,
-}, { threadId, present } = {}) {
+}, { threadId, present, publicWhereabouts = null } = {}) {
   if (!infra?.catalog
     || typeof infra.catalog.get !== "function"
     || typeof infra.catalog.upsert !== "function") {
@@ -155,7 +160,7 @@ async function publishCurrentPresent({
     sourceReferences:[present?.situationId],
     payload:present,
   });
-  await retainLatestPresent(infra.catalog, channelId, accepted.event, catalog);
+  await retainLatestPresent(infra.catalog, channelId, accepted.event, catalog, normalizePublicWhereabouts(publicWhereabouts));
 
   // Age anchors are presentation-only evidence. Resolve them from the same
   // admitted catalog and immutable object store as Observatory, at demand time.

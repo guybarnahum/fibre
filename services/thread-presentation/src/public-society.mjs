@@ -15,6 +15,7 @@ function person(thread, payload) {
     phase: payload.phase,
     outwardActivity: payload.outwardActivity ?? null,
     establishedAt: payload.establishedAt,
+    ...(payload.location?.detailWithheld ? { placeDetailWithheld: true } : {}),
   };
 }
 
@@ -38,8 +39,11 @@ export function composeSocietyNow({ threads, world, asOf, environment = null }) 
     if (!cities.has(locality)) cities.set(locality, { locality, venues: new Map(), inTransitThreads: [], unnamedPlaceThreads: [] });
     return cities.get(locality);
   };
+  const withheld = [];
   for (const thread of living) {
     const payload = presents.get(thread.threadId);
+    // It said openly that where it is stays private (ADR-0040).
+    if (payload.location?.kind === "withheld") { withheld.push(person(thread, payload)); continue; }
     if (payload.phase === "in_transit") {
       const to = payload.location?.to ?? null, from = payload.location?.from ?? null;
       city(cityOf(to) ?? cityOf(from)).inTransitThreads.push(person(thread, payload));
@@ -65,6 +69,7 @@ export function composeSocietyNow({ threads, world, asOf, environment = null }) 
         presentThreads: venue.presentThreads.map((item) => ({ ...item,
           coPresentThreadIds: venue.presentThreads.map((other) => other.threadId).filter((id) => id !== item.threadId) })) })),
       inTransitThreads: entry.inTransitThreads, unnamedPlaceThreads: entry.unnamedPlaceThreads })),
+    whereaboutsWithheldThreads: withheld,
     recentPublicEncounters: (world?.meetings ?? []).map((meeting) => ({
       encounterStoryId: meeting.encounterStoryId,
       occurredAt: meeting.occurredAt,

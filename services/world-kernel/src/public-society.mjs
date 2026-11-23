@@ -8,6 +8,7 @@ import { openWorldStateDatabase, worldTableExists } from "./world-state-storage.
 import { openLivedNowInspectionStore, LivedNowNotFoundError } from "./lived-now-store.mjs";
 import { openSituatedLifeInspectionStore } from "./situated-life-store.mjs";
 import { projectLivedPresent } from "./lived-now-publication-service.mjs";
+import { publicWhereaboutsIn } from "./information-disclosure-store.mjs";
 import { publicVenueOf } from "./live-world-geography.mjs";
 import { assertId } from "./persistence-common.mjs";
 
@@ -18,7 +19,18 @@ const MEETINGS = 24;
 // A meeting is an Encounter Story in which at least two of the public Threads
 // themselves spoke or acted (a happening several merely witnessed is not one).
 // It is shown at a venue only when every party was there by World's account.
-export function projectPublicSociety({ rows, resting, threadIds, venueOf, presentOf = () => null, now }) {
+// A meeting's place in public is no more precise than every participant has
+// let the public know where it is (ADR-0040).
+function meetingPlace(place, threadIds, whereaboutsOf) {
+  if (place === null) return null;
+  // With no record of the public's knowledge, the birth registration stands.
+  const levels = threadIds.map((id) => { const known = whereaboutsOf(id); return known ? known.now.level : "venue"; });
+  if (levels.includes(null)) return null;
+  return levels.includes("city") ? { displayName:null, locality:place.locality } : place;
+}
+
+export function projectPublicSociety({ rows, resting, threadIds, venueOf, presentOf = () => null,
+  whereaboutsOf = () => null, now }) {
   const shown = new Set(threadIds);
   const restingShown = resting.filter((id) => shown.has(id));
   const restingSet = new Set(restingShown);
@@ -47,7 +59,8 @@ export function projectPublicSociety({ rows, resting, threadIds, venueOf, presen
         && meeting.threadIds.filter((id) => meeting.actors.has(id)).length >= 2)
       .slice(0, MEETINGS)
       .map((meeting) => Object.freeze({ encounterStoryId: meeting.encounterStoryId, occurredAt: meeting.occurredAt,
-        threadIds: Object.freeze(meeting.threadIds), place: meeting.place ?? null }))),
+        threadIds: Object.freeze(meeting.threadIds),
+        place: meetingPlace(meeting.place ?? null, meeting.threadIds, whereaboutsOf) }))),
   });
 }
 
@@ -75,7 +88,8 @@ export function readPublicSociety(storage, { threadIds, hours = 24, now = new Da
       JOIN encounter_story_thread_presence p ON p.encounter_ref=e.encounter_id
       LEFT JOIN current_situation_records s ON s.situation_id=p.situation_id
       ORDER BY e.occurred_at DESC,e.encounter_id,p.thread_id`).all(since, now, STORY_SCAN);
-    return projectPublicSociety({ rows, resting, threadIds, now, presentOf,
+    const whereabouts = publicWhereaboutsIn(db, threadIds);
+    return projectPublicSociety({ rows, resting, threadIds, now, presentOf, whereaboutsOf: (id) => whereabouts.get(id),
       venueOf: (threadId, placeRef) => publicVenueOf(db, threadId, placeRef) });
   } finally {
     db.close();

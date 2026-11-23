@@ -1,5 +1,6 @@
 import { promptFor, promptRequest } from "./cognition-prompts.mjs";
 import { interestText } from "./thread-interests.mjs";
+import { livelihoodRef, livelihoodText, skillText } from "./thread-livelihood.mjs";
 import { momentText } from "./felt-expertise.mjs";
 import { recallMemories } from "./memory-availability.mjs";
 import {
@@ -128,6 +129,14 @@ function selectEvidence(threadId, sourceStores, policy, at, focus=null) {
   // Then what this Thread itself cares about: its own subjects and questions.
   for(const interest of sourceStores.experienceStore?.listCurrentInterests?.(threadId)??[]){
     candidates.push(evidenceCandidate(interest.interestId,"interest",interestText(interest)));
+  }
+  // What it is doing with its life now, and what it can do (livelihood L1).
+  const livelihood=sourceStores.experienceStore?.getCurrentLivelihood?.(threadId)??null;
+  if(livelihood!==null&&Date.parse(livelihood.asOf)<=Date.parse(at)){
+    candidates.push(evidenceCandidate(livelihoodRef(threadId,livelihood.revision),"livelihood",livelihoodText(livelihood)));
+  }
+  for(const skill of sourceStores.experienceStore?.listCurrentSkills?.(threadId,{limit:3})??[]){
+    if(Date.parse(skill.asOf)<=Date.parse(at))candidates.push(evidenceCandidate(skill.skillId,"skill",skillText(skill)));
   }
   for(const item of states.filter(item=>!regardsFocus(item)))candidates.push(stateCandidate(item));
 

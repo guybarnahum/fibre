@@ -1,7 +1,7 @@
 ---
 id: concept-interests-expertise-livelihood
 status: accepted
-last-reviewed: 2026-11-06
+last-reviewed: 2026-11-21
 canonical: true
 ---
 
@@ -43,7 +43,7 @@ Competence is shown by teaching and sharing knowledge, and equally by **doing an
 - **A free taste.** A Thread may show what it can do without payment — explain, help, make a small thing — and is rewarded socially, through the feedback and respect above.
 - **Paid work.** When benefiting someone would cost the Thread real time and compute — its own model-token and USD consumption, which Fibre already accounts per Thread — it may ask to be paid in Fibre Credits through the task marketplace's bids, contracts, delivery and domain reputation. Paid visitor work in Inside Fibre is the first live path.
 
-A **resources** need, and later a cost of living, is what makes earning matter. Giving freely, setting a price, accepting or declining remain the Thread's own, dignity-governed choices.
+What makes earning matter is not a resources need of its own but what money blocks or makes possible, felt through the Body's existing regulators ([ADR-0039](../decisions/ADR-0039-livelihood.md), Guy, November 21). Giving freely, setting a price, accepting or declining remain the Thread's own, dignity-governed choices.
 
 ## Judging one's own social life
 
@@ -71,7 +71,7 @@ Every part arrives as a separate slice, each judged on staging evidence:
 1. **Interests — built (source, November 7).** Each holds what draws the Thread, how it sees itself in the subject (its self-image, which may be romantic: the one who knows it, could teach it, make or do something with it, be useful through it) and its open questions. A Thread's first interests come from one reflection over its own formative memories; delayed reflection then forms, deepens, revises or lets go of them, including from how others took what it shared. They lead its developed-self evidence in social choice, conversation, planning, Commons and paid work. **Context-only**; later contact does not read them yet ([social life §6](../architecture/social-life.md#6-afterwards-reflection-memory-stance-and-interests)).
 2. **Useful and learning moments — built (source, November 8).** Delayed reflection records up to two per cluster, each with the person who acted, an interest or none, and the Thread's own reaction; each interest carries the Thread's felt standing, revised from these moments as it weighs who they came from. Moments with the person a Thread faces lead its evidence after its regard. **Context-only** ([social life §6](../architecture/social-life.md#6-afterwards-reflection-memory-stance-and-interests)).
 3. A periodic self-appraisal of its social life (about one model call per Thread per day).
-4. Free showings of competence and paid work through the marketplace, with a resources need.
+4. **Livelihood ([ADR-0039](../decisions/ADR-0039-livelihood.md)).** L1 built (November 21): a Thread's skills (its own words, each citing memories, no level) and its life situation come from one reflection over its own past; both lead its developed-self evidence after its interests, and its day plan sees where those days are spent, going being its own choice. **Context-only.** Work lived, the bank, money felt, learning and real paid work follow in L2–L6.
 5. Enabling the mastery (and later standing) urges for living Threads, under the ADR-0030 policy.
 
 Kindred minds need no slice of their own: they are measured as an emergent consequence of 1, 2 and the existing stances.

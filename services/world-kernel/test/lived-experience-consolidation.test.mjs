@@ -163,7 +163,7 @@ test("N7.5 clusters nearby experience and forms memory at consolidation time",as
       },
     ];
     const modelAdapter={
-      async invoke(request){
+      async invoke(request){if(String(request?.clientRequestId).startsWith("livelihood-formation_"))return {output:{skills:[],situation:null}};
         if(request.clientRequestId.startsWith("journal-profile_")){
           profileCalls++;
           return {output:{
@@ -355,7 +355,7 @@ test("a failed reflection waits, then resumes from its durable decision",async()
 
     let cognitionCalls=0;
     const modelAdapter={
-      async invoke(request){
+      async invoke(request){if(String(request?.clientRequestId).startsWith("livelihood-formation_"))return {output:{skills:[],situation:null}};
         if(request.clientRequestId.startsWith("interest-formation_"))return {output:{interests:[]}};
         if(request.clientRequestId.startsWith("memory-gist_"))return {output:{gists:[]}};
         cognitionCalls+=1;
@@ -616,7 +616,7 @@ test("retained lived Memory, not archived history, changes a later voluntary soc
         })},
         semanticStateStore:{listCurrentState:()=>[]},
         memoryStore,experienceStore,
-        modelAdapter:{async invoke({input}){
+        modelAdapter:{async invoke(request){const {input}=request;if(String(request?.clientRequestId).startsWith("livelihood-formation_"))return {output:{skills:[],situation:null}};
           assert.deepEqual(input.experiences.map(item=>item.experienceId),
             [witnessed.experienceId],"retention did not derive from lived Experience");
           return {output:{
@@ -685,7 +685,7 @@ test("retained lived Memory, not archived history, changes a later voluntary soc
         memoryStore,experienceStore,
         modelAdapter:{
           provider:"fixture",modelId:"social-fixture",configuration:{transport:"fixture"},
-          async invoke({input}){
+          async invoke(request){const {input}=request;if(String(request?.clientRequestId).startsWith("livelihood-formation_"))return {output:{skills:[],situation:null}};
             const kind=input?.concern?.kind;
             if(kind==="social_initiation"){
               decisions++;

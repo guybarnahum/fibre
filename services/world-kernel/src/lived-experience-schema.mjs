@@ -365,6 +365,40 @@ export function createLivedExperienceTables(database) {
     CREATE INDEX IF NOT EXISTS thread_social_moments_by_thread
       ON thread_social_moments(thread_id,as_of);
 
+    -- What a Thread can do, in its own words, and the memories or lived
+    -- evidence it rests on (livelihood L1, ADR-0039). Append-only revisions;
+    -- there is no level or score.
+    CREATE TABLE IF NOT EXISTS thread_skills (
+      thread_id TEXT NOT NULL,
+      skill_id TEXT NOT NULL,
+      revision INTEGER NOT NULL CHECK (revision>=1),
+      status TEXT NOT NULL CHECK (status IN ('current','let_go')),
+      skill_json TEXT NOT NULL CHECK (json_valid(skill_json)),
+      evidence_refs_json TEXT NOT NULL CHECK (json_valid(evidence_refs_json)),
+      formed_by TEXT NOT NULL CHECK (formed_by IN ('formative_reflection','consolidation')),
+      source_ref TEXT NOT NULL,
+      as_of TEXT NOT NULL,
+      PRIMARY KEY (thread_id,skill_id,revision),
+      UNIQUE (thread_id,skill_id,source_ref),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
+    -- What a Thread is doing with its life now, where, its rhythm, hopes,
+    -- worries and open questions, in its own words (livelihood L1, ADR-0039).
+    -- Append-only revisions; the latest is current.
+    CREATE TABLE IF NOT EXISTS thread_livelihood (
+      thread_id TEXT NOT NULL,
+      revision INTEGER NOT NULL CHECK (revision>=1),
+      livelihood_json TEXT NOT NULL CHECK (json_valid(livelihood_json)),
+      evidence_refs_json TEXT NOT NULL CHECK (json_valid(evidence_refs_json)),
+      formed_by TEXT NOT NULL CHECK (formed_by IN ('formative_reflection','consolidation')),
+      source_ref TEXT NOT NULL,
+      as_of TEXT NOT NULL,
+      PRIMARY KEY (thread_id,revision),
+      UNIQUE (thread_id,source_ref),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+
     -- Regard a Thread perceived between itself and one person, in its own
     -- reflection (ADR-0037): who did what to whom, as it saw it. Append-only;
     -- its perception, never a fact about the other.

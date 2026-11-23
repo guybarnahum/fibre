@@ -21,6 +21,7 @@ import {
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {authoredGenesisPlaceLocality,genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
 import { booksToContinueAt } from "./scene-glance.mjs";
+import { livelihoodForPlanning } from "./thread-livelihood.mjs";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const FORWARD_PLAN_MS = 12 * 60 * 60 * 1000;
@@ -462,9 +463,13 @@ async function formPlan({
   const agreedAppointments=materializedAt===null&&experienceStore
     ?appointmentsForPlanning({experienceStore,livedNowStore,situatedLifeStore,
       worldReader:worldStore,threadId,from:startAt,to:endAt}):[];
+  // Its life now and where those days are spent; whether to go is its own.
+  const livelihood=materializedAt===null&&experienceStore
+    ?livelihoodForPlanning({experienceStore,livedNowStore,threadId}):null;
   const knownRefs=[...new Set([
     ...ordinaryPlaceRefs,startingPlace,...guidePlaces.map(place=>place.ref),
     ...agreedAppointments.map(item=>item.placeRef),
+    ...(livelihood?.placeRef?[livelihood.placeRef]:[]),
   ])];
   // Books it has been reading and means to go on with, at the known places
   // where they are kept: whether to go back to one is its own choice.
@@ -506,6 +511,7 @@ async function formPlan({
       cityGuidePlaces:guidePlaces,
       agreedAppointments,
       booksToContinue,
+      livelihood,
       sourceReferences:[sourceEventRef],
       sourceStores:{
         worldStore,identityStore,semanticStateStore,memoryStore,

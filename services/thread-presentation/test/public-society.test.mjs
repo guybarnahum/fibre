@@ -61,3 +61,18 @@ test("nothing private crosses into the public society view, and nothing said in 
   const refused = await api.fetch(new Request("https://presentation.example/api/society/now", { headers:{ Origin:"https://elsewhere.example" } }));
   assert.equal(refused.status, 403, "another site could read the society view");
 });
+
+test("a Thread that keeps its whereabouts private openly is listed apart, in no city, venue or company", () => {
+  const withholding = thread("thr_mikias", "Mikias", { phase:"at_place", location:{ kind:"withheld" }, outwardActivity:"reading" });
+  const partly = thread("thr_hassan", "Hassan", { phase:"at_place",
+    location:{ kind:"place", place:{ displayName:"Addis Ababa", region:null }, detailWithheld:true }, outwardActivity:"reading" });
+  const society = composeSocietyNow({ threads:[...THREADS, withholding, partly], asOf:WORLD.asOf,
+    world:{ ...WORLD, presents:[...WORLD.presents, { threadId:"thr_mikias", present:withholding.now },
+      { threadId:"thr_hassan", present:partly.now }] } });
+  assert.deepEqual(society.whereaboutsWithheldThreads.map((item) => item.threadId), ["thr_mikias"]);
+  assert.equal(JSON.stringify(society.cities).includes("thr_mikias"), false, "a Thread that withheld its whereabouts was placed");
+  const [addis] = society.cities;
+  assert.equal(addis.unnamedPlaceThreads.find((item) => item.threadId === "thr_hassan")?.placeDetailWithheld, true,
+    "an open partial disclosure lost its word that detail is withheld");
+  assert.equal(addis.venues.some((venue) => venue.presentThreads.some((item) => item.threadId === "thr_hassan")), false);
+});

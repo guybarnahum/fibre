@@ -2,9 +2,12 @@
 // fact of how far an exchange repeats a Thread's earlier ones. Pure.
 
 // Cosine at or below LOW is other ground, at or above HIGH the same said
-// again; between, a share. Provisional for bge-m3, to be set from staging.
-const LOW=0.55;
-const HIGH=0.9;
+// again; between, a share. Set for bge-m3 from staging (Nov 23: 108 measures,
+// closeness p10 0.54, p50 0.67, p90 0.78, max 0.82, while the Threads
+// themselves read 84% of exchanges as nothing new). At 0.55–0.9 the World's
+// fact almost never said "covered" and never "several".
+const LOW=0.5;
+const HIGH=0.8;
 const NEAREST=3;
 
 export const unit=(vector)=>{

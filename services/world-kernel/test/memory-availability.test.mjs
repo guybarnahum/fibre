@@ -39,7 +39,7 @@ test("unused memories fade, anchored ones stay, and meeting someone again brings
       worldReader:world,semanticStateStore:semantic,memoryStore:memory,experienceStore:experience,
       livedNowStore:{getSituation:()=>({situationId:SITUATION,threadId:SELF,establishedAt:at(0),
         location:{kind:"place",placeRef:"wpl_cafe"},mediatedContext:null,activity:"At the café.",evidenceRefs:[]})},
-      modelAdapter:{async invoke(request){
+      modelAdapter:{async invoke(request){if(String(request?.clientRequestId).startsWith("livelihood-formation_"))return {output:{skills:[],situation:null}};
         if(request.clientRequestId.startsWith("memory-gist_"))return {output:{gists:[]}};
         if(request.clientRequestId.startsWith("interest-formation_"))return {output:{interests:[]}};
         return {output:outputs.shift(),provenance:{provider:"fixture",modelId:"fixture"}};

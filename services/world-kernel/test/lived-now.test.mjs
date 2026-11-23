@@ -24,6 +24,7 @@ import {
   openLivedNowStore,
 } from "../src/lived-now-store.mjs";
 import { readPublicSociety } from "../src/public-society.mjs";
+import { openInformationDisclosureStore } from "../src/information-disclosure-store.mjs";
 import { admitWorldPrivatePlace } from "../src/live-world-geography.mjs";
 import {
   lifeRelationId,
@@ -568,6 +569,16 @@ test("A1/A2: Thread cognition forms personal will; care can govern without fabri
     assert.equal(society.presents[0]?.present.situationId,first.situationId,
       "the public society did not show where a living Thread is now");
     assert.equal(JSON.stringify(society).includes("Home in Haifa"),false,"the public society named a private home");
+    const disclosures=openInformationDisclosureStore(localWorldStateStorage(databasePath));
+    try{
+      disclosures.record({aboutThreadId:life.thread.threadId,itemKind:"whereabouts.now",audience:"public",
+        extent:"none",form:"transparent",channel:"registry",decidedBy:life.thread.threadId,
+        occurredAt:"2026-09-10T05:04:30Z",reason:"I would rather people not know where I am."});
+    }finally{disclosures.close();}
+    const withheld=readPublicSociety(localWorldStateStorage(databasePath),
+      {threadIds:[life.thread.threadId],now:"2026-09-10T05:05:00Z"});
+    assert.deepEqual(withheld.presents[0]?.present.location,{kind:"withheld"},
+      "the public still saw where a Thread is after it told the registry to keep it private");
 
     lived = openLivedNowStore(localWorldStateStorage(databasePath));
     assert.deepEqual(lived.getCurrentSituation(life.thread.threadId), first);

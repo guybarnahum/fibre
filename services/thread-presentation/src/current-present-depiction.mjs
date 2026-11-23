@@ -8,6 +8,7 @@ import { presentationAssetSourceDigest } from "fibre/world-kernel/presentation-a
 import {resolveVisualAgeReferences} from "fibre/world-kernel/thread-presentation-contracts";
 
 function sceneLocation(location) {
+  if (location.kind === "withheld") return "somewhere it keeps private; show no identifiable place";
   if (location.kind === "place") {
     return location.place === null
       ? "at a current place whose identity is not public"

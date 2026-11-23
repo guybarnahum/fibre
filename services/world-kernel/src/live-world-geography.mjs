@@ -99,16 +99,38 @@ export function listKnownWorldPlaces(db,threadId,{limit=24}={}){
   ).all(threadId,limit).map(row=>stored(row,"World place",worldSchemaReady(db))));
 }
 
-export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind="place",geography=null,parentRef=null}={}){
-  assertId("World place Thread",threadId);
+// A place name is a fleeting Thread-authored proposal, never durable
+// World authority. Every admitted Flight Plan still cites physical place refs.
+export function proposedPlace(value){
+  const parts=typeof value==="string"?value.split(",").map(s=>s.trim()).filter(Boolean):[];
+  if(parts.length<2||parts.some(s=>s.length>120)
+    ||value.startsWith("wpl_")||value.startsWith("per:")){
+    throw new TypeError("new destination needs a place and country");
+  }
+  const country=parts.at(-1),city=parts.at(-2);
+  return {
+    name:parts.length===2?city:parts.slice(0,-2).join(", "),
+    kind:parts.length===2?"city":"place",city,country,
+  };
+}
+
+// The reference a named place has, or will have once a Thread discovers it:
+// the same name, city and country are always the same World place.
+export function worldPlaceRef({threadId,name,city=null,country=null,kind="place"}){
   const title=text("World place name",name);
   if(!["city","place"].includes(kind))throw new TypeError("World place kind must be city or place");
   const locality=kind==="city"?title:(city===null?null:text("World place city",city));
   const nation=country===null?null:text("World place country",country);
-  const identity={kind,name:placeKey(title),city:locality===null?null:placeKey(locality),
-    country:nation===null?null:placeKey(nation),
-    ...(kind==="place"?{threadId}:{})};
-  const ref=`wpl_${sha256(canonicalJson(identity))}`;
+  return `wpl_${sha256(canonicalJson({kind,name:placeKey(title),city:locality===null?null:placeKey(locality),
+    country:nation===null?null:placeKey(nation),...(kind==="place"?{threadId}:{})}))}`;
+}
+
+export function resolveWorldPlace(db,{threadId,name,city=null,country=null,kind="place",geography=null,parentRef=null}={}){
+  assertId("World place Thread",threadId);
+  const title=text("World place name",name);
+  const locality=kind==="city"?title:(city===null?null:text("World place city",city));
+  const nation=country===null?null:text("World place country",country);
+  const ref=worldPlaceRef({threadId,name,city,country,kind});
   const row=db.prepare("SELECT record_json,record_digest FROM world_places WHERE place_ref=?").get(ref);
   const prior=stored(row,"World place");
   if(geography!==null){
@@ -344,7 +366,7 @@ export function admitWorldPrivatePlace(db,input){
   assertPlainObject("private World place",input);
   const {
     threadId,placeRef,specificPlace,streetAddress,locality,country,countryCode,
-    lat,long,timeZone:zone,evidenceRef,publicGranularity="hidden",
+    lat,long,timeZone:zone,evidenceRef,publicGranularity="city",
   }=input;
   assertId("private World Thread",threadId);
   assertId("private World placeRef",placeRef);

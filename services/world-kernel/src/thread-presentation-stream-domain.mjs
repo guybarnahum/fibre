@@ -62,15 +62,26 @@ function presentPlace(name, value) {
 
 function presentLocation(value) {
   assertPlainObject("presentation event.payload.location", value);
+  // v0.3: the Thread withholds where it is, openly (ADR-0040).
+  if (value.kind === "withheld") {
+    assertExactKeys("presentation event.payload.location", value, ["kind"]);
+    return { kind: "withheld" };
+  }
+  // v0.3: shown openly in part, a location may say that detail is withheld.
+  const open = value.detailWithheld === undefined ? {} : { detailWithheld: value.detailWithheld };
+  if (open.detailWithheld !== undefined && open.detailWithheld !== true) {
+    throw new TypeError("presentation event.payload.location.detailWithheld must be true when present");
+  }
   if (value.kind === "place") {
-    assertExactKeys("presentation event.payload.location", value, ["kind", "place"]);
+    assertExactKeys("presentation event.payload.location", value, ["kind", "place", ...Object.keys(open)]);
     return {
       kind: "place",
       place: presentPlace("presentation event.payload.location.place", value.place),
+      ...open,
     };
   }
   if (value.kind === "transit") {
-    assertExactKeys("presentation event.payload.location", value, ["kind", "from", "to", "progress"]);
+    assertExactKeys("presentation event.payload.location", value, ["kind", "from", "to", "progress", ...Object.keys(open)]);
     assertFiniteNumber("presentation event.payload.location.progress", value.progress, { minimum: 0 });
     if (value.progress > 1) throw new TypeError("presentation event.payload.location.progress must be at most 1");
     return {
@@ -78,6 +89,7 @@ function presentLocation(value) {
       from: presentPlace("presentation event.payload.location.from", value.from),
       to: presentPlace("presentation event.payload.location.to", value.to),
       progress: value.progress,
+      ...open,
     };
   }
   throw new TypeError("presentation event.payload.location.kind is invalid");
@@ -117,7 +129,7 @@ function normalizePayload(kind, payload) {
   } else if (kind === "present.updated") {
     // v0.1 carried the private intention as activity; v0.2 only what is seen.
     const prior = payload.presentVersion === "thread-public-present-v0.1";
-    if (!prior && payload.presentVersion !== "thread-public-present-v0.2") {
+    if (!prior && !["thread-public-present-v0.2", "thread-public-present-v0.3"].includes(payload.presentVersion)) {
       throw new TypeError(`unsupported public present version ${payload.presentVersion}`);
     }
     assertExactKeys("presentation event.payload", payload, [
@@ -138,10 +150,13 @@ function normalizePayload(kind, payload) {
       throw new TypeError("presentation event.payload.phase is invalid");
     }
     const location = presentLocation(payload.location);
-    if (payload.phase === "at_place" && location.kind !== "place") {
+    if ((location.kind === "withheld" || location.detailWithheld) && payload.presentVersion !== "thread-public-present-v0.3") {
+      throw new TypeError("only a v0.3 public present may withhold where the Thread is");
+    }
+    if (payload.phase === "at_place" && !["place", "withheld"].includes(location.kind)) {
       throw new TypeError("at-place public present requires a place location");
     }
-    if (payload.phase === "in_transit" && location.kind !== "transit") {
+    if (payload.phase === "in_transit" && !["transit", "withheld"].includes(location.kind)) {
       throw new TypeError("in-transit public present requires a transit location");
     }
     nullableText("presentation event.payload.mediatedContext", payload.mediatedContext);

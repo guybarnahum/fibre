@@ -11,6 +11,7 @@ import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContext
 import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
 import {readWorldEventOverview} from "#services/world-kernel/src/world-event-observatory.mjs";
 import {readPublicSociety} from "#services/world-kernel/src/public-society.mjs";
+import {openInformationDisclosureStore} from "#services/world-kernel/src/information-disclosure-store.mjs";
 import { openLivedNowStore,openLivedNowInspectionStore } from "#services/world-kernel/src/lived-now-store.mjs";
 import { auditLivedContinuity } from "#services/world-kernel/src/lived-now-boundary.mjs";
 import { openGenesisFirstLifeStore } from "#services/world-kernel/src/genesis-first-life-store.mjs";
@@ -20,6 +21,7 @@ import {
   livedRegulationForLivedHistory,
 } from "#services/world-kernel/src/lived-now-regulation.mjs";
 import { bodyObservatory } from "#services/world-kernel/src/body-observatory.mjs";
+import { attendedHours } from "#services/world-kernel/src/thread-livelihood.mjs";
 import { feltSocialBody } from "#services/world-kernel/src/interoceptive-cognition.mjs";
 import { openSemanticStateInspectionStore } from "#services/world-kernel/src/semantic-state-store.mjs";
 import { openSituatedLifeInspectionStore } from "#services/world-kernel/src/situated-life-store.mjs";
@@ -338,6 +340,11 @@ function currentThreadObservatory(runtime,threadId){
   }finally{livedNow.close();}
 }
 
+function readDisclosures(runtime,threadId){
+  const store=openInformationDisclosureStore(runtime.worldStorage,{readOnly:true});
+  try{return structuredClone(store.list(threadId));}finally{store.close();}
+}
+
 function threadObservatory(runtime, threadId) {
   const thread = runtime.worldStore.getThread(threadId, { required:false });
   if (thread === null) return null;
@@ -428,6 +435,10 @@ function threadObservatory(runtime, threadId) {
         }),
         // Internal operator evidence only. Never added to public directory.
         privatelyKnownCurrentPlace:structuredClone(privatePlace),
+        // God-view of disclosure (ADR-0040): what the public knows of where it
+        // is, and every telling with its audience, extent, form and reason.
+        publicWhereabouts:structuredClone(livedNow.publicWhereabouts(threadId)),
+        disclosures:readDisclosures(runtime,threadId),
         previousSituation:structuredClone(previousSituation),
         recentSituations:structuredClone(recentSituations),
         recentPersonalPlans:structuredClone(recentPersonalPlans),
@@ -457,6 +468,7 @@ function threadObservatory(runtime, threadId) {
         experience.inspectThreadExperienceConsolidation(threadId,{limit:12}),
       ),
       interests:structuredClone(experience.inspectThreadInterests(threadId,{limit:24})),
+      livelihood:livelihoodView({experience,livedNow,threadId}),
       socialMoments:structuredClone(experience.listSocialMoments(threadId,{limit:24})),
       appointments:structuredClone(experience.listAppointments(threadId,{limit:24})),
       readings:structuredClone(experience.listThreadReadings(threadId,{limit:24})),
@@ -478,6 +490,17 @@ function threadObservatory(runtime, threadId) {
     experience.close();
     memory.close();
   }
+}
+
+// Its own account of its life and skills, and the World fact of where it
+// actually was: hours at the place of its livelihood over the last day.
+function livelihoodView({experience,livedNow,threadId}){
+  const current=experience.getCurrentLivelihood(threadId);
+  const to=new Date().toISOString(),from=new Date(Date.parse(to)-86_400_000).toISOString();
+  return Object.freeze({current:structuredClone(current),
+    skills:structuredClone(experience.listCurrentSkills(threadId)),
+    attendedHoursLastDay:current===null?0:attendedHours({situations:livedNow.listSituationsDuring(threadId,from,to),
+      placeRef:current.placeRef,from,to})});
 }
 
 export class FibreWorldDurableObject extends DurableObject {

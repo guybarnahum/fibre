@@ -73,6 +73,7 @@ export function createVisualPublicationWriteApi({ reconciler, privateToken } = {
           ? await reconciler.publishCurrentPresent({
               threadId: body.threadId,
               present: body.present,
+              publicWhereabouts: body.publicWhereabouts ?? null,
             })
           : await reconciler.reconcileAvailableEmbodiment({
               threadId: body.threadId,

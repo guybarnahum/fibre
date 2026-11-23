@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  THREAD_PUBLIC_PRESENT_VERSION,
   projectCurrentSituationPresent,
 } from "../src/current-present-projector.mjs";
 import {
@@ -101,7 +102,7 @@ test("A4 public present is a lossy scene, not a serialization of private current
   });
 
   assert.deepEqual(present, {
-    presentVersion: "thread-public-present-v0.2",
+    presentVersion: THREAD_PUBLIC_PRESENT_VERSION,
     situationId: situation.situationId,
     establishedAt: situation.establishedAt,
     phase: "at_place",

@@ -25,6 +25,7 @@ import {
 } from "./situated-life-domain.mjs";
 import { placeEpisodeRevisionRef } from "./situated-life-evidence.mjs";
 import {genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace} from "./current-thread-location.mjs";
+import {publicWhereaboutsIn} from "./information-disclosure-store.mjs";
 import {resolveLocalityGeography,countryCodeForCountry} from "#core/src/locality-geography.mjs";
 import {
   bindLivePhysicalVenue,
@@ -742,6 +743,11 @@ export class LivedNowStore {
 
   publicVenue(threadId,placeRef){
     return publicVenueOf(this.#database,threadId,placeRef);
+  }
+
+  // What the public knows of where this Thread lives and is (ADR-0040).
+  publicWhereabouts(threadId){
+    return publicWhereaboutsIn(this.#database,[threadId]).get(threadId);
   }
 
   coarseCurrentPlace(threadId,placeRef){

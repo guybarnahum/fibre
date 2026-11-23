@@ -8,12 +8,16 @@ import {
   publicThreadDirectoryEntry,
 } from "#services/thread-presentation/src/thread-directory.mjs";
 import { normalizeThreadPresentationEvent } from "fibre/world-kernel/thread-presentation-contracts";
-import { publicPresentPayload } from "../current-present-projector.mjs";
+import { normalizePublicWhereabouts, publicPresentPayload } from "../current-present-projector.mjs";
 
-// A present event as the public may read it (see publicPresentPayload).
-function publicEvent(event) {
-  return event?.kind === "present.updated" ? { ...event, payload: publicPresentPayload(event.payload) } : event;
+// A present event as the public may read it (see publicPresentPayload): never
+// more of where the Thread was than the public knows now (ADR-0040).
+function publicEvent(event, publicWhereabouts = null) {
+  return event?.kind === "present.updated"
+    ? { ...event, payload: publicPresentPayload(event.payload, publicWhereabouts) } : event;
 }
+const whereaboutsOf = (channelRecord) => normalizePublicWhereabouts(channelRecord?.publicWhereabouts ?? null);
+const PUBLIC_WHEREABOUTS_HEADER = "x-fibre-public-whereabouts";
 
 const ID_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$/;
 const PRESENTATION_CHANNEL_PREFIX = "presentation:";
@@ -59,7 +63,7 @@ async function requirePublicChannel(infra, threadId) {
   return { channelId, record };
 }
 
-function presentFromProjection(record, channelId, threadId) {
+function presentFromProjection(record, channelId, threadId, publicWhereabouts = null) {
   if (record === null
     || record === undefined
     || !Number.isSafeInteger(record.sequence)
@@ -72,14 +76,14 @@ function presentFromProjection(record, channelId, threadId) {
       || event.sequence !== record.sequence) {
       return null;
     }
-    return publicEvent(event);
+    return publicEvent(event, publicWhereabouts);
   } catch {
     return null;
   }
 }
 
 async function currentPublicPresent(infra, channelId, threadId, channelRecord = null) {
-  const projected = presentFromProjection(channelRecord?.currentPresent, channelId, threadId);
+  const projected = presentFromProjection(channelRecord?.currentPresent, channelId, threadId, whereaboutsOf(channelRecord));
   if (projected !== null) return projected;
 
   const legacy = await infra.catalog.get(`${CURRENT_PRESENT_CATALOG_PREFIX}${channelId}`);
@@ -88,7 +92,7 @@ async function currentPublicPresent(infra, channelId, threadId, channelRecord = 
     || legacy.publiclyVisible !== true
     || legacy.threadId !== threadId
     || legacy.channelId !== channelId) return null;
-  return presentFromProjection(legacy, channelId, threadId);
+  return presentFromProjection(legacy, channelId, threadId, whereaboutsOf(channelRecord));
 }
 
 function publicIdentityCredentialAllowed(snapshot) {
@@ -385,7 +389,9 @@ export function createPresentationReadApi({
           if (!Number.isSafeInteger(after) || after < 0 || !Number.isSafeInteger(limit) || limit < 1 || limit > 1000) {
             return json({ error: "invalid_cursor" }, { status: 400, headers: cors });
           }
-          const events = (await presentationServer.readEvents({ channelId, after, limit })).map(publicEvent);
+          const whereabouts = whereaboutsOf(publicChannel.record);
+          const events = (await presentationServer.readEvents({ channelId, after, limit }))
+            .map((event) => publicEvent(event, whereabouts));
           const head = await presentationServer.getHead(channelId);
           return json({ channelId, after, head: head.sequence, events }, { headers: { ...cors, "Cache-Control": "no-store" } });
         }
@@ -393,7 +399,13 @@ export function createPresentationReadApi({
         if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
           return json({ error: "websocket_required" }, { status: 426, headers: cors });
         }
-        return openStream({ channelId, request });
+        // The channel replays history within what the public knows now; the
+        // header is always set here, never taken from the caller.
+        const streamRequest = new Request(request);
+        const whereabouts = whereaboutsOf(publicChannel.record);
+        if (whereabouts === null) streamRequest.headers.delete(PUBLIC_WHEREABOUTS_HEADER);
+        else streamRequest.headers.set(PUBLIC_WHEREABOUTS_HEADER, JSON.stringify(whereabouts));
+        return openStream({ channelId, request: streamRequest });
       } catch (error) {
         if (error instanceof PublicPresentationAssetIntegrityError) {
           return json({ error: "media_integrity_failure" }, { status: 503, headers: cors });

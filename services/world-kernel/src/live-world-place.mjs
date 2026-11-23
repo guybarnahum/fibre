@@ -8,9 +8,14 @@ import { normalizeGenesisWorldSpec } from "./genesis-domain.mjs";
 import {genesisPlaceLabel} from "./genesis-place-presentation.mjs";
 import { normalizeGenesisHistoricalEnvelopePlan } from "./genesis-historical-envelope-authority.mjs";
 
+// One admission of Genesis places into the live World. Its version names the
+// identity namespace and authority of every admitted place, so it stays fixed
+// and each admitted place keeps its reference. Which kinds are admitted grows:
+// a school and a market joined learning places on November 21, 2026, so a
+// life can be more than one library (livelihood L1, ADR-0039).
 export const LIVE_WORLD_PLACE_POLICY = Object.freeze({
   version:"live-world-place-admission-v1",
-  admittedPlaceKinds:Object.freeze(["library_or_learning"]),
+  admittedPlaceKinds:Object.freeze(["library_or_learning","school","market_or_commerce"]),
 });
 
 const tableExists=worldTableExists;

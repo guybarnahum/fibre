@@ -40,7 +40,7 @@ test("a memory is held in mind by its gist while its full recollection stays the
       worldReader:world,semanticStateStore:semantic,memoryStore:memory,experienceStore:experience,
       livedNowStore:{getSituation:()=>({situationId:SITUATION,threadId:SELF,establishedAt:at(0),
         location:{kind:"place",placeRef:"wpl_cafe"},mediatedContext:null,activity:"At the café.",evidenceRefs:[]})},
-      modelAdapter:{async invoke(request){
+      modelAdapter:{async invoke(request){if(String(request?.clientRequestId).startsWith("livelihood-formation_"))return {output:{skills:[],situation:null}};
         // This Thread's first reflection on its formative interests is not under test here.
         if(request.clientRequestId.startsWith("interest-formation_"))return {output:{interests:[]}};
         if(request.clientRequestId.startsWith("memory-gist_"))return {output:{gists:olderGist===null?[]
@@ -76,7 +76,7 @@ test("a memory is held in mind by its gist while its full recollection stays the
     await decideLaterContact({
       thread:world.getThread(SELF),afterthoughts:[{kind:"intention",text:"Thank Noor properly."}],
       memories,candidates:[{partyId:FRIEND,recipientKind:"thread",displayName:"Noor Haddad",relationKind:"social_contact"}],
-      modelAdapter:{async invoke(request){seen=request.input.autobiographicalMemories;
+      modelAdapter:{async invoke(request){if(String(request?.clientRequestId).startsWith("livelihood-formation_"))return {output:{skills:[],situation:null}};seen=request.input.autobiographicalMemories;
         return {output:{decision:"keep_private",recipientPartyId:null,reason:"Later."},provenance:{}};}},
     });
     const held=text=>seen.find(item=>JSON.stringify(item).includes(text));

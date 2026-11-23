@@ -6,7 +6,8 @@ function requireMethod(owner, name) {
   }
 }
 
-// What anyone may see of a Thread's current situation. World may know the
+// What anyone may see of a Thread's current situation, within what the public
+// knows of its whereabouts by its own disclosure (ADR-0040). World may know the
 // exact private home; the viewer sees only its independently grounded
 // city/country, never an address or coordinates. A real public venue is
 // named; nothing else that World knows of the place.
@@ -18,6 +19,7 @@ export function projectLivedPresent({ livedNowStore, situatedLifeStore, situatio
     lifeRelations: situatedLifeStore.listCurrentLifeRelations(situation.threadId),
     coarsePlace: placeRef === null ? undefined : livedNowStore.coarseCurrentPlace?.(situation.threadId, placeRef),
     publicVenue: placeRef === null ? null : livedNowStore.publicVenue?.(situation.threadId, placeRef) ?? null,
+    publicWhereabouts: livedNowStore.publicWhereabouts?.(situation.threadId) ?? null,
   });
 }
 
@@ -36,6 +38,7 @@ export function createLivedNowPublicationService({
     const publication = await presentationPublisher.publishCurrentPresent({
       threadId: situation.threadId,
       present,
+      publicWhereabouts: livedNowStore.publicWhereabouts?.(situation.threadId) ?? null,
     });
     // The World context supplies civil time for the enacted place. Transit
     // cannot be assigned a local zone without a grounded current location.
