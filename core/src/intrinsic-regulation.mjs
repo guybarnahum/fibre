@@ -155,6 +155,9 @@ function normalizeExploration(value = {}) {
     // Weariness of what this Thread has been going over, from its own
     // readings of how its recent exchanges held it.
     weariness: optionalUnit("perceptFrame.exploration.weariness", value.weariness) ?? 0,
+    // How long since anything was new to it, as World measured it from what
+    // it learned and read as new (ADR-0041): 0 just now, toward 1 long ago.
+    drought: optionalUnit("perceptFrame.exploration.drought", value.drought) ?? 0,
     // People present whom this Thread hardly knows, or knew and is now out
     // of date with, as World measured it.
     unfamiliarPeople: people.map((person, index) => {
@@ -241,6 +244,25 @@ function feltUrges({drives,policy,urgeProjection,previousUrges=[],asOf}){
       felt,
     };
   });
+}
+
+// Learning this Thread began and has not gone back to (ADR-0041): each a
+// book in progress, how many hours since it last read on, and the evidence.
+function normalizeMastery(value) {
+  if (value === undefined) return { unfinished: [] };
+  plainObject("perceptFrame.mastery", value);
+  const unfinished = value.unfinished ?? [];
+  if (!Array.isArray(unfinished) || unfinished.length > 3) {
+    throw new TypeError("perceptFrame.mastery.unfinished must list at most three");
+  }
+  return { unfinished: unfinished.map((item, index) => {
+    const name = `perceptFrame.mastery.unfinished[${index}]`;
+    plainObject(name, item);
+    const hours = finite(`${name}.hoursSince`, item.hoursSince);
+    if (hours < 0) throw new TypeError(`${name}.hoursSince must not be negative`);
+    return { workRef: nonEmpty(`${name}.workRef`, item.workRef), hoursSince: hours,
+      evidenceRefs: normalizeRefs(`${name}.evidenceRefs`, item.evidenceRefs) };
+  }) };
 }
 
 function normalizeContact(value) {
@@ -380,6 +402,7 @@ export function normalizePerceptFrame(value) {
     internal: normalizeInternal(value.internal ?? {}),
     environment: normalizeEnvironment(value.environment ?? {}),
     exploration: normalizeExploration(value.exploration ?? {}),
+    mastery: normalizeMastery(value.mastery),
     contact: normalizeContact(value.contact),
     socialEnergy: normalizeSocialEnergy(value.socialEnergy),
     trust: normalizeTrust(value.trust),
@@ -568,6 +591,40 @@ function basalDrives(percept, profile) {
       pressure:restless,
       urgency:restless,
       evidenceRefs,
+    }));
+  }
+
+  // Hunger for something new (ADR-0041): not weariness of the same, but the
+  // plain absence of anything new for a while. It grows with the drought and
+  // is stilled by learning; how sharply it is felt, and toward what (ideas,
+  // people, places, making), is this Body's inheritance.
+  if (exploration.drought > 0) {
+    const hunger = 0.5 * exploration.drought * profile.sensitivity.exploration;
+    drives.push(drive({
+      family:"exploration",
+      targetRef:"self:appetite",
+      orientation:"approach",
+      pressure:hunger,
+      urgency:hunger,
+      evidenceRefs,
+    }));
+  }
+
+  // The itch of learning left unfinished (ADR-0041): a book it began and has
+  // not gone back to stays on its mind. It builds over the first day or two
+  // after it stopped, holds, and after a week or so it slowly lets go, as an
+  // interrupted task does. Reading on stills it.
+  for (const book of percept.mastery.unfinished) {
+    const builds = 1 - 2 ** (-book.hoursSince / 12);
+    const lettingGo = 2 ** (-Math.max(0, book.hoursSince - 168) / 168);
+    const itch = 0.5 * builds * lettingGo;
+    drives.push(drive({
+      family:"mastery_itch",
+      targetRef:`work:${book.workRef}`,
+      orientation:"approach",
+      pressure:itch,
+      urgency:itch,
+      evidenceRefs:[...new Set([...evidenceRefs, ...book.evidenceRefs])],
     }));
   }
 

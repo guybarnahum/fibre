@@ -61,6 +61,36 @@ export function learningLevels({events,at,exploration=null,mastery=null}){
 
 export const learningSince=(at)=>new Date(Date.parse(at)-RECENT_MS).toISOString();
 
+const WEEK_HOURS=168;
+const DROUGHT_HALF_HOURS=24;
+const hoursBetween=(from,to)=>Math.max(0,(Date.parse(to)-Date.parse(from))/HOUR_MS);
+
+// How long since anything was new to this Thread (ADR-0041), as a fact for
+// its Body: from the latest discovery it made and the latest exchange it
+// read as new; one it read as somewhat new counts for half. Nothing new in a
+// week is a week. 0 just now, toward 1 long ago; how hungry that makes it is
+// its genome's, in the Body's core.
+export function droughtOf({experienceStore,threadId,at}){
+  const since=new Date(Date.parse(at)-WEEK_HOURS*HOUR_MS).toISOString();
+  const readings=experienceStore?.listEngagementReadings?.(threadId,{since,until:at,limit:96})??[];
+  const discoveries=(experienceStore?.listLearning?.(threadId,{since,until:at})??[]).filter(item=>item.learning==="discovery");
+  const latest=(items)=>items.reduce((best,item)=>best===null||item.at>best?item.at:best,null);
+  const fullyNew=latest([...discoveries,...readings.filter(item=>item.reading==="new")]);
+  const partlyNew=latest(readings.filter(item=>item.reading==="some_new"));
+  const hours=Math.min(fullyNew===null?WEEK_HOURS:hoursBetween(fullyNew,at),
+    partlyNew===null?WEEK_HOURS:2*hoursBetween(partlyNew,at),WEEK_HOURS);
+  return Math.round((1-2**(-hours/DROUGHT_HALF_HOURS))*1e6)/1e6;
+}
+
+// Books this Thread began and means to go on with, for its Body: how long
+// since it last read on, and what each is (ADR-0041). One it set aside, or
+// finished, leaves no itch.
+export function unfinishedLearning({readings,at}){
+  return Object.freeze(readings.filter(item=>item.status==="reading").slice(0,3).map(item=>Object.freeze({
+    workRef:item.workRef,title:item.title,hoursSince:Math.round(hoursBetween(item.lastReadAt,at)*1000)/1000,
+    evidenceRefs:Object.freeze([item.holdingRef])})));
+}
+
 const LIFTED=Object.freeze([[0.15,null],[0.5,"Something new you came across has lifted you."],
   [1.01,"Discovering something new has lit you up."]]);
 const GLOW=Object.freeze([[0.15,null],[0.5,"Going further in what you know gives you a quiet satisfaction."],

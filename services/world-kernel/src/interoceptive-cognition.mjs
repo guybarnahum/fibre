@@ -324,6 +324,17 @@ const WEARY=Object.freeze({
   making:"You have had enough of this for now; you would rather do or make something.",
 });
 const WEARY_ANY="You have had enough of this for now; something new would be welcome.";
+// Hunger after a drought of anything new (ADR-0041), as this Body seeks it.
+const HUNGRY=Object.freeze({
+  ideas:"It has been a while since you learned anything new; you are hungry for it.",
+});
+const HUNGRY_ANY="Nothing new has come your way for a while; you are hungry for something new.";
+// The itch of a book begun and not gone back to, as this Body is drawn to finish.
+const UNFINISHED=Object.freeze({
+  technique:(title)=>`You want to keep at what you began in "${title}".`,
+  repeated_practice:(title)=>`You want to keep at what you began in "${title}".`,
+});
+const UNFINISHED_ANY=(title)=>`You keep coming back in your mind to "${title}"; you want to get back to it.`;
 const PLACE=Object.freeze({
   frustrated:"People do not give you the regard you feel is yours.",
   calm:"You feel at ease with your place among these people.",
@@ -399,6 +410,14 @@ export function feltSocialBody(regulationFrame){
   const weary=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="self:weariness"
     &&item.felt!==false&&item.pressure>0)??null;
   if(weary!==null)lines.push(WEARY[weary.inheritedDirection]??WEARY_ANY);
+  const hungry=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="self:appetite"
+    &&item.felt!==false&&item.pressure>0)??null;
+  if(hungry!==null)lines.push(HUNGRY[hungry.inheritedDirection]??HUNGRY_ANY);
+  // The two books most on its mind.
+  for(const itch of regulationFrame.drives.filter(item=>item.family==="mastery_itch"&&item.felt!==false
+    &&item.pressure>0&&regulationFrame.unfinishedTitles?.[item.targetRef]).sort((a,b)=>b.pressure-a.pressure).slice(0,2)){
+    lines.push((UNFINISHED[itch.inheritedDirection]??UNFINISHED_ANY)(regulationFrame.unfinishedTitles[itch.targetRef]));
+  }
   const hunger=felt("social_contact");
   if(hunger!==null){
     lines.push(band(HUNGER,hunger.pressure));

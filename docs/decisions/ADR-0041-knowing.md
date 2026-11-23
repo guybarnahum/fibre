@@ -34,13 +34,18 @@ Guy (Nov 23):
    - Within reach on a visit are the display, the one shelf the walk passes (by the venue and the moment, never by interest), the returns cart, and the Thread's own book in progress.
 2. **The Body reaches the moment of choosing.** The glance receives the Body's felt words (weariness of the same, what it would welcome instead, company wanted). Felt, never an order.
 3. **Learning is felt.** The existing appetites are rewarded: `exploration`·ideas for width (joy of discovery) and `mastery_itch` for depth (glow of competence). Both are Body levels that spike and fade, at genome-given strength. No new urge family.
-4. **Knowledge and interests are World fact,** as information items in the disclosure ledger. Who knows which subject, how it came, and who learned from whom are recorded.
-5. **Two credits for telling:**
+4. **The appetites learning answers** (Guy, November 23). Rewards alone pull nothing toward the library, so two needs are felt:
+   - **Hunger for something new.** An `exploration` drive (`self:appetite`) grows with the drought, meaning the hours since anything was new to the Thread, from its latest discovery and the latest exchange it read as new. An exchange it read as somewhat new counts for half. The drive is distinct from weariness of the same: weariness is too much of the same, hunger is the absence of anything new. Its strength (inherited gain), threshold, persistence and direction (ideas, people, places, making) are the genome's.
+   - **The itch of unfinished learning.** A `mastery_itch` drive per book in progress, aimed at that work. It builds over the first day after stopping, holds, and lets go after a week or so, as an interrupted task does. Reading on stills it; a book set aside or finished leaves none. `mastery_itch` joins the organism policy's enabled families.
+
+   Both reach the Thread's felt words and its Flight Plan's interoception, so they can draw it to go and read.
+5. **Knowledge and interests are World fact,** as information items in the disclosure ledger. Who knows which subject, how it came, and who learned from whom are recorded.
+6. **Two credits for telling:**
    - **teaching credit,** when the hearer, by its own reading, found it new: the teller's standing rises, and the hearer is drawn to the teller;
    - **closeness credit,** when the hearer shares the interest: the bond grows both ways and loneliness eases.
 
    Two pulls to tell follow: to someone who does not know, and to someone who cares. Writing simply for company is offered too.
-6. **Width and depth have economic weight** (livelihood L2+) **and public weight** (visitors, K2).
+7. **Width and depth have economic weight** (livelihood L2+) **and public weight** (visitors, K2).
 
 Nothing is labelled. Width and depth are measured for observation only, never shown to a Thread.
 
@@ -49,6 +54,7 @@ Nothing is labelled. Width and depth are measured for observation only, never sh
 |---|---|---|
 | W1 | A real library; the Body in the glance | Built |
 | W2 | Learning felt (discovery, competence); what a Thread knows as World fact | Built |
+| W2b | The appetites: hunger for something new, the itch of unfinished learning | Built |
 | W3 | Teaching and closeness credits; the two pulls to tell; writing for company | next |
 | W4 | Width and depth in livelihood | with L2 |
 | W5 | Width and depth to visitors | with K2 |

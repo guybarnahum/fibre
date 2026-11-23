@@ -12,7 +12,7 @@ import {
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 import { wearinessOf } from "./engagement.mjs";
-import { learningLevels, learningSince } from "./knowledge.mjs";
+import { droughtOf, learningLevels, learningSince, unfinishedLearning } from "./knowledge.mjs";
 import { bondOf, conversationDepletion, expectedRegard, longingOf, missingMoments, regardOf, regardShown, reunionJoy, selfStanding,
   SLIGHT_GAP, stingHalfLife,
   socialEnergyEvidence } from "./social-body.mjs";
@@ -425,8 +425,13 @@ export function livedRegulationForLivedHistory({
     events:experienceStore.listLearning(thread.threadId,{since:learningSince(asOf),until:asOf}),
     exploration:locusOf(thread,"exploration"),mastery:locusOf(thread,"mastery_itch")});
   const learned=learning!==null&&(learning.discovery>0||learning.competence>0)?learning:null;
+  // The appetites learning answers (ADR-0041): hunger after a drought of
+  // anything new, and the itch of books begun and not gone back to.
+  const drought=experienceStore===null?0:droughtOf({experienceStore,threadId:thread.threadId,at:asOf});
+  const unfinished=typeof experienceStore?.listThreadReadings!=="function"?[]
+    :unfinishedLearning({readings:experienceStore.listThreadReadings(thread.threadId,{limit:8}),at:asOf});
   if(!continuity.grounded&&contact===null&&socialEnergy===null&&people===null&&self?.gap==null
-    &&weariness===0)return learned===null?null:Object.freeze({drives:Object.freeze([]),learning:learned});
+    &&weariness===0&&learned===null&&drought===0&&unfinished.length===0)return null;
   const frame=evaluateIntrinsicRegulation({
     perceptFrame:{
       asOf,
@@ -440,7 +445,10 @@ export function livedRegulationForLivedHistory({
         ...(continuity.grounded?{novelty:0}:{}),
         ...(people?.exploration??{}),
         ...(weariness>0?{weariness}:{}),
+        ...(drought>0?{drought}:{}),
       },
+      ...(unfinished.length===0?{}:{mastery:{unfinished:unfinished.map(({workRef,hoursSince,evidenceRefs})=>
+        ({workRef,hoursSince,evidenceRefs:[...evidenceRefs]}))}}),
       ...(people?.urgeAvailability===undefined?{}:{urgeAvailability:people.urgeAvailability}),
       ...(people===null?{}:{trust:people.trust}),
       ...(people?.bonds===undefined?{}:{bonds:people.bonds}),
@@ -452,7 +460,12 @@ export function livedRegulationForLivedHistory({
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
   });
-  return learned===null?frame:Object.freeze({...frame,learning:learned});
+  // What its felt words need besides the drives: learning lately, and what
+  // each unfinished book is called.
+  if(learned===null&&unfinished.length===0)return frame;
+  return Object.freeze({...frame,...(learned===null?{}:{learning:learned}),
+    ...(unfinished.length===0?{}:{unfinishedTitles:Object.freeze(Object.fromEntries(
+      unfinished.map(item=>[`work:${item.workRef}`,item.title])))})});
 }
 
 // The social Body during a live conversation: the battery where it stood
