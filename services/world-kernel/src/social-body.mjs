@@ -118,7 +118,7 @@ function livedTrust({contacts,acts,at,weights,pace}){
     revived:revivedAt!==null&&days(revivedAt,at)<=REVIVED_FOR_DAYS};
 }
 
-const NO_ONE=Object.freeze({knowing:0,staleness:0,trust:0,hurt:0,revived:false,status:0,treated:0,expectedFrom:0,lately:Object.freeze([]),
+const NO_ONE=Object.freeze({knowing:0,staleness:0,trust:0,warmth:0,hurt:0,revived:false,status:0,treated:0,expectedFrom:0,lately:Object.freeze([]),
   refusedAt:null,
   apartDays:null,apartInPersonDays:null});
 
@@ -267,13 +267,36 @@ export function selfStanding({experienceStore,threadId,at,standingLocus=null}){
 }
 const rounded=(value)=>Math.round(value*1e6)/1e6;
 
+// Affective association (ADR-0041 W3): what this Body felt in someone's
+// company becomes part of how it takes them. A talk with them it read as new
+// (a lift), or somewhat new, warms it toward them; one that brought it
+// nothing new cools it a little; being credited or asked for advice by them
+// warms it too. It fades over days, more slowly the more persistent its
+// inherited attachment. Hurts are trust's, not counted again here. This is
+// conditioning, not a judgment: who it seeks out again, who it teaches, whom
+// it feels kindred with, all follow from it through the bond.
+const WARMTH_HALF_LIFE_MS=7*DAY_MS;
+const FELT_WITH=Object.freeze({new:1,some_new:0.5,nothing_new:-0.3});
+const VALUED_BY=Object.freeze({credited:0.5,asked_advice:0.5});
+export function warmthOf({experienceStore,threadId,contacts,regard,at,attachmentLocus=null}){
+  const together=new Set(contacts.filter(contact=>contact.kind!=="message").map(contact=>contact.at));
+  if(together.size===0&&regard.length===0)return 0;
+  const since=[...together].reduce((first,when)=>when<first?when:first,at);
+  const felt=together.size===0?[]:(experienceStore.listEngagementReadings?.(threadId,{since,until:at,limit:96})??[])
+    .filter(item=>item.sourceKind==="turn"&&together.has(item.at)&&FELT_WITH[item.reading]!==undefined)
+    .map(item=>({at:item.at,size:FELT_WITH[item.reading]}));
+  const valued=regard.filter(act=>act.by==="them"&&VALUED_BY[act.act]).map(act=>({at:act.at,size:VALUED_BY[act.act]}));
+  return rounded(bodyLevel({at,events:[...felt,...valued],bound:{min:-1,max:1},
+    halfLife:inheritedHalfLife(WARMTH_HALF_LIFE_MS,attachmentLocus?.persistence??0)}).level);
+}
+
 // How this Thread's Body regards another person, from the lived contact and
 // the relational acts World recorded between them: how well it knows them,
 // how out of date it is with them, how far it trusts them, how much what they
 // did still hurts, and whether a new hurt has just brought back an old one.
 // The trust locus ({orientation, persistence}, already scaled by inherited
 // spread) says what counts as safety and how fast this Body forgives.
-export function regardOf({experienceStore,threadId,otherThreadId,at,trustLocus=null,standingLocus=null}){
+export function regardOf({experienceStore,threadId,otherThreadId,at,trustLocus=null,standingLocus=null,attachmentLocus=null}){
   if(otherThreadId===null||otherThreadId===threadId)return NO_ONE;
   const contacts=experienceStore.listSharedContact(threadId,otherThreadId,{before:at});
   const regard=regardActs({contacts,at,otherThreadId,
@@ -289,6 +312,7 @@ export function regardOf({experienceStore,threadId,otherThreadId,at,trustLocus=n
     pace:2**(2*(trustLocus?.persistence??0))});
   return Object.freeze({knowing:rounded(knowing),staleness:rounded(knowing*(1-current)),
     trust:rounded(lived.trust),hurt:rounded(lived.hurt),revived:lived.revived,
+    warmth:warmthOf({experienceStore,threadId,contacts,regard,at,attachmentLocus}),
     status:rounded(heldOf(treatedOf(regard,standingLocus?.orientation??null),standingLocus)),
     treated:rounded(treatedOf(regard,standingLocus?.orientation??null)),
     // What it held before the last day's acts: what those acts were judged
@@ -305,15 +329,18 @@ export function regardOf({experienceStore,threadId,otherThreadId,at,trustLocus=n
 }
 
 // The bond (ADR-0036 R2): how much a person has come to matter to this Body,
-// from how well it knows them, how far it trusts them, and the doors they
-// have opened to each other. Being able to talk counts a little; reaching
-// each other, meeting by arrangement and sharing places count more. A
-// stranger has none, so a stranger is never missed.
+// from how well it knows them, how far it trusts them, the doors they have
+// opened to each other, and how it has felt to be with them (ADR-0041 W3).
+// Being able to talk counts a little; reaching each other, meeting by
+// arrangement and sharing places count more. A stranger has none, so a
+// stranger is never missed.
 const DOOR_BOND=Object.freeze({conversation:0.2,contact:0.3,time:0.3,place:0.2,
   confidence:0.4,care:0.4,romance:0.4,commitment:0.4});
+// How it felt to be with them (affective association) deepens or thins it.
+const BOND_WARMTH=0.5;
 export function bondOf({regard,doors}){
   const opened=Math.min(1,doors.reduce((sum,door)=>sum+(DOOR_BOND[door]??0),0));
-  return rounded(regard.knowing*regard.trust*opened);
+  return rounded(Math.min(1,regard.knowing*regard.trust*opened*(1+BOND_WARMTH*(regard.warmth??0))));
 }
 
 // Missing a bonded person (body levels B3, Guy, November 13): a baseline

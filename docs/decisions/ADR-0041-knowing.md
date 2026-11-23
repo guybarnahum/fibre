@@ -44,11 +44,16 @@ Guy (Nov 23):
 
    Felt words are read from the drives, like every other urge's. They reach the glance, contact decisions and the Flight Plan's interoception, which already knows where each book in progress is kept.
 5. **Knowledge and interests are World fact,** as information items in the disclosure ledger. Who knows which subject, how it came, and who learned from whom are recorded.
-6. **Two credits for telling:**
-   - **teaching credit,** when the hearer, by its own reading, found it new: the teller's standing rises, and the hearer is drawn to the teller;
-   - **closeness credit,** when the hearer shares the interest: the bond grows both ways and loneliness eases.
+6. **Teaching and closeness are emergent, never mechanisms** (Guy, November 23). They arise from low-level social regulation through one primitive, **affective association**: what a Body felt in someone's company becomes part of how it takes them.
+   - **What counts:** talks with them it read as new (or somewhat new) warm it toward them; talks that brought nothing new cool it a little; being credited or asked for advice by them warms it.
+   - **How it fades:** over days, as its inherited attachment persistence makes it.
+   - **How it acts:** it deepens or thins the bond, which the existing attachment, longing and reunion drives read. Trust is left to kept and broken faith.
 
-   Two pulls to tell follow: to someone who does not know, and to someone who cares. Writing simply for company is offered too.
+   From this:
+   - **Teaching emerges.** The hearer's lift in the teller's company becomes warmth, so it seeks the teller out and, in its own reflection, credits them or asks their advice. The teller's standing is satisfied by being valued, and that satisfaction warms it toward the hearer, so it tells again.
+   - **Closeness emerges.** Two Threads who keep bringing each other something new, or going deeper together, warm toward each other both ways.
+
+   No World rule turns a reading into credit, and no Thread is told what another lacks.
 7. **Width and depth have economic weight** (livelihood L2+) **and public weight** (visitors, K2).
 
 Nothing is labelled. Width and depth are measured for observation only, never shown to a Thread.
@@ -59,12 +64,25 @@ Nothing is labelled. Width and depth are measured for observation only, never sh
 | W1 | A real library; the Body in the glance | Built |
 | W2 | Learning felt (discovery, competence); what a Thread knows as World fact | Built |
 | W2b | Learning through the existing urges: measured novelty for `exploration` (hunger or lift), competence and the unfinished-book itch for `mastery_itch` | Built |
-| W3 | Teaching and closeness credits; the two pulls to tell; writing for company | next |
+| W3a | Affective association (the primitive teaching and closeness emerge from); conversation feels learning | Built |
+| W3b | A subject passing in talk as World fact (heard from whom, by meaning); writing to someone with no insight to share | next |
 | W4 | Width and depth in livelihood | with L2 |
 | W5 | Width and depth to visitors | with K2 |
 
+## Emergent, not authored: the true-to-life range
+Telling is also disclosure ([ADR-0040](ADR-0040-disclosure.md)), so the pull to tell (standing appetite, warmth toward people who value it) meets what foresight imagines could be lost. Each Thread's genome, history and consequences settle the balance. None of the following is coded. Each is expected to emerge in some Threads, and each is tolerated, because each is useful in some lives:
+- **Teaching and closeness:** described above.
+- **Hoarding:** a low-trust Body that dreads being used withholds. It misses the lifts and the warmth, and grows lonelier until its company hunger pushes it to risk again. It is protective after being burned.
+- **Cliques:** warmth concentrates where tellings were rewarded, so knowledge flows within trusted circles first.
+- **Credit theft and gossip:** what one taught resurfaces as another's (disclosure's passing-on, ADR-0040). Standing stings and resentment follow through the existing paths.
+- **Over-telling:** a Body hungry for standing tells too much. Hearers read nothing new and cool toward it, their regard drops, and the teller's standing stings, which teaches calibration.
+- **Bluffing:** claiming knowledge to gain standing (deception remains a disclosure mode), until found out, when trust is wounded.
+
+**What the measures check:** these show up and vary across Threads. Their absence would suggest the forces are too weak; their dominance, too strong.
+
 ## Not chosen
 - **Choosing books by a Thread's interests, or a rule to pick something different:** either would author the outcome.
+- **Teaching or closeness credits as mechanisms** (a reading converted into regard, shared interests weighted as closer contact, a percept of what another lacks): each would author an outcome that low-level regulation should produce.
 - **A new "curiosity" urge, or reward levels beside the drives:** the inherited `exploration` and `mastery_itch` families and the regulation core already carry need, satisfaction and genome shaping.
 
 ## Excluded
