@@ -85,6 +85,7 @@ Deployment environment is an explicit argument such as `--env staging`, **never 
 - Family, culture, geography, embodiment, reading, relationships, and history must be functional, not decorative.
 - Delegation uses bids, contracts, reputation, cost, and accountability.
 - A child Thread is not a cloned parent prompt.
+- **A Thread feels only through its Body regulation system.** Every need, satisfaction, pull or feeling a Thread has is a drive of an inherited urge family, evaluated by the regulation core and shaped by its genome there. No other code authors what a Thread feels (see **Shared mechanisms** below).
 - The underlying LLM is treated as fallible and audited by the Thread.
 - Historical state is not silently rewritten; meaningful changes are commands and events.
 
@@ -189,6 +190,33 @@ Rules:
 - Add or update a verifiable test in `docs/validation/` or `tests/`.
 - Identify a human-inspectable artifact that demonstrates the behavior.
 - Apply the **Vision and ambition guard** above to every proposal and pull request within its scope.
+
+## Shared mechanisms: extend, never replicate
+
+Fibre has a few canonical mechanisms. New work extends them; it never builds a parallel version, however convenient. A pull request that adds code resembling one of these names the mechanism it extends, or says why it cannot.
+
+### The Body regulation contract
+Anything a Thread feels follows this one path:
+
+1. **World measures facts:** events, hours, counts, Body levels. A level that rises and fades uses `core/src/body-level.mjs` (`bodyLevel`, `inheritedHalfLife`). Inherited persistence reaches a level only through `locusOf` in `services/world-kernel/src/lived-now-regulation.mjs`.
+2. **Facts enter the regulation core as percept fields** (`normalizePerceptFrame` in `core/src/intrinsic-regulation.mjs`).
+3. **The core emits drives of an inherited urge family** (`core/src/inherited-urges.mjs`):
+   - a need is pressure;
+   - a satisfaction is `attained`, with how much in `progressError`.
+
+   A new family needs a new library version and an ADR. A family acts only when the organism policy enables it.
+4. **The genome shapes drives only in the core's `feltUrges`:** gain, felt threshold, persistence, inherited direction. No other module reads an urge's gain or felt threshold. A test enforces this (`core/test/body-regulation-single-path.test.mjs`).
+5. **Felt words come only from drives,** in `services/world-kernel/src/interoceptive-cognition.mjs`. Cognition receives the Body through `feltSocialBody`, `feltTowardPeople` or `projectInteroception`.
+6. **No reward, mood or feeling value is computed, stored or passed beside the regulation frame.** If something should be felt, it is a drive.
+
+### Other shared mechanisms
+| Need | Mechanism |
+|---|---|
+| Who knows what, and telling | the disclosure ledger ([ADR-0040](docs/decisions/ADR-0040-disclosure.md)): `information-disclosure*.mjs` |
+| What a Thread has come to know | knowledge events ([ADR-0041](docs/decisions/ADR-0041-knowing.md)): `knowledge.mjs` |
+| Regard and standing between people | perceived regard ([ADR-0037](docs/decisions/ADR-0037-status-and-conflict.md)): `perceived-regard.mjs` |
+| A cognitive job | a prompt file and `promptRequest` (below) |
+| A model call | the reasoning integrations through `selectReasoningIntegration` |
 
 ## Implementation rules
 
