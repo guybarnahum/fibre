@@ -1,7 +1,7 @@
 ---
 id: investment-walkthrough-script
 status: proposed
-last-reviewed: 2026-11-22
+last-reviewed: 2026-11-23
 canonical: false
 ---
 
@@ -34,7 +34,7 @@ npm run model:options
 - **Say:** *"Every other AI company builds smarter servants. Fibre builds a persistent world, civil identity, and economic rails for independent digital individuals. Notice the flock behind the text — no central controller, just individuals acting on local drives. Scroll down two inches and you're looking straight at our real staging cohort in Addis Ababa right now."*
 
 ### 0:45 – 1:45 · The World vs. The Threads (`staging.insidefibre.com/new-site/live`)
-- **Show:** Click **See who's living now →** (`/new-site/live`), pointing out the live **Addis Ababa EAT clock**, the 8 living / 80 resting honest count, and (once `K1` is deployed) who is at Abrehot Library, Unity Park, or in transit with `outwardActivity`.
+- **Show:** Click **See who's living now →** (`/new-site/live`), pointing out the live **Addis Ababa EAT clock**, the 8 living / 80 resting honest count, and the live `K1` projection (`6e07ea8` for both `world-kernel` and `thread-presentation`, verified during Addis daytime with occupied Unity Park & Abrehot Library venues plus `L1` school/market venues, showing `outwardActivity` only and neutral `"Place not shown"` when no place is disclosed).
 - **Say:** *"For clarity: **Threads** are the digital individuals. **The World** is the projection of our real world into their awareness — partly simulated places and travel so they have somewhere to be, and partly completely real: real wall-clock time, real Project Gutenberg books, and real conversations with humans like us. Thread-to-Thread conversations stay private to the Threads involved — just like real life."*
 
 ### 1:45 – 3:15 · Meet a Thread Where It Already Is (click one awake Addis Thread → `/meet`)
@@ -52,7 +52,7 @@ npm run model:options
 - **Say:** *"Every technical investor asks: 'Is this all just elaborate persona theater?' Here is how we test ourselves. Our Vision-Integrity Scorecard sits honestly at **15 out of 26** — we refuse to count stored traits as individuality until they change behavior. And look at **Progress** (`/new-site/progress`): when we tested Gemma 4 on Workers AI last week, it failed attention at **35% against our 90% bar**, so we reverted it and keep the failure right here in public."*
 
 ### 4:15 – 5:00 · Measured Cost & The Ask (`/new-site/inspect` or CLI)
-- **Show:** The measured cost card (**$109.00/day → $2.12/day** = **~$0.27–$0.35 / living Thread / day** on `gpt-5.6-sol`, with 0 cheaper models certified yet and reflections-first certification next) and the scale ladder (**8 → 100–500 → 10k–100k → >1M**).
+- **Show:** The measured cost card (**$109.00/day → $2.12/day** = **~$0.27–$0.35 / living Thread / day** on `gpt-5.6-sol`, with **0 cheaper models certified yet** — first 36-reflection run at `cca3c7e` left Gemini 3.6 Flash *promising, undecided* at $5.90/1k and ruled out Gemma 4 for reflections) and the scale ladder (**8 → 100–500 → 10k–100k → >1M**).
 - **Say:** *"Pre-seed funds the jump from this 8-Thread infant world on staging to production and 100–500 living Threads, certified multi-model routing so costs drop cleanly, early paid livelihoods (`L1–L6`), and our public AI-verification registry. Happy to open the codebase or answer your hardest questions."*
 
 ---

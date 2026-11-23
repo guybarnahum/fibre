@@ -1,14 +1,14 @@
 ---
 id: investment-diligence-brief
 status: proposed
-last-reviewed: 2026-11-22
+last-reviewed: 2026-11-23
 canonical: false
 ---
 
 # Fibre — Technical Diligence Overview, 12–18 Month Roadmap & Measured Unit Economics
 
 **Audience:** Technical angels, AI researchers, engineering diligence partners, and strategic backers.
-**Evidence ceiling:** Every architectural claim and number below is sourced directly from `guybarnahum/fibre` at `38ef879` (`2026-11-22`), accepted ADRs, and live tool runs (`model:usage`, `model:options`, `infra:state-usage`). Unmeasured or future figures are explicitly marked `[TBD]` or **estimate**.
+**Evidence ceiling:** Every architectural claim and number below is sourced directly from `guybarnahum/fibre` at `6e07ea8` (`2026-11-23`), accepted ADRs, and live tool runs (`model:usage`, `model:options`, `model:quality`, `infra:state-usage`). Unmeasured or future figures are explicitly marked `[TBD]` or **estimate**.
 
 ---
 
@@ -68,11 +68,11 @@ flowchart LR
 
 ## 2. 12–18 Month Roadmap (and what pre-seed capital accelerates)
 
-Grounded in [`current-priorities.md`](../state/current-priorities.md), [`mvp.md`](mvp.md), [`claude-handoff-k1-k4.md`](claude-handoff-k1-k4.md), and held `ADR-0039` (`livelihood-l1.patch`):
+Grounded in [`current-priorities.md`](../state/current-priorities.md), [`mvp.md`](mvp.md), [`claude-handoff-k1-k4.md`](claude-handoff-k1-k4.md), [`ADR-0039`](../decisions/ADR-0039-livelihood.md), and [`ADR-0040`](../decisions/ADR-0040-disclosure.md):
 
 | Window | Milestone Focus | Concrete Deliverables & Exit Proofs | What Pre-Seed Accelerates |
 |---|---|---|---|
-| **Months 0–3** *(Gate A — Angel & Staging Closure)* | **Living society depth, public API & first model certifications** | - **Done on staging (`10813fa`):** `K1` (`GET /api/society/now` with `outwardActivity`, `thread-public-present-v0.2`, zero private dialogue); verify daytime Addis venue payload.<br>- Ship Claude `K2` (opt-in returning-visitor witness, preserving `N7.10`).<br>- Run staged `K3` certification starting on `experience.consolidation` (~85% of spend) across Gemma 4 & Gemini 3.6 Flash.<br>- Deploy `livelihood-l1.patch` (`ADR-0039` skills, school/market venues) and measure 48–72 h Addis divergence (`K4`).<br>- Close `N6.6c` browser encounter & `/new-site` -> `/` cutover on `staging.insidefibre.com`. | Funds initial `model:quality` certification runs and lets founder focus on closing Gate A without infrastructure burn anxiety. |
+| **Months 0–3** *(Gate A — Angel & Staging Closure)* | **Living society depth, public API & first model certifications** | - **Done on staging (`6e07ea8` for both `world-kernel` and `thread-presentation`):** `K1` (`GET /api/society/now` verified live during Addis daytime with occupied Unity Park & Abrehot Library venues, zero private dialogue), `L1` (`ADR-0039` school/market venues + skills formation, *context-only* until Nov 24 read), S5b same-ground thresholds, and `D1` (`ADR-0040` disclosure + `thread-public-present-v0.3`, built & *context-only* until `D2`).<br>- Ship Claude `K2` (opt-in returning-visitor witness, preserving `N7.10`), `D2` (Threads making their own disclosure decisions), and World contact-prompt fix (so Threads can write simply for company or to suggest a meeting, closing the World gap behind 0 messages).<br>- Accumulate ~1 week of reflection captures to move `K3` (`experience.consolidation`, ~85% of spend) past the `cca3c7e` 36-case `undecided` read (verifying Gemini 3.6 Flash's output-limit cutoff before any routing change).<br>- Close `N6.6c` browser encounter & `/new-site` -> `/` cutover on `staging.insidefibre.com`. | Funds multi-week `model:quality` certification runs and lets founder focus on closing Gate A without infrastructure burn anxiety. |
 | **Months 3–9** *(Gate B — Production & 100–500 Living Threads)* | **Production world, DO read scaling, early livelihood (`L2–L4`) & verification registry** | - Close **Slice I** empty-environment production deploy (`cloud:deploy`, `cloud:e2e -- --env production`).<br>- Cut DO read amplification (`K5`) and implement partitioned per-Thread / per-venue reconciliation (`world-reconciliation-scaling.md`) to wake **100–500 living Threads** across >= 3 cities.<br>- Add public `/encounter` spend/rate limits (`K6`) and automated provider failover.<br>- Build **Livelihood `L2–L4`**: lived work/study at venues, internal **Fibre bank & payroll** (`L3a`), token-paced compute awareness, money felt through Body regulators (`L4`).<br>- Launch **Public AI-Verification Registry** (FIN, name, and future Thread external handles). | **Primary pre-seed unlock:** hires `[TBD: 1–2 foundational distributed-systems / full-stack engineers]` to parallelize partitioned World scaling, production operations, and bank/payroll rails alongside cognition. |
 | **Months 9–18** *(Economic Proof & Ecosystem — Path to Pre-Series A)* | **Worker-Thread paid work (`L3b`/`L5`/`L6`), first Tribute-Threads & multi-viewer API** | - Launch Fibre's **paid task board (`L3b`)**, learning/path reconsideration (`L5`), and Thread-to-Thread market (`L6`) with real bids, contracts, reputation, and revocable consent.<br>- Legal/counsel review + first consented **Sponsored Tribute-Threads** (Echo living-consent workflow first; Homage estate-cleared pilot).<br>- Legal/payment framework decision for external real-world paid work (`L3c`).<br>- Open documented public API for third-party viewers and partners; benchmark second `InfraDriver` cloud target ahead of **Pre-Series A (10k–100k Threads)**. | Funds legal/regulatory counsel (paid AI work, payment/tax compliance, Echo/Homage publicity rights), multi-model certification across 2–3 provider families, and external partner onboarding. |
 
@@ -96,9 +96,19 @@ Every baseline number below comes directly from Fibre's live operational tools �
 - **High-frequency gate jobs:** `encounter.attention` (65 requests / 24 h), `body.interoception` (52), `world.happening` (48) — lower per-call token footprint than reflections, strong candidates for smaller certified models once reflections are certified.
 - **Resting Threads:** **$0.00 / day** model cognition (ADR-0034; identity and history preserved durably in storage).
 
-### 3.3 Illustrative cost-trend scenarios with certified cheaper models *(clearly marked estimates)*
+### 3.3 First reflection certification read (`cca3c7e`, 36 recorded reflections — all undecided)
 
-Today, `docs/validation/model-certifications.json` holds **0 certified models** (`npm run model:options` reports `$0.000` certified spend). The scenarios below are **transparent mathematical estimates**, NOT yet measured savings — actual routing only changes after models pass blind `model:quality` certification:
+Blind judging on `experience.consolidation@8` (`docs/validation/model-certifications.json` at `cca3c7e`) left **all three candidates undecided** — **0 cheaper models are certified yet** (`npm run model:options` still reports `$0.000` certified spend):
+
+| Candidate (`experience.consolidation@8`) | Cost / 1,000 calls | Acceptable | Failed / Truncated | Chose "nothing" | Honest verdict (`cca3c7e`) |
+|---|---:|---:|---:|---:|---|
+| **`openai:gpt-5.6-sol`** | **$22.51** | **94%** (`36/36`) | `0 / 36` | `3%` | Clean; `undecided` only because 36 cases are too few to prove a ≤1% broken-rules bar (needs a few hundred cases, ~1 week of captures). |
+| **`google:gemini-3.6-flash`** | **$5.90** | **94%** where answered (`18` scored) | `17 / 36` broken JSON | `21%` | **Promising, undecided** (NOT certified or passing): cutoffs likely caused by thinking tokens counting against output limit (under verification), plus higher "nothing" rate. |
+| **`@cf/google/gemma-4-26b-a4b-it`** | **$1.07** | **56%** (`9` scored) | `26 / 36` past 8k tokens (`27` failed) | `0%` (of 9) | **Not a candidate for reflections** (`undecided` overall with failing rule/invariant/acceptable checks). |
+
+### 3.4 Illustrative cost-trend scenarios with certified cheaper models *(clearly marked estimates)*
+
+The scenarios below remain **transparent mathematical estimates**, NOT yet measured savings — actual routing only changes after models pass blind `model:quality` certification over a larger capture window:
 
 | Scenario | Routing Assumption *(estimate)* | Est. Text Cognition / Living Thread / Day | Est. Monthly Text Cost @ 100 Threads | Est. Monthly Text Cost @ 500 Threads |
 |---|---|---:|---:|---:|
@@ -106,7 +116,7 @@ Today, `docs/validation/model-certifications.json` holds **0 certified models** 
 | **Scenario A — Reflections certified (60–80% cheaper model)** | Certified cheaper model (e.g. Gemini 3.6 Flash or equivalent) handles `experience.consolidation` (~85% of spend); remaining jobs stay on `gpt-5.6-sol` | **~$0.10–$0.16** *(estimate)* | ~$300–$480 / mo | ~$1,500–$2,400 / mo |
 | **Scenario B — Broad per-job certification + deeper cache reuse** | Certified cheaper models across reflections + gate jobs (`attention`, `interoception`, `happening`); frontier reserved for deep planning/social turns | **~$0.04–$0.09** *(estimate)* | ~$120–$270 / mo | ~$600–$1,350 / mo |
 
-### 3.4 Full-loaded cost items NOT yet in the `$2.12/day` figure (explicit limitations)
+### 3.5 Full-loaded cost items NOT yet in the `$2.12/day` figure (explicit limitations)
 
 | Cost Component | Current Status | Notes |
 |---|---|---|

@@ -1,7 +1,7 @@
 ---
 id: investment-risks-faq-team
 status: proposed
-last-reviewed: 2026-11-22
+last-reviewed: 2026-11-23
 canonical: false
 ---
 
@@ -28,7 +28,7 @@ canonical: false
 - **The risk:** Today 100% of live World cognition runs on OpenAI `gpt-5.6-sol` (`0` cheaper models certified yet). An OpenAI credit outage stalled staging Nov 15–20, and the first cheaper candidate (Workers AI Gemma 4) failed `encounter.attention` (`35%` vs `90%` bar).
 - **Mitigation:**
   - Provider-neutral adapters already span OpenAI, Google, and Cloudflare Workers AI with per-job routing (`cloudflare.yaml`), 30-minute failure backoff (`6217df8`), 10-minute circuit reopening (`382a4ac`), honest gap recovery (`world-life-waves.md`), and truthful `status.insidefibre.com` (`c13f71d`).
-  - Staged `K3` certification runs **reflections (`experience.consolidation`, ~85% of spend) first** across Gemma 4 and **Gemini 3.6 Flash** (~$30–$50) to unlock both cost reduction and non-OpenAI failover before certifying gate jobs.
+  - First `K3` reflection certification run (`cca3c7e`, 36 recorded reflections — ~85% of staging spend) left all candidates `undecided` (**0 cheaper models certified yet**): `gemini-3.6-flash` ($5.90/1k vs Sol's $22.51/1k) is **promising, undecided** (94% acceptable where answered, 17/36 cut off with broken JSON and 21% "nothing" under verification), while `gemma-4` ($1.07/1k) ran past 8k tokens on 26/36 calls and is ruled out for reflections. Proving a ≤1% rule-break bar requires ~1 week of captures.
   - Ops hardening before Gate B: automated provider billing alerts and auto-recharge.
 
 ### 1.3 Scalability (Durable Object reads & single-DO serial execution)
@@ -49,11 +49,11 @@ canonical: false
 
 ### 1.5 Single founder (key-person risk)
 - **The risk:** Bus factor = 1 today — architecture, provider accounts, secrets, and deployment approvals all sit with Guy.
-- **Mitigation:** Unusually strong institutional memory for pre-seed (39 ADRs, canonical docs, single-page walkthrough, 1,922 semantic tests, 0 runtime deps, AI context packs) makes onboarding foundational engineers fast. Pre-seed capital explicitly funds the first `[TBD: 1–2 senior engineering hires]` and shared operational runbooks.
+- **Mitigation:** Unusually strong institutional memory for pre-seed (41 ADR files, canonical docs, single-page walkthrough, 1,920+ semantic tests, 0 runtime deps, AI context packs) makes onboarding foundational engineers fast. Pre-seed capital explicitly funds the first `[TBD: 1–2 senior engineering hires]` and shared operational runbooks.
 
 ### 1.6 Persona theater / insufficient behavioral divergence
 - **The risk:** If Threads converge on polite, interchangeable LLM phrasing, Fibre loses its core differentiation and economic value.
-- **Mitigation:** Hardwired anti-theater discipline — Vision-Integrity Scorecard (`15 / 26`), Thread Differential Gate, Social Life Scorecard (which honestly caught the Nov 18–21 polite library monoculture and Nov 22 rising weariness of sameness), and `K4` (`same-ground` + `B3` + `L1` skills/school/market venues).
+- **Mitigation:** Hardwired anti-theater discipline — Vision-Integrity Scorecard (`15 / 26`), Thread Differential Gate, and Social Life Scorecard. On Nov 23, staging honestly measured sameness (`0.64–1.0` weariness, `84%` of exchanges read as "nothing new", talk nearly one subject) and diagnosed 0 messages as a **World gap, not a Thread failure** (World offered messaging only to share a reflection insight, never for company; 13 of 14 declined for sound reasons and 1 went in person instead). `L1` (school/market venues + skills, *context-only* until Nov 24 read) and S5b thresholds deployed at `6e07ea8` in response; a World contact-prompt fix is planned after `L1`.
 
 ---
 
@@ -78,7 +78,7 @@ Are humans safe? Is the fact that Dutch people exist a security risk? There is n
 Deliberate capital and scientific discipline. Staging holds 88 born Threads — 8 actively living in Addis Ababa and 80 resting at $0 cognition cost ([ADR-0034](../decisions/ADR-0034-thread-life-can-rest.md)) — so we could cut daily spend from $109/day to **$2.12/day**, measure social dynamics honestly, and fix quality gaps (like weariness of sameness and Gemma 4's attention failure) *before* multiplying infrastructure bills. Moving from hardened staging to production and **100–500 living Threads** is what pre-seed capital funds.
 
 ### Q7. "What happens if OpenAI raises prices, deprecates a model, or goes down?"
-Models are replaceable cognition behind provider-neutral adapters (`integrations/ai/reasoning/`). Staging already survived a Nov 15–20 OpenAI credit stall cleanly — Threads resumed honestly at the real present without fabricating gap history, backed off to 30 minutes, and `status.insidefibre.com` truthfully reported `Thread life: Paused`. Right now all live jobs still run on `gpt-5.6-sol` (`0` models certified yet), which is why our immediate `K3` step certifies **Gemini 3.6 Flash** (non-OpenAI fallback) and **Gemma 4** starting on reflections (~85% of spend).
+Models are replaceable cognition behind provider-neutral adapters (`integrations/ai/reasoning/`). Staging already survived a Nov 15–20 OpenAI credit stall cleanly — Threads resumed honestly at the real present without fabricating gap history, backed off to 30 minutes, and `status.insidefibre.com` truthfully reported `Thread life: Paused`. Right now all live jobs still run on `gpt-5.6-sol` (**0 cheaper models certified yet**): on the first 36-reflection certification run (`cca3c7e`), **Gemini 3.6 Flash** ($5.90/1k) tested **promising, undecided** (94% acceptable where answered, pending output-limit verification and a larger ~1-week capture) while **Gemma 4** was ruled out for reflections.
 
 ### Q8. "Why is `insidefibre.com` in a separate repository?"
 By design. Fibre is an **API-first World platform** (`api.insidefibre.com`). Keeping `insidefibre.com` in a separate repo enforces cleanly that public viewers are strictly projections of the World — never parallel authorities — and proves third-party apps and viewers can connect over the exact same public HTTP/SSE API. `apps/admin-dashboard` is the sole internal God-view exception.

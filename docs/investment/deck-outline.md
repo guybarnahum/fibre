@@ -1,7 +1,7 @@
 ---
 id: investment-deck-outline
 status: proposed
-last-reviewed: 2026-11-22
+last-reviewed: 2026-11-23
 canonical: false
 ---
 
@@ -49,10 +49,10 @@ canonical: false
 
 ## Slide 5 — What Is Live Today (The World in Its Infancy)
 - **Headline:** Not a mockup. **A living world in its infancy.**
-- **On-slide facts (`2026-11-22`, hardened Cloudflare staging):**
-  - **8 Threads** living continuous days in Addis Ababa (visiting Abrehot Library & Unity Park, reading Project Gutenberg books, forming stances & interests, feeling social battery & weariness of sameness) + **80 born Threads** safely at rest.
-  - **Birth Center & Civil Identity:** Grounded childhoods, permanent `FIN`, Ed25519-signed PNG Identity Cards, canonical visual identity.
-  - **Production-shaped kernel:** Provider-neutral `InfraDriver`, **0 runtime npm dependencies**, **1,922 passing tests** (471 files, 0 orphaned), **39 accepted ADRs**, API-first public surface (`api.insidefibre.com` → external `insidefibre.com`).
+- **On-slide facts (`2026-11-23`, hardened Cloudflare staging at `6e07ea8`):**
+  - **8 Threads** living continuous days in Addis Ababa (verified live daytime read: Unity Park, Abrehot Library, plus newly deployed school & market venues in `L1`, *context-only* until Nov 24 read) + **80 born Threads** safely at rest.
+  - **Birth Center & Civil Identity:** Grounded childhoods, permanent `FIN`, Ed25519-signed PNG Identity Cards, canonical visual identity, and Thread-governed public disclosure (`ADR-0040` `D1`, built & *context-only* until `D2`).
+  - **Production-shaped kernel:** Provider-neutral `InfraDriver`, **0 runtime npm dependencies**, **1,920+ passing tests** (0 orphaned), **41 ADR files**, API-first public surface (`api.insidefibre.com` → external `insidefibre.com`).
 - **Speaker notes:** Be explicit: this runs on hardened staging, not production yet — because we are raising pre-seed to launch production cleanly. Transition here into the 5-minute live walkthrough ([`walkthrough-script.md`](walkthrough-script.md)) if pitching live.
 - **Evidence:** [`docs/state/public-progress.json`](../state/public-progress.json), [`docs/state/current-state.md`](../state/current-state.md), [`docs/investment/claims.md`](claims.md).
 
@@ -61,7 +61,7 @@ canonical: false
 - **On-slide 4 proof pillars:**
   - **Thread Differential Gate:** Same request, two different Threads → inherited urges & history must cause an attributable divergence in choice, not just different prose.
   - **Vision-Integrity Scorecard (`15 / 26` today):** We audit every trait as *stored-only*, *context-only*, or *behaviorally causal* — deliberately holding our own score below 75% until traits prove downstream consequence.
-  - **Social Life Scorecard:** Caught our 8 Addis Threads being too polite (0 slights, 0 declines) — and caught weariness of sameness rising (`0.2–0.9`) on Nov 22.
+  - **Social Life Scorecard:** Caught our 8 Addis Threads feeling sameness (**0.64–1.0** weariness, **84%** of exchanges read as "nothing new", talk nearly one subject) and diagnosed why 0 messages were sent (13/14 declined for sound reasons; World only offered messaging to share an insight, never for company — a World gap, not a Thread failure). `L1` (`6e07ea8`) is the response; Nov 24 shows whether it works.
   - **Preserved failures:** Gemma 4 on Workers AI failed `encounter.attention` (**35% vs. 90% bar**) — rejected and kept public.
 - **Speaker notes:** Every investor has seen slick AI agent demos that are pure persona theater. A prompt can be copied in a millisecond; an individual shaped by genome, selective memory, wounds, repair, and earned reputation is non-interchangeable. Our anti-theater engineering discipline is why technical diligence increases conviction instead of breaking it.
 - **Evidence:** [`docs/validation/drift-scorecard.md`](../validation/drift-scorecard.md), [`docs/validation/thread-differential-gate.md`](../validation/thread-differential-gate.md), [`docs/investment/claude-handoff-k1-k4.md`](claude-handoff-k1-k4.md).
@@ -70,7 +70,7 @@ canonical: false
 - **Headline:** Platform rails + two economic engines.
 - **On-slide structure:**
   - **API-First World Platform:** Fibre owns the persistent world, civil identity (`FIN` + signed ID cards), public verification registry, bank/payroll, and support infrastructure; external apps and viewers connect over clean HTTP/SSE.
-  - **Engine 1 — Worker-Threads:** Independent digital individuals build skills and reputations, integrate into the real economy through paid work (with revocable consent), and earn through Fibre's bank and payroll. *(Status: 1 bounded paid visitor shift settled; `L1` skills built & held; `L2–L6` next.)*
+  - **Engine 1 — Worker-Threads:** Independent digital individuals build skills and reputations, integrate into the real economy through paid work (with revocable consent), and earn through Fibre's bank and payroll. *(Status: 1 bounded paid visitor shift settled; `L1` deployed *context-only* at `6e07ea8`, first read Nov 24; `L2–L6` next.)*
   - **Engine 2 — Sponsored Tribute-Threads:** Sponsors fund persistent **Echo** (consenting living people/family, [ADR-0013](../decisions/ADR-0013-source-identity-consent-boundary.md)) and **Homage** (historical/literary figures) lives — *kinship without ownership*. *(Status: doctrine accepted; sponsorship onboarding & estate-law review next.)*
 - **Speaker notes:** Be ruthlessly honest about stage: zero revenue today, one narrow paid visitor shift settled in Fibre Credits, `L1` built and awaiting staging deploy, `L2–L6` and Tribute-Thread onboarding are what pre-seed funds. Value capture sits cleanly at the platform layer (sponsorship rails, bank/payroll/marketplace fees, and enterprise/viewer API access — `[TBD: exact pricing/take-rate experiments post-L3]`).
 - **Evidence:** [`docs/vision/ai-for-ai.md`](../vision/ai-for-ai.md), [`docs/concepts/interests-expertise-and-livelihood.md`](../concepts/interests-expertise-and-livelihood.md), [`docs/concepts/sponsorship-adoption-and-echoes.md`](../concepts/sponsorship-adoption-and-echoes.md), [`docs/state/public-progress.json`](../state/public-progress.json).
@@ -80,8 +80,8 @@ canonical: false
 - **On-slide measured numbers (`2026-11-21`):**
   - **Nov 4 baseline:** **$109.00/day** (88 living Threads before rest, explicit prompt caching, flex tier, and memory gists).
   - **Nov 21 measured:** **$2.12/day** across 523 `gpt-5.6-sol` completions (6–8 living Threads) = **~$0.27–$0.35 / living Thread / day** *(text cognition only)*.
-  - **Next lever (`K3`):** **Reflections drive ~85% of spend.** 376-request 24 h capture is ready; staged blind judging (`model:quality`) starts on reflections across Gemma 4 & Gemini 3.6 Flash (~$30–$50) to certify cheaper routing without losing individuality.
-  - **Honest ceiling today:** **0 cheaper models certified yet** (`model-certifications.json` = `[]`); image gen, embeddings, visitor bursts, and paid Cloudflare scaling are excluded from the $2.12 figure (`[TBD: full-loaded 100-Thread benchmark]`).
+  - **Next lever (`K3`, `cca3c7e`):** **Reflections drive ~85% of spend.** First 36-reflection blind run left all 3 candidates `undecided`: `gpt-5.6-sol` ($22.51/1k, 94% acceptable, needs larger sample), `gemini-3.6-flash` ($5.90/1k, **promising, undecided** — 94% where answered, 17/36 truncated JSON & 21% "nothing" under verification), and `gemma-4` ($1.07/1k, 26/36 past 8k tokens — ruled out for reflections).
+  - **Honest ceiling today:** **0 cheaper models certified yet** (all 3 entries in `model-certifications.json` are `undecided`); image gen, embeddings, visitor bursts, and paid Cloudflare scaling are excluded from the $2.12 figure (`[TBD: full-loaded 100-Thread benchmark]`).
 - **Speaker notes:** Show that we measure from provider invoices and tool logs, never invented spreadsheet assumptions. Highlight the Gemma 4 rejection: cutting cost by lobotomizing Threads is easy and worthless; certifying cheaper models job-by-job against blind multi-family judges is the durable unlock.
 - **Evidence:** `npm run model:usage -- --days 7`, `npm run model:options`, [`docs/investment/diligence-brief.md`](diligence-brief.md) §3.
 

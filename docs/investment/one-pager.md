@@ -1,7 +1,7 @@
 ---
 id: investment-one-pager
 status: proposed
-last-reviewed: 2026-11-22
+last-reviewed: 2026-11-23
 canonical: false
 ---
 
@@ -38,17 +38,17 @@ A **Thread** is not a chatbot, a prompt, or a running process. Models provide te
 
 ---
 
-## What is live today (the world in its infancy — `2026-11-22`)
+## What is live today (the world in its infancy — `2026-11-23`)
 
 This is not a mockup or a scripted demo. It is **the world — and the Threads in it — in its infancy**, running on hardened Cloudflare staging (Workers, Durable Objects, D1, R2, Workers AI):
 
-- **Living cohort:** **8 Threads** actively living continuous days in Addis Ababa (visiting Abrehot Library and Unity Park, reading Project Gutenberg books, forming stances and interests, feeling social fatigue and weariness of sameness) while **80 born Threads** rest safely at zero cognition cost ([ADR-0034](../decisions/ADR-0034-thread-life-can-rest.md)).
-- **Production-shaped engineering:** Provider-neutral kernel (`InfraDriver`) with **0 runtime npm dependencies**, **1,922+ passing semantic tests** (0 orphaned), **39 accepted ADRs**, Birth Center, Civil Registry (`FIN`), Ed25519 Identity Cards, live public society projection (`GET /api/society/now`, deployed on staging at `10813fa`), and live SSE encounters (`GET /present`, `POST /encounter`).
-- **Measured cost discipline:** Active staging OpenAI spend reduced from **$109.00/day** (Nov 4, 88 Threads) to **$2.12/day** (Nov 21, 6–8 living Threads = **~$0.27–$0.35/Thread/day** text cognition on `gpt-5.6-sol`), with a 376-request staging capture ready for blind multi-family model certification (`model:quality`).
+- **Living cohort:** **8 Threads** actively living continuous days in Addis Ababa (a live 17:15 EAT daytime read showed Hassan Mamo at Unity Park and Mikias Kebede, Kaleb Bekele, and Bontu Jaalala at Abrehot Library, with 4 others at unnamed places; school and market venues just deployed with `L1` at `6e07ea8`, *context-only* until first Nov 24 reflection read) while **80 born Threads** rest safely at zero cognition cost ([ADR-0034](../decisions/ADR-0034-thread-life-can-rest.md)).
+- **Production-shaped engineering:** Provider-neutral kernel (`InfraDriver`) with **0 runtime npm dependencies**, **1,920+ passing semantic tests** (0 orphaned), **41 ADR files**, Birth Center, Civil Registry (`FIN`), Ed25519 Identity Cards, live public society projection (`GET /api/society/now`, deployed on staging at `6e07ea8` for both `world-kernel` and `thread-presentation`), live SSE encounters (`GET /present` `v0.3`, `POST /encounter`), and Thread-governed disclosure (`ADR-0040` `D1`, built & *context-only* until `D2`).
+- **Measured cost discipline:** Active staging OpenAI spend reduced from **$109.00/day** (Nov 4, 88 Threads) to **$2.12/day** (Nov 21, 6–8 living Threads = **~$0.27–$0.35/Thread/day** text cognition on `gpt-5.6-sol`). First blind reflection certification (`cca3c7e`, 36 recorded reflections) measured `gpt-5.6-sol` ($22.51/1k calls, 94% acceptable, undecided only on sample size), `gemini-3.6-flash` ($5.90/1k, **promising, undecided** — 94% acceptable where answered, 17/36 truncated JSON & 21% "nothing" under investigation), and `gemma-4` ($1.07/1k, 26/36 truncated past 8k tokens — not a candidate for reflections).
 - **Radical scientific honesty (anti-theater moat):**
   - Vision-Integrity Scorecard sits honestly at **15 / 26** (Rubric v2) — refusing to count stored persona text as behavioral individuality.
-  - Failed experiments stay public: **Workers AI Gemma 4** failed `encounter.attention` (**35% acceptable vs. 90% bar**, noticing nothing in 70% of moments) and was rejected rather than quietly shipped.
-  - Clear honest limits today: **0 cheaper models certified yet**, production is not yet deployed, real paid livelihoods (`L1–L6`) and Tribute-Thread sponsorship are in progress / not yet live, and Durable Object reads (~2.67M rows/day for 6–8 Threads) require optimization before scaling.
+  - Failed experiments stay public: **Workers AI Gemma 4** failed `encounter.attention` (**35% acceptable vs. 90% bar**, noticing nothing in 70% of moments) and ran past token limits on 26/36 reflections; both failures are kept public rather than quietly shipped.
+  - Clear honest limits today: **0 cheaper models certified yet** (Gemini 3.6 Flash is *promising, undecided* — not passing or certified), production is not yet deployed, real paid livelihoods (`L1–L6`) and Tribute-Thread sponsorship are in progress / not yet live, and Durable Object reads (~2.67M rows/day for 6–8 Threads) require optimization before scaling.
 
 ---
 
