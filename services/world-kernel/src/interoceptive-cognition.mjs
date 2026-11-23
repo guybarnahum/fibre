@@ -1,5 +1,4 @@
 import { promptRequest } from "./cognition-prompts.mjs";
-import { feltLearning } from "./knowledge.mjs";
 import {
   assertId,
   assertIsoTimestamp,
@@ -324,11 +323,17 @@ const WEARY=Object.freeze({
   making:"You have had enough of this for now; you would rather do or make something.",
 });
 const WEARY_ANY="You have had enough of this for now; something new would be welcome.";
-// Hunger after a drought of anything new (ADR-0041), as this Body seeks it.
+// Novelty (ADR-0041): below the floor, hunger for something new, as this
+// Body seeks it; above it, the lift of something new just found.
 const HUNGRY=Object.freeze({
   ideas:"It has been a while since you learned anything new; you are hungry for it.",
 });
 const HUNGRY_ANY="Nothing new has come your way for a while; you are hungry for something new.";
+const LIFTED=Object.freeze([[0.1,null],[0.35,"Something new you came across has lifted you."],
+  [1.01,"Discovering something new has lit you up."]]);
+// Mastery (ADR-0041): the satisfaction of going deeper.
+const GLOW=Object.freeze([[0.15,null],[0.5,"Going further in what you know gives you a quiet satisfaction."],
+  [1.01,"Getting deeper into something you know is deeply satisfying right now."]]);
 // The itch of a book begun and not gone back to, as this Body is drawn to finish.
 const UNFINISHED=Object.freeze({
   technique:(title)=>`You want to keep at what you began in "${title}".`,
@@ -410,9 +415,19 @@ export function feltSocialBody(regulationFrame){
   const weary=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="self:weariness"
     &&item.felt!==false&&item.pressure>0)??null;
   if(weary!==null)lines.push(WEARY[weary.inheritedDirection]??WEARY_ANY);
-  const hungry=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="self:appetite"
-    &&item.felt!==false&&item.pressure>0)??null;
-  if(hungry!==null)lines.push(HUNGRY[hungry.inheritedDirection]??HUNGRY_ANY);
+  const novelty=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="world:novelty")??null;
+  if(novelty?.attained){
+    const lifted=band(LIFTED,novelty.progressError);
+    if(lifted)lines.push(lifted);
+  }else if(novelty!==null&&novelty.felt!==false&&novelty.pressure>0){
+    lines.push(HUNGRY[novelty.inheritedDirection]??HUNGRY_ANY);
+  }
+  const competence=regulationFrame.drives.find(item=>item.family==="mastery_itch"&&item.targetRef==="self:competence"
+    &&item.attained)??null;
+  if(competence!==null){
+    const glow=band(GLOW,competence.progressError);
+    if(glow)lines.push(glow);
+  }
   // The two books most on its mind.
   for(const itch of regulationFrame.drives.filter(item=>item.family==="mastery_itch"&&item.felt!==false
     &&item.pressure>0&&regulationFrame.unfinishedTitles?.[item.targetRef]).sort((a,b)=>b.pressure-a.pressure).slice(0,2)){
@@ -423,7 +438,5 @@ export function feltSocialBody(regulationFrame){
     lines.push(band(HUNGER,hunger.pressure));
     if(SEEKS[hunger.inheritedDirection])lines.push(SEEKS[hunger.inheritedDirection]);
   }
-  // What learning lately did for it (ADR-0041 W2).
-  lines.push(...feltLearning(regulationFrame.learning));
   return lines;
 }

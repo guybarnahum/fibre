@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { feltLearning, learningFromReading, learningLevels, subjectsOf } from "../src/knowledge.mjs";
+import { learningFromReading, subjectsOf } from "../src/knowledge.mjs";
 import { wearinessLevel } from "../src/engagement.mjs";
 
 const AT = "2026-11-24T12:00:00.000Z";
@@ -20,21 +20,6 @@ test("meeting a subject new to it is a discovery; going on, or another book in w
     "a book wholly within what it knew counted as discovery");
   assert.equal(learningFromReading({ held:new Map(), work:tarzan, continuing:true }).learning, "depth",
     "going on with a book it began counted as discovery");
-});
-
-test("learning is felt, fades, and moves each Body as its genome does", () => {
-  const events = [{ learning:"discovery", at:hoursAgo(1) }, { learning:"depth", at:hoursAgo(2) }];
-  const ideas = learningLevels({ events, at:AT, exploration:{ orientation:"ideas", gain:0.8, persistence:0 },
-    mastery:{ orientation:"technique", gain:0.8, persistence:0 } });
-  const places = learningLevels({ events, at:AT, exploration:{ orientation:"places", gain:-0.8, persistence:0 },
-    mastery:{ orientation:"technique", gain:-0.8, persistence:0 } });
-  assert.ok(ideas.discovery > places.discovery, "a Body drawn to ideas was no more lifted by discovery than one drawn to places");
-  assert.ok(ideas.competence > places.competence, "the mastery itch's inherited gain did not shape the glow of competence");
-  const later = learningLevels({ events, at:new Date(Date.parse(AT) + 48 * 3_600_000).toISOString(),
-    exploration:{ orientation:"ideas", gain:0.8 }, mastery:{ gain:0.8 } });
-  assert.ok(later.discovery < ideas.discovery / 10, "the joy of discovery did not fade");
-  assert.deepEqual(learningLevels({ events:[], at:AT }), { discovery:0, competence:0 }, "nothing learned was felt");
-  assert.ok(feltLearning(ideas).length > 0, "learning was not put into felt words");
 });
 
 test("a subject new to it eases weariness of the same, as something new in talk does", () => {

@@ -35,6 +35,10 @@ export const THREAD_SPECIES_PROFILE = Object.freeze({
     opennessMin: 0.08,
   }),
   explorationNoveltyFloor: 0.35,
+  // The itch of unfinished learning (ADR-0041): it builds over these hours
+  // after stopping, holds, and after a week lets go by half each week.
+  masteryItchBuildHours: 12,
+  masteryItchHoldHours: 168,
   // At the earliest grounded 2-hour social gap pressure is 0.8*2/24 = 0.0667.
   // The same 0.05 awareness baseline applies to every Thread, regardless of birth version.
   speciesFeltThreshold: 0.05,
@@ -155,9 +159,6 @@ function normalizeExploration(value = {}) {
     // Weariness of what this Thread has been going over, from its own
     // readings of how its recent exchanges held it.
     weariness: optionalUnit("perceptFrame.exploration.weariness", value.weariness) ?? 0,
-    // How long since anything was new to it, as World measured it from what
-    // it learned and read as new (ADR-0041): 0 just now, toward 1 long ago.
-    drought: optionalUnit("perceptFrame.exploration.drought", value.drought) ?? 0,
     // People present whom this Thread hardly knows, or knew and is now out
     // of date with, as World measured it.
     unfamiliarPeople: people.map((person, index) => {
@@ -249,13 +250,17 @@ function feltUrges({drives,policy,urgeProjection,previousUrges=[],asOf}){
 // Learning this Thread began and has not gone back to (ADR-0041): each a
 // book in progress, how many hours since it last read on, and the evidence.
 function normalizeMastery(value) {
-  if (value === undefined) return { unfinished: [] };
+  if (value === undefined) return { competence: 0, unfinished: [] };
   plainObject("perceptFrame.mastery", value);
   const unfinished = value.unfinished ?? [];
   if (!Array.isArray(unfinished) || unfinished.length > 3) {
     throw new TypeError("perceptFrame.mastery.unfinished must list at most three");
   }
-  return { unfinished: unfinished.map((item, index) => {
+  return {
+    // How much going deeper in what it knows has lately satisfied it, as a
+    // Body level World measured (0 none, toward 1).
+    competence: optionalUnit("perceptFrame.mastery.competence", value.competence) ?? 0,
+    unfinished: unfinished.map((item, index) => {
     const name = `perceptFrame.mastery.unfinished[${index}]`;
     plainObject(name, item);
     const hours = finite(`${name}.hoursSince`, item.hoursSince);
@@ -565,6 +570,8 @@ function basalDrives(percept, profile) {
     }));
   }
 
+  // Novelty below the floor is hunger for something new; at or above it,
+  // something new has just answered it (ADR-0041), felt as how far above.
   if (exploration.novelty !== undefined) {
     const floor = species.explorationNoveltyFloor;
     const explorationPressure = exploration.novelty >= floor
@@ -576,6 +583,8 @@ function basalDrives(percept, profile) {
       orientation:"approach",
       pressure:explorationPressure,
       urgency:explorationPressure,
+      progressError:exploration.novelty >= floor ? exploration.novelty - floor : 0,
+      attained:exploration.novelty >= floor,
       evidenceRefs,
     }));
   }
@@ -594,29 +603,13 @@ function basalDrives(percept, profile) {
     }));
   }
 
-  // Hunger for something new (ADR-0041): not weariness of the same, but the
-  // plain absence of anything new for a while. It grows with the drought and
-  // is stilled by learning; how sharply it is felt, and toward what (ideas,
-  // people, places, making), is this Body's inheritance.
-  if (exploration.drought > 0) {
-    const hunger = 0.5 * exploration.drought * profile.sensitivity.exploration;
-    drives.push(drive({
-      family:"exploration",
-      targetRef:"self:appetite",
-      orientation:"approach",
-      pressure:hunger,
-      urgency:hunger,
-      evidenceRefs,
-    }));
-  }
-
   // The itch of learning left unfinished (ADR-0041): a book it began and has
   // not gone back to stays on its mind. It builds over the first day or two
   // after it stopped, holds, and after a week or so it slowly lets go, as an
   // interrupted task does. Reading on stills it.
   for (const book of percept.mastery.unfinished) {
-    const builds = 1 - 2 ** (-book.hoursSince / 12);
-    const lettingGo = 2 ** (-Math.max(0, book.hoursSince - 168) / 168);
+    const builds = 1 - 2 ** (-book.hoursSince / species.masteryItchBuildHours);
+    const lettingGo = 2 ** (-Math.max(0, book.hoursSince - species.masteryItchHoldHours) / species.masteryItchHoldHours);
     const itch = 0.5 * builds * lettingGo;
     drives.push(drive({
       family:"mastery_itch",
@@ -625,6 +618,21 @@ function basalDrives(percept, profile) {
       pressure:itch,
       urgency:itch,
       evidenceRefs:[...new Set([...evidenceRefs, ...book.evidenceRefs])],
+    }));
+  }
+
+  // Going deeper in what it knows has just satisfied it (ADR-0041): the
+  // mastery urge attained, felt as how much.
+  if (percept.mastery.competence > 0) {
+    drives.push(drive({
+      family:"mastery_itch",
+      targetRef:"self:competence",
+      orientation:"approach",
+      pressure:0,
+      urgency:0,
+      progressError:percept.mastery.competence,
+      attained:true,
+      evidenceRefs,
     }));
   }
 

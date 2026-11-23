@@ -12,7 +12,7 @@ import {
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 import { wearinessOf } from "./engagement.mjs";
-import { droughtOf, learningLevels, learningSince, unfinishedLearning } from "./knowledge.mjs";
+import { competenceLevel, noveltyLevel, unfinishedLearning } from "./knowledge.mjs";
 import { bondOf, conversationDepletion, expectedRegard, longingOf, missingMoments, regardOf, regardShown, reunionJoy, selfStanding,
   SLIGHT_GAP, stingHalfLife,
   socialEnergyEvidence } from "./social-body.mjs";
@@ -269,7 +269,6 @@ function locusOf(thread,family){
   const gene=(thread.genome?.urgeProjection??[]).find(item=>item.family===family)??null;
   return gene===null?null:{orientation:gene.orientation,
     persistence:(gene.positions?.persistence??0)*organismPolicy.inheritedSpread,
-    gain:(gene.positions?.gain??0)*organismPolicy.inheritedSpread,
     selfRegard:(gene.positions?.selfRegard??0)*organismPolicy.inheritedSpread,
     stubbornness:(gene.positions?.stubbornness??0)*organismPolicy.inheritedSpread};
 }
@@ -419,19 +418,17 @@ export function livedRegulationForLivedHistory({
   const people=experienceStore===null||perceivedPeople.length===0?null:peoplePercept({
     thread,people:perceivedPeople,experienceStore,memoryStore,at:asOf,self,
   });
-  // What learning lately did for it (ADR-0041 W2): the joy of discovery and
-  // the glow of competence, as its genome feels them.
-  const learning=typeof experienceStore?.listLearning!=="function"?null:learningLevels({at:asOf,
-    events:experienceStore.listLearning(thread.threadId,{since:learningSince(asOf),until:asOf}),
-    exploration:locusOf(thread,"exploration"),mastery:locusOf(thread,"mastery_itch")});
-  const learned=learning!==null&&(learning.discovery>0||learning.competence>0)?learning:null;
-  // The appetites learning answers (ADR-0041): hunger after a drought of
-  // anything new, and the itch of books begun and not gone back to.
-  const drought=experienceStore===null?0:droughtOf({experienceStore,threadId:thread.threadId,at:asOf});
+  // The Body levels learning moves (ADR-0041): how fresh something new is,
+  // how much going deeper has satisfied it, and books begun and not gone
+  // back to. The regulation core reads them as it reads every urge.
+  const novelty=typeof experienceStore?.listLearning!=="function"?(continuity.grounded?0:undefined)
+    :noveltyLevel({experienceStore,threadId:thread.threadId,at:asOf,persistence:locusOf(thread,"exploration")?.persistence??0});
+  const competence=typeof experienceStore?.listLearning!=="function"?0
+    :competenceLevel({experienceStore,threadId:thread.threadId,at:asOf,persistence:locusOf(thread,"mastery_itch")?.persistence??0});
   const unfinished=typeof experienceStore?.listThreadReadings!=="function"?[]
     :unfinishedLearning({readings:experienceStore.listThreadReadings(thread.threadId,{limit:8}),at:asOf});
   if(!continuity.grounded&&contact===null&&socialEnergy===null&&people===null&&self?.gap==null
-    &&weariness===0&&learned===null&&drought===0&&unfinished.length===0)return null;
+    &&weariness===0&&novelty===undefined&&competence===0&&unfinished.length===0)return null;
   const frame=evaluateIntrinsicRegulation({
     perceptFrame:{
       asOf,
@@ -442,13 +439,12 @@ export function livedRegulationForLivedHistory({
         ...(people?.evidenceRefs??[]),
       ])],
       exploration:{
-        ...(continuity.grounded?{novelty:0}:{}),
+        ...(novelty===undefined?{}:{novelty}),
         ...(people?.exploration??{}),
         ...(weariness>0?{weariness}:{}),
-        ...(drought>0?{drought}:{}),
       },
-      ...(unfinished.length===0?{}:{mastery:{unfinished:unfinished.map(({workRef,hoursSince,evidenceRefs})=>
-        ({workRef,hoursSince,evidenceRefs:[...evidenceRefs]}))}}),
+      ...(competence===0&&unfinished.length===0?{}:{mastery:{competence,
+        unfinished:unfinished.map(({workRef,hoursSince,evidenceRefs})=>({workRef,hoursSince,evidenceRefs:[...evidenceRefs]}))}}),
       ...(people?.urgeAvailability===undefined?{}:{urgeAvailability:people.urgeAvailability}),
       ...(people===null?{}:{trust:people.trust}),
       ...(people?.bonds===undefined?{}:{bonds:people.bonds}),
@@ -460,12 +456,9 @@ export function livedRegulationForLivedHistory({
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
   });
-  // What its felt words need besides the drives: learning lately, and what
-  // each unfinished book is called.
-  if(learned===null&&unfinished.length===0)return frame;
-  return Object.freeze({...frame,...(learned===null?{}:{learning:learned}),
-    ...(unfinished.length===0?{}:{unfinishedTitles:Object.freeze(Object.fromEntries(
-      unfinished.map(item=>[`work:${item.workRef}`,item.title])))})});
+  // What its felt words need besides the drives: what each unfinished book is called.
+  return unfinished.length===0?frame:Object.freeze({...frame,unfinishedTitles:Object.freeze(Object.fromEntries(
+    unfinished.map(item=>[`work:${item.workRef}`,item.title])))});
 }
 
 // The social Body during a live conversation: the battery where it stood
