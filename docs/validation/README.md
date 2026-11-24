@@ -7,6 +7,7 @@ How Fibre challenges and proves its claims — keeping representation separate f
 - **[`thread-chain.md`](thread-chain.md)** — The chain, Thread by Thread: whether Body regulation moves each Thread as designed, changes what it does, and widens its talk and mind, read against its genes and life (`npm run thread:chain`).
 - **[`thread-differential-gate.md`](thread-differential-gate.md)** — Standing causal non-interchangeability gate: same request, different Thread-owned history, attributable behavioral divergence.
 - **Foundational behavioral & authority contracts:** [`persistent-thread-round-trip.md`](persistent-thread-round-trip.md), [`dignity-request-scenarios.md`](dignity-request-scenarios.md), [`interiority-expression-scenarios.md`](interiority-expression-scenarios.md), and [`fibre-invariants.yaml`](fibre-invariants.yaml).
+- **[`model-certification.md`](model-certification.md)** — How each cognitive job's model is certified, prompt by prompt, at its settings, against fixed bars and by cost, apart from the rest of Fibre (`model:quality`, `model:options`).
 - **[`model-certifications.json`](model-certifications.json)** — Machine-readable registry of models certified per World cognitive job by `npm run model:quality`.
 - **[`prototype-roadmap.md`](prototype-roadmap.md)** — High-level capability arc from persistent Thread to lived society.
 - **[`experiment-lifecycle.md`](experiment-lifecycle.md)** & **[`test-lifecycle-best-practice.md`](test-lifecycle-best-practice.md)** — Scientific experiment discipline and test-suite lifecycle rules.

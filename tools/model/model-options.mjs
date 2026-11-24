@@ -52,7 +52,8 @@ for (const [id, prompt] of Object.entries(PROMPTS).sort()) {
   if (certified.length === 0) console.log(`  no certification yet${stale ? ` (${stale} for an earlier version)` : ""}`);
   for (const item of [...certified].sort((a, b) => (a.costPer1000Calls ?? Infinity) - (b.costPer1000Calls ?? Infinity))) {
     const daily = perThread === null || item.costPer1000Calls == null ? null : perThread * item.costPer1000Calls / 1000;
-    console.log(`  ${item.verdict.toUpperCase().padEnd(9)} ${item.provider}:${item.model}  ${money(item.costPer1000Calls)} per 1,000 calls`
+    const settings = Object.entries(item.settings ?? {}).map(([key, value]) => `+${key}=${value}`).join("");
+    console.log(`  ${item.verdict.toUpperCase().padEnd(9)} ${item.provider}:${item.model}${settings}  ${money(item.costPer1000Calls)} per 1,000 calls`
       + (daily === null ? "" : ` · ${money(daily)} per Thread per day`) + `  (${item.certifiedAt}, ${item.requests} requests)`);
   }
 }

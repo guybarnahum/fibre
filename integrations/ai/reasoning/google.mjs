@@ -73,10 +73,48 @@ function googleSchema(value) {
   return result;
 }
 
+// The answer's own text: thought summaries, when a model returns them, are not the answer.
 function extractText(body) {
   const parts = body?.candidates?.[0]?.content?.parts;
   if (!Array.isArray(parts)) return "";
-  return parts.filter((part) => typeof part?.text === "string").map((part) => part.text).join("\n").trim();
+  return parts.filter((part) => typeof part?.text === "string" && part.thought !== true).map((part) => part.text).join("\n").trim();
+}
+
+// What a call used. Thinking is billed as output, so output includes it, and
+// how much of it was thinking is kept beside it.
+function usageOf(metadata, previous = {}) {
+  const thinking = Number(metadata?.thoughtsTokenCount ?? previous.reasoningTokens ?? 0);
+  const answer = Number(metadata?.candidatesTokenCount ?? 0);
+  return {
+    inputTokens: Number(metadata?.promptTokenCount ?? previous.inputTokens ?? 0),
+    cachedInputTokens: Number(metadata?.cachedContentTokenCount ?? 0),
+    outputTokens: metadata?.candidatesTokenCount === undefined && metadata?.thoughtsTokenCount === undefined
+      ? Number(previous.outputTokens ?? 0) : answer + thinking,
+    reasoningTokens: thinking,
+    totalTokens: Number(metadata?.totalTokenCount ?? previous.totalTokens ?? 0),
+  };
+}
+
+// Why a model stopped, when it did not finish its answer: cut off at the
+// output limit (often by its own thinking), or stopped by the provider.
+function incomplete(finishReason, usage) {
+  const reason = String(finishReason);
+  const cutOff = reason === "MAX_TOKENS";
+  const error = new GuardianModelError(cutOff
+    ? `Google answer was cut off at its output limit (${usage.reasoningTokens} of ${usage.outputTokens} output tokens were thinking)`
+    : `Google model stopped before answering: ${reason}`, {
+    code: "MODEL_INCOMPLETE_RESPONSE", retryable: false, providerErrorCode: reason,
+    actionHint: cutOff ? "Raise maxOutputTokens or lower the thinking level for this model." : undefined,
+  });
+  error.providerUsage = usage;
+  return error;
+}
+
+// The thinking a model may do: a level for Gemini 3 models, a token budget for 2.5.
+function thinkingConfig({ thinkingLevel, thinkingBudget }) {
+  if (thinkingLevel !== null) return { thinkingLevel };
+  if (thinkingBudget !== null) return { thinkingBudget };
+  return null;
 }
 
 function parseOutput(text) {
@@ -134,6 +172,8 @@ export function createGoogleModelAdapter({
   maxOutputTokens = DEFAULTS.maxOutputTokens,
   retryLimit = DEFAULTS.retryLimit,
   retryDelayMs = DEFAULTS.retryDelayMs,
+  thinkingLevel = null,
+  thinkingBudget = null,
   fetchImpl = globalThis.fetch,
   observer = null,
   now = Date.now,
@@ -147,6 +187,11 @@ export function createGoogleModelAdapter({
   }
   assertId("Google modelId", modelId);
   if (typeof fetchImpl !== "function") throw new TypeError("Google model fetchImpl must be a function");
+  if (thinkingLevel !== null && !["minimal", "low", "medium", "high"].includes(thinkingLevel)) {
+    throw new TypeError("Google thinkingLevel must be minimal, low, medium or high");
+  }
+  if (thinkingBudget !== null && !Number.isSafeInteger(thinkingBudget)) throw new TypeError("Google thinkingBudget must be an integer");
+  const thinking = thinkingConfig({ thinkingLevel, thinkingBudget });
 
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:generateContent`;
   const streamEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelId)}:streamGenerateContent?alt=sse`;
@@ -157,12 +202,15 @@ export function createGoogleModelAdapter({
     retryLimit,
     retryDelayMs,
     structuredOutput: "json_schema",
+    ...(thinking === null ? {} : { thinking }),
   });
   const expressionConfiguration = Object.freeze({
     transport:"streamGenerateContent",
     endpoint:streamEndpoint,
     maxOutputTokens,
+    ...(thinking === null ? {} : { thinking }),
   });
+  const generationConfig = (extra = {}) => ({ maxOutputTokens, ...(thinking === null ? {} : { thinkingConfig: thinking }), ...extra });
   const circuit = createProviderCircuit({ now });
 
   return Object.freeze({
@@ -184,7 +232,7 @@ export function createGoogleModelAdapter({
       signal?.addEventListener("abort", onAbort, { once:true });
       const timer = setTimeout(() => controller.abort(), timeoutMs);
       let completed = false;
-      let usage = { inputTokens:0, outputTokens:0, totalTokens:0 };
+      let usage = { inputTokens:0, outputTokens:0, reasoningTokens:0, totalTokens:0 };
       let resolvedModelId = modelId;
 
       try {
@@ -200,7 +248,7 @@ export function createGoogleModelAdapter({
             body:JSON.stringify({
               systemInstruction:{ parts:[{ text:systemPrompt }] },
               contents:[{ role:"user", parts:[{ text:JSON.stringify(input) }] }],
-              generationConfig:{ maxOutputTokens },
+              generationConfig:generationConfig(),
             }),
             signal:controller.signal,
           });
@@ -223,30 +271,17 @@ export function createGoogleModelAdapter({
           if (typeof chunk?.modelVersion === "string" && chunk.modelVersion.trim() !== "") {
             resolvedModelId = chunk.modelVersion;
           }
-          if (chunk?.usageMetadata) {
-            usage = {
-              inputTokens:Number(chunk.usageMetadata.promptTokenCount ?? usage.inputTokens),
-              cachedInputTokens:Number(chunk.usageMetadata.cachedContentTokenCount ?? 0),
-              outputTokens:Number(chunk.usageMetadata.candidatesTokenCount ?? usage.outputTokens),
-              totalTokens:Number(chunk.usageMetadata.totalTokenCount ?? usage.totalTokens),
-            };
-          }
+          if (chunk?.usageMetadata) usage = usageOf(chunk.usageMetadata, usage);
 
           for (const part of chunk?.candidates?.[0]?.content?.parts ?? []) {
-            if (typeof part?.text === "string" && part.text !== "") {
+            if (typeof part?.text === "string" && part.text !== "" && part.thought !== true) {
               yield Object.freeze({ type:"expression_delta", text:part.text });
             }
           }
 
           const finishReason = chunk?.candidates?.[0]?.finishReason ?? null;
           if (finishReason !== null && finishReason !== "") {
-            if (finishReason !== "STOP") {
-              throw new GuardianModelError(`Google expression stream did not complete: ${finishReason}`, {
-                code:"MODEL_INCOMPLETE_RESPONSE",
-                retryable:false,
-                providerErrorCode:String(finishReason),
-              });
-            }
+            if (finishReason !== "STOP") throw incomplete(finishReason, usage);
             const provenance = Object.freeze({
               provider:"google",
               transport:"streamGenerateContent",
@@ -299,11 +334,10 @@ export function createGoogleModelAdapter({
               body: JSON.stringify({
                 systemInstruction: { parts: [{ text: systemPrompt }] },
                 contents: [{ role: "user", parts: [{ text: JSON.stringify(input) }] }],
-                generationConfig: {
-                  maxOutputTokens,
+                generationConfig: generationConfig({
                   responseMimeType: "application/json",
                   responseSchema: googleSchema(responseSchema),
-                },
+                }),
               }),
               signal: controller.signal,
             });
@@ -321,6 +355,9 @@ export function createGoogleModelAdapter({
           }
 
           if (!response.ok) throw classifyHttpFailure(response, body);
+          const usage = usageOf(body?.usageMetadata);
+          const finishReason = body?.candidates?.[0]?.finishReason ?? null;
+          if (finishReason !== null && finishReason !== "STOP") throw incomplete(finishReason, usage);
           const output = parseOutput(extractText(body));
           const provenance = {
             provider: "google",
@@ -330,12 +367,7 @@ export function createGoogleModelAdapter({
             configuration: { ...configuration },
             invocationAttempts: attempt,
             operationalRetries: structuredClone(operationalRetries),
-            usage: {
-              inputTokens: Number(body?.usageMetadata?.promptTokenCount ?? 0),
-              cachedInputTokens: Number(body?.usageMetadata?.cachedContentTokenCount ?? 0),
-              outputTokens: Number(body?.usageMetadata?.candidatesTokenCount ?? 0),
-              totalTokens: Number(body?.usageMetadata?.totalTokenCount ?? 0),
-            },
+            usage,
           };
           notify(observer, {
             type: "model_response",

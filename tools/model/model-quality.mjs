@@ -21,7 +21,7 @@ import { loadDeploymentManifest, resolveServiceDeployment } from "../deployment/
 import { reasoningIntegrationFor, selectReasoningIntegration } from "../../infra/deployments/integration-selection.mjs";
 import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
-import { CERTIFICATIONS_PATH, EMPTY_CERTIFICATIONS, recordCertifications } from "../../infra/deployments/model-certifications.mjs";
+import { CERTIFICATIONS_PATH, EMPTY_CERTIFICATIONS, parseModelSpec, recordCertifications } from "../../infra/deployments/model-certifications.mjs";
 import { judgesFor } from "./model-judges.mjs";
 import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, scopeOf, scoringJudges } from "./model-quality-criteria.mjs";
 import { agreement, readReview, readVerdicts, REVIEW_KIND, testReading } from "../../apps/admin-dashboard/model-quality-review.mjs";
@@ -49,9 +49,10 @@ function args(argv) {
   if (!options.prompt || jobOf(options.prompt) === null) {
     throw new Error("usage: model:quality -- --prompt <job> [--models openai:<model>,google:<model>,cloudflare:<@cf model>] [--judges claude-opus-5-5,gpt-5.6-sol] [--fresh <model,...>]");
   }
+  // A candidate is a model at its settings; its label (model+settings) names it throughout the run.
   options.models = options.models.map((item) => {
-    const [provider, model] = item.includes(":") ? item.split(":", 2) : ["openai", item];
-    return { provider, model };
+    const spec = parseModelSpec(item);
+    return { provider: spec.provider, model: spec.label, modelId: spec.model, settings: spec.settings };
   });
   return options;
 }
@@ -84,11 +85,15 @@ async function main() {
   const adapterFor = (model, provider = "openai") => {
     // A candidate gets room for the whole answer: a reflection runs long, and
     // an answer cut off at a small default limit says nothing of the model.
+    // It runs at the settings it is named with, which are part of what is certified.
+    const candidate = options.models.find((item) => item.model === model) ?? { modelId: model, settings: {} };
     if (!adapters.has(model)) adapters.set(model, selectReasoningIntegration(
-      reasoningIntegrationFor(provider, model, provider === base.provider ? base.config : { maxOutputTokens: CANDIDATE_OUTPUT_TOKENS }),
+      reasoningIntegrationFor(provider, candidate.modelId, {
+        ...(provider === base.provider ? base.config : { maxOutputTokens: CANDIDATE_OUTPUT_TOKENS }), ...candidate.settings }),
       { environment: process.env }));
     return adapters.get(model);
   };
+  const modelIdOf = (model) => options.models.find((item) => item.model === model)?.modelId ?? model;
   const judges = judgesFor(options.judges, { environment: process.env, adapterFor: (model) => adapterFor(model) });
 
   const { found } = await captures(resolve(repoRoot, options.evidence), options.prompt);
@@ -105,7 +110,7 @@ async function main() {
   const ask = (model, provider, input) => cached({ kind: "answer", model, prompt: options.prompt, version: prompt.version, input },
     () => adapterFor(model, provider).invoke({ systemPrompt: prompt.text, input, responseSchema: requests[0].responseSchema,
       clientRequestId: `quality_${digest(input).slice(0, 24)}`, latency: "minutes" })
-      .then((result) => ({ output: result.output, cost: costOf(model, result.provenance?.usage, result.provenance?.serviceTier) }),
+      .then((result) => ({ output: result.output, cost: costOf(modelIdOf(model), result.provenance?.usage, result.provenance?.serviceTier) }),
         (error) => ({ error: String(error?.message ?? error).slice(0, 200) })),
     { fresh: options.fresh.includes(model) });
   const answers = new Map();
@@ -278,7 +283,8 @@ async function main() {
   const rate = ([k, n]) => n === 0 ? null : { share: Math.round(k / n * 1000) / 1000, of: n };
   await writeFile(certificationsPath, JSON.stringify(recordCertifications(record, report.models.map((m) => ({
     prompt: options.prompt, promptVersion: prompt.version,
-    provider: options.models.find((item) => item.model === m.model).provider, model: m.model,
+    ...(({ provider, modelId, settings }) => ({ provider, model: modelId, ...(Object.keys(settings).length ? { settings } : {}) }))(
+      options.models.find((item) => item.model === m.model)),
     verdict: m.tooFew ? "undecided" : m.goodEnough.overall,
     tests: Object.fromEntries(m.goodEnough.tests.map((test) => [test.test, test.verdict])),
     acceptable: rate(m.acceptable), scoredBy: m.scoredBy, nothingChosen: rate(m.nothingRate),

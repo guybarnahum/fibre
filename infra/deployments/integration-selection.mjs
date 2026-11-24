@@ -352,6 +352,12 @@ export function selectReasoningIntegration(value, { environment = process.env, f
     return createGoogleModelAdapter({
       environment: { ...environment, GEMINI_API_KEY: apiKey },
       modelId,
+      maxOutputTokens: chosen.config?.maxOutputTokens,
+      timeoutMs: chosen.config?.timeoutMs,
+      retryLimit: chosen.config?.retryLimit,
+      retryDelayMs: chosen.config?.retryDelayMs,
+      thinkingLevel: chosen.config?.thinkingLevel ?? null,
+      thinkingBudget: chosen.config?.thinkingBudget ?? null,
       fetchImpl,
       observer,
     });
