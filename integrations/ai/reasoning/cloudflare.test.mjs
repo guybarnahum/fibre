@@ -104,3 +104,19 @@ test("a job thinks with the model its service names for it, every other job with
   assert.throws(() => selectReasoningIntegration(integrations["world.happening"], { environment:{} }),
     "Workers AI without a binding or token was accepted");
 });
+
+test("a mechanical miss is the adapter's to repair, never the model's verdict: read from a fence, or asked once more", async () => {
+  const answering = (...contents) => { let calls = 0;
+    return { calls:() => calls, adapter:createCloudflareModelAdapter({ modelId:"@cf/google/gemma-4-26b-a4b-it", retryLimit:0,
+      binding:{ run:async () => chat(contents[Math.min(calls++, contents.length - 1)]) } }) }; };
+  const fenced = answering("Here it is:\n```json\n{\"noticed\":true}\n```");
+  assert.deepEqual((await ask(fenced.adapter)).output, { noticed:true }, "JSON inside a code fence was not read");
+  const missed = answering("{\"noticed\":\"yes\"}", "{\"noticed\":false}");
+  const { output, provenance } = await ask(missed.adapter);
+  assert.deepEqual(output, { noticed:false }, "an answer that missed the schema was not asked again");
+  assert.equal(provenance.answersAskedAgain.length, 1);
+  assert.equal(provenance.usage.inputTokens, 240, "the missed answer's cost was hidden");
+  const never = answering("{\"seen\":true}");
+  await assert.rejects(ask(never.adapter), { code:"UNPARSEABLE_MODEL_OUTPUT" });
+  assert.equal(never.calls(), 2, "a model that keeps missing the schema was asked more than once again");
+});

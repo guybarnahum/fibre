@@ -97,3 +97,43 @@ export function recoverModelOutput({ output, responseSchema } = {}) {
     recoveries: Object.freeze(recoveries.map((item) => structuredClone(item))),
   });
 }
+
+// Where an answer misses its schema — a type, an enumerated value, a required
+// or unknown field, too many or too few items — as a path, or null when it
+// meets it. For providers that honour a schema only on a best-effort basis:
+// an answer that misses it is a mechanical failure, asked again, never judged.
+export function schemaMiss(value, schema, path = "$") {
+  if (!isSchemaObject(schema)) return null;
+  if (Array.isArray(schema.anyOf)) {
+    return schema.anyOf.some((branch) => schemaMiss(value, branch, path) === null) ? null : `${path} (no allowed form)`;
+  }
+  const types = schema.type === undefined ? null : [schema.type].flat();
+  const typeOf = value === null ? "null" : Array.isArray(value) ? "array"
+    : Number.isInteger(value) ? "integer" : typeof value;
+  if (types !== null && !types.includes(typeOf) && !(typeOf === "integer" && types.includes("number"))) {
+    return `${path} (${typeOf}, not ${types.join(" or ")})`;
+  }
+  if (Array.isArray(schema.enum) && !schema.enum.some((item) => canonicalKey(item) === canonicalKey(value))) return `${path} (not an allowed value)`;
+  if (Array.isArray(value)) {
+    if (Number.isSafeInteger(schema.minItems) && value.length < schema.minItems) return `${path} (too few items)`;
+    if (Number.isSafeInteger(schema.maxItems) && value.length > schema.maxItems) return `${path} (too many items)`;
+    for (let index = 0; index < value.length; index += 1) {
+      const miss = schemaMiss(value[index], schema.items, `${path}[${index}]`);
+      if (miss !== null) return miss;
+    }
+    return null;
+  }
+  if (value !== null && typeof value === "object") {
+    const properties = isSchemaObject(schema.properties) ? schema.properties : {};
+    for (const key of schema.required ?? []) if (!Object.hasOwn(value, key)) return `${propertyPath(path, key)} (missing)`;
+    for (const [key, item] of Object.entries(value)) {
+      if (!Object.hasOwn(properties, key)) {
+        if (schema.additionalProperties === false) return `${propertyPath(path, key)} (not asked for)`;
+        continue;
+      }
+      const miss = schemaMiss(item, properties[key], propertyPath(path, key));
+      if (miss !== null) return miss;
+    }
+  }
+  return null;
+}

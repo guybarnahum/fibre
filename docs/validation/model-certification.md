@@ -61,6 +61,7 @@ Limits, timeouts and retries are not part of it. They change whether an answer a
   On November 24 a reflection run of six models over 100 requests cost about $62 in judges, before both savings.
 - **Too few answers** decide nothing: a model with fewer than 30 is undecided, and one that gave no answer at all is not recorded.
 - **Failures** are counted and named by cause: cut off at its output limit (and how much of that was thinking), stopped by the provider, timed out, schema missed. A model is never failed for a mistake in how it was called.
+- **Mechanical misses are the adapter's to repair, never the model's verdict.** Where a provider honours the schema only on a best-effort basis (Workers AI), JSON in a code fence or a sentence is read from inside it. A string over its length is cut as for OpenAI. An answer that is unreadable, cut off or misses the schema is asked once more; both answers are billed and reported. A candidate runs at the settings the World would route it with: name them, for example `cloudflare:@cf/google/gemma-4-26b-a4b-it+temperature=0.3`.
 
 ## Where it is recorded, and how a job moves
 

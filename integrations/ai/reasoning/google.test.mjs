@@ -39,6 +39,8 @@ test("an answer cut off by its own thinking is reported as cut off, not as a bro
 test("a model certified at one thinking setting is not certified at another", () => {
   const spec = parseModelSpec("google:gemini-3.6-flash+thinkingLevel=low");
   assert.deepEqual([spec.provider, spec.model, spec.settings], ["google", "gemini-3.6-flash", { thinkingLevel: "low" }]);
+  assert.deepEqual(parseModelSpec("cloudflare:@cf/google/gemma-4-26b-a4b-it+temperature=0.3+thinking=true").settings,
+    { temperature: 0.3, thinking: true }, "a setting was certified as a different value than the World runs it with");
   const record = { certifications: [{ prompt: "experience.consolidation", promptVersion: 8, provider: "google",
     model: "gemini-3.6-flash", settings: { thinkingLevel: "low" }, verdict: "pass" }] };
   const route = (config) => ({ "world-kernel": { "experience.consolidation": { kind: "ai.reasoning", provider: "google", config } } });

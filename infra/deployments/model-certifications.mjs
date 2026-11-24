@@ -22,13 +22,15 @@ export function cognitionSettings(config = {}) {
 const settingsKey = (settings) => JSON.stringify(Object.entries(cognitionSettings(settings ?? {})).sort(([a], [b]) => a.localeCompare(b)));
 
 // A candidate as an operator names it: provider:model, with settings after +,
-// for example google:gemini-3.6-flash+thinkingLevel=low. Numbers stay numbers.
+// for example google:gemini-3.6-flash+thinkingLevel=low. Numbers stay numbers,
+// and true and false stay booleans (cloudflare:…+thinking=true).
 export function parseModelSpec(spec) {
   const [head, ...pairs] = String(spec).split("+");
   const [provider, model] = head.includes(":") ? head.split(/:(.*)/su).filter(Boolean) : ["openai", head];
   const settings = Object.fromEntries(pairs.map((pair) => {
     const [key, value] = pair.split("=", 2);
     if (!COGNITION_SETTINGS.includes(key) || value === undefined) throw new TypeError(`unknown model setting ${pair}`);
+    if (value === "true" || value === "false") return [key, value === "true"];
     return [key, Number.isFinite(Number(value)) && value.trim() !== "" ? Number(value) : value];
   }));
   return Object.freeze({ provider, model, settings: Object.freeze(settings), label: String(spec).replace(/^openai:/u, "") });

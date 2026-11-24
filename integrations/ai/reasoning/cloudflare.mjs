@@ -1,4 +1,5 @@
 import { GuardianModelError } from "../guardian-model-adapter.mjs";
+import { recoverModelOutput, schemaMiss } from "./output-recovery.mjs";
 import { assertId, assertNonEmpty, assertPlainObject, canonicalJson, sha256 } from "../persistence-common.mjs";
 import {
   attachRetryGuidance,
@@ -21,6 +22,14 @@ import {
 // The binding cannot cancel a request: one we stop waiting for still runs
 // and is billed. So a binding timeout is never retried, and cognition that
 // may take minutes is given minutes to answer.
+// Mechanical misses are the adapter's to repair, never the model's verdict:
+// JSON wrapped in a code fence or a sentence is read from inside it; a string
+// over its length is cut as for OpenAI (output-recovery); an answer that is
+// unreadable, cut off, or misses the schema is asked once more, and both
+// answers are billed and reported.
+
+const ANSWER_ATTEMPTS = 2;
+const MECHANICAL = new Set(["UNPARSEABLE_MODEL_OUTPUT", "MODEL_INCOMPLETE_RESPONSE"]);
 
 const DEFAULTS = Object.freeze({
   timeoutMs:60_000, deferredTimeoutMs:180_000, maxOutputTokens:2_000, retryLimit:2, retryDelayMs:2_000,
@@ -106,6 +115,24 @@ function withNullsRestored(value, schema) {
   return result;
 }
 
+// The first complete JSON object in a text, wherever the model put it.
+function jsonIn(text) {
+  const start = text.indexOf("{");
+  if (start < 0) return text;
+  let depth = 0, inString = false, escaped = false;
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+    } else if (char === '"') inString = true;
+    else if (char === "{") depth += 1;
+    else if (char === "}" && (depth -= 1) === 0) return text.slice(start, index + 1);
+  }
+  return text;
+}
+
 function parseOutput(content, finishReason) {
   if (content !== null && typeof content === "object" && !Array.isArray(content)) return content;
   if (finishReason === "length") {
@@ -114,7 +141,7 @@ function parseOutput(content, finishReason) {
   }
   try {
     assertNonEmpty("Workers AI model output", content);
-    const value = JSON.parse(content);
+    const value = JSON.parse(jsonIn(content.trim()));
     assertPlainObject("Workers AI model output", value);
     return value;
   } catch (error) {
@@ -280,13 +307,33 @@ export function createCloudflareModelAdapter({
       assertPlainObject("model responseSchema", responseSchema);
       assertId("model clientRequestId", clientRequestId);
       const context = { inputDigest:digest(input), promptHash:digest(systemPrompt), responseSchemaHash:digest(responseSchema) };
-      const { answer, attemptNumber, operationalRetries } =
-        await attempt(request({ systemPrompt, input, responseSchema }), clientRequestId, context,
-          latency === "minutes" ? deferredTimeoutMs : timeoutMs);
-      const output = withNullsRestored(parseOutput(answer.content, answer.finishReason), responseSchema);
-      notify(observer, { type:"model_response", provider:"cloudflare", modelId, clientRequestId,
-        attempt:attemptNumber, ...context, modelOutput:structuredClone(output), usage:answer.usage });
-      return { output, provenance:provenance(answer, attemptNumber, operationalRetries) };
+      const missed = [], spent = [];
+      for (let answerAttempt = 1; ; answerAttempt += 1) {
+        try {
+          // Workers AI may itself refuse an answer that could not meet the schema.
+          const { answer, attemptNumber, operationalRetries } =
+            await attempt(request({ systemPrompt, input, responseSchema }), clientRequestId, context,
+              latency === "minutes" ? deferredTimeoutMs : timeoutMs);
+          spent.push(answer.usage);
+          const { output, recoveries } = recoverModelOutput({
+            output:withNullsRestored(parseOutput(answer.content, answer.finishReason), responseSchema), responseSchema });
+          const miss = schemaMiss(output, responseSchema);
+          if (miss !== null) throw new GuardianModelError(`Workers AI answer missed the response schema at ${miss}`, {
+            code:"UNPARSEABLE_MODEL_OUTPUT", retryable:false });
+          notify(observer, { type:"model_response", provider:"cloudflare", modelId, clientRequestId,
+            attempt:attemptNumber, ...context, modelOutput:structuredClone(output), usage:answer.usage });
+          const usage = Object.fromEntries(Object.keys(answer.usage).map((key) => [key, spent.reduce((sum, item) => sum + item[key], 0)]));
+          return { output, provenance:{ ...provenance({ ...answer, usage }, attemptNumber, operationalRetries),
+            ...(recoveries.length ? { outputRecoveries:recoveries } : {}),
+            ...(missed.length ? { answersAskedAgain:missed } : {}) } };
+        } catch (error) {
+          if (!(error instanceof GuardianModelError) || !MECHANICAL.has(error.code) || answerAttempt >= ANSWER_ATTEMPTS) throw error;
+          missed.push({ code:error.code, message:error.message });
+          notify(observer, { type:"operational_failure", provider:"cloudflare", modelId, clientRequestId, attempt:answerAttempt,
+            maximumAttempts:ANSWER_ATTEMPTS, retrying:true, ...context,
+            failure:{ code:error.code, message:error.message, retryable:true } });
+        }
+      }
     },
     async *streamExpression({ systemPrompt, input, clientRequestId, signal = null }) {
       assertNonEmpty("expression systemPrompt", systemPrompt);
