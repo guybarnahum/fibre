@@ -238,16 +238,18 @@ const workRefOf=(work)=>`${work.source}:${work.sourceId}`;
 // Thread's), so its pages no longer depend on the catalogue being up. Best
 // effort: a book it cannot fetch now is tried again another time.
 export async function keepBookText({catalogue,experienceStore,holding,at}){
-  if(typeof catalogue?.fetchText!=="function"||typeof experienceStore.keepBookText!=="function")return false;
-  const workRef=workRefOf(holding.work);
-  if(experienceStore.keptBookText(workRef)!==null)return false;
+  const workRef=workRefOf(holding.work),title=holding.work.title??null;
+  if(typeof catalogue?.fetchText!=="function"||typeof experienceStore.keepBookText!=="function")
+    return Object.freeze({workRef,title,kept:false,error:"no way to keep books here"});
+  if(experienceStore.keptBookText(workRef)!==null)return Object.freeze({workRef,title,kept:false,already:true});
   try{
     const {bytes,fetchedFrom}=await catalogue.fetchText({sourceId:holding.work.sourceId,textUrl:holding.work.textUrl});
     experienceStore.keepBookText({workRef,bytes,fetchedFrom,at});
-    return true;
+    return Object.freeze({workRef,title,kept:true,fetchedFrom,bytes:bytes.length});
   }catch(error){
-    console.warn(JSON.stringify({event:"book-text-not-kept",workRef,message:String(error?.message??error).slice(0,160)}));
-    return false;
+    const message=String(error?.message??error).slice(0,160);
+    console.warn(JSON.stringify({event:"book-text-not-kept",workRef,message}));
+    return Object.freeze({workRef,title,kept:false,error:message});
   }
 }
 
@@ -255,7 +257,19 @@ export async function keepBookText({catalogue,experienceStore,holding,at}){
 // library comes to hold its own books over time.
 export async function keepOneMoreBook({catalogue,experienceStore,holdings,at}){
   const missing=holdings.find(holding=>experienceStore.keptBookText?.(workRefOf(holding.work))===null);
-  return missing===undefined?false:keepBookText({catalogue,experienceStore,holding:missing,at});
+  return missing===undefined?null:keepBookText({catalogue,experienceStore,holding:missing,at});
+}
+
+// For an operator: keep the library's books now, a few at a time and spaced
+// out, so readings never wait on the catalogue and access is proven from
+// where World runs. Says what happened to each book.
+export async function keepLibraryBooks({catalogue,experienceStore,at,limit=6,pauseMs=2000,pause=(ms)=>new Promise(done=>setTimeout(done,ms))}){
+  const results=[];
+  for(const holding of experienceStore.listUnkeptBooks({limit})){
+    if(results.length>0)await pause(pauseMs);
+    results.push(await keepBookText({catalogue,experienceStore,holding,at}));
+  }
+  return Object.freeze({results:Object.freeze(results),library:experienceStore.libraryKeeping()});
 }
 
 // Reading a book one has taken up: World supplies the actual pages it reaches,

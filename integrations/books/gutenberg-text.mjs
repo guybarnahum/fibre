@@ -11,17 +11,23 @@ const ATTEMPTS = 2;
 const RETRY_AFTER_MS = 1_500;
 const HEADERS = Object.freeze({ "User-Agent": "FibreWorldLibrary/1.0 (a library for persistent artificial persons)" });
 
-// Where a book's plain text can be found, in order: the Gutenberg
-// foundation's own mirror, then Gutenberg itself, at the same path, then the
-// catalogue's own link (older links, for example /files/…, can be gone).
-// Measured November 23: www.gutenberg.org answered 503 to every request,
-// from World and from an ordinary computer alike; the mirror answered.
-export const GUTENBERG_HOSTS = Object.freeze(["https://gutenberg.pglaf.org", "https://www.gutenberg.org"]);
+// Where a book's plain text is fetched: the Gutenberg foundation's own
+// mirror, never Gutenberg's website. Its policy says the website is for
+// people and that programs are blocked; it points them to its mirrors. Each
+// book is fetched once and kept, so the mirror is asked rarely. Measured
+// November 23: www.gutenberg.org answered 503 to every request, from World
+// and from an ordinary computer alike; the mirror answered. A catalogue link
+// to somewhere other than Gutenberg's website is tried after it.
+export const GUTENBERG_HOSTS = Object.freeze(["https://gutenberg.pglaf.org"]);
+const WEBSITE = /^(www\.)?gutenberg\.org$/iu;
 export function gutenbergTextUrls({ sourceId = null, textUrl }) {
   if (typeof textUrl !== "string" || !textUrl.startsWith("https://")) throw new TypeError("book text must be an https link");
   const id = String(sourceId ?? "");
   const cached = /^\d+$/u.test(id) ? GUTENBERG_HOSTS.map((host) => `${host}/cache/epub/${id}/pg${id}.txt`) : [];
-  return [...new Set([...cached, textUrl])];
+  const elsewhere = WEBSITE.test(new URL(textUrl).host) ? [] : [textUrl];
+  const urls = [...new Set([...cached, ...elsewhere])];
+  if (urls.length === 0) throw new TypeError("no source this library may fetch the book from");
+  return urls;
 }
 
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

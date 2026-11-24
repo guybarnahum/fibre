@@ -3002,6 +3002,34 @@ export class LivedExperienceStore {
     return this.keptBookText(workRef);
   }
 
+  // Books on a library's shelves it has no copy of yet, the newest shelved
+  // first (this week's display before older shelves), each work once; and how
+  // many works it holds and keeps.
+  listUnkeptBooks({limit=8}={}){
+    if(!Number.isSafeInteger(limit)||limit<1||limit>32)throw new TypeError("unkept books must be bounded");
+    const rows=this.#database.prepare(`SELECT h.* FROM venue_holdings h
+      WHERE NOT EXISTS (SELECT 1 FROM library_book_texts t
+        WHERE t.work_ref=json_extract(h.work_json,'$.source')||':'||json_extract(h.work_json,'$.sourceId'))
+      ORDER BY h.recorded_at DESC,h.holding_ref`).all();
+    const seen=new Set(),books=[];
+    for(const row of rows){
+      const work=JSON.parse(row.work_json),workRef=`${work.source}:${work.sourceId}`;
+      if(seen.has(workRef))continue;
+      seen.add(workRef);
+      books.push(Object.freeze({holdingRef:row.holding_ref,venueRef:row.venue_ref,section:row.section,
+        position:row.position,work:Object.freeze(work)}));
+      if(books.length===limit)break;
+    }
+    return Object.freeze(books);
+  }
+
+  libraryKeeping(){
+    const works=this.#database.prepare(`SELECT COUNT(DISTINCT json_extract(work_json,'$.source')||':'||json_extract(work_json,'$.sourceId')) AS n
+      FROM venue_holdings`).get().n;
+    const kept=this.#database.prepare("SELECT COUNT(*) AS n FROM library_book_texts").get().n;
+    return Object.freeze({works,kept});
+  }
+
   keptBookText(workRef){
     assertNonEmpty("kept book",workRef);
     const row=this.#database.prepare("SELECT total_bytes FROM library_book_texts WHERE work_ref=?").get(workRef);

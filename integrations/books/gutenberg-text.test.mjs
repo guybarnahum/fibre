@@ -36,17 +36,13 @@ test("a catalogue link that is gone does not keep a reader from the book", async
   assert.ok(passage.text.startsWith("Paragraph 0"), "the book could not be read once its old link was gone");
 });
 
-test("a busy catalogue is asked again, then its mirrors; one that is down does not keep a reader from the book", async () => {
+test("a busy mirror is asked again before giving up, and Gutenberg's website is never fetched by a program", async () => {
   const asked = [];
-  const down = async (url, init) => {
-    asked.push(new URL(url).host);
-    return new URL(url).host === "gutenberg.pglaf.org" ? new Response("busy", { status: 503 }) : ranged(url, init);
-  };
-  const passage = await readGutenbergPassage({ sourceId: "205", textUrl: "https://www.gutenberg.org/files/205/205.txt",
-    maxChars: 600, fetchImpl: down });
-  assert.ok(passage.text.startsWith("Paragraph 0"), "a busy catalogue kept the reader from the book");
-  assert.deepEqual(asked.slice(0, 3), ["gutenberg.pglaf.org", "gutenberg.pglaf.org", "www.gutenberg.org"],
-    "a busy source was not asked again before the reader moved on to the next");
+  const busy = async (url) => { asked.push(new URL(url).host); return new Response("busy", { status: 503 }); };
+  await assert.rejects(readGutenbergPassage({ sourceId: "205", textUrl: "https://www.gutenberg.org/files/205/205.txt",
+    maxChars: 600, fetchImpl: busy }), /503/u, "a busy mirror was reported as a book");
+  assert.deepEqual(asked, ["gutenberg.pglaf.org", "gutenberg.pglaf.org"],
+    "a busy mirror was not asked again, or Gutenberg's website was fetched by a program");
 });
 
 test("a library's own copy is read without the catalogue, and gives the same pages", async () => {

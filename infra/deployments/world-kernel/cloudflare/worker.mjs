@@ -8,7 +8,9 @@ import { openAutobiographicalMemoryInspectionStore } from "#services/world-kerne
 import { openContactInspectionStore } from "#services/world-kernel/src/contact-store.mjs";
 import { openEmbodimentInspectionStore } from "#services/world-kernel/src/embodiment-store.mjs";
 import { projectCurrentThreadLocation,projectOperatorCurrentPlace,genesisContextLocations,isModernGenesisPlace,isModernGenesisWorldPlace } from "#services/world-kernel/src/current-thread-location.mjs";
-import { openLivedExperienceInspectionStore } from "#services/world-kernel/src/lived-experience-store.mjs";
+import { openLivedExperienceInspectionStore, openLivedExperienceStore } from "#services/world-kernel/src/lived-experience-store.mjs";
+import { keepLibraryBooks } from "#services/world-kernel/src/scene-glance.mjs";
+import { fetchGutenbergText } from "#integrations/books/gutenberg-text.mjs";
 import {readWorldEventOverview} from "#services/world-kernel/src/world-event-observatory.mjs";
 import {readPublicSociety} from "#services/world-kernel/src/public-society.mjs";
 import {openInformationDisclosureStore} from "#services/world-kernel/src/information-disclosure-store.mjs";
@@ -793,6 +795,21 @@ export class FibreWorldDurableObject extends DurableObject {
           return Response.json({error:"INVALID_PUBLIC_SOCIETY_REQUEST",message:error.message},{status:400});
         throw error;
       }
+    }
+    // For an operator: the library keeps its books now, a few at a time, so
+    // readings never wait on the catalogue, and access is proven from here.
+    if(url.pathname==="/internal/library/keep"){
+      if(request.method!=="POST")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});
+      if(!privateOperatorAuthorized(request,this.env)){
+        return Response.json({error:"PRIVATE_TOKEN_REQUIRED"},{status:403});
+      }
+      const body=await request.json().catch(()=>({}));
+      const limit=Number.isSafeInteger(body?.limit)&&body.limit>=1&&body.limit<=12?body.limit:6;
+      const experience=openLivedExperienceStore(this.worldStorage);
+      try{
+        return Response.json(await keepLibraryBooks({experienceStore:experience,limit,at:new Date().toISOString(),
+          catalogue:{fetchText:(query)=>fetchGutenbergText(query)}}));
+      }finally{experience.close?.();}
     }
     if(url.pathname==="/internal/world-events/overview"){
       if(request.method!=="GET")return Response.json({error:"METHOD_NOT_ALLOWED"},{status:405});

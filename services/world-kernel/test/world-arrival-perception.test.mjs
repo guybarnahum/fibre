@@ -11,7 +11,7 @@ import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs"
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import {evaluateSalience} from "../src/salience-gate.mjs";
 import {embodimentSpecificationDigest} from "../src/embodiment-domain.mjs";
-import {booksToContinueAt,booksWithinReach,displayHoldings,glanceItems,keepBookText,keepOneMoreBook,LIBRARY_SHELVES,readHolding} from "../src/scene-glance.mjs";
+import {booksToContinueAt,booksWithinReach,displayHoldings,glanceItems,keepBookText,keepLibraryBooks,keepOneMoreBook,LIBRARY_SHELVES,readHolding} from "../src/scene-glance.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -534,8 +534,8 @@ test("the library keeps its own copy of a book, and its pages are read from it w
       async readPassage({kept}){if(kept===null)throw new Error("book text 503");
         return {text:new TextDecoder().decode(kept.read(1_999_990,40)),nextByte:2_000_030};},
     };
-    assert.equal(await keepBookText({catalogue,experienceStore:ctx.store,holding,at:AT}),true,"the library kept no copy");
-    assert.equal(await keepBookText({catalogue,experienceStore:ctx.store,holding,at:AT}),false,"a kept book was fetched again");
+    assert.equal((await keepBookText({catalogue,experienceStore:ctx.store,holding,at:AT})).kept,true,"the library kept no copy");
+    assert.equal((await keepBookText({catalogue,experienceStore:ctx.store,holding,at:AT})).kept,false,"a kept book was fetched again");
     assert.equal(fetched,1,"a kept book was fetched again");
     up=false;
     const reading=await readHolding({thread:ctx.threads.get(ctx.ids[0]),situation:ctx.situations[0],
@@ -544,8 +544,12 @@ test("the library keeps its own copy of a book, and its pages are read from it w
         new TextDecoder().decode(text.subarray(1_999_990,2_000_030)),"the kept copy gave other pages than the book's");
         return {output:{experienceText:"It holds me.",keepReading:true}};}}});
     assert.ok(reading!==null,"a kept book could not be read while the catalogue was down");
-    assert.equal(await keepOneMoreBook({catalogue,experienceStore:ctx.store,holdings:[holding,other],at:AT}),false,
+    assert.equal((await keepOneMoreBook({catalogue,experienceStore:ctx.store,holdings:[holding,other],at:AT})).kept,false,
       "a book that cannot be fetched now was counted as kept");
+    up=true;
+    const kept=await keepLibraryBooks({catalogue,experienceStore:ctx.store,at:AT,pause:async()=>{}});
+    assert.ok(kept.results.every(item=>item.kept)&&kept.library.kept===kept.library.works,
+      "keeping the library left books on its shelves without a copy");
   }finally{ctx.close();}
 });
 
