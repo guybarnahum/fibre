@@ -1,5 +1,6 @@
 import {admitEncounterAttention,recognitionFor} from "./lived-encounter-attention.mjs";
-import {admitGlance,appraiseGlance,bookInHand,booksInProgress,booksWithinReach,glanceItems,holdsBooks,readHolding}
+import {admitGlance,appraiseGlance,bookInHand,booksInProgress,booksWithinReach,glanceItems,holdsBooks,keepBookText,
+  keepOneMoreBook,readHolding}
   from "./scene-glance.mjs";
 import {createEncounterVisualization} from "./lived-encounter-visualization.mjs";
 import {assertIsoTimestamp} from "./persistence-common.mjs";
@@ -189,6 +190,10 @@ export function createWorldArrivalPerception({
               describeSelf:describe(arrival),experienceStore,onExperienceQueued});
             // Having taken a book down, it opens it and reads.
             const taken=appraisal.focus===null?null:items[appraisal.focus];
+            // The library keeps its own copy first when it can, so the pages
+            // are there even when the catalogue is not.
+            const takenHolding=taken?.kind==="book"?experienceStore.getVenueHolding(taken.ref):null;
+            if(takenHolding!==null)await keepBookText({catalogue,experienceStore,holding:takenHolding,at});
             // A reading that fails is lost, never retried as a different
             // moment; the arrival itself still completes.
             if(taken?.kind==="book")await readHolding({thread:arrivingThread,situation:arrival,holdingRef:taken.ref,
@@ -197,6 +202,8 @@ export function createWorldArrivalPerception({
                 holdingRef:taken.ref,message:String(error?.message??error).slice(0,160)})));
             glanced=true;
             if(appraisal.focus!==null)noticed++;
+            // And one more book within reach, so the library comes to hold its own.
+            await keepOneMoreBook({catalogue,experienceStore,holdings,at});
           }
           experienceStore.completeArrivalPerception({
             situationId:obligation.situationId,encounterRef,at,

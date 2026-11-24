@@ -73,3 +73,28 @@ test("the Body panel shows the Body as it was at each moment of the day, from on
   assert.deepEqual(body.events.recalled.map((item) => item.people), [[AWAY]], "the memory was not tied to the friend it holds");
   assert.ok([...panelReads.reads.values()].every((n) => n === 1), "the panel read the same records more than once");
 });
+
+test("the Body panel shows what learning did to it through the day: the lift of a discovery, and the pull to tell", () => {
+  const { store } = world();
+  const learning = [{ learning:"discovery", sourceRef:"gutenberg:78", at:hoursAgo(5) }];
+  const body = bodyObservatory({ thread:{ threadId:SELF, genome:{ urgeProjection:[] } }, at:AT,
+    experienceStore:{ ...store, listLearning:(t, { since, until }) => learning.filter((item) => item.at >= since && item.at <= until) },
+    memoryStore:store });
+  const before = body.series.find((point) => point.at <= hoursAgo(6)), after = body.series.find((point) => point.at >= hoursAgo(4));
+  assert.ok(!before.lifted && before.share === 0, "it was lifted before it found anything");
+  assert.ok(after.lifted && after.novelty > before.novelty && after.share > 0,
+    "the discovery's lift and the pull to tell were not shown when they were felt");
+});
+
+test("the Body panel shows the Body just before each moment it chose something, never after what the choice brought", () => {
+  const { store } = world();
+  const found = hoursAgo(5);
+  const learning = [{ learning:"discovery", sourceRef:"gutenberg:78", at:found }];
+  const body = bodyObservatory({ thread:{ threadId:SELF, genome:{ urgeProjection:[] } }, at:AT, moments:[found, hoursAgo(3)],
+    present:[AWAY], memoryStore:store,
+    experienceStore:{ ...store, listLearning:(t, { since, until }) => learning.filter((item) => item.at >= since && item.at <= until) } });
+  const [atChoice, later] = body.atMoments;
+  assert.ok(atChoice.at < found && !atChoice.lifted, "the Body at the moment of choosing already held what the choice brought");
+  assert.ok(later.lifted, "the Body after the discovery was not shown lifted");
+  assert.ok(AWAY in later.people, "how it took someone it met then was not shown");
+});

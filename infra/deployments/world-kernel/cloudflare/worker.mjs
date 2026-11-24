@@ -282,7 +282,13 @@ function bodyThreadObservatory(runtime,threadId){
     // The Threads it has relations with, whom it may be missing.
     const apart=situatedLife.listCurrentLifeRelations(threadId)
       .filter(relation=>relation.relatedParty?.kind==="thread").map(relation=>relation.relatedParty.partyId);
+    // The moments it chose something (arriving somewhere, a conversation), and
+    // whom it met then, so what it felt can be read against what it did.
+    const glances=experience.listThreadGlances(threadId,{limit:24});
+    const talks=experience.listEncounterStories(threadId,{limit:24});
     const body=bodyObservatory({thread,experienceStore:experience,memoryStore:memory,at,apart,
+      moments:[...glances.map(glance=>glance.occurredAt),...talks.map(story=>story.occurredAt)],
+      present:glances.flatMap(glance=>glance.items.filter(item=>item.kind==="person").map(item=>item.ref)),
       nameOf:(id)=>runtime.worldStore.getThread(id,{required:false})?.identity?.name??null});
     const currentSituation=livedNow.getCurrentSituation(threadId);
     // What the Thread reads of its social Body now, in its own words.
@@ -364,7 +370,7 @@ function threadObservatory(runtime, threadId) {
   const semanticState = openSemanticStateInspectionStore(runtime.worldStorage);
   const situatedLife = openSituatedLifeInspectionStore(runtime.worldStorage);
   try {
-    const encounterStories=experience.inspectRecentEncounterStories(threadId,{limit:12});
+    const encounterStories=experience.inspectRecentEncounterStories(threadId,{limit:24});
     const currentSituation = livedNow.getCurrentSituation(threadId);
     const previousSituation = currentSituation === null
       ? null
@@ -480,7 +486,8 @@ function threadObservatory(runtime, threadId) {
       readings:structuredClone(experience.listThreadReadings(threadId,{limit:24})),
       glances:experience.listThreadGlances(threadId,{limit:24}).map(glance=>({...glance,
         items:glance.items.map(item=>item.kind==="book"
-          ?{...item,title:experience.getVenueHolding(item.ref)?.work.title??null}:item)})),
+          ?(({work}={})=>({...item,title:work?.title??null,subjects:(work?.subjects??[]).slice(0,6)}))
+            (experience.getVenueHolding(item.ref)??undefined):item)})),
       contactOutreach:structuredClone(
         contact.inspectThreadContact(threadId,{limit:12}),
       ),

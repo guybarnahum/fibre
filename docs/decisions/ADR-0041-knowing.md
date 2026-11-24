@@ -32,9 +32,10 @@ Guy (Nov 23):
    - A display set anew each week.
    - A returns cart of books others read there lately.
    - Within reach on a visit are the display, the one shelf the walk passes (by the venue and the moment, never by interest), the returns cart, and the Thread's own book in progress.
+   - **The library keeps its own copy of each book** once it can fetch it whole: the book taken up, and one more within reach on each visit. Its pages then no longer depend on the catalogue being up. From November 14 Gutenberg answered World with 503s and no reading happened. The catalogue is asked politely, a busy source is asked again, then its mirrors.
 2. **The Body reaches the moment of choosing.** The glance receives the Body's felt words (weariness of the same, what it would welcome instead, company wanted). Felt, never an order.
 3. **Learning moves the urges the Body already has; nothing is replicated.** World measures two Body levels with the shared level component (spikes that fade, more slowly the more persistent the inherited locus):
-   - **novelty,** for the inherited `exploration` urge: each discovery and each exchange read as new adds to it, one read as somewhat new half as much;
+   - **novelty,** for the inherited `exploration` urge: a subject new to it adds the most, an exchange read as new half as much, one read as somewhat new a quarter. A remark is less than a new subject: on November 23, two "somewhat new" turns in a dull day were felt as a lift worth telling;
    - **competence,** for `mastery_itch`: each step deeper adds to it.
 
    The regulation core reads them as it reads every urge, through the same drives, genome gain, felt threshold, persistence and inherited direction:

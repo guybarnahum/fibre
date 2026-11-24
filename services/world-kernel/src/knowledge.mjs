@@ -44,16 +44,20 @@ const weekBefore=(at)=>new Date(Date.parse(at)-WEEK_HOURS*HOUR_MS).toISOString()
 const learningOf=({experienceStore,threadId,at})=>experienceStore?.listLearning?.(threadId,{since:weekBefore(at),until:at})??[];
 
 // How fresh something new is for this Thread (ADR-0041), as a Body level for
-// its `exploration` urge: each discovery it made and each exchange it read as
-// new adds to it, one read as somewhat new half as much, and it fades with
-// the hours, more slowly the more persistent its inherited exploration. The
-// Body's core reads it as it reads any novelty: below the species floor,
-// hunger for something new; above it, something new has just answered it.
+// its `exploration` urge: a subject new to it adds the most; an exchange it
+// read as new half that, one read as somewhat new a quarter (a remark is less
+// than a new subject, Nov 23: two "somewhat new" turns in a dull day were
+// felt as a lift worth telling). It fades with the hours, more slowly the
+// more persistent its inherited exploration. The Body's core reads it as it
+// reads any novelty: below the species floor, hunger for something new;
+// above it, something new has just answered it.
+const NOVELTY_OF=Object.freeze({discovery:1,new:0.5,some_new:0.25});
 export function noveltyLevel({experienceStore,threadId,at,persistence=0}){
   const readings=experienceStore?.listEngagementReadings?.(threadId,{since:weekBefore(at),until:at,limit:96})??[];
-  const events=[...learningOf({experienceStore,threadId,at}).filter(item=>item.learning==="discovery").map(item=>({at:item.at,size:1})),
-    ...readings.filter(item=>item.reading==="new"||item.reading==="some_new")
-      .map(item=>({at:item.at,size:item.reading==="new"?1:0.5}))];
+  const events=[...learningOf({experienceStore,threadId,at}).filter(item=>item.learning==="discovery")
+    .map(item=>({at:item.at,size:NOVELTY_OF.discovery})),
+    ...readings.filter(item=>NOVELTY_OF[item.reading]!==undefined&&item.reading!=="discovery")
+      .map(item=>({at:item.at,size:NOVELTY_OF[item.reading]}))];
   return Math.round(bodyLevel({at,events,bound:{saturate:1},
     halfLife:inheritedHalfLife(NOVELTY_HALF_LIFE_HOURS*HOUR_MS,persistence)}).level*1e6)/1e6;
 }

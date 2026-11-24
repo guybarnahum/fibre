@@ -5,7 +5,7 @@
 import { HOUR_MS, DAY_MS } from "#core/src/body-level.mjs";
 import { bondOf, longingOf, missingMoments, regardOf, selfStanding, socialEnergyEvidence } from "./social-body.mjs";
 import { wearinessLevel } from "./engagement.mjs";
-import { socialBodyLoci } from "./lived-now-regulation.mjs";
+import { learningBodyAt, socialBodyLoci } from "./lived-now-regulation.mjs";
 
 const iso=(ms)=>new Date(ms).toISOString();
 const round=(value)=>Math.round(value*1000)/1000;
@@ -48,6 +48,8 @@ export function recordsAsOf(store,{now,since,memoryStore=null}){
       "at",item=>item.at>=from&&item.at<=until,limit),
     listSharedExperienceRefs:(threadId,otherThreadId)=>once(`shared:${otherThreadId}`,
       ()=>store.listSharedExperienceRefs?.(threadId,otherThreadId,{before:now,limit:64})??[]),
+    listLearning:(threadId,{since:from,until})=>once("learning",
+      ()=>store.listLearning?.(threadId,{since,until:now})??[]).filter(item=>item.at>=from&&item.at<=until),
     // Doors carry no time here; they are read as they stand now.
     listOpenDoors:(threadId,otherThreadId)=>once(`doors:${otherThreadId}`,
       ()=>store.listOpenDoors?.(threadId,otherThreadId,{before:now})??[]),
@@ -57,8 +59,12 @@ export function recordsAsOf(store,{now,since,memoryStore=null}){
 // The social Body over the last day, every two hours, with what moved it:
 // toward the people it lived most with, and those it is bonded to apart
 // (missed, named by the caller from its relations).
+// Besides the two-hourly series, the Body just before each given moment (the
+// moments it chose something: arriving somewhere, a conversation), so what it
+// felt then can be read against what it did, never against what the choice
+// itself brought it, nor against the nearest hour.
 export function bodyObservatory({thread,experienceStore,memoryStore=null,at,nameOf=()=>null,hours=24,stepHours=2,
-  people:most=6,apart=[]}){
+  people:most=6,apart=[],moments=[],present=[]}){
   const now=Date.parse(at),from=now-hours*HOUR_MS;
   const threadId=thread.threadId;
   const records=recordsAsOf(experienceStore,{now:at,since:iso(from-2*DAY_MS),memoryStore});
@@ -73,13 +79,20 @@ export function bodyObservatory({thread,experienceStore,memoryStore=null,at,name
     if(typeof person==="string"&&person!==threadId)weight.set(person,(weight.get(person)??0)+1);
   const lived=[...weight].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).slice(0,most).map(([person])=>person);
   const people=[...lived,...apart.filter(person=>person!==threadId&&!lived.includes(person)).slice(0,4)];
+  // And anyone it met at those moments, so how it took them then is shown.
+  for(const person of present)if(person!==threadId&&!people.includes(person)&&people.length<16)people.push(person);
   const attachment=loci.attachment;
-  const series=instants.map(instant=>{
+  const pointAt=(instant)=>{
     const standing=selfStanding({experienceStore:records,threadId,at:instant,standingLocus:loci.standing});
     const weariness=wearinessLevel({experienceStore:records,threadId,at:instant,
       persistence:loci.exploration?.persistence??0});
     const moments=missingMoments({experienceStore:records,memoryStore:records,threadId,at:instant});
+    // What learning was doing to it then (ADR-0041), through the same core.
+    const learning=typeof experienceStore.listLearning==="function"
+      ?learningBodyAt({thread,experienceStore:records,at:instant}):null;
     return Object.freeze({at:instant,
+      ...(learning===null?{}:{novelty:round(learning.novelty),competence:round(learning.competence),
+        lifted:learning.lifted,noveltyHunger:round(learning.noveltyHunger),share:round(learning.share)}),
       battery:round(socialEnergyEvidence({threadId,experienceStore:records,asOf:instant,trustLocus:loci.trust})?.depletion??0),
       weariness:round(weariness.level),wearinessBaseline:round(weariness.baseline),
       self:round(standing.self),gap:standing.gap===null?null:round(standing.gap),
@@ -96,12 +109,16 @@ export function bodyObservatory({thread,experienceStore,memoryStore=null,at,name
           bond:round(bond),longing:round(longing.level),longingBaseline:round(longing.baseline)})];
       }))),
     });
-  });
+  };
+  const series=instants.map(pointAt);
+  const atMoments=[...new Set(moments)].filter(moment=>typeof moment==="string"&&moment>=iso(from)&&moment<=at)
+    .sort().slice(-48).map(moment=>pointAt(iso(Date.parse(moment)-1000)));
   return Object.freeze({
     threadId,asOf:at,window:Object.freeze({hours,stepHours}),
     genetics:structuredClone(thread.genome?.urgeProjection??[]),
     people:people.map(person=>Object.freeze({threadId:person,name:nameOf(person)})),
     series,
+    atMoments,
     events:Object.freeze({
       exposures:exposures.filter(item=>item.at>=iso(from)).map(item=>({at:item.at,kind:item.kind,
         person:item.otherThreadId??null,turns:item.turns})),

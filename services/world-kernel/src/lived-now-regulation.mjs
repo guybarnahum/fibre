@@ -400,6 +400,21 @@ function learningOf({thread,experienceStore,at}){
       :unfinishedLearning({readings:experienceStore.listThreadReadings(thread.threadId,{limit:8}),at}),
   };
 }
+// For the operator's Body panel: what learning is doing to this Body at a
+// moment, read through the same regulation core (never a parallel copy):
+// novelty and competence, whether something new lifts it, and how strong its
+// pull to tell someone is.
+export function learningBodyAt({thread,experienceStore,at}){
+  const learning=learningOf({thread,experienceStore,at});
+  if(learning.novelty===undefined)return null;
+  const frame=evaluateIntrinsicRegulation({
+    perceptFrame:{asOf:at,evidenceRefs:[`self:learning:${at}`],exploration:{novelty:learning.novelty},...masteryPercept(learning)},
+    runtimeBaselines:thread.genome?.runtimeBaselines??{},urgeProjection:thread.genome?.urgeProjection??null,organismPolicy});
+  const drive=(family,targetRef)=>frame.drives.find(item=>item.family===family&&item.targetRef===targetRef)??null;
+  const novelty=drive("exploration","world:novelty"),share=drive("social_contact","self:share");
+  return Object.freeze({novelty:learning.novelty,competence:learning.competence,lifted:novelty?.attained===true,
+    noveltyHunger:novelty?.attained?0:novelty?.pressure??0,share:share?.felt===false?0:share?.pressure??0});
+}
 const masteryPercept=({competence,unfinished})=>competence===0&&unfinished.length===0?{}
   :{mastery:{competence,unfinished:unfinished.map(({workRef,hoursSince,evidenceRefs})=>({workRef,hoursSince,evidenceRefs:[...evidenceRefs]}))}};
 // What its felt words need besides the drives: what each unfinished book is called.

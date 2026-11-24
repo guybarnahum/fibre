@@ -453,6 +453,28 @@ export function createLivedExperienceTables(database) {
       recorded_at TEXT NOT NULL,
       UNIQUE (venue_ref,section,position)
     ) STRICT;
+    -- A library's own copy of a book's text, kept once it was first fetched
+    -- whole, so its pages no longer depend on the catalogue being up. Kept in
+    -- chunks; never changed.
+    CREATE TABLE IF NOT EXISTS library_book_texts (
+      work_ref TEXT PRIMARY KEY CHECK (length(work_ref) BETWEEN 1 AND 160),
+      total_bytes INTEGER NOT NULL CHECK (total_bytes>0),
+      fetched_from TEXT NOT NULL,
+      kept_at TEXT NOT NULL
+    ) STRICT;
+    CREATE TABLE IF NOT EXISTS library_book_text_chunks (
+      work_ref TEXT NOT NULL,
+      chunk INTEGER NOT NULL CHECK (chunk>=0),
+      bytes BLOB NOT NULL,
+      PRIMARY KEY (work_ref,chunk),
+      FOREIGN KEY (work_ref) REFERENCES library_book_texts(work_ref)
+    ) STRICT;
+    CREATE TRIGGER IF NOT EXISTS library_book_texts_no_update
+      BEFORE UPDATE ON library_book_texts
+      BEGIN SELECT RAISE(ABORT,'library_book_texts are kept, never changed'); END;
+    CREATE TRIGGER IF NOT EXISTS library_book_text_chunks_no_update
+      BEFORE UPDATE ON library_book_text_chunks
+      BEGIN SELECT RAISE(ABORT,'library_book_text_chunks are kept, never changed'); END;
     -- What a Thread took in on entering a scene: the list in World's order,
     -- and the one item it took up, if any. Items after it were not reached.
     CREATE TABLE IF NOT EXISTS thread_glances (

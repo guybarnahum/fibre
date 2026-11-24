@@ -34,6 +34,10 @@ test("novelty is one Body level: long without anything new it is hunger, as shar
   const lifted = body({ novelty:fed, genes:[gene("exploration", "ideas", 0)] });
   assert.ok(noveltyDrive(lifted).attained && noveltyDrive(lifted).pressure === 0, "a fresh discovery did not still the hunger");
   assert.match(feltSocialBody(lifted).join(" "), /lifted|lit you up/u, "the lift of a discovery was not felt");
+  const remarks = noveltyLevel({ experienceStore:store([], [{ reading:"some_new", at:hoursAgo(1) }, { reading:"some_new", at:hoursAgo(2) }]),
+    threadId:"thr_kadir", at:AT });
+  assert.ok(!noveltyDrive(body({ novelty:remarks, genes:[gene("exploration", "ideas", 0)] })).attained,
+    "a couple of somewhat new remarks in a dull day were felt as the lift of a discovery");
   const persistent = noveltyLevel({ experienceStore:store([{ learning:"discovery", at:hoursAgo(20) }]), threadId:"thr_kadir", at:AT, persistence:0.8 });
   const fleeting = noveltyLevel({ experienceStore:store([{ learning:"discovery", at:hoursAgo(20) }]), threadId:"thr_kadir", at:AT, persistence:-0.8 });
   assert.ok(persistent > fleeting, "an inherited persistence did not keep the lift longer");

@@ -15,6 +15,9 @@ import {
   recordInvitationRelationalActs,recordStoryRelationalActs,
 } from "./relationship-doors.mjs";
 
+// A kept book is stored in pieces small enough for one stored value.
+const BOOK_CHUNK_BYTES=1_000_000;
+
 function digest(value) {
   return `sha256:${sha256(canonicalJson(value))}`;
 }
@@ -2979,6 +2982,42 @@ export class LivedExperienceStore {
       ORDER BY h.holding_ref LIMIT ?`).all(venueRef,exceptThreadId,since,limit)
       .map(row=>Object.freeze({holdingRef:row.holding_ref,venueRef:row.venue_ref,section:row.section,
         position:row.position,work:Object.freeze(JSON.parse(row.work_json))})));
+  }
+
+  // A library's own copy of a book (keptBookText): its length and a way to
+  // read any part of it, or null when it has none yet.
+  keepBookText({workRef,bytes,fetchedFrom,at}){
+    assertNonEmpty("kept book",workRef);
+    assertNonEmpty("kept book source",fetchedFrom);
+    assertIsoTimestamp("kept book at",at);
+    if(!(bytes instanceof Uint8Array)||bytes.length===0)throw new TypeError("a kept book has its text");
+    this.#database.transaction(()=>{
+      if(this.#database.prepare("SELECT 1 FROM library_book_texts WHERE work_ref=?").get(workRef)!==undefined)return;
+      this.#database.prepare(`INSERT INTO library_book_texts(work_ref,total_bytes,fetched_from,kept_at)
+        VALUES (?,?,?,?)`).run(workRef,bytes.length,fetchedFrom,at);
+      const insert=this.#database.prepare("INSERT INTO library_book_text_chunks(work_ref,chunk,bytes) VALUES (?,?,?)");
+      for(let chunk=0;chunk*BOOK_CHUNK_BYTES<bytes.length;chunk+=1)
+        insert.run(workRef,chunk,bytes.subarray(chunk*BOOK_CHUNK_BYTES,(chunk+1)*BOOK_CHUNK_BYTES));
+    });
+    return this.keptBookText(workRef);
+  }
+
+  keptBookText(workRef){
+    assertNonEmpty("kept book",workRef);
+    const row=this.#database.prepare("SELECT total_bytes FROM library_book_texts WHERE work_ref=?").get(workRef);
+    if(row===undefined)return null;
+    const chunkAt=this.#database.prepare("SELECT bytes FROM library_book_text_chunks WHERE work_ref=? AND chunk=?");
+    const length=row.total_bytes;
+    return Object.freeze({length,read:(from,want)=>{
+      const start=Math.max(0,Math.min(from,length)),end=Math.min(length,start+Math.max(0,want));
+      const out=new Uint8Array(end-start);
+      for(let chunk=Math.floor(start/BOOK_CHUNK_BYTES);chunk*BOOK_CHUNK_BYTES<end;chunk+=1){
+        const piece=new Uint8Array(chunkAt.get(workRef,chunk).bytes);
+        const base=chunk*BOOK_CHUNK_BYTES,lo=Math.max(start,base),hi=Math.min(end,base+piece.length);
+        out.set(piece.subarray(lo-base,hi-base),lo-start);
+      }
+      return out;
+    }});
   }
 
   getVenueHolding(holdingRef){

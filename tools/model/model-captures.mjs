@@ -33,14 +33,17 @@ export function recordedRequests(logEvents) {
   for (const item of logEvents) {
     let source = item?.source;
     if (typeof source === "string") try { source = JSON.parse(source); } catch { continue; }
+    // When the log was written, so each request can be placed in a Thread's day.
+    const stamp = Number(item?.timestamp ?? item?.$metadata?.timestamp);
+    const at = Number.isFinite(stamp) && stamp > 0 ? new Date(stamp).toISOString() : null;
     // World's measure of same ground (S5b): how close each exchange came, never its words.
     if (source?.event === "meaning-call") { meanings.push({ kind: source.kind ?? null, outcome: source.outcome,
-      cosine: typeof source.cosine === "number" ? source.cosine : null }); continue; }
+      cosine: typeof source.cosine === "number" ? source.cosine : null, threadId: source.threadId ?? null, at }); continue; }
     if (source?.event === "model-capture-skipped") { skipped.push({ prompt: source.prompt, chars: source.chars }); continue; }
     if (source?.event !== "model-capture" || typeof source.capture !== "string") continue;
     try { JSON.parse(source.capture); } catch { broken += 1; continue; }
     events.push({ event: "model-capture", kind: source.kind, prompt: source.prompt, depth: source.depth,
-      scope: source.scope, modelId: source.modelId, capture: source.capture });
+      scope: source.scope, modelId: source.modelId, at, capture: source.capture });
   }
   return { events, skipped, broken, meanings };
 }

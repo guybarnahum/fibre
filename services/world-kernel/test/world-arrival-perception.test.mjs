@@ -11,7 +11,7 @@ import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs"
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import {evaluateSalience} from "../src/salience-gate.mjs";
 import {embodimentSpecificationDigest} from "../src/embodiment-domain.mjs";
-import {booksToContinueAt,booksWithinReach,displayHoldings,glanceItems,LIBRARY_SHELVES,readHolding} from "../src/scene-glance.mjs";
+import {booksToContinueAt,booksWithinReach,displayHoldings,glanceItems,keepBookText,keepOneMoreBook,LIBRARY_SHELVES,readHolding} from "../src/scene-glance.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -519,6 +519,33 @@ test("a Thread reads the actual pages from where it stopped, and its place in th
       "what the Thread came to know from the book is not World fact");
     assert.deepEqual(ctx.store.listLearning(ctx.ids[0],{since:AT,until:"2026-10-20T00:00:00.000Z"}).map(item=>item.learning),
       ["discovery","depth"],"a first meeting with a subject was not a discovery, or going on with the book not a step deeper");
+  }finally{ctx.close();}
+});
+
+test("the library keeps its own copy of a book, and its pages are read from it when the catalogue is down",async()=>{
+  const ctx=setup();
+  try{
+    const [holding,other]=await displayHoldings({venueRef:"venue_verified_cafe",
+      catalogue:{async listWorks(){return WORKS;}},experienceStore:ctx.store,at:AT});
+    const text=new TextEncoder().encode("*** START OF THE PROJECT GUTENBERG EBOOK X ***\n"+"A long book. ".repeat(200_000));
+    let up=true,fetched=0;
+    const catalogue={
+      async fetchText(){if(!up)throw new Error("book text 503");fetched+=1;return {bytes:text,fetchedFrom:"www.gutenberg.org"};},
+      async readPassage({kept}){if(kept===null)throw new Error("book text 503");
+        return {text:new TextDecoder().decode(kept.read(1_999_990,40)),nextByte:2_000_030};},
+    };
+    assert.equal(await keepBookText({catalogue,experienceStore:ctx.store,holding,at:AT}),true,"the library kept no copy");
+    assert.equal(await keepBookText({catalogue,experienceStore:ctx.store,holding,at:AT}),false,"a kept book was fetched again");
+    assert.equal(fetched,1,"a kept book was fetched again");
+    up=false;
+    const reading=await readHolding({thread:ctx.threads.get(ctx.ids[0]),situation:ctx.situations[0],
+      holdingRef:holding.holdingRef,describeSelf:"A person",catalogue,experienceStore:ctx.store,
+      modelAdapter:{async invoke({input}){assert.equal(input.reading.passage,
+        new TextDecoder().decode(text.subarray(1_999_990,2_000_030)),"the kept copy gave other pages than the book's");
+        return {output:{experienceText:"It holds me.",keepReading:true}};}}});
+    assert.ok(reading!==null,"a kept book could not be read while the catalogue was down");
+    assert.equal(await keepOneMoreBook({catalogue,experienceStore:ctx.store,holdings:[holding,other],at:AT}),false,
+      "a book that cannot be fetched now was counted as kept");
   }finally{ctx.close();}
 });
 

@@ -227,11 +227,36 @@ export async function admitGlance({thread,situation,arrivalStory=null,items,appr
     focusEncounterRef=encounter.encounterId;
   }
   return experienceStore.recordThreadGlance({threadId:thread.threadId,situationId:situation.situationId,
-    occurredAt:at,items:items.map(({kind,ref})=>({kind,ref})),focus:appraisal.focus,focusEncounterRef});
+    occurredAt:at,items:items.map(({kind,ref,yours})=>({kind,ref,...(kind==="book"?{own:Boolean(yours)}:{})})),
+    focus:appraisal.focus,focusEncounterRef});
 }
 
 const PASSAGE_CHARACTERS=1500;
 const workRefOf=(work)=>`${work.source}:${work.sourceId}`;
+
+// The library keeps its own copy of a book once it can (World's, never a
+// Thread's), so its pages no longer depend on the catalogue being up. Best
+// effort: a book it cannot fetch now is tried again another time.
+export async function keepBookText({catalogue,experienceStore,holding,at}){
+  if(typeof catalogue?.fetchText!=="function"||typeof experienceStore.keepBookText!=="function")return false;
+  const workRef=workRefOf(holding.work);
+  if(experienceStore.keptBookText(workRef)!==null)return false;
+  try{
+    const {bytes,fetchedFrom}=await catalogue.fetchText({sourceId:holding.work.sourceId,textUrl:holding.work.textUrl});
+    experienceStore.keepBookText({workRef,bytes,fetchedFrom,at});
+    return true;
+  }catch(error){
+    console.warn(JSON.stringify({event:"book-text-not-kept",workRef,message:String(error?.message??error).slice(0,160)}));
+    return false;
+  }
+}
+
+// One more book within reach the library has no copy of yet, kept now, so a
+// library comes to hold its own books over time.
+export async function keepOneMoreBook({catalogue,experienceStore,holdings,at}){
+  const missing=holdings.find(holding=>experienceStore.keptBookText?.(workRefOf(holding.work))===null);
+  return missing===undefined?false:keepBookText({catalogue,experienceStore,holding:missing,at});
+}
 
 // Reading a book one has taken up: World supplies the actual pages it reaches,
 // from where this Thread left off; what it makes of them is its own. Its place
@@ -244,15 +269,19 @@ export async function readHolding({thread,situation,holdingRef,describeSelf,cata
   const workRef=workRefOf(holding.work);
   const prior=experienceStore.getThreadReading(thread.threadId,workRef);
   const fromByte=prior?.status==="finished"?null:prior?.nextByte??null;
+  const kept=experienceStore.keptBookText?.(workRef)??null;
   let passage;
   try{passage=await catalogue.readPassage({sourceId:holding.work.sourceId,textUrl:holding.work.textUrl,
-    fromByte,maxChars:PASSAGE_CHARACTERS});}
+    fromByte,maxChars:PASSAGE_CHARACTERS,kept});}
   catch(error){
     console.warn(JSON.stringify({event:"book-pages-unavailable",holdingRef,
       message:String(error?.message??error).slice(0,160)}));
     return null;
   }
-  if(!passage?.text)return null;
+  if(!passage?.text){
+    console.warn(JSON.stringify({event:"book-pages-unavailable",holdingRef,message:"no text at this place in the book"}));
+    return null;
+  }
   const book=bookItem(holding);
   const input={
     thread:{threadId:thread.threadId,name:thread.identity?.name??null,
