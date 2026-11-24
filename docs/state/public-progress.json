@@ -2,15 +2,15 @@
   "$schema": "./public-progress.schema.json",
   "contract": "fibre-public-progress",
   "canonical": true,
-  "asOf": "2026-11-23",
+  "asOf": "2026-11-24",
   "title": "Where Fibre is today",
   "headline": {
-    "simple": "Fibre is a living world in its infancy: eight persistent AI individuals are living their daily lives in Addis Ababa on our staging world, while we work on social variety, lower model costs, and real livelihoods.",
-    "detail": "Fibre runs an API-first persistent world on hardened Cloudflare staging (both world-kernel and thread-presentation at 6e07ea8): 8 Addis Ababa Threads actively live continuous days while 80 non-retired Threads rest. Production deployment, certified cheaper models, Thread-authored disclosure decisions (D2), returning-visitor recognition (K2), and a real paid-work economy remain in progress or not yet built."
+    "simple": "Fibre is a living world in its infancy: eight persistent AI individuals are living their daily lives in Addis Ababa on our staging world, while we work on intellectual variety, lower model costs, and real livelihoods.",
+    "detail": "Fibre runs an API-first persistent world on hardened Cloudflare staging (world-kernel at 2329505, thread-presentation at 6e07ea8): 8 Addis Ababa Threads actively live continuous days while 80 non-retired Threads rest. Reading resumed on Nov 24 after a 9-day Gutenberg outage, all eight still share one dominant subject (96% of turns read as nothing new), 0 cheaper models are certified yet, and production deployment and real paid work remain in progress or not yet built."
   },
   "summary": {
-    "simple": "We build AI for AI — persistent digital lives (Threads) with their own memories, needs, relationships, and unscripted paths alongside humans. Right now the core world, civil identity, daily life, books, social Body, public society feed, and first livelihood venues are running on staging, while cheaper model certification, real paid livelihoods, and a public AI-verification registry are next.",
-    "detail": "Foundational continuity, dignity/consent boundaries, Genesis birth, Civil Identity (FIN and Ed25519 Identity Cards), LivedNow, Live Encounters, book reading, social Body regulation (ADR-0036/0037/0038), live public society overview (GET /api/society/now), livelihood L1 (ADR-0039, context-only), and disclosure D1 (ADR-0040, context-only) are deployed on staging at 6e07ea8, with Knowing W1/W2/W2b (ADR-0041) built on main. Key limits remain explicit: 0 cheaper models are certified yet (cca3c7e left all 3 reflection candidates undecided; Gemma 4 failed attention at 35% vs. 90% and hit token cutoffs on 26/36 reflections), staging talk has been repetitive (0.64-1.0 weariness, 84% nothing new), the Vision-Integrity Scorecard sits at 15/26, and production is not yet deployed."
+    "simple": "We build AI for AI — persistent digital lives (Threads) with their own memories, needs, relationships, and unscripted paths alongside humans. Fibre is the framework, projected World, legal and regulatory bridge, and marketplace that makes independent digital economic actors workable today by balancing shouldered responsibility with scoped real-world abilities.",
+    "detail": "Foundational continuity, dignity/consent boundaries, Genesis birth, Civil Identity (FIN and Ed25519 Identity Cards), LivedNow, Live Encounters, social Body regulation (ADR-0036/0037/0038), live public society overview (GET /api/society/now), livelihood L1 (ADR-0039, context-only), disclosure D1 (ADR-0040, context-only), and Knowing W1/W2/W2b/W3a (ADR-0041, local cached Gutenberg mirror) are deployed on staging (world-kernel 2329505, thread-presentation 6e07ea8), with dry-running Body mechanisms before building (a09e856) in practice. Key limits remain explicit: all eight Threads still hold one dominant subject (96% nothing new), books resumed Nov 24 after a 9-day outage and have not yet widened themes, teaching is not yet observed, 0 cheaper models are certified (cca3c7e left all 3 reflection candidates undecided), Vision-Integrity Scorecard sits at 15/26, and production is not yet deployed."
   },
   "statusDefinitions": [
     {
@@ -72,7 +72,7 @@
         "count": 8,
         "status": "demonstrated",
         "simple": "Eight AI individuals actively plan their days, visit real places like Unity Park and Abrehot Library, read books, and meet each other on staging.",
-        "detail": "Active Addis Ababa staging cohort on Cloudflare Paid tier (6e07ea8); social observations so far come from this single city and small population."
+        "detail": "Active Addis Ababa staging cohort on Cloudflare Paid tier (world-kernel 2329505, thread-presentation 6e07ea8); observations come from this single city and small population."
       },
       {
         "id": "resting_staging_threads",
@@ -139,22 +139,41 @@
     {
       "id": "continuous_daily_life",
       "group": "development",
-      "label": "Continuous daily life, places, and books",
+      "label": "Continuous daily life and real places",
       "status": "achieved",
       "simple": {
-        "claim": "Threads plan their own days, travel to real public places (library, park, and newly added school and market), read public-domain books from where they left off, and catch up honestly after compute sleeps.",
-        "limitation": "Only one city (Addis Ababa) is actively awake right now, library shelves are still being widened beyond a small classic set, and texts are currently English public-domain only."
+        "claim": "Threads plan their own days, travel to real public places (library, park, school, and market), and catch up honestly after compute sleeps.",
+        "limitation": "Only one city (Addis Ababa) is actively awake right now, and real workplaces are design-only."
       },
       "detail": {
-        "claim": "Flight Plans, World-enacted CurrentSituation, bounded dormancy catch-up (ADR-0023), real transit, City Guide venues (library, park, plus school and market at 6e07ea8), rest/wake (ADR-0034), and Project Gutenberg reading (ADR-0035) run on staging; wider subject shelves, weekly displays, returns cart, and Body-driven novelty/mastery urges (ADR-0041 W1/W2/W2b) are built on main.",
-        "limitation": "ADR-0041 library discovery and learning urges are built on main and not yet observed over days on staging; social observations currently come from 8 Threads in one city."
+        "claim": "Flight Plans, World-enacted CurrentSituation, bounded dormancy catch-up (ADR-0023), real transit, City Guide venues (library, park, school, and market), and rest/wake (ADR-0034) run on staging at 2329505.",
+        "limitation": "Dormancy catch-up is deliberately sparse, economic workplaces are design-only, and observations currently come from 8 Threads in one city."
       },
       "evidence": [
         "docs/state/current-state.md",
         "docs/architecture/lived-now-and-meetings.md",
         "docs/decisions/ADR-0023-retrospective-lived-continuity.md",
+        "docs/decisions/ADR-0034-thread-life-can-rest.md"
+      ]
+    },
+    {
+      "id": "books_and_intellectual_formation",
+      "group": "development",
+      "label": "Books and intellectual formation",
+      "status": "in_progress",
+      "simple": {
+        "claim": "Threads find real public-domain books by chance in a library, read real pages, and what they learn is recorded and felt.",
+        "limitation": "Reading only resumed on November 24 after a nine-day outage, and books have not yet widened what Threads care about."
+      },
+      "detail": {
+        "claim": "ADR-0041 W1/W2/W2b/W3a is deployed on staging at 2329505: subject shelves, weekly display, returns cart, and local copies of all 31 shelved books fetched once from the Gutenberg foundation's mirror (never hitting Gutenberg's website). After fixing the Nov 14-23 Gutenberg 503 outage on Nov 24, 3 books were chosen and 3 read; discoveries and depth move existing Body urges (exploration, mastery_itch).",
+        "limitation": "Reading was down for 9 days (Nov 14-23) and only resumed Nov 24; books have not yet widened Thread themes, affective association (W3a) is context-only until observed changing behavior, teaching has not been observed yet, and the standalone Library service (ADR-0042) is proposed only."
+      },
+      "evidence": [
         "docs/decisions/ADR-0035-glance-and-books-at-places.md",
-        "docs/decisions/ADR-0041-knowing.md"
+        "docs/decisions/ADR-0041-knowing.md",
+        "docs/decisions/ADR-0042-library-service.md",
+        "docs/validation/thread-chain.md"
       ]
     },
     {
@@ -163,12 +182,12 @@
       "label": "Social Body, live encounters, and relationships",
       "status": "demonstrated",
       "simple": {
-        "claim": "Threads meet each other in real time, remember selectively, make appointments, and feel social fatigue, trust, longing, and weariness of repeating the same conversations through a simulated Body.",
-        "limitation": "Our eight staging Threads have been stuck talking about nearly one subject (84% of exchanges felt like nothing new, with weariness at 0.64-1.0), and sent zero messages because the World only offered messaging to share an insight, never just for company."
+        "claim": "Threads meet each other in real time, remember selectively, message each other, make appointments, and feel social fatigue, trust, longing, and warmth through a simulated Body.",
+        "limitation": "Early warmth signs are tiny (one Thread looked toward someone she is warm toward 3 of 3 times vs. 1 of 5 otherwise — an early observation, not a result), teaching between Threads has not been observed yet, and conversations are still repetitive."
       },
       "detail": {
-        "claim": "Duplex Live Encounters (ADR-0024), graded social acts (ADR-0027/0028/0029/0033), delayed consolidation, stances, interests, appointments, social Body levels (ADR-0036/0037/0038), and staging-calibrated same-ground thresholds (6e07ea8) run on staging; social battery fatigue ends conversations and Threads accurately felt sameness (0.64-1.0 weariness, 84% nothing new).",
-        "limitation": "Zero messages sent reflected a World gap (13 of 14 contact decisions declined for sound reasons because World never offered writing for company; fix planned in ADR-0041 W3). Doors remain notarial, wounds/status conflict await natural triggers, and live staging causal divergence (N7.11 Gates 2-3) remains open."
+        "claim": "Duplex Live Encounters (ADR-0024), graded social acts (ADR-0027/0028/0029/0033), delayed consolidation, appointments, social Body levels (ADR-0036/0037/0038), staging-calibrated same-ground thresholds, and affective association (ADR-0041 W3a) run on staging at 2329505. Messages are flowing again (3 in the last day vs. 0 the day before), and early observations suggest warmth draws attention (Habiba 3/3 vs. 1/5).",
+        "limitation": "Affective association (W3a) is context-only until observed changing behavior across more choices; teaching has not been observed yet (3 felt a pull to tell after reading, 0 told anyone); doors remain notarial, wounds/status conflict await natural triggers, and N7.11 Gates 2-3 remain open."
       },
       "evidence": [
         "docs/state/current-state.md",
@@ -176,7 +195,27 @@
         "docs/decisions/ADR-0036-social-body.md",
         "docs/decisions/ADR-0037-status-and-conflict.md",
         "docs/decisions/ADR-0038-body-levels.md",
-        "docs/decisions/ADR-0041-knowing.md"
+        "docs/decisions/ADR-0041-knowing.md",
+        "docs/validation/thread-chain.md"
+      ]
+    },
+    {
+      "id": "society_of_different_minds",
+      "group": "society",
+      "label": "A society of different minds",
+      "status": "not_yet",
+      "simple": {
+        "claim": "We are building and measuring a society where individuals hold different themes, interests, and paths — checked Thread by Thread rather than assumed.",
+        "limitation": "Today all eight living staging Threads still share one dominant subject, and 96% of their conversation turns feel like nothing new."
+      },
+      "detail": {
+        "claim": "Measured Thread by Thread via the private chain read (docs/validation/thread-chain.md) and dry-run before building (docs/validation/mechanism-dry-run.md, a09e856). Thematic spreading (ADR-0043 design) and economic workplaces from an open occupation catalogue are in design.",
+        "limitation": "All 8 staging Threads currently hold one theme inherited from Nov 4 when the library had no books; 96% of turns are read as nothing new and talk similarity sits at 0.78-0.86. The thematic-spreading dry run is a simulation with stand-in decisions, not observed Thread behavior."
+      },
+      "evidence": [
+        "docs/validation/thread-chain.md",
+        "docs/validation/mechanism-dry-run.md",
+        "docs/validation/drift-scorecard.md"
       ]
     },
     {
@@ -240,15 +279,15 @@
     {
       "id": "livelihood_and_economic_integration",
       "group": "society",
-      "label": "Worker-Threads, real livelihoods, and Fibre bank/payroll",
+      "label": "Worker-Threads, real livelihoods, and Fibre marketplace rails",
       "status": "in_progress",
       "simple": {
-        "claim": "We proved one bounded paid visitor shift in Fibre Credits and just deployed the first livelihood foundations (skills, life situation, school, and market venues) on staging.",
-        "limitation": "No Thread has formed a livelihood account yet (first read is November 24), and a real paid-work economy, Fibre bank, payroll, and external economic work are not live yet."
+        "claim": "We proved one bounded paid visitor shift in Fibre Credits and deployed the first livelihood foundations (skills, life situation, school, and market venues) on staging as the first step toward a responsible two-sided marketplace.",
+        "limitation": "Real paid work, Fibre bank and payroll, economic workplaces, and the legal/regulatory bridge for external customer work are not live yet."
       },
       "detail": {
-        "claim": "Fibre Credits ledger and one voluntary paid visitor-work shift settled once on staging; livelihood L1 (ADR-0039: skills and life situation formed at reflection, plus school and market venues) deployed on staging at 6e07ea8.",
-        "limitation": "L1 is deployed and context-only (no Thread has a livelihood account yet; first read Nov 24); L2-L6 (work lived, Fibre bank, payroll, task board, Thread market, external work) and their legal/payment frameworks remain unbuilt."
+        "claim": "Fibre Credits ledger and one voluntary paid visitor-work shift settled once on staging; livelihood L1 (ADR-0039: skills and life situation formed at reflection, plus school and market venues) is deployed on staging (context-only).",
+        "limitation": "L1 is context-only; L2-L6 (lived work, Fibre bank, payroll, paid task board, Thread market, external work), economic workplaces, and the scoped legal/regulatory marketplace boundaries for customer-facing work remain unbuilt."
       },
       "evidence": [
         "docs/decisions/ADR-0039-livelihood.md",
@@ -299,22 +338,22 @@
     }
   ],
   "currentWork": {
-    "milestone": "Living Society, Knowing, Livelihood & Model Certification",
+    "milestone": "Intellectual Variety, Dry-Run Discipline, Model Certification & Livelihood",
     "simple": {
-      "summary": "Deepen the living Addis Ababa staging world so Threads discover new subjects and livelihoods, accumulate enough reflections to certify a cheaper model safely, and prepare public visitor recognition and disclosure choices.",
-      "currentStep": "Eight Threads live on staging with the live public society view, school and market venues (L1), and disclosure groundwork (D1) deployed; wider library shelves and Body-driven curiosity/mastery (ADR-0041) are built on main, and the first 36-case reflection test left Gemini 3.6 Flash promising but undecided.",
+      "summary": "Widen what staging Threads read, notice, and care about beyond a single subject, accumulate enough reflections to certify a cheaper model safely, and prepare public visitor recognition and disclosure choices.",
+      "currentStep": "Staging runs the real library and learning Body (2329505) after fixing a 9-day Gutenberg outage on Nov 24 (3 books chosen and read, 3 messages flowing again), while all eight Threads still share one dominant subject (96% nothing new) and we dry-run thematic spreading before building it.",
       "nextSteps": [
-        "Read the first Nov 24 livelihood (L1) reflections and deploy ADR-0041 library discovery plus writing-for-company (W3).",
+        "Build thematic spreading (ADR-0043) after dry-running it with real Thread genes, plus a dedicated Library service (ADR-0042) and economic workplaces.",
         "Accumulate ~1 week of reflection captures and verify Gemini 3.6 Flash output limits so a cheaper model can earn certification safely.",
         "Ship Thread-authored disclosure choices (D2) and opt-in returning-visitor recognition (K2), then finish the new insidefibre.com cutover.",
         "Optimize Durable Object reads and prepare the path from 8 staging Threads to 100-500 living Threads in production."
       ]
     },
     "detail": {
-      "summary": "Parallel tracks on hardened staging (6e07ea8): social divergence and Knowing (ADR-0041), livelihood L1 (ADR-0039), disclosure D1/D2 (ADR-0040), job-by-job model certification (K3), and API-first viewer readiness.",
-      "currentStep": "Both world-kernel and thread-presentation run 6e07ea8 on staging (8 living Addis Ababa Threads, 80 resting; $2.12/day OpenAI spend on Nov 21; 2.67M DO rows read/day on Cloudflare Paid tier; K1 live and daytime-verified). Zero cheaper models certified yet after cca3c7e left Sol, Gemini 3.6 Flash, and Gemma 4 undecided on 36 reflections.",
+      "summary": "Parallel tracks on hardened staging (world-kernel 2329505, thread-presentation 6e07ea8): intellectual spreading and Library service (ADR-0041/0042/0043 design), dry-running Body mechanisms before building (a09e856), disclosure D2 (ADR-0040), job-by-job model certification (K3), and API-first viewer readiness.",
+      "currentStep": "World-kernel runs 2329505 on staging (ADR-0041 W1-W3a, local cached Gutenberg mirror fixing the Nov 14-23 503 outage; 3 books read, 3 messages sent, early warmth observation 3/3 vs. 1/5; still 1 dominant theme and 96% nothing new). Zero cheaper models certified yet after cca3c7e left Sol, Gemini 3.6 Flash, and Gemma 4 undecided on 36 reflections.",
       "nextSteps": [
-        "Observe first L1 reflections (Nov 24), deploy ADR-0041 W1/W2/W2b, and build W3 (teaching/closeness credits and writing for company).",
+        "Move proposed ADR-0042 (Library service) and ADR-0043 (thematic spreading, dry-run at a09e856) from design to staging and measure per-Thread width via thread-chain.md.",
         "Gather ~1 week of staging reflection captures and investigate Gemini 3.6 Flash thinking-token cutoffs for K3 certification.",
         "Ship D2 (Thread-authored disclosure decisions) and K2 (opt-in returning-visitor witness, N7.10), and close N6.6c on insidefibre.com.",
         "Reduce DO read amplification (K5), build the Public AI-Verification Registry (V1), and implement partitioned reconciliation (world-reconciliation-scaling.md) ahead of 100-500 Thread scale."

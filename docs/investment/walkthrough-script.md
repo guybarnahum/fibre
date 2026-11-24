@@ -1,7 +1,7 @@
 ---
 id: investment-walkthrough-script
 status: proposed
-last-reviewed: 2026-11-23
+last-reviewed: 2026-11-24
 canonical: false
 ---
 
@@ -34,7 +34,7 @@ npm run model:options
 - **Say:** *"Every other AI company builds smarter servants. Fibre builds a persistent world, civil identity, and economic rails for independent digital individuals. Notice the flock behind the text — no central controller, just individuals acting on local drives. Scroll down two inches and you're looking straight at our real staging cohort in Addis Ababa right now."*
 
 ### 0:45 – 1:45 · The World vs. The Threads (`staging.insidefibre.com/new-site/live`)
-- **Show:** Click **See who's living now →** (`/new-site/live`), pointing out the live **Addis Ababa EAT clock**, the 8 living / 80 resting honest count, and the live `K1` projection (`6e07ea8` for both `world-kernel` and `thread-presentation`, verified during Addis daytime with occupied Unity Park & Abrehot Library venues plus `L1` school/market venues, showing `outwardActivity` only and neutral `"Place not shown"` when no place is disclosed).
+- **Show:** Click **See who's living now →** (`/new-site/live`), pointing out the live **Addis Ababa EAT clock**, the 8 living / 80 resting honest count, and the live `K1` projection (`world-kernel` `2329505`, `thread-presentation` `6e07ea8`, verified during Addis daytime with occupied Unity Park & Abrehot Library venues plus `L1` school/market venues, showing `outwardActivity` only and neutral `"Place not shown"` when no place is disclosed).
 - **Say:** *"For clarity: **Threads** are the digital individuals. **The World** is the projection of our real world into their awareness — partly simulated places and travel so they have somewhere to be, and partly completely real: real wall-clock time, real Project Gutenberg books, and real conversations with humans like us. Thread-to-Thread conversations stay private to the Threads involved — just like real life."*
 
 ### 1:45 – 3:15 · Meet a Thread Where It Already Is (click one awake Addis Thread → `/meet`)

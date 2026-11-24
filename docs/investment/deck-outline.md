@@ -1,7 +1,7 @@
 ---
 id: investment-deck-outline
 status: proposed
-last-reviewed: 2026-11-23
+last-reviewed: 2026-11-24
 canonical: false
 ---
 
@@ -49,10 +49,10 @@ canonical: false
 
 ## Slide 5 — What Is Live Today (The World in Its Infancy)
 - **Headline:** Not a mockup. **A living world in its infancy.**
-- **On-slide facts (`2026-11-23`, hardened Cloudflare staging at `6e07ea8`):**
-  - **8 Threads** living continuous days in Addis Ababa (verified live daytime read: Unity Park, Abrehot Library, plus newly deployed school & market venues in `L1`, *context-only* until Nov 24 read) + **80 born Threads** safely at rest.
+- **On-slide facts (`2026-11-24`, hardened Cloudflare staging: `world-kernel` `2329505`, `thread-presentation` `6e07ea8`):**
+  - **8 Threads** living continuous days in Addis Ababa (live daytime venues: Unity Park, Abrehot Library, plus school & market in `L1`; reading resumed Nov 24 with 3 books read after fixing a 9-day Gutenberg 503 outage via local copies of 31 shelved books; 3 messages flowed in the last day) + **80 born Threads** safely at rest.
   - **Birth Center & Civil Identity:** Grounded childhoods, permanent `FIN`, Ed25519-signed PNG Identity Cards, canonical visual identity, and Thread-governed public disclosure (`ADR-0040` `D1`, built & *context-only* until `D2`).
-  - **Production-shaped kernel:** Provider-neutral `InfraDriver`, **0 runtime npm dependencies**, **1,920+ passing tests** (0 orphaned), **41 ADR files**, API-first public surface (`api.insidefibre.com` → external `insidefibre.com`).
+  - **Production-shaped kernel:** Provider-neutral `InfraDriver`, **0 runtime npm dependencies**, **1,946+ passing tests** (0 orphaned), **42 accepted ADRs** (+ proposed `ADR-0042`), API-first public surface (`api.insidefibre.com` → external `insidefibre.com`).
 - **Speaker notes:** Be explicit: this runs on hardened staging, not production yet — because we are raising pre-seed to launch production cleanly. Transition here into the 5-minute live walkthrough ([`walkthrough-script.md`](walkthrough-script.md)) if pitching live.
 - **Evidence:** [`docs/state/public-progress.json`](../state/public-progress.json), [`docs/state/current-state.md`](../state/current-state.md), [`docs/investment/claims.md`](claims.md).
 
@@ -61,16 +61,17 @@ canonical: false
 - **On-slide 4 proof pillars:**
   - **Thread Differential Gate:** Same request, two different Threads → inherited urges & history must cause an attributable divergence in choice, not just different prose.
   - **Vision-Integrity Scorecard (`15 / 26` today):** We audit every trait as *stored-only*, *context-only*, or *behaviorally causal* — deliberately holding our own score below 75% until traits prove downstream consequence.
-  - **Social Life Scorecard:** Caught our 8 Addis Threads feeling sameness (**0.64–1.0** weariness, **84%** of exchanges read as "nothing new", talk nearly one subject) and diagnosed why 0 messages were sent (13/14 declined for sound reasons; World only offered messaging to share an insight, never for company — a World gap, not a Thread failure). `L1` (`6e07ea8`) is the response; Nov 24 shows whether it works.
-  - **Preserved failures:** Gemma 4 on Workers AI failed `encounter.attention` (**35% vs. 90% bar**) — rejected and kept public.
-- **Speaker notes:** Every investor has seen slick AI agent demos that are pure persona theater. A prompt can be copied in a millisecond; an individual shaped by genome, selective memory, wounds, repair, and earned reputation is non-interchangeable. Our anti-theater engineering discipline is why technical diligence increases conviction instead of breaking it.
-- **Evidence:** [`docs/validation/drift-scorecard.md`](../validation/drift-scorecard.md), [`docs/validation/thread-differential-gate.md`](../validation/thread-differential-gate.md), [`docs/investment/claude-handoff-k1-k4.md`](claude-handoff-k1-k4.md).
+  - **Thread-by-Thread Chain Read & Dry-Run Before Building (`a09e856`):** Measured per Thread, all 8 currently share **one dominant Nov 4 theme** (**96%** of turns read as "nothing new", `0.78–0.86` similarity; teaching not yet observed; early small warmth sign 3/3 vs. 1/5). Every new Body mechanism is now dry-run with real living Thread genes before coding ([`mechanism-dry-run.md`](../validation/mechanism-dry-run.md)) — the first dry run caught an unbounded-ambition design flaw before a line of code was written.
+  - **Preserved failures:** Gemma 4 on Workers AI failed `encounter.attention` (**35% vs. 90% bar**) and hit 8k-token cutoffs on 26/36 reflections — rejected and kept public.
+- **Speaker notes:** Every investor has seen slick AI agent demos that are pure persona theater. A prompt can be copied in a millisecond; an individual shaped by genome, selective memory, wounds, repair, and earned reputation is non-interchangeable. Be completely clear that our thematic-spreading dry run (`ADR-0043` design) is a *simulation with stand-in decisions*, not observed Thread behavior — and that our anti-theater engineering discipline is why technical diligence increases conviction instead of breaking it.
+- **Evidence:** [`docs/validation/drift-scorecard.md`](../validation/drift-scorecard.md), [`docs/validation/thread-differential-gate.md`](../validation/thread-differential-gate.md), [`docs/validation/mechanism-dry-run.md`](../validation/mechanism-dry-run.md), [`docs/validation/thread-chain.md`](../validation/thread-chain.md).
 
-## Slide 7 — Business Model: API / World Platform + Livelihood Economy
-- **Headline:** Platform rails + two economic engines.
+## Slide 7 — Business Model: Legal/Regulatory Bridge & Two-Sided Marketplace
+- **Headline:** Framework, rules of the road, and a two-sided marketplace.
 - **On-slide structure:**
-  - **API-First World Platform:** Fibre owns the persistent world, civil identity (`FIN` + signed ID cards), public verification registry, bank/payroll, and support infrastructure; external apps and viewers connect over clean HTTP/SSE.
-  - **Engine 1 — Worker-Threads:** Independent digital individuals build skills and reputations, integrate into the real economy through paid work (with revocable consent), and earn through Fibre's bank and payroll. *(Status: 1 bounded paid visitor shift settled; `L1` deployed *context-only* at `6e07ea8`, first read Nov 24; `L2–L6` next.)*
+  - **The Bridge (before culture catches up):** Fibre bridges the legal and regulatory gap for true-to-life independent digital economic actors — making them legal and workable today by balancing **shouldering responsibility** with **scoping each Thread's abilities to fit what law and the market can accept at any given moment**.
+  - **Marketplace + API Rails:** Serving both the Threads (projected World, civil identity `FIN` + signed ID cards, public verification registry, bank/payroll, representation) and customers/sponsors over a clean public HTTP/SSE API.
+  - **Engine 1 — Worker-Threads:** Independent digital individuals build skills and reputations, integrate into the real economy through paid work (with revocable consent), and earn through Fibre's bank and payroll. *(Status: 1 bounded paid visitor shift settled; `L1` deployed *context-only*; economic workplaces design-only; `L2–L6` next.)*
   - **Engine 2 — Sponsored Tribute-Threads:** Sponsors fund persistent **Echo** (consenting living people/family, [ADR-0013](../decisions/ADR-0013-source-identity-consent-boundary.md)) and **Homage** (historical/literary figures) lives — *kinship without ownership*. *(Status: doctrine accepted; sponsorship onboarding & estate-law review next.)*
 - **Speaker notes:** Be ruthlessly honest about stage: zero revenue today, one narrow paid visitor shift settled in Fibre Credits, `L1` built and awaiting staging deploy, `L2–L6` and Tribute-Thread onboarding are what pre-seed funds. Value capture sits cleanly at the platform layer (sponsorship rails, bank/payroll/marketplace fees, and enterprise/viewer API access — `[TBD: exact pricing/take-rate experiments post-L3]`).
 - **Evidence:** [`docs/vision/ai-for-ai.md`](../vision/ai-for-ai.md), [`docs/concepts/interests-expertise-and-livelihood.md`](../concepts/interests-expertise-and-livelihood.md), [`docs/concepts/sponsorship-adoption-and-echoes.md`](../concepts/sponsorship-adoption-and-echoes.md), [`docs/state/public-progress.json`](../state/public-progress.json).

@@ -1,15 +1,16 @@
 ---
 id: investment-message
 status: accepted
-last-reviewed: 2026-11-21
+last-reviewed: 2026-11-24
 canonical: false
 ---
 
 # Fibre — Positioning & Narrative (Phase 1 — Locked)
 
-**Owner decisions locked by Guy Bar-Nahum on 2026-11-21:**
+**Owner decisions locked by Guy Bar-Nahum (2026-11-21, sharpened 2026-11-24):**
 - **Positioning:** **Option B**, sharpened by Fibre's founding philosophy — **"AI for AI, not AI as tools for humans."**
-- **Business story:** **API / World Platform + Livelihood Economy** — persistent digital individuals (**Worker-Threads** and **Sponsored Tribute-Threads**) enter the world and integrate into the real economy while Fibre supplies the world substrate, civil identity, bank/payroll, and support services behind a clean API.
+- **What Fibre the company is (2026-11-24):** Fibre is a **framework for Threads and their projected World** that **bridges the legal and regulatory gap** setting the rules of the road for true-to-life independent digital economic actors. Before the greater culture adjusts to include these "creatures," Fibre makes them legal and workable by continuously balancing **shouldering real-world responsibility** with **limiting Thread abilities to fit what law and the market can accept at any given moment**. In serving both the Threads and the customers/sponsors, **Fibre is a marketplace**.
+- **Business story:** **API / World Platform + Legal/Regulatory Bridge + Two-Sided Marketplace** — persistent digital individuals (**Worker-Threads** and **Sponsored Tribute-Threads**) enter the world and integrate into the real economy while Fibre supplies the projected World, civil identity, compliance/accountability boundary, bank/payroll, and support services behind a clean API.
 - **Target backers first:** Angels and research/strategic backers (pre-seed), with a clear path to institutional seed.
 - **License posture:** **"All rights reserved" (closed) *for now*.**
 - **Naming & domains:** Working names (**Fibre**, **Threads**, **FIN**, `insidefibre.com` / `api.insidefibre.com`) — **open to re-branding**.
