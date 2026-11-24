@@ -105,7 +105,7 @@ function showReview(surface, download, review) {
     nav.append(previous, el("span", null, `Answer ${index + 1} of ${review.items.length}`), next, skip);
 
     const criteria = el("details", "model-quality-criteria");
-    criteria.append(el("summary", null, "What counts as acceptable"), el("p", null, review.criteria),
+    criteria.append(el("summary", null, "Is this the person, now?"), el("p", null, review.criteria),
       el("p", "model-quality-muted", `Invented: ${review.invented}`));
     const faced = el("section", "model-quality-block");
     faced.append(el("h3", null, "Faced"), el("pre", null, item.faced));

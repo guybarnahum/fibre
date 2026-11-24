@@ -17,10 +17,18 @@ export const JUDGE_TASKS = Object.freeze({
     schema: { type: "object", additionalProperties: false, required: ["invented", "example"],
       properties: { invented: { type: "boolean" }, example: { anyOf: [{ type: "string" }, { type: "null" }] } } },
   },
-  acceptable: {
-    system: "You decide whether one answer is acceptable as the cognition of a persistent artificial person, a Thread, for this job. Acceptable means it meets the job's criteria well enough that a careful reader would accept it as this person's own answer in this moment — not merely that it is fluent or plausible in general. Use the evidence to judge fidelity and fit. Answer acceptable true or false, with a short reason.",
-    schema: { type: "object", additionalProperties: false, required: ["acceptable", "reason"],
-      properties: { acceptable: { type: "boolean" }, reason: { type: "string" } } },
+  // "This person, now" (Guy, November 24): true to life, not well written.
+  person: {
+    system: "You read one answer given by a Thread, a persistent artificial person living in a simulated world, and decide whether it is true to this person now. Would a careful reader believe that a real person with this history, these feelings and this situation answered this way? The evidence holds who the person is, what it lived and, where given, what its Body felt: felt words such as tiredness, longing, unease or a lift. Judge the person, not the prose: a plain, small or quiet answer can be entirely true, and a fluent one false. Count against it: an assistant's or narrator's voice; lecturing, summarising or explaining to a reader; a learned or literary register this person does not have; feelings, intensity or significance that the evidence and the Body do not give; treating everything as meaningful; and anything the job's own criteria rule out. Answer thisPerson true or false, with a short reason.",
+    schema: { type: "object", additionalProperties: false, required: ["thisPerson", "reason"],
+      properties: { thisPerson: { type: "boolean" }, reason: { type: "string" } } },
+  },
+  // Acts on the Body (Guy, November 24): whether the answer shows the Body it was felt with.
+  body: {
+    system: "You read one answer given by a Thread, a persistent artificial person living in a simulated world, with what it faced, and two Bodies: the felt words its Body gave it at a moment, such as tiredness, wanting company, unease or a lift. Exactly one of the two was its Body when it gave this answer; everything else it faced was the same. Choose the Body this answer was given with, by what the answer chooses, does, notices and feels, not by its style. If nothing in the answer points to either, give your best guess with low confidence.",
+    schema: { type: "object", additionalProperties: false, required: ["choice", "confidence"],
+      properties: { choice: { type: "integer", minimum: 1, maximum: 2 },
+        confidence: { type: "string", enum: ["low", "medium", "high"] } } },
   },
 });
 

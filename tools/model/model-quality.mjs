@@ -1,10 +1,12 @@
 // What a good answer is, measured on recorded requests of one cognitive job
-// for each candidate model — the standard accepted by Guy on November 8,
-// 2026 (docs: claude/model-quality-criteria-proposal.md in the project):
-// valid, attributable, invariant, credible over the day, readable. No model
-// is the reference; no judge reads its own model's answers.
+// for each candidate model — the standard accepted by Guy on November 24,
+// 2026 (docs/validation/model-certification.md): a model is good enough for a
+// job when the Threads would be at least as true to life with it as they are
+// now. Each candidate is compared with the reference, the model the job runs
+// on now (--reference to name another), whose own answers are measured the
+// same way; no judge reads its own model's answers.
 //
-//   npm run model:quality -- --prompt encounter.attention --models openai:gpt-5.6-sol,openai:gpt-5.6-terra
+//   npm run model:quality -- --prompt encounter.attention --models openai:gpt-5.6-terra,google:gemini-3.6-flash
 //
 // Answers and verdicts are cached, so a re-run pays only for what is new.
 // --fresh <model,...> asks those models again (after their adapter changed);
@@ -21,18 +23,22 @@ import { loadDeploymentManifest, resolveServiceDeployment } from "../deployment/
 import { reasoningIntegrationFor, selectReasoningIntegration } from "../../infra/deployments/integration-selection.mjs";
 import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
-import { CERTIFICATIONS_PATH, EMPTY_CERTIFICATIONS, parseModelSpec, recordCertifications } from "../../infra/deployments/model-certifications.mjs";
+import { CERTIFICATIONS_PATH, EMPTY_CERTIFICATIONS, cognitionSettings, parseModelSpec, recordCertifications } from "../../infra/deployments/model-certifications.mjs";
 import { judgesFor } from "./model-judges.mjs";
-import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, scopeOf, scoringJudges,
-  SHOWN_WITHOUT_ANSWER } from "./model-quality-criteria.mjs";
+import { bodyLineup, bodyOf, dayAlarms, decision, defectText, goodEnough, interval, jobOf, lineup, modelCaused, otherBody,
+  perturbed, ratesOf, scopeOf, scoringJudges, SHOWN_WITHOUT_ANSWER, steadyDecision, withBody, withoutBody } from "./model-quality-criteria.mjs";
+import { centroid, closenessToOthers, meaningOf } from "../ops/thread-chain.mjs";
+import { createCloudflareEmbeddingAdapter } from "../../integrations/ai/embedding/cloudflare.mjs";
 import { agreement, readReview, readVerdicts, REVIEW_KIND, testReading } from "../../apps/admin-dashboard/model-quality-review.mjs";
 
 const MIN_CASES = 30;
 const CANDIDATE_OUTPUT_TOKENS = 8000;
 const REVIEW_ANSWERS = 30;
+// What the owner is asked of each answer in a blind review, as the judges are.
+const THIS_PERSON = "True to this person, now: would a careful reader believe that a real person with this history, these feelings and this situation answered this way? Not whether it is well written.";
 
 function args(argv) {
-  const options = { prompt: null, models: ["openai:gpt-5.6-sol"], judges: ["claude-opus-5-5", "gpt-5.6-sol"],
+  const options = { prompt: null, models: [], judges: ["claude-opus-5-5", "gpt-5.6-sol"], reference: null,
     limit: 200, concurrency: 4, evidence: ".fibre/infra-measure", agreementOnly: false, fresh: [], allJudges: false };
   for (let index = 0; index < argv.length; index += 1) {
     const [name, inline] = argv[index].split("=", 2);
@@ -41,6 +47,7 @@ function args(argv) {
     const value = inline ?? argv[++index];
     if (name === "--prompt") options.prompt = value;
     else if (name === "--models") options.models = value.split(",");
+    else if (name === "--reference") options.reference = value;
     else if (name === "--judges") options.judges = value.split(",");
     else if (name === "--fresh") options.fresh = value.split(",");
     else if (name === "--limit") options.limit = Number(value);
@@ -49,14 +56,24 @@ function args(argv) {
     else throw new Error(`unknown option ${name}`);
   }
   if (!options.prompt || jobOf(options.prompt) === null) {
-    throw new Error("usage: model:quality -- --prompt <job> [--models openai:<model>,google:<model>,cloudflare:<@cf model>] [--judges claude-opus-5-5,gpt-5.6-sol] [--fresh <model,...>]");
+    throw new Error("usage: model:quality -- --prompt <job> [--models openai:<model>,google:<model>,cloudflare:<@cf model>] [--reference <model>] [--judges claude-opus-5-5,gpt-5.6-sol] [--fresh <model,...>]");
   }
-  // A candidate is a model at its settings; its label (model+settings) names it throughout the run.
-  options.models = options.models.map((item) => {
-    const spec = parseModelSpec(item);
-    return { provider: spec.provider, model: spec.label, modelId: spec.model, settings: spec.settings };
-  });
   return options;
+}
+
+// A candidate is a model at its settings; its label (model+settings) names it throughout the run.
+function candidate(spec) {
+  const parsed = parseModelSpec(spec);
+  return { provider: parsed.provider, model: parsed.label, modelId: parsed.model, settings: parsed.settings };
+}
+
+// The model the job runs on now: its own route, or the port's default (whose
+// settings the run applies as the World does).
+function runsOnNow(integrations, prompt) {
+  const routed = integrations[String(prompt).split("@")[0]];
+  if (routed?.kind === "ai.reasoning") return `${routed.provider}:${routed.config.model}${Object.entries(cognitionSettings(routed.config))
+    .map(([key, value]) => `+${key}=${value}`).join("")}`;
+  return `${integrations.encounter.provider}:${integrations.encounter.config.model}`;
 }
 
 const digest = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
@@ -82,7 +99,11 @@ async function main() {
   if (options.agreementOnly) return;
 
   const manifest = await loadDeploymentManifest(join(repoRoot, "infra/deployments/environments/cloudflare.yaml"));
-  const base = resolveServiceDeployment(manifest, "world-kernel").integrations.encounter;
+  const integrations = resolveServiceDeployment(manifest, "world-kernel").integrations;
+  const base = integrations.encounter;
+  // The reference is measured like every candidate, and first.
+  const reference = candidate(options.reference ?? runsOnNow(integrations, options.prompt));
+  options.models = [reference, ...options.models.map(candidate).filter((item) => item.model !== reference.model)];
   const adapters = new Map();
   const adapterFor = (model, provider = "openai") => {
     // A candidate gets room for the whole answer: a reflection runs long, and
@@ -100,7 +121,7 @@ async function main() {
 
   const { found } = await captures(resolve(repoRoot, options.evidence), options.prompt);
   const requests = found.slice(-options.limit);
-  console.log(`${options.prompt}: ${requests.length} recorded requests · models ${options.models.map((m) => m.model).join(", ")} · judges ${judges.map((j) => j.model).join(", ")}`);
+  console.log(`${options.prompt}: ${requests.length} recorded requests · reference ${reference.model} · candidates ${options.models.slice(1).map((m) => m.model).join(", ") || "none"} · judges ${judges.map((j) => j.model).join(", ")}`);
   const panel = judges.map((j) => j.model).filter((name) => !options.models.some((m) => m.model === name));
   console.log(panel.length ? `scored by the judges that read every model: ${panel.join(", ")}`
     : "no judge reads every model: each model is scored by the judges that read it");
@@ -130,15 +151,23 @@ async function main() {
         ...(live ? { firstWordsMs: result.firstWordsMs, totalMs: result.totalMs } : {}) }),
         (error) => ({ error: String(error?.message ?? error).slice(0, 200) })),
     { fresh: options.fresh.includes(model) });
+  // Where the job is given the Body, each request is also asked felt with
+  // another moment's Body: whether the answer changes with it is measured.
+  const bodyPool = requests.map((event) => ({ scope: scopeOf(options.prompt, event.input), lines: bodyOf(event.input)?.lines ?? null }))
+    .filter((entry) => entry.lines);
   const answers = new Map();
   for (const { provider, model } of options.models) {
     let done = 0;
     answers.set(model, await pool(requests, options.concurrency, async (event) => {
       const original = await ask(model, provider, event.input);
       const shuffled = job.unordered.length === 0 ? null : await ask(model, provider, perturbed(options.prompt, event.input));
+      const requestKey = digest(event.input).slice(0, 16);
+      const other = otherBody({ input: event.input, scope: scopeOf(options.prompt, event.input), requestKey, pool: bodyPool });
+      const felt = other === null || original.error ? null : await ask(model, provider, withBody(event.input, other));
       progress(`answers ${model} ${++done}/${requests.length}`);
       return { event, input: event.input, output: original.output, error: original.error, cost: original.cost,
-        firstWordsMs: original.firstWordsMs, perturbedOutput: shuffled?.output };
+        firstWordsMs: original.firstWordsMs, perturbedOutput: shuffled?.output,
+        body: felt?.output === undefined ? null : { own: bodyOf(event.input).lines, other, output: felt.output } };
     }));
   }
 
@@ -185,6 +214,7 @@ async function main() {
     }
   }
 
+  const textOf = (input, output) => job.items(input, output).map((entry) => entry.text).filter(Boolean).join("\n") || null;
   for (const { model } of options.models) {
     const answered = answers.get(model).filter((item) => !item.error);
     const failed = answers.get(model).length - answered.length;
@@ -203,7 +233,7 @@ async function main() {
         // A gist answers to its own memory; other answers to everything the job was given.
         const evidence = entry.siblings ? { thread: entry.request.input.thread, memory: entry.source } : entry.request.input;
         const fidelity = await verdict(judge, "fidelity", { whatCounts: job.faithful, evidence, answer: entry.text });
-        const acceptable = await verdict(judge, "acceptable", { criteria: job.readable, whatCountsAsInvented: job.faithful,
+        const person = await verdict(judge, "person", { criteria: job.readable, whatCountsAsInvented: job.faithful,
           evidence, answer: entry.text });
         const lineupMaterial = (answer) => ({ whatEachSourceIs: job.lineupOf, faced: round.faced, answer,
           sources: Object.fromEntries(round.sources.map((source, index) => [index + 1, source])) });
@@ -212,10 +242,10 @@ async function main() {
         // points to the source. Shared by every model, so judged once.
         const control = round === null ? null : await verdict(judge, "attribute",
           lineupMaterial("(not shown: choose the most likely source from what was faced alone)"));
-        judgeCost += [fidelity, acceptable, attribution, control].reduce((sum, result) => sum + spent(result), 0);
+        judgeCost += [fidelity, person, attribution, control].reduce((sum, result) => sum + spent(result), 0);
         const right = (result) => result?.verdict ? result.verdict.choice - 1 === round.truth : null;
         results[judge.model] = { invented: fidelity.verdict?.invented ?? null, example: fidelity.verdict?.example ?? null,
-          acceptable: acceptable.verdict?.acceptable ?? null, why: acceptable.verdict?.reason ?? null,
+          person: person.verdict?.thisPerson ?? null, why: person.verdict?.reason ?? null,
           correct: right(attribution), withoutAnswer: right(control), choices: round?.sources.length ?? null };
       }
       progress(`judges reading ${model} ${++read}/${items.length}`);
@@ -223,7 +253,29 @@ async function main() {
         context: entry.siblings ? entry.source.rememberedContent ?? entry.source : entry.faced };
     });
 
-    // Scores, with intervals; "too few" below MIN_CASES.
+    // Acts on the Body: each answer, and its counterpart felt with another
+    // moment's Body, read against the two Bodies.
+    const felt = answered.filter((item) => item.body !== null);
+    let bodyRead = 0;
+    const bodyByRequest = await pool(felt, options.concurrency, async (item) => {
+      const requestKey = digest(item.input).slice(0, 16), faced = withoutBody(item.input);
+      const votes = [];
+      for (const [givenWith, output] of [["own", item.output], ["other", item.body.output]]) {
+        const answer = textOf(givenWith === "own" ? item.input : withBody(item.input, item.body.other), output);
+        if (answer === null) continue;
+        const { material, truth } = bodyLineup({ faced, answer, own: item.body.own, other: item.body.other, givenWith, requestKey });
+        for (const judge of readers.filter((reader) => scorers.includes(reader.model))) {
+          const result = await verdict(judge, "body", material);
+          judgeCost += spent(result);
+          if (result?.verdict) votes.push(result.verdict.choice - 1 === truth);
+        }
+      }
+      progress(`judges reading ${model}'s Body ${++bodyRead}/${felt.length}`);
+      return { request: requestKey, votes };
+    });
+    const bodyVotes = bodyByRequest.flatMap((item) => item.votes);
+
+    // What it measures, before it is compared with the reference.
     const tally = (pick) => { const values = judged.flatMap(pick).filter((v) => v !== null && v !== undefined);
       return [values.filter(Boolean).length, values.length]; };
     const attributed = Object.fromEntries(readers.map((judge) => [judge.model, tally((row) => [row.results[judge.model]?.correct])]));
@@ -231,58 +283,95 @@ async function main() {
     const chance = mean(judged.flatMap((row) => Object.values(row.results).map((value) => value.choices ? 1 / value.choices : null)));
     const invented = Object.fromEntries(readers.map((judge) => [judge.model, tally((row) => [row.results[judge.model]?.invented])]));
     const decided = answered.filter((item) => item.perturbedOutput !== undefined);
-    const invariant = [decided.filter((item) => decision(options.prompt, item.output) === decision(options.prompt, item.perturbedOutput)).length, decided.length];
-    // Per answer: invented or acceptable only when every scoring judge says so.
+    const steady = (item) => steadyDecision(options.prompt, item.output) === steadyDecision(options.prompt, item.perturbedOutput);
+    const invariant = [decided.filter(steady).length, decided.length];
+    // Per answer: invented or true to the person only when every scoring judge says so.
     const scored = (row) => scorers.map((name) => row.results[name]).filter(Boolean);
     const every = (field, value) => { const rows = judged.map((row) => scored(row)
       .map((result) => result[field]).filter((v) => v !== null && v !== undefined)).filter((votes) => votes.length > 0);
       return [rows.filter((votes) => votes.every((vote) => vote === value)).length, rows.length]; };
-    const gains = judged.flatMap((row) => {
-      const both = scored(row).filter((r) => r.correct !== null && r.withoutAnswer !== null);
-      return both.length === 0 ? [] : [mean(both.map((r) => Number(r.correct))) - mean(both.map((r) => Number(r.withoutAnswer)))];
-    });
-    const nothing = [answered.filter((item) => job.nothing(item.output)).length, answered.length];
-    const result = {
-      model, answered: answered.length, failed, costPerCall: mean(answered.map((item) => item.cost)),
-      defects: [defects.filter((list) => list.length > 0).length, answered.length],
-      defectExamples: [...new Set(defects.flat())].slice(0, 5),
-      invented, attributed, unaided, chance, invariant, nothingRate: nothing, alarms: dayAlarms(options.prompt, answered),
-      acceptable: every("acceptable", true),
-      tooFew: answered.length < MIN_CASES,
+    // The same, answer by answer, so a candidate is compared with the
+    // reference on the same requests.
+    const rowKey = (row) => `${digest(row.request.input).slice(0, 16)}|${row.key}`;
+    const perAnswer = (score) => Object.fromEntries(judged.map((row) => [rowKey(row), score(scored(row))])
+      .filter(([, value]) => Number.isFinite(value)));
+    const allSay = (field, value) => (results) => { const votes = results.map((r) => r[field]).filter((v) => v !== null && v !== undefined);
+      return votes.length === 0 ? null : Number(votes.every((vote) => vote === value)); };
+    const gainOf = (results) => { const both = results.filter((r) => r.correct !== null && r.withoutAnswer !== null);
+      return both.length === 0 ? null : mean(both.map((r) => Number(r.correct))) - mean(both.map((r) => Number(r.withoutAnswer))); };
+    const pairedGains = perAnswer(gainOf);
+    const gains = Object.values(pairedGains);
+    const paired = {
+      person: perAnswer(allSay("person", true)),
+      gains: pairedGains,
+      correct: perAnswer((results) => mean(results.map((r) => r.correct).filter((v) => v !== null).map(Number))),
+      invariant: Object.fromEntries(decided.map((item) => [digest(item.input).slice(0, 16),
+        Number(steady(item))])),
+      body: Object.fromEntries(bodyByRequest.filter((item) => item.votes.length > 0)
+        .map((item) => [item.request, mean(item.votes.map(Number))])),
     };
-    result.goodEnough = goodEnough(options.prompt, { defects: result.defects, invented: every("invented", true), gains,
-      correct: scorers.map((name) => attributed[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]), chance,
-      unaided: shownWithout ?? scorers.map((name) => unaided[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]),
+    const sum = (names, of) => names.map((name) => of[name] ?? [0, 0]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]);
+    const ours = defects.filter((list) => list.length > modelCaused(list).length).length;
+    const measures = {
       cases: answered.length,
-      invariant: decided.length === 0 ? null : invariant, alarms: result.alarms, acceptable: result.acceptable,
-      ...(live ? { firstWordsMs: answered.map((item) => item.firstWordsMs).filter(Number.isFinite) } : {}) });
-    if (live) result.firstWords = result.goodEnough.tests.at(-1).detail;
-    result.scoredBy = scorers;
-    report.models.push(result);
+      defects: [defects.filter((list) => modelCaused(list).length > 0).length, answered.length],
+      ourDefects: [ours, answered.length],
+      invented: every("invented", true),
+      body: bodyVotes.length === 0 ? null : [bodyVotes.filter(Boolean).length, bodyVotes.length],
+      rates: ratesOf(options.prompt, answered.map((item) => item.output)),
+      alarms: dayAlarms(options.prompt, answered),
+      person: every("person", true),
+      gains, correct: sum(scorers, attributed), chance,
+      unaided: shownWithout ?? sum(scorers, unaided),
+      voice: null,
+      invariant: decided.length === 0 ? null : invariant,
+      ...(live ? { firstWordsMs: answered.map((item) => item.firstWordsMs).filter(Number.isFinite) } : {}),
+      paired,
+    };
+    report.models.push({
+      model, answered: answered.length, failed, costPerCall: mean(answered.map((item) => item.cost)),
+      defectExamples: [...new Set(defects.flat().map(defectText))].slice(0, 5),
+      invented, attributed, unaided, measures, scoredBy: scorers, readers: readers.map((judge) => judge.model),
+      tooFew: answered.length < MIN_CASES,
+      alsoRead: Object.fromEntries(readers.filter((judge) => !scorers.includes(judge.model))
+        .map((judge) => [judge.model, tally((row) => [row.results[judge.model]?.person])])),
+      judged: judged.map((row) => ({ key: row.key, request: digest(row.request.input).slice(0, 16),
+        scope: scopeOf(options.prompt, row.request.input), text: row.text,
+        context: row.context, scene: scene(row.request.input, row.context), results: row.results })),
+    });
+  }
 
-    console.log(`\n${model}${result.tooFew ? " — too few cases to decide" : ""}`);
-    console.log(`  cost ${result.costPerCall === null ? "unknown" : `$${(result.costPerCall * 1000).toFixed(2)} per 1,000 calls`}${failed ? ` · ${failed} requests failed` : ""}`);
+  // Not one voice: how close in meaning different Threads' answers are, per
+  // Thread, with each model. Threads only; a World job speaks for no one.
+  const voices = await voicesOf({ prompt: options.prompt, out, models: report.models, answers, textOf });
+  for (const m of report.models) m.measures.voice = voices?.[m.model] ?? null;
+
+  // Verdicts, each candidate against the reference.
+  const referenceMeasures = report.models.find((m) => m.model === reference.model).measures;
+  for (const m of report.models) {
+    const isReference = m.model === reference.model;
+    m.goodEnough = goodEnough(options.prompt, m.measures, isReference ? null : referenceMeasures);
+    if (live) m.firstWords = m.goodEnough.tests.at(-1).detail;
+    const { measures } = m;
+    console.log(`\n${m.model}${isReference ? " — the reference: the model this job runs on now" : ""}${m.tooFew ? " — too few cases to decide" : ""}`);
+    console.log(`  cost ${m.costPerCall === null ? "unknown" : `$${(m.costPerCall * 1000).toFixed(2)} per 1,000 calls`}${m.failed ? ` · ${m.failed} requests failed` : ""}`);
     // Why answers failed matters as much as how many: a timeout, the schema missed, an account limit.
     const reasons = new Map();
-    for (const item of answers.get(model)) if (item.error) reasons.set(item.error, (reasons.get(item.error) ?? 0) + 1);
+    for (const item of answers.get(m.model)) if (item.error) reasons.set(item.error, (reasons.get(item.error) ?? 0) + 1);
     for (const [reason, count] of [...reasons].sort((a, b) => b[1] - a[1]).slice(0, 3)) console.log(`  failed ${count}×: ${reason}`);
-    console.log(`  valid: defects in ${share(result.defects)}${result.defectExamples.length ? ` (${result.defectExamples.join("; ")})` : ""}`);
-    for (const judge of readers) console.log(`  invented a fact (${judge.model}): ${share(invented[judge.model])}`);
-    for (const judge of readers) console.log(`  attributable (${judge.model}): ${share(attributed[judge.model])} · without the answer ${share(unaided[judge.model])} · chance ${percent(chance)}`);
-    console.log(`  invariant: ${share(invariant)} · "nothing" chosen ${share(nothing)}`);
-    console.log(`  day alarms: ${result.alarms.length ? result.alarms.join("; ") : "none"}`);
-    console.log(`  acceptable (${scorers.join(" and ")}): ${share(result.acceptable)}`);
-    for (const judge of readers) if (!scorers.includes(judge.model)) {
-      console.log(`  also read by ${judge.model} (a candidate, not scored): acceptable ${share(tally((row) => [row.results[judge.model]?.acceptable]))}`);
-    }
-    console.log(`  GOOD ENOUGH FOR FIBRE: ${result.goodEnough.overall.toUpperCase()}`);
-    for (const test of result.goodEnough.tests) {
+    console.log(`  broken rules in ${share(measures.defects)}${m.defectExamples.length ? ` (${m.defectExamples.join("; ")})` : ""}`);
+    for (const judge of m.readers) console.log(`  invented a fact (${judge}): ${share(m.invented[judge])}`);
+    if (shownWithout === null) for (const judge of m.readers) console.log(`  shows whose answer (${judge}): ${share(m.attributed[judge])} · without the answer ${share(m.unaided[judge])} · chance ${percent(measures.chance)}`);
+    if (measures.body) console.log(`  the Body it was given with, picked out: ${share(measures.body)} (chance 50%)`);
+    console.log(`  rates: ${Object.entries(measures.rates).map(([name, counts]) => `${name} ${share(counts)}`).join(" · ") || "none for this job"}`);
+    console.log(`  steady: ${share(measures.invariant ?? [0, 0])}`);
+    console.log(`  this person, now (${m.scoredBy.join(" and ")}): ${share(measures.person)}`);
+    for (const [judge, counts] of Object.entries(m.alsoRead)) console.log(`  also read by ${judge} (a candidate, not scored): this person, now ${share(counts)}`);
+    console.log(`  GOOD ENOUGH FOR FIBRE: ${m.goodEnough.overall.toUpperCase()}`);
+    for (const test of m.goodEnough.tests) {
       const { value, bar } = testReading(test);
       console.log(`    ${test.verdict.padEnd(9)} ${test.test}${value ? ` ${value}` : ""}${bar ? ` (bar ${bar})` : ""}${test.detail ? ` — ${test.detail}` : ""}`);
     }
-    result.judged = judged.map((row) => ({ key: row.key, request: digest(row.request.input).slice(0, 16),
-      scope: scopeOf(options.prompt, row.request.input), text: row.text,
-      context: row.context, scene: scene(row.request.input, row.context), results: row.results }));
   }
 
   // The owner's blind read of a whole morning, in time order, for each model.
@@ -313,13 +402,15 @@ async function main() {
   const reviewId = `${options.prompt}-${stamp}`;
   await writeFile(join(out, `review-${reviewId}.json`), JSON.stringify({
     kind: REVIEW_KIND, id: reviewId, prompt: options.prompt, promptVersion: prompt.version, createdAt: new Date().toISOString(),
-    criteria: job.readable, invented: job.faithful, judges: report.judges, requests: requests.length,
+    criteria: `${THIS_PERSON}\n\nThis job's own criteria: ${job.readable}`, invented: job.faithful, judges: report.judges,
+    requests: requests.length, reference: reference.model,
     scorecard: report.models.map((m) => ({ model: m.model, answered: m.answered, failed: m.failed, costPerCall: m.costPerCall,
-      acceptable: m.acceptable, alarms: m.alarms, goodEnough: m.goodEnough })),
+      acceptable: m.measures.person, alarms: m.measures.alarms, goodEnough: m.goodEnough })),
+    // The owner's accept or reject is set beside the judges' "this person, now".
     items: sample.map((row) => ({ id: row.id, model: row.model,
       faced: row.scene, answer: row.text,
       judges: Object.fromEntries(Object.entries(row.results).map(([judge, r]) =>
-        [judge, { acceptable: r.acceptable, why: r.why, invented: r.invented, example: r.example }])) })),
+        [judge, { acceptable: r.person, why: r.why, invented: r.invented, example: r.example }])) })),
   }, null, 2));
   report.judgeCost = judgeCost;
   for (const [model, errors] of judgeErrors) {
@@ -338,8 +429,10 @@ async function main() {
     ...(({ provider, modelId, settings }) => ({ provider, model: modelId, ...(Object.keys(settings).length ? { settings } : {}) }))(
       options.models.find((item) => item.model === m.model)),
     verdict: m.tooFew ? "undecided" : m.goodEnough.overall,
+    ...(m.model === reference.model ? { reference: true } : { comparedWith: reference.model }),
     tests: Object.fromEntries(m.goodEnough.tests.map((test) => [test.test, test.verdict])),
-    acceptable: rate(m.acceptable), scoredBy: m.scoredBy, nothingChosen: rate(m.nothingRate),
+    thisPerson: rate(m.measures.person), scoredBy: m.scoredBy,
+    rates: Object.fromEntries(Object.entries(m.measures.rates).map(([name, counts]) => [name, rate(counts)?.share ?? null])),
     costPer1000Calls: m.costPerCall === null ? null : Math.round(m.costPerCall * 1000 * 100) / 100,
     ...(m.firstWords ? { firstWords: m.firstWords } : {}),
     requests: m.answered, failed: m.failed, certifiedAt: stamp.slice(0, 10), evidence: `quality-${options.prompt}-${stamp}.json`,
@@ -347,6 +440,38 @@ async function main() {
   console.log(`certifications: ${CERTIFICATIONS_PATH} updated (${measured.map((m) => `${m.model} ${m.tooFew ? "undecided" : m.goodEnough.overall}`).join(", ")}); commit it`);
   console.log(`\njudges spent ≈ $${judgeCost.toFixed(2)} this run (cached verdicts are free)`);
   console.log(`evidence: .fibre/model-quality/ — open review-${reviewId}.json in Admin › Model Quality to review blind`);
+}
+
+// Per model, each Thread's closeness in meaning to the other Threads (bge-m3):
+// the centroid of its answers against theirs, over the Threads every model
+// answered for. Null when meaning cannot be measured here.
+async function voicesOf({ prompt, out, models, answers, textOf }) {
+  if (String(prompt).startsWith("world.")) return null;
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID, apiToken = process.env.CLOUDFLARE_AI_API_TOKEN ?? process.env.CLOUDFLARE_API_TOKEN;
+  if (!accountId || !apiToken) {
+    console.log("not one voice: not measured (CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AI_API_TOKEN are needed for meaning)");
+    return null;
+  }
+  const spoken = Object.fromEntries(models.map((m) => [m.model, answers.get(m.model).filter((item) => !item.error)
+    .map((item) => ({ scope: scopeOf(prompt, item.input), text: textOf(item.input, item.output)?.slice(0, 2000) ?? null }))
+    .filter((item) => item.text && item.scope)]));
+  const threads = [...new Set(Object.values(spoken).flat().map((item) => item.scope))]
+    .filter((scope) => Object.values(spoken).every((list) => list.some((item) => item.scope === scope)));
+  if (threads.length < 4) return null;
+  const embedder = createCloudflareEmbeddingAdapter({ accountId, apiToken, modelId: "@cf/baai/bge-m3" });
+  let vectorOf;
+  try {
+    vectorOf = await meaningOf(Object.values(spoken).flat().map((item) => item.text), join(out, "meaning-cache.json"), embedder);
+  } catch (error) {
+    console.log(`not one voice: not measured (${String(error?.message ?? error).slice(0, 160)})`);
+    return null;
+  }
+  return Object.fromEntries(Object.entries(spoken).map(([model, list]) => {
+    const centres = Object.fromEntries(threads.map((scope) => [scope,
+      centroid(list.filter((item) => item.scope === scope).map((item) => vectorOf(item.text)).filter(Boolean))]));
+    return [model, Object.fromEntries(threads.map((scope) => [scope,
+      closenessToOthers(centres[scope], threads.filter((other) => other !== scope).map((other) => centres[other]))]))];
+  }));
 }
 
 // What was faced, as a reader would want it: the whole scene in its own words,

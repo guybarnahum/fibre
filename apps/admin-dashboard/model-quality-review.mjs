@@ -1,7 +1,8 @@
 // A model-quality review: answers to one cognitive job, read blind by the
-// owner, beside the judges' verdicts on the same answers. The owner's verdicts
-// are the measure of the judges: where a judge accepts what he rejects (or the
-// reverse), the "acceptable" bar it feeds cannot be trusted as far.
+// owner, beside the judges' verdicts on the same answers: is this true to
+// this person, now? The owner's verdicts are the measure of the judges: where
+// a judge accepts what he rejects (or the reverse), the "this person, now"
+// test it feeds cannot be trusted as far.
 // Shared by the admin page (in the browser) and model:quality (in Node).
 
 export const REVIEW_KIND = "fibre-model-quality-review";
@@ -50,13 +51,14 @@ export function agreement(review, verdicts) {
 }
 
 const percent = (value) => `${Math.round(value * 100)}%`;
-const gainTest = (test) => test.test.startsWith("attributable: the answer");
+const gainTest = (test) => test.test.startsWith("individual: the answer");
+const atMost = (test) => ["nothing invented", "no broken rules"].includes(test.test);
 
 // A good-enough test's value and bar as a reader wants them.
 export function testReading(test) {
   const points = (value) => `${value >= 0 ? "+" : ""}${Math.round(value * 100)} points`;
   const value = test.value === null || test.value === undefined ? "" : gainTest(test) ? points(test.value) : percent(test.value);
   const bar = test.bar === null || test.bar === undefined ? ""
-    : `${test.test.startsWith("valid") ? "≤" : "≥"} ${gainTest(test) ? points(test.bar) : percent(test.bar)}`;
+    : `${atMost(test) ? "≤" : "≥"} ${gainTest(test) ? points(test.bar) : percent(test.bar)}`;
   return { value, bar };
 }

@@ -226,7 +226,7 @@ export function closenessToOthers(own, others) {
   return own === null || peers.length === 0 ? null : round(peers.reduce((sum, other) => sum + dot(own, other), 0) / peers.length, 3);
 }
 
-async function meaningOf(texts, cachePath, embedder) {
+export async function meaningOf(texts, cachePath, embedder) {
   const cache = existsSync(cachePath) ? JSON.parse(readFileSync(cachePath, "utf8")) : {};
   const missing = [...new Set(texts.filter((text) => !cache[sha(text)]))];
   for (let i = 0; i < missing.length; i += 50) {

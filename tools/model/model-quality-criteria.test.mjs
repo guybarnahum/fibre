@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { dayAlarms, goodEnough, jobOf, lineup, perturbed, scopeOf, scoringJudges } from "./model-quality-criteria.mjs";
+import { bodyLineup, bodyOf, dayAlarms, goodEnough, jobOf, lineup, modelCaused, otherBody, perturbed, scopeOf, scoringJudges, withBody,
+  withoutBody } from "./model-quality-criteria.mjs";
 import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 
 const ATTENTION = "encounter.attention@1";
@@ -77,30 +78,105 @@ test("a meaningless change reorders evidence and nothing else", () => {
   assert.deepEqual(input.semanticStates[0].dimension, "interest", "the recorded request was modified");
 });
 
-test("good enough is an absolute bar: clear passes pass, clear failures fail, and too few cases decide nothing", () => {
-  const strong = { defects: [0, 400], invented: [2, 400], gains: Array(400).fill(0.3), correct: [0, 0], chance: 0.25,
-    invariant: [380, 400], alarms: [], acceptable: [390, 400] };
-  assert.equal(goodEnough(ATTENTION, strong).overall, "pass", "a model clearly above every bar did not pass");
-  assert.equal(goodEnough(ATTENTION, { ...strong, invented: [60, 400] }).overall, "fail", "a model that often invents facts passed");
-  assert.equal(goodEnough(ATTENTION, { ...strong, alarms: ["noticed nothing"] }).overall, "fail", "a dead day passed");
-  const few = { ...strong, defects: [0, 7], invented: [0, 7], gains: Array(7).fill(0.3), invariant: [7, 7], acceptable: [7, 7] };
-  assert.equal(goodEnough(ATTENTION, few).overall, "undecided", "seven cases decided whether a model is good enough");
-  assert.equal(goodEnough(ATTENTION, { ...few, defects: [0, 0], invented: [0, 0], gains: [], invariant: null, acceptable: [0, 0],
-    cases: 0 }).overall, "undecided", "a model that gave no answer at all was called good enough");
-  const obvious = { ...strong, gains: Array(400).fill(0), unaided: [390, 400] };
-  assert.notEqual(goodEnough(ATTENTION, obvious).tests.find((item) => item.test.startsWith("attributable")).verdict, "fail",
-    "a model failed attribution where what it faced already showed whose answer it was");
+// One model's measures over 100 answers, as model:quality takes them, with
+// the same outcomes request by request (two models alike answer alike).
+const outcomes = ([k, n]) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`r${i}`, i < k ? 1 : 0]));
+const measured = (over = {}) => {
+  const m = { cases: 100, defects: [0, 100], ourDefects: [0, 100], invented: [1, 100], body: null,
+    rates: { "leaves things as they were": [12, 100], "keeps a memory": [29, 100] }, alarms: [], person: [95, 100],
+    gains: Array.from({ length: 100 }, (_, i) => (i % 2 ? 0.3 : 0.2)), correct: [0, 0], unaided: [30, 100],
+    voice: null, invariant: [85, 100], ...over };
+  return { ...m, paired: { person: outcomes(m.person), ...(m.invariant ? { invariant: outcomes(m.invariant) } : {}),
+    ...(m.body ? { body: outcomes(m.body) } : {}), gains: Object.fromEntries(m.gains.map((gain, i) => [`r${i}`, gain])) } };
+};
+const REFLECTION = "experience.consolidation@8";
+const verdictOf = (result, name) => result.tests.find((item) => item.test.startsWith(name)).verdict;
+
+test("a model as true to life as the one Threads run on now is good enough; the reference is held only to Fibre's hard rules", () => {
+  const reference = measured();
+  assert.equal(goodEnough(REFLECTION, measured(), reference).overall, "pass", "a model that matches the reference was not good enough");
+  const itself = goodEnough(REFLECTION, reference, null);
+  assert.equal(itself.overall, "pass", "the model Threads live on now failed against itself");
+  assert.equal(verdictOf(itself, "this person, now"), "reference", "the reference was compared with itself");
+  assert.equal(goodEnough(REFLECTION, measured({ invented: [23, 100] }), reference).overall, "fail", "a model that invents facts passed");
+  assert.equal(goodEnough(REFLECTION, measured({ person: [61, 100] }), reference).overall, "fail",
+    "a model far less true to the person than the reference passed");
+  assert.equal(goodEnough(REFLECTION, measured({ cases: 7 }), reference).overall, "undecided", "seven answers decided a model");
+  assert.equal(goodEnough(REFLECTION, measured({ cases: 0, invented: [0, 0], person: [0, 0], gains: [], invariant: null }), reference)
+    .overall, "undecided", "a model that gave no answer at all was called good enough");
+});
+
+test("a model that changes something after every experience is not true to life, however well it writes", () => {
+  const reference = measured();
+  const restless = goodEnough(REFLECTION, measured({ rates: { "leaves things as they were": [0, 100], "keeps a memory": [64, 100] } }), reference);
+  assert.equal(verdictOf(restless, "true-to-life rates"), "fail", "never leaving things as they were passed as true to life");
+  assert.equal(restless.overall, "fail");
+  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ rates: { "leaves things as they were": [10, 100], "keeps a memory": [33, 100] } }),
+    reference), "true-to-life rates"), "pass", "rates close to the reference's were not true to life");
+  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ rates: {}, alarms: ["noticed nothing"] }), reference), "true-to-life rates"),
+    "fail", "a dead day passed");
+});
+
+test("a model that ignores the Body fails, and one with no Body to act on is not asked", () => {
+  const reference = measured({ body: [150, 200] });
+  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ body: [101, 200] }), reference), "acts on the Body"), "fail",
+    "a model that picks out its own Body only by chance acted on it");
+  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ body: [148, 200] }), reference), "acts on the Body"), "pass",
+    "a model that follows the Body as the reference does failed");
+  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ body: [101, 200] }), null), "acts on the Body"), "fail",
+    "a reference that ignores the Body was not caught");
+  assert.equal(verdictOf(goodEnough(REFLECTION, measured(), measured()), "acts on the Body"), "n/a");
+});
+
+test("answers of different Threads may not grow closer to one voice than with the reference", () => {
+  const spread = { a: 0.5, b: 0.52, c: 0.48, d: 0.5, e: 0.51 };
+  const one = Object.fromEntries(Object.entries(spread).map(([id, value]) => [id, value + 0.12]));
+  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ voice: one }), measured({ voice: spread })), "not one voice"), "fail",
+    "a model that makes every Thread sound alike passed");
+  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ voice: spread }), measured({ voice: spread })), "not one voice"), "pass");
 });
 
 test("a live job is judged on how soon its first words come, and only a live job", () => {
-  const strong = { defects: [0, 400], invented: [2, 400], gains: Array(400).fill(0.3), correct: [0, 0], chance: 0.25,
-    invariant: null, alarms: [], acceptable: [390, 400] };
-  const quick = goodEnough("social.live-turn@13", { ...strong, firstWordsMs: Array(400).fill(900) });
-  assert.equal(quick.overall, "pass", "a good model that speaks at once did not pass");
-  assert.equal(goodEnough("social.live-turn@13", { ...strong, firstWordsMs: Array(400).fill(6000) }).overall, "fail",
+  const quick = measured({ firstWordsMs: Array(100).fill(900) });
+  assert.equal(goodEnough("social.live-turn@13", quick, measured()).overall, "pass", "a good model that speaks at once did not pass");
+  assert.equal(goodEnough("social.live-turn@13", measured({ firstWordsMs: Array(100).fill(6000) }), measured()).overall, "fail",
     "a model too slow to speak live passed");
-  assert.ok(!goodEnough(ATTENTION, strong).tests.some((item) => item.test.startsWith("quick enough")),
+  assert.ok(!goodEnough(ATTENTION, measured(), measured()).tests.some((item) => item.test.startsWith("quick enough")),
     "a job that is not spoken live was held to a speaking time");
+});
+
+test("a rule broken because our own input left someone out is ours, never the model's", () => {
+  const reflection = jobOf(REFLECTION);
+  const alone = { people: [], interests: [], recentMoments: [{ personRef: "thr_n", person: "Nathan Tesfahun" }],
+    experiences: [{ experiencedAs: "Nathan's message catches my attention.",
+      encounterStory: { beats: [{ actorThreadId: null, kind: "occurrence", text: "A private addressed message from Nathan Tesfahun becomes available: compare?" }] } }] };
+  const quiet = { journalEntry: null, memory: { outcome: "not_remembered" }, afterthoughts: [], interests: [], moments: [], regard: [],
+    engagement: "nothing_new", newToIt: null };
+  const toSender = reflection.defects(alone, { ...quiet, stances: [{ personRef: "thr_n", aspect: "attachment", regard: "closer" }] });
+  assert.equal(toSender.length, 1);
+  assert.deepEqual(modelCaused(toSender), [], "a stance toward the sender of the message it read was counted against the model");
+  const toStranger = reflection.defects(alone, { ...quiet, stances: [{ personRef: "thr_x", aspect: "trust", regard: "wary" }] });
+  assert.equal(modelCaused(toStranger).length, 1, "a stance toward someone the experiences never mention was not the model's");
+});
+
+test("the same request felt with another moment's Body changes the Body and nothing else", () => {
+  const glance = (id, body) => ({ thread: { threadId: id, name: id }, currentSituation: { activity: "reading" }, body,
+    glance: { items: [{ index: 0, kind: "book", text: "A history of salt" }] } });
+  const own = glance("thr_h", ["You are tired of the same."]);
+  const pool = [{ scope: "thr_h", lines: ["You are tired of the same."] }, { scope: "thr_k", lines: ["You want company."] },
+    { scope: "thr_h", lines: ["Something new lifted you."] }];
+  const other = otherBody({ input: own, scope: "thr_h", requestKey: "r1", pool });
+  assert.deepEqual(other, ["Something new lifted you."], "another moment of the same Thread was not preferred, or its own Body was reused");
+  const felt = withBody(own, other);
+  assert.deepEqual({ ...felt, body: own.body }, own, "more than the Body changed");
+  assert.deepEqual(own.body, ["You are tired of the same."], "the recorded request was modified");
+  assert.ok(!("body" in withoutBody(own)), "a reader saw the Body in what was faced");
+  const turn = { thread: { threadId: "thr_h" }, liveInteraction: { spokenSoFar: 3, body: ["Talk has tired you."] } };
+  assert.deepEqual(bodyOf(withBody(turn, ["You want to stay."])).lines, ["You want to stay."], "a conversation's Body was not found");
+  const lineups = ["own", "other"].map((givenWith) => bodyLineup({ faced: {}, answer: "x", own: own.body, other, givenWith, requestKey: "r1" }));
+  assert.deepEqual(lineups[0].material.bodies, lineups[1].material.bodies, "an answer and its counterpart saw the Bodies in different orders");
+  assert.notEqual(lineups[0].truth, lineups[1].truth);
+  assert.equal(bodyOf({ thread: {} }), null, "a request without a Body was given one");
 });
 
 test("every compared model is scored by the same judges, never by a rival alone", () => {
