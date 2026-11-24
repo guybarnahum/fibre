@@ -209,6 +209,16 @@ Anything a Thread feels follows this one path:
 5. **Felt words come only from drives,** in `services/world-kernel/src/interoceptive-cognition.mjs`. Cognition receives the Body through `feltSocialBody`, `feltTowardPeople` or `projectInteroception`.
 6. **No reward, mood or feeling value is computed, stored or passed beside the regulation frame.** If something should be felt, it is a drive.
 
+**Dry-run before building.** A new or changed Body mechanism that claims an emergent behaviour or outcome is dry-run first, as [`docs/validation/mechanism-dry-run.md`](docs/validation/mechanism-dry-run.md) describes:
+
+- draw its chain from genes to outcomes, and its state machine;
+- simulate it with the living Threads' genes and the core's own Body levels;
+- check that the outcome is reached and stable, per Thread;
+- check that genes shape it;
+- remove each piece in turn and show what it does.
+
+Design flaws caught there cost nothing.
+
 ### Other shared mechanisms
 | Need | Mechanism |
 |---|---|

@@ -3,6 +3,7 @@
 How Fibre challenges and proves its claims — keeping representation separate from causal behavior.
 
 - **[`drift-scorecard.md`](drift-scorecard.md)** — Vision-Integrity Scorecard (Rubric v2, currently 15/26). Prevents infrastructure progress from masquerading as personhood.
+- **[`mechanism-dry-run.md`](mechanism-dry-run.md)** — Dry-running a Body mechanism before building it: chain, state machine, simulation with living Threads' genes, ablations and gene checks (`tools/dry-run/`).
 - **[`thread-chain.md`](thread-chain.md)** — The chain, Thread by Thread: whether Body regulation moves each Thread as designed, changes what it does, and widens its talk and mind, read against its genes and life (`npm run thread:chain`).
 - **[`thread-differential-gate.md`](thread-differential-gate.md)** — Standing causal non-interchangeability gate: same request, different Thread-owned history, attributable behavioral divergence.
 - **Foundational behavioral & authority contracts:** [`persistent-thread-round-trip.md`](persistent-thread-round-trip.md), [`dignity-request-scenarios.md`](dignity-request-scenarios.md), [`interiority-expression-scenarios.md`](interiority-expression-scenarios.md), and [`fibre-invariants.yaml`](fibre-invariants.yaml).
