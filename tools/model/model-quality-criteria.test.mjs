@@ -85,6 +85,8 @@ test("good enough is an absolute bar: clear passes pass, clear failures fail, an
   assert.equal(goodEnough(ATTENTION, { ...strong, alarms: ["noticed nothing"] }).overall, "fail", "a dead day passed");
   const few = { ...strong, defects: [0, 7], invented: [0, 7], gains: Array(7).fill(0.3), invariant: [7, 7], acceptable: [7, 7] };
   assert.equal(goodEnough(ATTENTION, few).overall, "undecided", "seven cases decided whether a model is good enough");
+  assert.equal(goodEnough(ATTENTION, { ...few, defects: [0, 0], invented: [0, 0], gains: [], invariant: null, acceptable: [0, 0],
+    cases: 0 }).overall, "undecided", "a model that gave no answer at all was called good enough");
   const obvious = { ...strong, gains: Array(400).fill(0), unaided: [390, 400] };
   assert.notEqual(goodEnough(ATTENTION, obvious).tests.find((item) => item.test.startsWith("attributable")).verdict, "fail",
     "a model failed attribution where what it faced already showed whose answer it was");

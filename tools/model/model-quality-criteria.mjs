@@ -362,6 +362,7 @@ export const BARS = Object.freeze({
   // compared fairly with another; the World's own latency differs a little.
   firstWordsMs: 3000,
   quickShare: 0.90,
+  minimumCases: 30, // fewer answers than this decide nothing, whatever they show
 });
 
 const Z = 1.645;
@@ -387,7 +388,7 @@ const atLeast = (test, [k, n], bar) => {
 // When what was faced alone already shows whose answer it is (a reflection
 // on its own experiences, say), the answer cannot show it any better: the
 // test cannot be measured there, and says so rather than failing.
-const SHOWN_WITHOUT_ANSWER = 0.9;
+export const SHOWN_WITHOUT_ANSWER = 0.9;
 function gainAtLeast(test, gains, bar, unaided = null) {
   if (gains.length === 0) return { test, verdict: "n/a", value: null, bar };
   if (unaided !== null && unaided[1] > 0 && unaided[0] / unaided[1] >= SHOWN_WITHOUT_ANSWER) {
@@ -411,7 +412,7 @@ function quickEnough(times, bars) {
 // measures: defects [k,n]; invented [k,n]; gains [number]; correct [k,n];
 // unaided [k,n] (sources picked from what was faced alone);
 // chance; invariant [k,n] or null; alarms [string]; acceptable [k,n];
-// firstWordsMs [ms], for a live job only.
+// firstWordsMs [ms], for a live job only; cases, the answers it rests on.
 export function goodEnough(prompt, measures, bars = BARS) {
   const gist = String(prompt).startsWith("experience.memory-gist");
   const tests = [
@@ -422,12 +423,16 @@ export function goodEnough(prompt, measures, bars = BARS) {
       : gainAtLeast("attributable: the answer shows who (or where)", measures.gains, bars.gain, measures.unaided ?? null),
     measures.invariant === null ? { test: "invariant", verdict: "n/a", value: null, bar: bars.invariant }
       : atLeast("invariant", measures.invariant, bars.invariant),
-    { test: "credible day", verdict: measures.alarms.length > 0 ? "fail" : "pass", value: null, bar: null,
-      detail: measures.alarms.join("; ") || "no alarms (Guy's reference range not yet set)" },
+    measures.cases === 0 ? { test: "credible day", verdict: "n/a", value: null, bar: null, detail: "no answers" }
+      : { test: "credible day", verdict: measures.alarms.length > 0 ? "fail" : "pass", value: null, bar: null,
+        detail: measures.alarms.join("; ") || "no alarms (Guy's reference range not yet set)" },
     atLeast("acceptable", measures.acceptable, bars.acceptable),
     ...(measures.firstWordsMs === undefined ? [] : [quickEnough(measures.firstWordsMs, bars)]),
   ];
   const verdicts = tests.map((item) => item.verdict).filter((verdict) => verdict !== "n/a");
-  const overall = verdicts.includes("fail") ? "fail" : verdicts.every((verdict) => verdict === "pass") ? "pass" : "undecided";
+  // Too few answers (a provider that refused most calls, say) decide nothing.
+  const tooFew = measures.cases !== undefined && measures.cases < bars.minimumCases;
+  const overall = tooFew ? "undecided"
+    : verdicts.includes("fail") ? "fail" : verdicts.every((verdict) => verdict === "pass") ? "pass" : "undecided";
   return { overall, tests };
 }

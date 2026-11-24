@@ -23,7 +23,8 @@ import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs
 import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
 import { CERTIFICATIONS_PATH, EMPTY_CERTIFICATIONS, parseModelSpec, recordCertifications } from "../../infra/deployments/model-certifications.mjs";
 import { judgesFor } from "./model-judges.mjs";
-import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, scopeOf, scoringJudges } from "./model-quality-criteria.mjs";
+import { dayAlarms, decision, goodEnough, interval, jobOf, lineup, perturbed, scopeOf, scoringJudges,
+  SHOWN_WITHOUT_ANSWER } from "./model-quality-criteria.mjs";
 import { agreement, readReview, readVerdicts, REVIEW_KIND, testReading } from "../../apps/admin-dashboard/model-quality-review.mjs";
 
 const MIN_CASES = 30;
@@ -32,10 +33,11 @@ const REVIEW_ANSWERS = 30;
 
 function args(argv) {
   const options = { prompt: null, models: ["openai:gpt-5.6-sol"], judges: ["claude-opus-5-5", "gpt-5.6-sol"],
-    limit: 200, concurrency: 4, evidence: ".fibre/infra-measure", agreementOnly: false, fresh: [] };
+    limit: 200, concurrency: 4, evidence: ".fibre/infra-measure", agreementOnly: false, fresh: [], allJudges: false };
   for (let index = 0; index < argv.length; index += 1) {
     const [name, inline] = argv[index].split("=", 2);
     if (name === "--agreement") { options.agreementOnly = true; continue; }
+    if (name === "--all-judges") { options.allJudges = true; continue; }
     const value = inline ?? argv[++index];
     if (name === "--prompt") options.prompt = value;
     else if (name === "--models") options.models = value.split(",");
@@ -155,17 +157,46 @@ async function main() {
   const spent = (result) => result && !result.cached ? result.cost ?? 0 : 0;
   let judgeCost = 0;
 
+  // Whether attribution can be measured for this job at all. When what was
+  // faced alone already shows whose answer it is (a reflection on one's own
+  // experiences), attributing every model's answers costs and shows nothing.
+  // Twenty lineups without an answer decide it; the same verdicts are reused below.
+  const independent = judges.filter((judge) => panel.includes(judge.model));
+  let shownWithout = null;
+  if (!String(options.prompt).startsWith("experience.memory-gist")) {
+    const probe = [];
+    for (const event of requests.slice(0, 20)) {
+      const [entry] = job.items(event.input, {});
+      const round = entry?.source ? lineup({ item: entry, scope: scopeOf(options.prompt, event.input),
+        requestKey: digest(event.input).slice(0, 16), pool: sourcePool }) : null;
+      if (round === null) continue;
+      for (const judge of independent.length ? independent : judges) {
+        const control = await verdict(judge, "attribute", { whatEachSourceIs: job.lineupOf, faced: round.faced,
+          answer: "(not shown: choose the most likely source from what was faced alone)",
+          sources: Object.fromEntries(round.sources.map((source, index) => [index + 1, source])) });
+        judgeCost += spent(control);
+        if (control?.verdict) probe.push(control.verdict.choice - 1 === round.truth);
+      }
+    }
+    const seen = [probe.filter(Boolean).length, probe.length];
+    if (seen[1] >= 20 && seen[0] / seen[1] >= SHOWN_WITHOUT_ANSWER) {
+      shownWithout = seen;
+      console.log(`attribution not asked: what was faced alone shows whose answer it is (${seen[0]} of ${seen[1]})`);
+    }
+  }
+
   for (const { model } of options.models) {
     const answered = answers.get(model).filter((item) => !item.error);
     const failed = answers.get(model).length - answered.length;
-    const readers = judges.filter((judge) => judge.model !== model);
     const scorers = scoringJudges(judges.map((judge) => judge.model), options.models.map((m) => m.model), model);
+    // Only judges whose verdicts count are asked, unless every reading is wanted.
+    const readers = judges.filter((judge) => judge.model !== model && (options.allJudges || scorers.includes(judge.model)));
     const items = answered.flatMap((item) => job.items(item.input, item.output)
       .filter((entry) => entry.text).map((entry) => ({ ...entry, request: item })));
     const defects = answered.map((item) => job.defects(item.input, item.output));
     let read = 0;
     const judged = await pool(items, options.concurrency, async (entry) => {
-      const round = lineup({ item: entry, scope: scopeOf(options.prompt, entry.request.input),
+      const round = shownWithout !== null ? null : lineup({ item: entry, scope: scopeOf(options.prompt, entry.request.input),
         requestKey: digest(entry.request.input).slice(0, 16), pool: sourcePool });
       const results = {};
       for (const judge of readers) {
@@ -221,7 +252,8 @@ async function main() {
     };
     result.goodEnough = goodEnough(options.prompt, { defects: result.defects, invented: every("invented", true), gains,
       correct: scorers.map((name) => attributed[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]), chance,
-      unaided: scorers.map((name) => unaided[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]),
+      unaided: shownWithout ?? scorers.map((name) => unaided[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]),
+      cases: answered.length,
       invariant: decided.length === 0 ? null : invariant, alarms: result.alarms, acceptable: result.acceptable,
       ...(live ? { firstWordsMs: answered.map((item) => item.firstWordsMs).filter(Number.isFinite) } : {}) });
     if (live) result.firstWords = result.goodEnough.tests.at(-1).detail;
@@ -298,7 +330,10 @@ async function main() {
   const certificationsPath = join(repoRoot, CERTIFICATIONS_PATH);
   const record = await readFile(certificationsPath, "utf8").then(JSON.parse, () => EMPTY_CERTIFICATIONS);
   const rate = ([k, n]) => n === 0 ? null : { share: Math.round(k / n * 1000) / 1000, of: n };
-  await writeFile(certificationsPath, JSON.stringify(recordCertifications(record, report.models.map((m) => ({
+  // A model that gave no answer at all (an account or permission refusal) is not recorded: nothing was measured.
+  const measured = report.models.filter((m) => m.answered > 0);
+  for (const m of report.models.filter((item) => item.answered === 0)) console.log(`not recorded: ${m.model} gave no answer`);
+  await writeFile(certificationsPath, JSON.stringify(recordCertifications(record, measured.map((m) => ({
     prompt: options.prompt, promptVersion: prompt.version,
     ...(({ provider, modelId, settings }) => ({ provider, model: modelId, ...(Object.keys(settings).length ? { settings } : {}) }))(
       options.models.find((item) => item.model === m.model)),
@@ -309,7 +344,7 @@ async function main() {
     ...(m.firstWords ? { firstWords: m.firstWords } : {}),
     requests: m.answered, failed: m.failed, certifiedAt: stamp.slice(0, 10), evidence: `quality-${options.prompt}-${stamp}.json`,
   }))), null, 2) + "\n");
-  console.log(`certifications: ${CERTIFICATIONS_PATH} updated (${report.models.map((m) => `${m.model} ${m.tooFew ? "undecided" : m.goodEnough.overall}`).join(", ")}); commit it`);
+  console.log(`certifications: ${CERTIFICATIONS_PATH} updated (${measured.map((m) => `${m.model} ${m.tooFew ? "undecided" : m.goodEnough.overall}`).join(", ")}); commit it`);
   console.log(`\njudges spent ≈ $${judgeCost.toFixed(2)} this run (cached verdicts are free)`);
   console.log(`evidence: .fibre/model-quality/ — open review-${reviewId}.json in Admin › Model Quality to review blind`);
 }
