@@ -40,13 +40,13 @@ test("a busy catalogue is asked again, then its mirrors; one that is down does n
   const asked = [];
   const down = async (url, init) => {
     asked.push(new URL(url).host);
-    return new URL(url).host === "www.gutenberg.org" ? new Response("busy", { status: 503 }) : ranged(url, init);
+    return new URL(url).host === "gutenberg.pglaf.org" ? new Response("busy", { status: 503 }) : ranged(url, init);
   };
   const passage = await readGutenbergPassage({ sourceId: "205", textUrl: "https://www.gutenberg.org/files/205/205.txt",
     maxChars: 600, fetchImpl: down });
   assert.ok(passage.text.startsWith("Paragraph 0"), "a busy catalogue kept the reader from the book");
-  assert.deepEqual(asked.slice(0, 3), ["www.gutenberg.org", "www.gutenberg.org", "gutenberg.pglaf.org"],
-    "a busy source was not asked again before the reader moved on to a mirror");
+  assert.deepEqual(asked.slice(0, 3), ["gutenberg.pglaf.org", "gutenberg.pglaf.org", "www.gutenberg.org"],
+    "a busy source was not asked again before the reader moved on to the next");
 });
 
 test("a library's own copy is read without the catalogue, and gives the same pages", async () => {
@@ -58,5 +58,5 @@ test("a library's own copy is read without the catalogue, and gives the same pag
   const whole = await fetchGutenbergText({ sourceId: "205", textUrl: "https://example.org/walden.txt",
     fetchImpl: async () => new Response(bytes, { status: 200 }) });
   assert.equal(whole.bytes.length, bytes.length, "a whole book fetched to keep was cut short");
-  assert.equal(whole.fetchedFrom, "www.gutenberg.org", "where a kept book came from was not recorded");
+  assert.equal(whole.fetchedFrom, "gutenberg.pglaf.org", "where a kept book came from was not recorded");
 });

@@ -11,12 +11,12 @@ const ATTEMPTS = 2;
 const RETRY_AFTER_MS = 1_500;
 const HEADERS = Object.freeze({ "User-Agent": "FibreWorldLibrary/1.0 (a library for persistent artificial persons)" });
 
-// Where a book's plain text can be found, in order: Gutenberg's current home
-// for it, its mirrors at the same path, then the catalogue's own link (older
-// links, for example /files/…, can be gone).
-export const GUTENBERG_HOSTS = Object.freeze([
-  "https://www.gutenberg.org", "https://gutenberg.pglaf.org", "https://aleph.gutenberg.org",
-]);
+// Where a book's plain text can be found, in order: the Gutenberg
+// foundation's own mirror, then Gutenberg itself, at the same path, then the
+// catalogue's own link (older links, for example /files/…, can be gone).
+// Measured November 23: www.gutenberg.org answered 503 to every request,
+// from World and from an ordinary computer alike; the mirror answered.
+export const GUTENBERG_HOSTS = Object.freeze(["https://gutenberg.pglaf.org", "https://www.gutenberg.org"]);
 export function gutenbergTextUrls({ sourceId = null, textUrl }) {
   if (typeof textUrl !== "string" || !textUrl.startsWith("https://")) throw new TypeError("book text must be an https link");
   const id = String(sourceId ?? "");
