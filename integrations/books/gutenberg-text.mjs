@@ -23,7 +23,12 @@ const WEBSITE = /^(www\.)?gutenberg\.org$/iu;
 export function gutenbergTextUrls({ sourceId = null, textUrl }) {
   if (typeof textUrl !== "string" || !textUrl.startsWith("https://")) throw new TypeError("book text must be an https link");
   const id = String(sourceId ?? "");
-  const cached = /^\d+$/u.test(id) ? GUTENBERG_HOSTS.map((host) => `${host}/cache/epub/${id}/pg${id}.txt`) : [];
+  // The generated text first; a book without one (November 24: four books
+  // answered 404 there) is read from the collection's own folders, where a
+  // book numbered 2848 lives under 2/8/4/2848/.
+  const folder = id.length === 1 ? `0/${id}` : `${id.slice(0, -1).split("").join("/")}/${id}`;
+  const cached = /^\d+$/u.test(id) ? GUTENBERG_HOSTS.flatMap((host) => [`${host}/cache/epub/${id}/pg${id}.txt`,
+    `${host}/${folder}/${id}-0.txt`, `${host}/${folder}/${id}.txt`]) : [];
   const elsewhere = WEBSITE.test(new URL(textUrl).host) ? [] : [textUrl];
   const urls = [...new Set([...cached, ...elsewhere])];
   if (urls.length === 0) throw new TypeError("no source this library may fetch the book from");

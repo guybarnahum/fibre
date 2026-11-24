@@ -80,6 +80,18 @@ export function unfinishedLearning({readings,at}){
     evidenceRefs:Object.freeze([item.holdingRef])})));
 }
 
+// What it last learned from, within a day: the work it read, as it is
+// called, and the subjects it met there. A World fact the felt words may
+// name when the Body wants to tell of something; never a feeling itself.
+const LATELY_HOURS=24;
+export function latelyLearned({experienceStore,threadId,at,readings=[]}){
+  const last=learningOf({experienceStore,threadId,at}).filter(item=>hoursBetween(item.at,at)<=LATELY_HOURS).at(-1);
+  if(last===undefined)return null;
+  const title=readings.find(item=>item.workRef===last.sourceRef)?.title??null;
+  return title===null?null:Object.freeze({workRef:last.sourceRef,title,learning:last.learning,
+    subjects:Object.freeze([...(last.subjects??[])].slice(0,3))});
+}
+
 // For observation only, never shown to a Thread: how many subjects it holds
 // (width) and how far it has gone in its deepest (depth).
 export function knowledgeMeasures(held){

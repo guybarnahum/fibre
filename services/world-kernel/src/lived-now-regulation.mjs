@@ -12,7 +12,7 @@ import {
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 import { wearinessOf } from "./engagement.mjs";
-import { competenceLevel, noveltyLevel, unfinishedLearning } from "./knowledge.mjs";
+import { competenceLevel, latelyLearned, noveltyLevel, unfinishedLearning } from "./knowledge.mjs";
 import { bondOf, conversationDepletion, expectedRegard, longingOf, missingMoments, regardOf, regardShown, reunionJoy, selfStanding,
   SLIGHT_GAP, stingHalfLife,
   socialEnergyEvidence } from "./social-body.mjs";
@@ -392,12 +392,13 @@ function peoplePercept({thread,people=[],experienceStore,memoryStore=null,at,kno
 // to. The regulation core reads them as it reads every urge. Novelty is
 // undefined when World cannot measure it.
 function learningOf({thread,experienceStore,at}){
-  if(typeof experienceStore?.listLearning!=="function")return {competence:0,unfinished:[]};
+  if(typeof experienceStore?.listLearning!=="function")return {competence:0,unfinished:[],lately:null};
+  const readings=typeof experienceStore.listThreadReadings!=="function"?[]:experienceStore.listThreadReadings(thread.threadId,{limit:8});
   return {
     novelty:noveltyLevel({experienceStore,threadId:thread.threadId,at,persistence:locusOf(thread,"exploration")?.persistence??0}),
     competence:competenceLevel({experienceStore,threadId:thread.threadId,at,persistence:locusOf(thread,"mastery_itch")?.persistence??0}),
-    unfinished:typeof experienceStore.listThreadReadings!=="function"?[]
-      :unfinishedLearning({readings:experienceStore.listThreadReadings(thread.threadId,{limit:8}),at}),
+    unfinished:unfinishedLearning({readings,at}),
+    lately:latelyLearned({experienceStore,threadId:thread.threadId,at,readings}),
   };
 }
 // For the operator's Body panel: what learning is doing to this Body at a
@@ -413,13 +414,18 @@ export function learningBodyAt({thread,experienceStore,at}){
   const drive=(family,targetRef)=>frame.drives.find(item=>item.family===family&&item.targetRef===targetRef)??null;
   const novelty=drive("exploration","world:novelty"),share=drive("social_contact","self:share");
   return Object.freeze({novelty:learning.novelty,competence:learning.competence,lifted:novelty?.attained===true,
-    noveltyHunger:novelty?.attained?0:novelty?.pressure??0,share:share?.felt===false?0:share?.pressure??0});
+    noveltyHunger:novelty?.attained?0:novelty?.pressure??0,share:share?.felt===false?0:share?.pressure??0,frame});
 }
 const masteryPercept=({competence,unfinished})=>competence===0&&unfinished.length===0?{}
   :{mastery:{competence,unfinished:unfinished.map(({workRef,hoursSince,evidenceRefs})=>({workRef,hoursSince,evidenceRefs:[...evidenceRefs]}))}};
-// What its felt words need besides the drives: what each unfinished book is called.
-const withTitles=(frame,unfinished)=>unfinished.length===0||frame===null?frame
-  :Object.freeze({...frame,unfinishedTitles:Object.freeze(Object.fromEntries(unfinished.map(item=>[`work:${item.workRef}`,item.title])))});
+// What its felt words need besides the drives: what each unfinished book is
+// called, and what it last learned from (ADR-0041), so a pull to tell has
+// something to tell. World facts, not feelings: whether they are felt is the
+// drives' to say.
+const withTitles=(frame,{unfinished=[],lately=null}={})=>frame===null||(unfinished.length===0&&lately===null)?frame
+  :Object.freeze({...frame,
+    ...(unfinished.length===0?{}:{unfinishedTitles:Object.freeze(Object.fromEntries(unfinished.map(item=>[`work:${item.workRef}`,item.title])))}),
+    ...(lately===null?{}:{lately})});
 
 // One evidence-driven Body projection for planning and social attention.
 // No extra model call, time tick, or family-specific consumer path.
@@ -455,7 +461,7 @@ export function livedRegulationForLivedHistory({
   const people=experienceStore===null||perceivedPeople.length===0?null:peoplePercept({
     thread,people:perceivedPeople,experienceStore,memoryStore,at:asOf,self,
   });
-  const {novelty=continuity.grounded?0:undefined,competence,unfinished}=learningOf({thread,experienceStore,at:asOf});
+  const {novelty=continuity.grounded?0:undefined,competence,unfinished,lately}=learningOf({thread,experienceStore,at:asOf});
   if(!continuity.grounded&&contact===null&&socialEnergy===null&&people===null&&self?.gap==null
     &&weariness===0&&novelty===undefined&&competence===0&&unfinished.length===0)return null;
   const frame=evaluateIntrinsicRegulation({
@@ -484,7 +490,7 @@ export function livedRegulationForLivedHistory({
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
   });
-  return withTitles(frame,unfinished);
+  return withTitles(frame,{unfinished,lately});
 }
 
 // The social Body during a live conversation: the battery where it stood
@@ -512,7 +518,7 @@ export function socialBodyInConversation({thread,start,regard,turns,asOf,other,s
     runtimeBaselines:thread.genome?.runtimeBaselines??{},
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
-  }),learning.unfinished);
+  }),learning);
 }
 
 // Where a conversation's battery starts, and how known and trusted the other

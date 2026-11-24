@@ -157,16 +157,28 @@ export const COUPLINGS = Object.freeze([
 
 // ---- The Body (link 1) ----
 
-export function bodyLink({ series, knowledge, readings, from, to }) {
-  const discoveries = (knowledge?.subjects ?? []).filter((item) => within(item.firstAt, from, to)).map((item) => item.firstAt);
-  const newTurns = (readings ?? []).filter((item) => item.reading === "new").map((item) => item.at);
-  const lifted = series.filter((point) => point.lifted);
-  const backed = lifted.filter((point) => [...discoveries, ...newTurns].some((at) =>
-    at <= point.at && Date.parse(point.at) - Date.parse(at) <= 12 * HOUR_MS));
-  const followed = discoveries.filter((at) => series.some((point) => point.lifted && point.at >= at
+// A lift is counted as the Body's words have it (felt), or, for runs before
+// the panel said so, as the novelty drive's attainment. A felt lift is
+// backed when something new (a discovery, or a turn read as new) came after
+// the last moment it was not lifted; a lift that began before the window
+// looks back two days.
+const liftOf = (point) => point.liftFelt ?? point.lifted === true;
+export function bodyLink({ series, learning = [], readings, from, to }) {
+  const found = learning.filter((item) => within(item.at, from, to));
+  const discoveries = [...new Set(found.filter((item) => item.learning === "discovery").map((item) => item.at))];
+  const deeper = new Set(found.filter((item) => item.learning === "depth").map((item) => item.at)).size;
+  const sources = [...discoveries, ...(readings ?? []).filter((item) => item.reading === "new").map((item) => item.at)];
+  const lifted = series.filter(liftOf);
+  const backed = lifted.filter((point) => {
+    const before = series.filter((other) => other.at < point.at && !liftOf(other)).at(-1)?.at
+      ?? new Date(Date.parse(point.at) - 48 * HOUR_MS).toISOString();
+    return sources.some((at) => at > before && at <= point.at);
+  });
+  const followed = discoveries.filter((at) => series.some((point) => liftOf(point) && point.at >= at
     && Date.parse(point.at) - Date.parse(at) <= 4 * HOUR_MS));
   const mean = (key) => series.length === 0 ? null : round(series.reduce((sum, point) => sum + (point[key] ?? 0), 0) / series.length);
-  return { discoveries: discoveries.length, liftedPoints: lifted.length, points: series.length,
+  return { discoveries: discoveries.length, deeper, liftedPoints: lifted.length, points: series.length,
+    pullFelt: series.filter((point) => point.shareFelt).length,
     liftPrecision: lifted.length === 0 ? null : round(backed.length / lifted.length),
     liftRecall: discoveries.length === 0 ? null : round(followed.length / discoveries.length),
     meanWeariness: mean("weariness"), meanShare: mean("share"), meanNovelty: mean("novelty") };
@@ -322,7 +334,7 @@ async function main(argv) {
       lived: { conversations: stories.filter((story) => (story.story?.beats ?? []).some((beat) => beat.kind === "utterance")).length,
         turnsSpoken: utterances.length, arrivals: decisions.filter((row) => row.kind === "glance" && within(row.at, from, to)).length },
       reading: { chosen: chosenBooks.length, read: read.length, rate: chosenBooks.length ? round(read.length / chosenBooks.length) : null },
-      body: bodyLink({ series, knowledge: b.knowledge, from, to,
+      body: bodyLink({ series, learning: b.events?.learning ?? [], from, to,
         readings: (b.events?.readings ?? []).filter((item) => within(item.at, from, to)) }),
       toward: Object.fromEntries(Object.entries(last.people ?? {}).filter(([, p]) => (p.promise ?? 0) >= PROMISE_FELT || Math.abs(p.warmth ?? 0) >= WARMTH_FELT)
         .map(([person, p]) => [name(person), { warmth: round(p.warmth), promise: round(p.promise ?? 0), bond: round(p.bond) }])),
@@ -395,8 +407,9 @@ async function main(argv) {
     console.log(`  lived: ${card.lived.conversations} conversations, ${card.lived.turnsSpoken} turns spoken, ${card.lived.arrivals} arrivals`);
     console.log(`  0 reading: chose ${card.reading.chosen} book(s), read ${card.reading.read}`);
     const bd = card.body;
-    console.log(`  1 body: ${bd.discoveries} discoveries; lifted ${bd.liftedPoints}/${bd.points} moments (precision ${bd.liftPrecision ?? "—"}, recall ${bd.liftRecall ?? "—"}); `
-      + `mean weariness ${bd.meanWeariness}, novelty ${bd.meanNovelty}, pull to tell ${bd.meanShare}`);
+    console.log(`  1 body: ${bd.discoveries} discoveries, ${bd.deeper} steps deeper; lift felt ${bd.liftedPoints}/${bd.points} moments `
+      + `(precision ${bd.liftPrecision ?? "—"}, recall ${bd.liftRecall ?? "—"}); pull to tell felt ${bd.pullFelt}/${bd.points}; `
+      + `mean weariness ${bd.meanWeariness}, novelty ${bd.meanNovelty}`);
     console.log(`  2 felt→did (all runs; ${card.decisions.glances} arrivals, ${card.decisions.turns} turns, ${card.decisions.contacts} contact decisions):`);
     for (const item of card.couplings.filter((entry) => entry.felt[1] + entry.notFelt[1] > 0)) console.log(`      ${line(item)}`);
     const toward = Object.entries(card.toward).map(([who, p]) => `${who} w${p.warmth} p${p.promise} b${p.bond}`).join("; ");

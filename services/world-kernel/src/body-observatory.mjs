@@ -6,6 +6,7 @@ import { HOUR_MS, DAY_MS } from "#core/src/body-level.mjs";
 import { bondOf, longingOf, missingMoments, regardOf, selfStanding, socialEnergyEvidence } from "./social-body.mjs";
 import { wearinessLevel } from "./engagement.mjs";
 import { learningBodyAt, socialBodyLoci } from "./lived-now-regulation.mjs";
+import { learningFelt } from "./interoceptive-cognition.mjs";
 
 const iso=(ms)=>new Date(ms).toISOString();
 const round=(value)=>Math.round(value*1000)/1000;
@@ -88,11 +89,14 @@ export function bodyObservatory({thread,experienceStore,memoryStore=null,at,name
       persistence:loci.exploration?.persistence??0});
     const moments=missingMoments({experienceStore:records,memoryStore:records,threadId,at:instant});
     // What learning was doing to it then (ADR-0041), through the same core.
+    // Whether a lift and the pull to tell were felt, as the Body's own words say.
     const learning=typeof experienceStore.listLearning==="function"
       ?learningBodyAt({thread,experienceStore:records,at:instant}):null;
+    const felt=learning===null?null:learningFelt(learning.frame);
     return Object.freeze({at:instant,
       ...(learning===null?{}:{novelty:round(learning.novelty),competence:round(learning.competence),
-        lifted:learning.lifted,noveltyHunger:round(learning.noveltyHunger),share:round(learning.share)}),
+        lifted:learning.lifted,noveltyHunger:round(learning.noveltyHunger),share:round(learning.share),
+        liftFelt:felt.lift!==null,shareFelt:felt.share!==null}),
       battery:round(socialEnergyEvidence({threadId,experienceStore:records,asOf:instant,trustLocus:loci.trust})?.depletion??0),
       weariness:round(weariness.level),wearinessBaseline:round(weariness.baseline),
       self:round(standing.self),gap:standing.gap===null?null:round(standing.gap),
@@ -126,6 +130,10 @@ export function bodyObservatory({thread,experienceStore,memoryStore=null,at,name
         ...(item.note?{note:item.note}:{})})),
       regard:regard.filter(item=>item.asOf>=iso(from)).map(item=>({at:item.asOf,act:item.act,
         person:item.personThreadId,by:item.actorThreadId===threadId?"me":"them"})),
+      // What it came to know in the window: discoveries and steps deeper (ADR-0041).
+      learning:typeof experienceStore.listLearning==="function"
+        ?records.listLearning(threadId,{since:iso(from),until:at}).map(item=>({at:item.at,learning:item.learning,
+          workRef:item.sourceRef,subjects:item.subjects??[]})):[],
       recalled:records.listRecalledMemories(threadId,{since:iso(from),until:at})
         .map(item=>({at:item.at,people:people.filter(person=>
           item.eventRefs.some(ref=>records.listSharedExperienceRefs(threadId,person).includes(ref)))})),

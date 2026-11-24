@@ -90,6 +90,13 @@ test("good news seeks company: a fresh lift is a pull to tell someone, as sharp 
   const words = feltSocialBody(lifted(0.9)).join(" ");
   assert.match(words, /want to tell someone/u, "the pull to tell was not felt in words");
   assert.doesNotMatch(words, /company/u, "the pull to tell was felt as loneliness");
+  const lately = { workRef:"gutenberg:164", title:"Twenty Thousand Leagues under the Sea", learning:"discovery",
+    subjects:["Submarines", "Underwater exploration"] };
+  assert.match(feltSocialBody({ ...lifted(0.9), lately }).join(" "), /Twenty Thousand Leagues.*Submarines/u,
+    "the pull to tell did not know what it was about");
+  const faint = feltSocialBody({ ...lifted(0.4), lately }).join(" ");
+  assert.ok(share(lifted(0.4)) > 0 && !/lifted you|Twenty Thousand/u.test(faint),
+    "a faint pull was put into words as a lift");
 });
 
 test("in conversation the Body hears what learning did for it, as it does everywhere else", () => {

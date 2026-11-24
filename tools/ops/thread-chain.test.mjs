@@ -56,11 +56,13 @@ test("in conversation: whether it spoke, and whether it told what it had just le
     "telling what it just learned was not read against its pull to tell");
 });
 
-test("the Body's lift is checked against what lifted it", () => {
-  const backed = bodyLink({ series, knowledge, readings: [], from: hoursAgo(24), to: AT });
+test("the Body's lift is checked against what lifted it: a discovery lifts, going on with a known book does not", () => {
+  const learning = [{ at: hoursAgo(1), learning: "discovery", workRef: "gutenberg:72" }];
+  const backed = bodyLink({ series, learning, readings: [], from: hoursAgo(24), to: AT });
   assert.deepEqual([backed.discoveries, backed.liftPrecision, backed.liftRecall], [1, 1, 1], "a discovery's lift was not traced to it");
-  const empty = bodyLink({ series, knowledge: { subjects: [] }, readings: [], from: hoursAgo(24), to: AT });
-  assert.equal(empty.liftPrecision, 0, "a lift with nothing behind it was not caught");
+  const deeper = bodyLink({ series, learning: [{ ...learning[0], learning: "depth" }], readings: [], from: hoursAgo(24), to: AT });
+  assert.deepEqual([deeper.discoveries, deeper.deeper, deeper.liftPrecision], [0, 1, 0],
+    "going on with a book it knew was counted as a discovery, or a lift with nothing new behind it was not caught");
 });
 
 test("teaching between two: it spoke of a subject it held and the other did not, and the other heard it as new", () => {

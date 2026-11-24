@@ -2838,9 +2838,10 @@ export class LivedExperienceStore {
     assertId("knowledge threadId",threadId);
     assertIsoTimestamp("knowledge since",since);
     assertIsoTimestamp("knowledge until",until);
-    return Object.freeze(this.#database.prepare(`SELECT DISTINCT learning,source_ref AS sourceRef,at
-      FROM thread_knowledge_events WHERE thread_id=? AND at>=? AND at<=? ORDER BY at`)
-      .all(threadId,since,until).map(row=>Object.freeze({...row})));
+    return Object.freeze(this.#database.prepare(`SELECT learning,source_ref AS sourceRef,at,
+      json_group_array(subject) AS subjects FROM thread_knowledge_events
+      WHERE thread_id=? AND at>=? AND at<=? GROUP BY learning,source_ref,at ORDER BY at`)
+      .all(threadId,since,until).map(row=>Object.freeze({...row,subjects:Object.freeze(JSON.parse(row.subjects))})));
   }
 
   listEngagementReadings(threadId,{since,until,limit=48}={}){

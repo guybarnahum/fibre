@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { fetchGutenbergText, readGutenbergPassage } from "./gutenberg-text.mjs";
+import { fetchGutenbergText, gutenbergTextUrls, readGutenbergPassage } from "./gutenberg-text.mjs";
 
 const book = "The Project Gutenberg eBook of Walden\n\n*** START OF THE PROJECT GUTENBERG EBOOK WALDEN ***\n\n\n"
   + Array.from({ length: 40 }, (_, i) => `Paragraph ${i} — when I wrote the following pages, I lived alone, in the woods.`).join("\n\n")
@@ -41,8 +41,19 @@ test("a busy mirror is asked again before giving up, and Gutenberg's website is 
   const busy = async (url) => { asked.push(new URL(url).host); return new Response("busy", { status: 503 }); };
   await assert.rejects(readGutenbergPassage({ sourceId: "205", textUrl: "https://www.gutenberg.org/files/205/205.txt",
     maxChars: 600, fetchImpl: busy }), /503/u, "a busy mirror was reported as a book");
-  assert.deepEqual(asked, ["gutenberg.pglaf.org", "gutenberg.pglaf.org"],
-    "a busy mirror was not asked again, or Gutenberg's website was fetched by a program");
+  assert.ok(asked.length > 0 && asked.every((host) => host === "gutenberg.pglaf.org"),
+    "Gutenberg's website was fetched by a program");
+  assert.equal(asked.length, 2 * gutenbergTextUrls({ sourceId: "205", textUrl: "https://www.gutenberg.org/files/205/205.txt" }).length,
+    "a busy mirror was not asked again before moving on");
+});
+
+test("a book without the mirror's generated text is found in the collection's own folders", async () => {
+  const urls = gutenbergTextUrls({ sourceId: "2848", textUrl: "https://www.gutenberg.org/ebooks/2848.txt.utf-8" });
+  assert.ok(urls.includes("https://gutenberg.pglaf.org/2/8/4/2848/2848-0.txt"), "the collection's folder was not tried");
+  const folders = async (url, init) => String(url).includes("/cache/epub/") ? new Response("", { status: 404 }) : ranged(url, init);
+  const passage = await readGutenbergPassage({ sourceId: "2848", textUrl: "https://www.gutenberg.org/ebooks/2848.txt.utf-8",
+    maxChars: 600, fetchImpl: folders });
+  assert.ok(passage.text.startsWith("Paragraph 0"), "a book missing from the generated texts could not be read");
 });
 
 test("a library's own copy is read without the catalogue, and gives the same pages", async () => {

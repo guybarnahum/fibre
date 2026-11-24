@@ -331,7 +331,12 @@ const HUNGRY=Object.freeze({
 const HUNGRY_ANY="Nothing new has come your way for a while; you are hungry for something new.";
 const LIFTED=Object.freeze([[0.1,null],[0.35,"Something new you came across has lifted you."],
   [1.01,"Discovering something new has lit you up."]]);
-const SHARE="Something has lifted you; you want to tell someone about it.";
+// The pull to tell (ADR-0041), as strong as it is: a faint one is not felt
+// as a lift. When it is felt, what it last learned from is named, so the
+// pull has something to tell.
+const SHARE=Object.freeze([[0.1,null],[0.3,"Something you came across is still with you; you would like to share it."],
+  [1.01,"Something has lifted you; you want to tell someone about it."]]);
+const ON_YOUR_MIND=({title,subjects})=>`It is "${title}" on your mind${subjects.length?`: ${subjects.join(", ")}`:""}.`;
 const PROMISING="They tend to bring you something new.";
 // Mastery (ADR-0041): the satisfaction of going deeper.
 const GLOW=Object.freeze([[0.15,null],[0.5,"Going further in what you know gives you a quiet satisfaction."],
@@ -395,6 +400,23 @@ export function feltTowardPeople(regulationFrame){
   return felt;
 }
 
+// What learning does to the Body, in words (ADR-0041): the lift of
+// something new or the hunger for it, and the pull to tell. Shared by the
+// Body's own words and the operator's panel, so both say the same.
+export function learningFelt(regulationFrame){
+  const drives=regulationFrame?.drives??[];
+  const novelty=drives.find(item=>item.family==="exploration"&&item.targetRef==="world:novelty")??null;
+  const pull=drives.find(item=>item.family==="social_contact"&&item.targetRef==="self:share"&&item.felt!==false)??null;
+  const share=pull===null?null:band(SHARE,pull.pressure);
+  return Object.freeze({
+    lift:novelty?.attained?band(LIFTED,novelty.progressError):null,
+    hungry:!novelty?.attained&&novelty!==null&&novelty.felt!==false&&novelty.pressure>0
+      ?HUNGRY[novelty.inheritedDirection]??HUNGRY_ANY:null,
+    share,
+    onMind:share!==null&&regulationFrame?.lately?ON_YOUR_MIND(regulationFrame.lately):null,
+  });
+}
+
 export function feltSocialBody(regulationFrame){
   if(regulationFrame===null)return [];
   const felt=(family)=>regulationFrame.drives.find(item=>item.family===family&&item.felt!==false&&item.pressure>0)??null;
@@ -418,16 +440,10 @@ export function feltSocialBody(regulationFrame){
   const weary=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="self:weariness"
     &&item.felt!==false&&item.pressure>0)??null;
   if(weary!==null)lines.push(WEARY[weary.inheritedDirection]??WEARY_ANY);
-  // Good news seeks company (ADR-0041).
-  if(regulationFrame.drives.some(item=>item.family==="social_contact"&&item.targetRef==="self:share"
-    &&item.felt!==false&&item.pressure>0))lines.push(SHARE);
-  const novelty=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="world:novelty")??null;
-  if(novelty?.attained){
-    const lifted=band(LIFTED,novelty.progressError);
-    if(lifted)lines.push(lifted);
-  }else if(novelty!==null&&novelty.felt!==false&&novelty.pressure>0){
-    lines.push(HUNGRY[novelty.inheritedDirection]??HUNGRY_ANY);
-  }
+  const learned=learningFelt(regulationFrame);
+  if(learned.share!==null)lines.push(learned.share,...(learned.onMind===null?[]:[learned.onMind]));
+  if(learned.lift!==null)lines.push(learned.lift);
+  else if(learned.hungry!==null)lines.push(learned.hungry);
   const competence=regulationFrame.drives.find(item=>item.family==="mastery_itch"&&item.targetRef==="self:competence"
     &&item.attained)??null;
   if(competence!==null){

@@ -11,6 +11,7 @@ import {createWorldSocialOpportunity} from "../src/world-social-opportunity.mjs"
 import {projectSituatedPercept} from "../src/situated-percept.mjs";
 import {evaluateSalience} from "../src/salience-gate.mjs";
 import {embodimentSpecificationDigest} from "../src/embodiment-domain.mjs";
+import {latelyLearned} from "../src/knowledge.mjs";
 import {booksToContinueAt,booksWithinReach,displayHoldings,glanceItems,keepBookText,keepLibraryBooks,keepOneMoreBook,LIBRARY_SHELVES,readHolding} from "../src/scene-glance.mjs";
 
 const seed=JSON.parse(readFileSync(
@@ -519,6 +520,9 @@ test("a Thread reads the actual pages from where it stopped, and its place in th
       "what the Thread came to know from the book is not World fact");
     assert.deepEqual(ctx.store.listLearning(ctx.ids[0],{since:AT,until:"2026-10-20T00:00:00.000Z"}).map(item=>item.learning),
       ["discovery","depth"],"a first meeting with a subject was not a discovery, or going on with the book not a step deeper");
+    const lately=latelyLearned({experienceStore:ctx.store,threadId:ctx.ids[0],at:"2026-10-19T11:00:00.000Z",
+      readings:ctx.store.listThreadReadings(ctx.ids[0],{limit:8})});
+    assert.ok(lately?.title===holding.work.title&&lately.subjects.length>0,"what it last learned from could not be named");
   }finally{ctx.close();}
 });
 
