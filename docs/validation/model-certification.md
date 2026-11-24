@@ -35,6 +35,12 @@ Limits, timeouts and retries are not part of it. They change whether an answer a
   - **acceptability:** every judge finds the answer acceptable for this job.
 
   Bars are in `tools/model/model-quality-criteria.mjs`. Guy's blind verdicts, from the admin Model Quality page, are compared with the judges' at every run.
+- **Speed, for live jobs** (`latency: live`: conversation turns, visitors' replies):
+  - such a job is asked the way the World asks it, streamed;
+  - it is timed to its first words;
+  - it passes only if at least 90% of answers begin within 3 s.
+
+  Timed from where the run is made, so providers are compared fairly; the World's own times differ a little. Run live jobs with low concurrency (`--concurrency 2`) so the timing is not crowded.
 - **Cost:** per 1,000 calls, from each call's real usage. Thinking is billed as output, so it is counted as output.
 - **Failures** are counted and named by cause: cut off at its output limit (and how much of that was thinking), stopped by the provider, timed out, schema missed. A model is never failed for a mistake in how it was called.
 

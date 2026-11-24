@@ -54,7 +54,8 @@ for (const [id, prompt] of Object.entries(PROMPTS).sort()) {
     const daily = perThread === null || item.costPer1000Calls == null ? null : perThread * item.costPer1000Calls / 1000;
     const settings = Object.entries(item.settings ?? {}).map(([key, value]) => `+${key}=${value}`).join("");
     console.log(`  ${item.verdict.toUpperCase().padEnd(9)} ${item.provider}:${item.model}${settings}  ${money(item.costPer1000Calls)} per 1,000 calls`
-      + (daily === null ? "" : ` · ${money(daily)} per Thread per day`) + `  (${item.certifiedAt}, ${item.requests} requests)`);
+      + (daily === null ? "" : ` · ${money(daily)} per Thread per day`) + (item.firstWords ? ` · ${item.firstWords}` : "")
+      + `  (${item.certifiedAt}, ${item.requests} requests)`);
   }
 }
 if (day) console.log(`\ncertified jobs as they run now: ${money(total)} per Thread per day (jobs without a certification of their current model not counted)`);

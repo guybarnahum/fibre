@@ -356,6 +356,12 @@ export const BARS = Object.freeze({
   chanceMultiple: 3, // attribution of a gist to its own memory, at least 3× chance
   invariant: 0.85, // the same decision when only evidence order changes, at least
   acceptable: 0.90, // judged acceptable for this job by every judge that read it, at least
+  // A live job (a conversation turn, a visitor's reply) is spoken as it
+  // streams: its first words must come within this time, for at least this
+  // share of answers. Measured from where the run is made, so a provider is
+  // compared fairly with another; the World's own latency differs a little.
+  firstWordsMs: 3000,
+  quickShare: 0.90,
 });
 
 const Z = 1.645;
@@ -393,9 +399,19 @@ function gainAtLeast(test, gains, bar, unaided = null) {
   return { test, value: m, n, bar, verdict: m - half >= bar ? "pass" : m + half < bar ? "fail" : "undecided" };
 }
 
+// How soon a live job's first words came, per answer: quick enough when at
+// least the bar's share came within its time.
+function quickEnough(times, bars) {
+  const within = times.filter((ms) => ms <= bars.firstWordsMs).length;
+  const sorted = [...times].sort((a, b) => a - b), at = (q) => sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))] ?? null;
+  return { ...atLeast(`quick enough to speak live: first words within ${bars.firstWordsMs / 1000} s`, [within, times.length], bars.quickShare),
+    detail: times.length ? `first words p50 ${Math.round(at(0.5))} ms, p90 ${Math.round(at(0.9))} ms` : null };
+}
+
 // measures: defects [k,n]; invented [k,n]; gains [number]; correct [k,n];
 // unaided [k,n] (sources picked from what was faced alone);
-// chance; invariant [k,n] or null; alarms [string]; acceptable [k,n].
+// chance; invariant [k,n] or null; alarms [string]; acceptable [k,n];
+// firstWordsMs [ms], for a live job only.
 export function goodEnough(prompt, measures, bars = BARS) {
   const gist = String(prompt).startsWith("experience.memory-gist");
   const tests = [
@@ -409,6 +425,7 @@ export function goodEnough(prompt, measures, bars = BARS) {
     { test: "credible day", verdict: measures.alarms.length > 0 ? "fail" : "pass", value: null, bar: null,
       detail: measures.alarms.join("; ") || "no alarms (Guy's reference range not yet set)" },
     atLeast("acceptable", measures.acceptable, bars.acceptable),
+    ...(measures.firstWordsMs === undefined ? [] : [quickEnough(measures.firstWordsMs, bars)]),
   ];
   const verdicts = tests.map((item) => item.verdict).filter((verdict) => verdict !== "n/a");
   const overall = verdicts.includes("fail") ? "fail" : verdicts.every((verdict) => verdict === "pass") ? "pass" : "undecided";

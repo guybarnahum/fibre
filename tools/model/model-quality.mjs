@@ -107,10 +107,25 @@ async function main() {
   const prompt = promptFor(options.prompt);
 
   // 1. Answers: each model, each request, as recorded and with meaningless changes.
-  const ask = (model, provider, input) => cached({ kind: "answer", model, prompt: options.prompt, version: prompt.version, input },
-    () => adapterFor(model, provider).invoke({ systemPrompt: prompt.text, input, responseSchema: requests[0].responseSchema,
-      clientRequestId: `quality_${digest(input).slice(0, 24)}`, latency: "minutes" })
-      .then((result) => ({ output: result.output, cost: costOf(modelIdOf(model), result.provenance?.usage, result.provenance?.serviceTier) }),
+  // A live job is asked as the World asks it, streamed, and timed to its first words.
+  const live = prompt.latency === "live";
+  const streamed = async (adapter, input) => {
+    const started = performance.now();
+    let first = null, text = "", provenance = null;
+    for await (const event of adapter.streamExpression({ systemPrompt: prompt.text, input,
+      clientRequestId: `quality_${digest(input).slice(0, 24)}` })) {
+      if (event?.type === "expression_delta" && event.text) { first ??= performance.now() - started; text += event.text; }
+      if (event?.type === "expression_complete") provenance = event.provenance;
+    }
+    if (first === null) throw new Error("the stream ended without a word");
+    return { output: { text }, provenance, firstWordsMs: Math.round(first), totalMs: Math.round(performance.now() - started) };
+  };
+  const ask = (model, provider, input) => cached({ kind: live ? "streamed-answer" : "answer", model, prompt: options.prompt, version: prompt.version, input },
+    () => (live ? streamed(adapterFor(model, provider), input)
+      : adapterFor(model, provider).invoke({ systemPrompt: prompt.text, input, responseSchema: requests[0].responseSchema,
+        clientRequestId: `quality_${digest(input).slice(0, 24)}`, latency: "minutes" }))
+      .then((result) => ({ output: result.output, cost: costOf(modelIdOf(model), result.provenance?.usage, result.provenance?.serviceTier),
+        ...(live ? { firstWordsMs: result.firstWordsMs, totalMs: result.totalMs } : {}) }),
         (error) => ({ error: String(error?.message ?? error).slice(0, 200) })),
     { fresh: options.fresh.includes(model) });
   const answers = new Map();
@@ -121,7 +136,7 @@ async function main() {
       const shuffled = job.unordered.length === 0 ? null : await ask(model, provider, perturbed(options.prompt, event.input));
       progress(`answers ${model} ${++done}/${requests.length}`);
       return { event, input: event.input, output: original.output, error: original.error, cost: original.cost,
-        perturbedOutput: shuffled?.output };
+        firstWordsMs: original.firstWordsMs, perturbedOutput: shuffled?.output };
     }));
   }
 
@@ -207,7 +222,9 @@ async function main() {
     result.goodEnough = goodEnough(options.prompt, { defects: result.defects, invented: every("invented", true), gains,
       correct: scorers.map((name) => attributed[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]), chance,
       unaided: scorers.map((name) => unaided[name]).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]),
-      invariant: decided.length === 0 ? null : invariant, alarms: result.alarms, acceptable: result.acceptable });
+      invariant: decided.length === 0 ? null : invariant, alarms: result.alarms, acceptable: result.acceptable,
+      ...(live ? { firstWordsMs: answered.map((item) => item.firstWordsMs).filter(Number.isFinite) } : {}) });
+    if (live) result.firstWords = result.goodEnough.tests.at(-1).detail;
     result.scoredBy = scorers;
     report.models.push(result);
 
@@ -289,6 +306,7 @@ async function main() {
     tests: Object.fromEntries(m.goodEnough.tests.map((test) => [test.test, test.verdict])),
     acceptable: rate(m.acceptable), scoredBy: m.scoredBy, nothingChosen: rate(m.nothingRate),
     costPer1000Calls: m.costPerCall === null ? null : Math.round(m.costPerCall * 1000 * 100) / 100,
+    ...(m.firstWords ? { firstWords: m.firstWords } : {}),
     requests: m.answered, failed: m.failed, certifiedAt: stamp.slice(0, 10), evidence: `quality-${options.prompt}-${stamp}.json`,
   }))), null, 2) + "\n");
   console.log(`certifications: ${CERTIFICATIONS_PATH} updated (${report.models.map((m) => `${m.model} ${m.tooFew ? "undecided" : m.goodEnough.overall}`).join(", ")}); commit it`);

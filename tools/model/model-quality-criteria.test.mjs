@@ -90,6 +90,17 @@ test("good enough is an absolute bar: clear passes pass, clear failures fail, an
     "a model failed attribution where what it faced already showed whose answer it was");
 });
 
+test("a live job is judged on how soon its first words come, and only a live job", () => {
+  const strong = { defects: [0, 400], invented: [2, 400], gains: Array(400).fill(0.3), correct: [0, 0], chance: 0.25,
+    invariant: null, alarms: [], acceptable: [390, 400] };
+  const quick = goodEnough("social.live-turn@13", { ...strong, firstWordsMs: Array(400).fill(900) });
+  assert.equal(quick.overall, "pass", "a good model that speaks at once did not pass");
+  assert.equal(goodEnough("social.live-turn@13", { ...strong, firstWordsMs: Array(400).fill(6000) }).overall, "fail",
+    "a model too slow to speak live passed");
+  assert.ok(!goodEnough(ATTENTION, strong).tests.some((item) => item.test.startsWith("quick enough")),
+    "a job that is not spoken live was held to a speaking time");
+});
+
 test("every compared model is scored by the same judges, never by a rival alone", () => {
   const judges = ["claude-opus-5-5", "gpt-5.6-sol"];
   const candidates = ["gpt-5.6-sol", "@cf/google/gemma-4-26b-a4b-it"];
