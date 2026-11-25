@@ -133,6 +133,7 @@
     "world-social:quality": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-social-quality.mjs",
     "dry-run:thematic-spreading": "node --disable-warning=ExperimentalWarning tools/dry-run/thematic-spreading.mjs",
     "dry-run:thematic-lens": "node --disable-warning=ExperimentalWarning tools/dry-run/thematic-lens.mjs",
+    "dry-run:mood": "node tools/deployment/run-with-progress.mjs dry-run:mood node --disable-warning=ExperimentalWarning tools/dry-run/mood.mjs",
     "library:keep": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/library-keep.mjs",
     "thread:chain": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/thread-chain.mjs",
     "world-observatory": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-observatory.mjs",
