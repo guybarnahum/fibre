@@ -41,20 +41,20 @@
         "temperature": 0.3
       },
       "verdict": "fail",
-      "comparedWith": "gpt-5.6-sol",
       "tests": {
         "nothing invented": "fail",
         "no broken rules": "fail",
         "acts on the Body": "n/a",
         "true-to-life rates": "fail",
         "this person, now": "fail",
-        "individual: the answer shows whose it is": "n/a",
-        "not one voice": "pass",
-        "steady": "pass"
+        "individual: the answer shows whose it is": "pass",
+        "not one voice": "undecided",
+        "steady": "n/a",
+        "moves the Thread on: restates what it holds": "fail"
       },
       "thisPerson": {
-        "share": 0.222,
-        "of": 99
+        "share": 0.21,
+        "of": 100
       },
       "scoredBy": [
         "claude-opus-5-5"
@@ -62,20 +62,20 @@
       "rates": {
         "leaves things as they were": 0,
         "keeps a memory": 1,
-        "writes in its journal": 0.98,
-        "an afterthought": 0.99,
-        "changes an interest": 0.576,
-        "a stance toward someone": 0.737,
-        "a moment with someone": 0.535,
-        "regard shown": 0.242,
-        "finds something new": 0.737
+        "writes in its journal": 1,
+        "an afterthought": 1,
+        "changes an interest": 0.67,
+        "a stance toward someone": 0.75,
+        "a moment with someone": 0.61,
+        "regard shown": 0.29,
+        "finds something new": 0.83
       },
-      "costPer1000Calls": 1.05,
-      "requests": 99,
-      "failedByModel": 1,
+      "costPer1000Calls": 1.1,
+      "requests": 100,
+      "failedByModel": 0,
       "notAnswered": 0,
       "certifiedAt": "2026-11-25",
-      "evidence": "quality-experience.consolidation-2026-11-25T17-12-49.325Z.json"
+      "evidence": "quality-experience.consolidation-2026-11-25T20-55-35.593Z.json"
     },
     {
       "prompt": "experience.consolidation",
@@ -252,42 +252,43 @@
       "promptVersion": 8,
       "provider": "openai",
       "model": "gpt-5.6-sol",
-      "verdict": "pass",
-      "reference": true,
+      "verdict": "fail",
+      "runsOnNow": true,
       "tests": {
         "nothing invented": "pass",
         "no broken rules": "pass",
         "acts on the Body": "n/a",
-        "true-to-life rates": "reference",
-        "this person, now": "reference",
-        "individual: the answer shows whose it is": "n/a",
-        "not one voice": "reference",
-        "steady": "reference"
+        "true-to-life rates": "fail",
+        "this person, now": "pass",
+        "individual: the answer shows whose it is": "undecided",
+        "not one voice": "fail",
+        "steady": "pass",
+        "moves the Thread on: restates what it holds": "pass"
       },
       "thisPerson": {
-        "share": 0.98,
-        "of": 100
+        "share": 0.96,
+        "of": 99
       },
       "scoredBy": [
         "claude-opus-5-5"
       ],
       "rates": {
-        "leaves things as they were": 0.12,
-        "keeps a memory": 0.29,
-        "writes in its journal": 0.88,
-        "an afterthought": 0.36,
-        "changes an interest": 0.28,
-        "a stance toward someone": 0.16,
-        "a moment with someone": 0.26,
-        "regard shown": 0.07,
-        "finds something new": 0.29
+        "leaves things as they were": 0.11,
+        "keeps a memory": 0.42,
+        "writes in its journal": 0.89,
+        "an afterthought": 0.49,
+        "changes an interest": 0.4,
+        "a stance toward someone": 0.28,
+        "a moment with someone": 0.35,
+        "regard shown": 0.13,
+        "finds something new": 0.42
       },
-      "costPer1000Calls": 23.47,
+      "costPer1000Calls": 23.07,
       "requests": 100,
       "failedByModel": 0,
       "notAnswered": 0,
       "certifiedAt": "2026-11-25",
-      "evidence": "quality-experience.consolidation-2026-11-25T17-12-49.325Z.json"
+      "evidence": "quality-experience.consolidation-2026-11-25T20-55-35.593Z.json"
     },
     {
       "prompt": "experience.consolidation",
@@ -295,19 +296,19 @@
       "provider": "openai",
       "model": "gpt-5.6-terra",
       "verdict": "fail",
-      "comparedWith": "gpt-5.6-sol",
       "tests": {
         "nothing invented": "pass",
         "no broken rules": "pass",
         "acts on the Body": "n/a",
         "true-to-life rates": "fail",
-        "this person, now": "undecided",
-        "individual: the answer shows whose it is": "n/a",
-        "not one voice": "pass",
-        "steady": "undecided"
+        "this person, now": "pass",
+        "individual: the answer shows whose it is": "fail",
+        "not one voice": "fail",
+        "steady": "pass",
+        "moves the Thread on: restates what it holds": "fail"
       },
       "thisPerson": {
-        "share": 0.96,
+        "share": 0.94,
         "of": 100
       },
       "scoredBy": [
@@ -315,20 +316,21 @@
       ],
       "rates": {
         "leaves things as they were": 0,
-        "keeps a memory": 0.64,
+        "keeps a memory": 0.78,
         "writes in its journal": 1,
-        "an afterthought": 0.29,
-        "changes an interest": 0.34,
-        "a stance toward someone": 0.39,
-        "a moment with someone": 0.38,
-        "regard shown": 0.09,
-        "finds something new": 0.42
+        "an afterthought": 0.44,
+        "changes an interest": 0.48,
+        "a stance toward someone": 0.53,
+        "a moment with someone": 0.49,
+        "regard shown": 0.24,
+        "finds something new": 0.53
       },
-      "costPer1000Calls": 9.15,
+      "costPer1000Calls": 9.86,
       "requests": 100,
-      "failed": 0,
-      "certifiedAt": "2026-11-24",
-      "evidence": "quality-experience.consolidation-2026-11-24T22-20-21.456Z.json"
+      "failedByModel": 0,
+      "notAnswered": 0,
+      "certifiedAt": "2026-11-25",
+      "evidence": "quality-experience.consolidation-2026-11-25T20-55-35.593Z.json"
     },
     {
       "prompt": "world.happening",
@@ -339,33 +341,33 @@
         "temperature": 0.3
       },
       "verdict": "fail",
-      "comparedWith": "gpt-5.6-sol",
       "tests": {
         "nothing invented": "pass",
         "no broken rules": "pass",
         "acts on the Body": "n/a",
         "true-to-life rates": "fail",
-        "this person, now": "n/a",
-        "individual: the answer shows whose it is": "n/a",
+        "true to this place, now": "fail",
+        "individual: the answer shows whose it is": "pass",
         "not one voice": "n/a",
-        "steady": "fail"
+        "steady": "pass"
       },
       "thisPerson": {
-        "share": 0.944,
+        "share": 0.778,
         "of": 18
       },
       "scoredBy": [
         "claude-opus-5-5"
       ],
       "rates": {
-        "something happens": 0.18
+        "something happens, in a public place": 0.45,
+        "something happens, elsewhere": 0
       },
       "costPer1000Calls": 0.12,
       "requests": 100,
       "failedByModel": 0,
       "notAnswered": 0,
       "certifiedAt": "2026-11-25",
-      "evidence": "quality-world.happening-2026-11-25T17-37-10.236Z.json"
+      "evidence": "quality-world.happening-2026-11-25T20-22-02.690Z.json"
     },
     {
       "prompt": "world.happening",
@@ -373,30 +375,31 @@
       "provider": "openai",
       "model": "gpt-5.6-sol",
       "verdict": "fail",
-      "reference": true,
+      "runsOnNow": true,
       "tests": {
         "nothing invented": "n/a",
         "no broken rules": "pass",
         "acts on the Body": "n/a",
         "true-to-life rates": "fail",
-        "this person, now": "reference",
-        "individual: the answer shows whose it is": "reference",
-        "not one voice": "reference",
-        "steady": "reference"
+        "true to this place, now": "n/a",
+        "individual: the answer shows whose it is": "n/a",
+        "not one voice": "n/a",
+        "steady": "n/a"
       },
       "thisPerson": null,
       "scoredBy": [
         "claude-opus-5-5"
       ],
       "rates": {
-        "something happens": 0
+        "something happens, in a public place": 0,
+        "something happens, elsewhere": 0
       },
       "costPer1000Calls": 2.15,
       "requests": 100,
       "failedByModel": 0,
       "notAnswered": 0,
       "certifiedAt": "2026-11-25",
-      "evidence": "quality-world.happening-2026-11-25T17-37-10.236Z.json"
+      "evidence": "quality-world.happening-2026-11-25T20-22-02.690Z.json"
     }
   ]
 }
