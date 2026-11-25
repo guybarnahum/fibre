@@ -37,31 +37,41 @@
       "promptVersion": 8,
       "provider": "google",
       "model": "gemini-3.6-flash",
-      "verdict": "undecided",
+      "verdict": "fail",
+      "comparedWith": "gpt-5.6-sol",
       "tests": {
-        "valid: no broken rules": "undecided",
-        "valid: nothing invented": "undecided",
-        "attributable: the answer shows who (or where)": "fail",
-        "invariant": "n/a",
-        "credible day": "pass",
-        "acceptable": "fail"
+        "nothing invented": "pass",
+        "no broken rules": "pass",
+        "acts on the Body": "n/a",
+        "true-to-life rates": "fail",
+        "this person, now": "undecided",
+        "individual: the answer shows whose it is": "n/a",
+        "not one voice": "pass",
+        "steady": "undecided"
       },
-      "acceptable": {
-        "share": 0.25,
-        "of": 4
+      "thisPerson": {
+        "share": 0.88,
+        "of": 100
       },
       "scoredBy": [
         "claude-opus-5-5"
       ],
-      "nothingChosen": {
-        "share": 0,
-        "of": 4
+      "rates": {
+        "leaves things as they were": 0.08,
+        "keeps a memory": 0.69,
+        "writes in its journal": 0.92,
+        "an afterthought": 0.5,
+        "changes an interest": 0.18,
+        "a stance toward someone": 0.08,
+        "a moment with someone": 0.29,
+        "regard shown": 0.04,
+        "finds something new": 0.35
       },
-      "costPer1000Calls": 14.04,
-      "requests": 4,
-      "failed": 96,
+      "costPer1000Calls": 13.34,
+      "requests": 100,
+      "failed": 0,
       "certifiedAt": "2026-11-24",
-      "evidence": "quality-experience.consolidation-2026-11-24T19-25-42.685Z.json"
+      "evidence": "quality-experience.consolidation-2026-11-24T22-20-21.456Z.json"
     },
     {
       "prompt": "experience.consolidation",
@@ -71,25 +81,41 @@
       "settings": {
         "thinkingLevel": "low"
       },
-      "verdict": "undecided",
+      "verdict": "fail",
+      "comparedWith": "gpt-5.6-sol",
       "tests": {
-        "valid: no broken rules": "n/a",
-        "valid: nothing invented": "n/a",
-        "attributable: the answer shows who (or where)": "n/a",
-        "invariant": "n/a",
-        "credible day": "pass",
-        "acceptable": "n/a"
+        "nothing invented": "pass",
+        "no broken rules": "pass",
+        "acts on the Body": "n/a",
+        "true-to-life rates": "fail",
+        "this person, now": "fail",
+        "individual: the answer shows whose it is": "n/a",
+        "not one voice": "pass",
+        "steady": "undecided"
       },
-      "acceptable": null,
+      "thisPerson": {
+        "share": 0.86,
+        "of": 100
+      },
       "scoredBy": [
         "claude-opus-5-5"
       ],
-      "nothingChosen": null,
-      "costPer1000Calls": null,
-      "requests": 0,
-      "failed": 100,
+      "rates": {
+        "leaves things as they were": 0.24,
+        "keeps a memory": 0.69,
+        "writes in its journal": 0.76,
+        "an afterthought": 0.27,
+        "changes an interest": 0.15,
+        "a stance toward someone": 0.1,
+        "a moment with someone": 0.31,
+        "regard shown": 0.06,
+        "finds something new": 0.52
+      },
+      "costPer1000Calls": 6.29,
+      "requests": 100,
+      "failed": 0,
       "certifiedAt": "2026-11-24",
-      "evidence": "quality-experience.consolidation-2026-11-24T19-25-42.685Z.json"
+      "evidence": "quality-experience.consolidation-2026-11-24T22-20-21.456Z.json"
     },
     {
       "prompt": "experience.consolidation",
@@ -99,25 +125,41 @@
       "settings": {
         "thinkingLevel": "minimal"
       },
-      "verdict": "undecided",
+      "verdict": "fail",
+      "comparedWith": "gpt-5.6-sol",
       "tests": {
-        "valid: no broken rules": "n/a",
-        "valid: nothing invented": "n/a",
-        "attributable: the answer shows who (or where)": "n/a",
-        "invariant": "n/a",
-        "credible day": "pass",
-        "acceptable": "n/a"
+        "nothing invented": "undecided",
+        "no broken rules": "pass",
+        "acts on the Body": "n/a",
+        "true-to-life rates": "fail",
+        "this person, now": "fail",
+        "individual: the answer shows whose it is": "n/a",
+        "not one voice": "pass",
+        "steady": "undecided"
       },
-      "acceptable": null,
+      "thisPerson": {
+        "share": 0.82,
+        "of": 100
+      },
       "scoredBy": [
         "claude-opus-5-5"
       ],
-      "nothingChosen": null,
-      "costPer1000Calls": null,
-      "requests": 0,
-      "failed": 100,
+      "rates": {
+        "leaves things as they were": 0.19,
+        "keeps a memory": 0.74,
+        "writes in its journal": 0.81,
+        "an afterthought": 0.27,
+        "changes an interest": 0.14,
+        "a stance toward someone": 0.1,
+        "a moment with someone": 0.28,
+        "regard shown": 0.06,
+        "finds something new": 0.48
+      },
+      "costPer1000Calls": 6.39,
+      "requests": 100,
+      "failed": 0,
       "certifiedAt": "2026-11-24",
-      "evidence": "quality-experience.consolidation-2026-11-24T19-25-42.685Z.json"
+      "evidence": "quality-experience.consolidation-2026-11-24T22-20-21.456Z.json"
     },
     {
       "prompt": "experience.consolidation",
@@ -125,61 +167,81 @@
       "provider": "openai",
       "model": "gpt-5.6-luna",
       "verdict": "fail",
+      "comparedWith": "gpt-5.6-sol",
       "tests": {
-        "valid: no broken rules": "undecided",
-        "valid: nothing invented": "fail",
-        "attributable: the answer shows who (or where)": "n/a",
-        "invariant": "undecided",
-        "credible day": "pass",
-        "acceptable": "fail"
+        "nothing invented": "fail",
+        "no broken rules": "pass",
+        "acts on the Body": "n/a",
+        "true-to-life rates": "fail",
+        "this person, now": "fail",
+        "individual: the answer shows whose it is": "n/a",
+        "not one voice": "pass",
+        "steady": "pass"
       },
-      "acceptable": {
-        "share": 0.61,
+      "thisPerson": {
+        "share": 0.65,
         "of": 100
       },
       "scoredBy": [
         "claude-opus-5-5"
       ],
-      "nothingChosen": {
-        "share": 0.01,
-        "of": 100
+      "rates": {
+        "leaves things as they were": 0.01,
+        "keeps a memory": 0.87,
+        "writes in its journal": 0.99,
+        "an afterthought": 0.83,
+        "changes an interest": 0.51,
+        "a stance toward someone": 0.53,
+        "a moment with someone": 0.62,
+        "regard shown": 0.56,
+        "finds something new": 0.59
       },
       "costPer1000Calls": 1.02,
       "requests": 100,
       "failed": 0,
       "certifiedAt": "2026-11-24",
-      "evidence": "quality-experience.consolidation-2026-11-24T19-25-42.685Z.json"
+      "evidence": "quality-experience.consolidation-2026-11-24T22-20-21.456Z.json"
     },
     {
       "prompt": "experience.consolidation",
       "promptVersion": 8,
       "provider": "openai",
       "model": "gpt-5.6-sol",
-      "verdict": "undecided",
+      "verdict": "pass",
+      "reference": true,
       "tests": {
-        "valid: no broken rules": "undecided",
-        "valid: nothing invented": "undecided",
-        "attributable: the answer shows who (or where)": "n/a",
-        "invariant": "undecided",
-        "credible day": "pass",
-        "acceptable": "pass"
+        "nothing invented": "pass",
+        "no broken rules": "pass",
+        "acts on the Body": "n/a",
+        "true-to-life rates": "reference",
+        "this person, now": "reference",
+        "individual: the answer shows whose it is": "n/a",
+        "not one voice": "reference",
+        "steady": "reference"
       },
-      "acceptable": {
-        "share": 0.97,
+      "thisPerson": {
+        "share": 0.98,
         "of": 100
       },
       "scoredBy": [
         "claude-opus-5-5"
       ],
-      "nothingChosen": {
-        "share": 0.12,
-        "of": 100
+      "rates": {
+        "leaves things as they were": 0.12,
+        "keeps a memory": 0.29,
+        "writes in its journal": 0.88,
+        "an afterthought": 0.36,
+        "changes an interest": 0.28,
+        "a stance toward someone": 0.16,
+        "a moment with someone": 0.26,
+        "regard shown": 0.07,
+        "finds something new": 0.29
       },
       "costPer1000Calls": 23.47,
       "requests": 100,
       "failed": 0,
       "certifiedAt": "2026-11-24",
-      "evidence": "quality-experience.consolidation-2026-11-24T19-25-42.685Z.json"
+      "evidence": "quality-experience.consolidation-2026-11-24T22-20-21.456Z.json"
     },
     {
       "prompt": "experience.consolidation",
@@ -187,30 +249,40 @@
       "provider": "openai",
       "model": "gpt-5.6-terra",
       "verdict": "fail",
+      "comparedWith": "gpt-5.6-sol",
       "tests": {
-        "valid: no broken rules": "undecided",
-        "valid: nothing invented": "pass",
-        "attributable: the answer shows who (or where)": "n/a",
-        "invariant": "fail",
-        "credible day": "pass",
-        "acceptable": "undecided"
+        "nothing invented": "pass",
+        "no broken rules": "pass",
+        "acts on the Body": "n/a",
+        "true-to-life rates": "fail",
+        "this person, now": "undecided",
+        "individual: the answer shows whose it is": "n/a",
+        "not one voice": "pass",
+        "steady": "undecided"
       },
-      "acceptable": {
-        "share": 0.94,
+      "thisPerson": {
+        "share": 0.96,
         "of": 100
       },
       "scoredBy": [
         "claude-opus-5-5"
       ],
-      "nothingChosen": {
-        "share": 0,
-        "of": 100
+      "rates": {
+        "leaves things as they were": 0,
+        "keeps a memory": 0.64,
+        "writes in its journal": 1,
+        "an afterthought": 0.29,
+        "changes an interest": 0.34,
+        "a stance toward someone": 0.39,
+        "a moment with someone": 0.38,
+        "regard shown": 0.09,
+        "finds something new": 0.42
       },
       "costPer1000Calls": 9.15,
       "requests": 100,
       "failed": 0,
       "certifiedAt": "2026-11-24",
-      "evidence": "quality-experience.consolidation-2026-11-24T19-25-42.685Z.json"
+      "evidence": "quality-experience.consolidation-2026-11-24T22-20-21.456Z.json"
     }
   ]
 }
