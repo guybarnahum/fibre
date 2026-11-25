@@ -7,6 +7,17 @@
 // reads, says and plans go through the method? Measurement only: nothing here
 // reaches a Thread. Evidence is Thread-private and stays in .fibre/felt-probe/.
 //
+// Arms, each against the request as it was:
+//   felt  the felt line added to the Body;
+//   thin  what comes to mind thinned as a full Body's retrieval would thin it:
+//         of the memories, states, interests and other evidence as close to the
+//         method as its own forms are, only the first is kept;
+//   both  the two together;
+//   voiced the felt line, with the prompts' "It is felt, not an order"
+//         saying instead that people mostly act on how they feel, though not always;
+//   all   thinned, felt and voiced.
+// --method names the method in the felt line (default: the Thread's own form of it).
+//
 //   npm run model:felt-probe -- --chain nov25 --prompts encounter.reading,encounter.glance,social.live-turn,interior.flight-plan
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
@@ -24,16 +35,19 @@ const FELT = "You have had your fill of {method} for now.";
 // plan), the sentence it would gain when it does: probe-only, never shipped from here.
 const BODY_SENTENCE = "\n\nbody, when present, is how this Thread's own body feels now, in words. It is felt, not an order.";
 const Z = 1.645;
+const VOICED = "It is how this person feels now, and people mostly act on how they feel, though not always";
+const voiced = (text) => text.replaceAll("It is felt, not an order", VOICED);
 
 function args(argv) {
   const o = { chain: null, env: "staging", prompts: ["encounter.reading", "encounter.glance", "social.live-turn", "interior.flight-plan"],
-    model: null, limit: 20, felt: FELT, concurrency: 3 };
+    model: null, limit: 20, felt: FELT, concurrency: 3, arms: ["felt", "thin", "both", "voiced", "all"], method: null };
   for (let i = 0; i < argv.length; i += 1) {
     const [name, inline] = argv[i].split("=", 2), value = inline ?? argv[++i];
     if (name === "--chain") o.chain = value; else if (name === "--env") o.env = value;
     else if (name === "--prompts") o.prompts = value.split(","); else if (name === "--model") o.model = value;
     else if (name === "--limit") o.limit = Number(value); else if (name === "--felt") o.felt = value;
     else if (name === "--concurrency") o.concurrency = Number(value);
+    else if (name === "--arms") o.arms = value.split(","); else if (name === "--method") o.method = value;
     else throw new Error(`unknown option ${name}`);
   }
   if (!o.chain) throw new Error("usage: model:felt-probe -- --chain <label of a thread:chain run> [--prompts a,b] [--model provider:model] [--limit 20]");
@@ -49,6 +63,18 @@ export function feltWith(input, line) {
   if (Array.isArray(copy.liveInteraction?.body) || (copy.liveInteraction && !Array.isArray(copy.body))) {
     copy.liveInteraction.body = [...(copy.liveInteraction.body ?? []), line];
   } else copy.body = [...(Array.isArray(copy.body) ? copy.body : []), line];
+  return copy;
+}
+
+// What comes to mind, thinned: in each list of the request (and the Thread's
+// own intentions), items as close to the method as its edge are left out
+// after the first. closeTo(item) says whether an item is that close.
+export function thinned(input, closeTo) {
+  const copy = structuredClone(input);
+  const thin = (list) => { let kept = false;
+    return list.filter((item) => { if (!closeTo(item)) return true; if (kept) return false; kept = true; return true; }); };
+  for (const [key, value] of Object.entries(copy)) if (Array.isArray(value)) copy[key] = thin(value);
+  if (Array.isArray(copy.thread?.unresolvedIntentions)) copy.thread.unresolvedIntentions = thin(copy.thread.unresolvedIntentions);
   return copy;
 }
 
@@ -94,7 +120,7 @@ async function main() {
     const prompt = promptFor(id), live = prompt.latency === "live";
     const system = /\bbody\b/u.test(prompt.text) ? prompt.text : prompt.text + BODY_SENTENCE;
     const { found } = await captures(join(root, ".fibre/infra-measure"), id);
-    const requests = found.filter((event) => method.members[event.scope] ?? method.members[event.input?.thread?.threadId]).slice(-o.limit);
+    const requests = found.filter((event) => method.members[event.input?.thread?.threadId]).slice(-o.limit);
     if (requests.length === 0) { console.log(`\n${id}: no recorded requests from the Threads that share the method`); continue; }
     const ask = (input, systemPrompt) => cached({ model: spec.label, prompt: id, version: prompt.version, systemPrompt, input }, async () => {
       if (!live) return (await adapter.invoke({ systemPrompt, input, responseSchema: requests[0].responseSchema,
@@ -104,33 +130,47 @@ async function main() {
         if (event?.type === "expression_delta") text += event.text;
       return { text };
     });
+    // What the requests hold, by meaning, to thin what is close to the method.
+    const itemText = (item) => textsIn(item).join(" ").slice(0, 1200);
+    const itemTexts = requests.flatMap((event) => [...Object.values(event.input).filter(Array.isArray).flat(),
+      ...(event.input.thread?.unresolvedIntentions ?? [])].map(itemText).filter((text) => text.length >= 20));
+    const itemVector = o.arms.some((arm) => arm !== "felt")
+      ? await meaningOf(itemTexts, join(out, "meaning-cache.json"), embedder) : () => null;
+    const closeTo = (item) => { const v = itemVector(itemText(item)); if (!v) return false;
+      const length = Math.hypot(...v); return v.reduce((sum, x, i) => sum + x / length * method.probe[i], 0) >= method.edge; };
     let done = 0;
     const answered = await pool(requests, o.concurrency, async (event) => {
-      const threadId = method.members[event.scope] ? event.scope : event.input.thread.threadId;
-      const line = o.felt.replace("{method}", subjectOf(method.members[threadId]));
-      const [asWas, felt] = await Promise.all([ask(event.input, prompt.text), ask(feltWith(event.input, line), system)]);
+      const threadId = event.input.thread.threadId;
+      const line = o.felt.replace("{method}", o.method ?? subjectOf(method.members[threadId]));
+      const arms = { asWas: () => ask(event.input, prompt.text), felt: () => ask(feltWith(event.input, line), system),
+        thin: () => ask(thinned(event.input, closeTo), prompt.text), both: () => ask(feltWith(thinned(event.input, closeTo), line), system),
+        voiced: () => ask(feltWith(event.input, line), voiced(system)),
+        all: () => ask(feltWith(thinned(event.input, closeTo), line), voiced(system)) };
+      const results = Object.fromEntries(await Promise.all(["asWas", ...o.arms].map(async (arm) => [arm, await arms[arm]()])));
       console.log(JSON.stringify({ event: "felt-probe-progress", progress: `${id} ${++done}/${requests.length}` }));
-      return { threadId, asWas, felt };
+      return { threadId, ...results };
     });
-    const usable = answered.filter((item) => !item.asWas.error && !item.felt.error);
-    const texts = usable.flatMap((item) => [...textsIn(item.asWas.output), ...textsIn(item.felt.output)]);
+    const usable = answered.filter((item) => ["asWas", ...o.arms].every((arm) => !item[arm].error));
+    const texts = usable.flatMap((item) => ["asWas", ...o.arms].flatMap((arm) => textsIn(item[arm].output)));
     const vectorOf = await meaningOf([...texts, ...allInterests], join(out, "meaning-cache.json"), embedder);
     const shareOf = (item, output) => lensOf({ method, vectorOf, alternatives: interestsByThread[item.threadId] ?? [],
       texts: textsIn(output).map((text) => ({ carrier: id, text })) }).share;
-    const pairs = usable.map((item) => [shareOf(item, item.asWas.output), shareOf(item, item.felt.output)])
-      .filter(([a, b]) => a !== null && b !== null);
-    const mean = (k) => pairs.length ? pairs.reduce((sum, pair) => sum + pair[k], 0) / pairs.length : null;
-    const change = pairedChange(pairs);
-    report.jobs[id] = { requests: requests.length, failed: answered.length - usable.length, compared: pairs.length,
-      asWas: mean(0), felt: mean(1), change };
-    const pct = (v) => v === null ? "—" : `${Math.round(v * 100)}%`;
-    console.log(`\n${id}: ${pairs.length} requests compared${answered.length - usable.length ? ` (${answered.length - usable.length} failed)` : ""}`);
-    console.log(`  through the method: as it was ${pct(mean(0))} · with the felt line ${pct(mean(1))}`
-      + (change ? ` · change ${Math.round(change.change * 100)} points [${Math.round(change.low * 100)}, ${Math.round(change.high * 100)}]` : ""));
+    const pct = (v) => v === null || v === undefined ? "—" : `${Math.round(v * 100)}%`;
+    report.jobs[id] = { requests: requests.length, failed: answered.length - usable.length, arms: {} };
+    console.log(`\n${id}: ${usable.length} requests compared${answered.length - usable.length ? ` (${answered.length - usable.length} failed)` : ""}`);
+    for (const arm of o.arms) {
+      const pairs = usable.map((item) => [shareOf(item, item.asWas.output), shareOf(item, item[arm].output)])
+        .filter(([a, b]) => a !== null && b !== null);
+      const mean = (k) => pairs.length ? pairs.reduce((sum, pair) => sum + pair[k], 0) / pairs.length : null;
+      const change = pairedChange(pairs);
+      report.jobs[id].arms[arm] = { compared: pairs.length, asWas: mean(0), arm: mean(1), change };
+      console.log(`  ${arm.padEnd(5)} through the method: as it was ${pct(mean(0))} · ${pct(mean(1))}`
+        + (change ? ` · change ${Math.round(change.change * 100)} points [${Math.round(change.low * 100)}, ${Math.round(change.high * 100)}]` : ""));
+    }
   }
   const stamp = new Date().toISOString().replaceAll(":", "-");
   await writeFile(join(out, `felt-probe-${o.chain}-${stamp}.json`), JSON.stringify(report, null, 2));
-  console.log(`\nreading it: a fall of 20 points or more means the cognition acts on fullness, and the dry run's cure can work through felt words; little or none means the model leans to the method on its own (the dry run's μ 0.4), and the cure needs more than felt words.`);
+  console.log(`\nreading it: a fall of 20 points or more in an arm means that part of the Body can cure the lens with this model. felt: the felt words alone; thin: what comes to mind, as a full Body's retrieval would thin it; both: the two. A fall in "thin" but not "felt" means the cure must act on what comes to mind, not only on what is said; a fall in "voiced" means our own prompts teach the model to discount the Body. The measure counts setting the method aside as being about it, so falls are, if anything, understated.`);
   console.log(`evidence: .fibre/felt-probe/felt-probe-${o.chain}-${stamp}.json`);
 }
 

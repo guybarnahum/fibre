@@ -258,10 +258,11 @@ export function textsIn(value, key = "") {
 export function lensTexts({ threadId, captures, utterances = [], from, to }) {
   const texts = utterances.filter((text) => text.length >= LENS_TEXT).map((text) => ({ carrier: "talk", text }));
   for (const event of captures) {
-    if (event.scope !== threadId || !within(event.at, from, to)) continue;
     const carrier = CARRIERS[String(event.prompt).split("@")[0]];
-    if (!carrier) continue;
+    if (!carrier || !within(event.at, from, to)) continue;
+    // A request's scope is a cache key; whose cognition it was is in the request itself.
     const capture = typeof event.capture === "string" ? JSON.parse(event.capture) : event.capture ?? event;
+    if ((capture?.input?.thread?.threadId ?? null) !== threadId) continue;
     for (const text of textsIn(capture?.output)) texts.push({ carrier, text });
   }
   return texts;

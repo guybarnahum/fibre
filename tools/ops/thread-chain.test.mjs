@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bodyLink, lensOf, sharedMethod, captureDecisions, closenessToOthers, glanceDecisions, personUplift, rankCorrelation, spread,
+import { bodyLink, lensOf, lensTexts, sharedMethod, captureDecisions, closenessToOthers, glanceDecisions, personUplift, rankCorrelation, spread,
   tellings, turnOutput, uplift } from "./thread-chain.mjs";
 
 // The chain read per Thread: Body signals are the panel's levels at the last
@@ -103,4 +103,14 @@ test("the shared lens is found from the Threads' own interests, and a text goes 
   assert.deepEqual(lens.byCarrier.reading, [1, 2], "reading a book as itself was counted as reading it through the method, or the reverse");
   assert.equal(sharedMethod({ vectorOf, interestsByThread: { a: ["Bees and their hives"], b: ["Sea stories"], c: ["Testing claims: what the evidence supports"] } }),
     null, "Threads with nothing in common were said to share a method");
+});
+
+test("a Thread's cognition is read from the requests that name it, whatever cache scope they were kept under", () => {
+  const at = "2026-11-25T10:00:00.000Z";
+  const captures = [{ prompt: "encounter.reading@1", scope: "cache-scope-1", at,
+    capture: JSON.stringify({ input: { thread: { threadId: "thr_a" } }, output: { experienceText: "The Nautilus dives under the ice and I hold my breath with Aronnax." } }) },
+    { prompt: "encounter.reading@1", scope: "thr_a", at,
+      capture: JSON.stringify({ input: { thread: { threadId: "thr_b" } }, output: { experienceText: "Someone else's reading, kept under a scope that looks like a Thread's id." } }) }];
+  const texts = lensTexts({ threadId: "thr_a", captures, from: "2026-11-25T00:00:00.000Z", to: "2026-11-26T00:00:00.000Z" });
+  assert.deepEqual(texts.map((item) => item.carrier), ["reading"], "a Thread's reading was missed, or another's counted as its own");
 });

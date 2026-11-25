@@ -28,9 +28,9 @@ const KAPPA = +(process.env.KAPPA ?? 0.6), PHI = +(process.env.PHI ?? 0.5);
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32); }
 
 export const TODAY = Object.freeze({ lensBody: false, reflectionBody: false, planBody: false, creditExpected: false, fullness: true,
-  fullnessByGain: false, mu: 0.1 });
+  fullnessByGain: false, mu: 0.1, phi: PHI, retrievalBody: false, rho: 0.7 });
 export const PROPOSED = Object.freeze({ lensBody: true, reflectionBody: true, planBody: true, creditExpected: true, fullness: true,
-  fullnessByGain: false, mu: 0.1 });
+  fullnessByGain: false, mu: 0.1, phi: PHI, retrievalBody: false, rho: 0.7 });
 
 export function run({ days = 90, seed = 1, worldSections = SECTORS, ...config } = {}) {
   const c = { ...PROPOSED, ...config };
@@ -76,9 +76,12 @@ export function run({ days = 90, seed = 1, worldSections = SECTORS, ...config } 
   const fullOf = (p, t, h) => c.fullness && p.themes.has(t) ? satiety(p, t, h) * (c.fullnessByGain ? p.eg : 1) : 0;
   // The method's pull on a cognition: what it sees, the model's leaning, and
   // where the Body reaches the cognition, the method's fullness against its itch.
+  // With fullness thinning what comes to mind (retrieval, felt where context
+  // is chosen), less of what the cognition sees is the method while it is full.
   const methodPull = (p, h, felt) => {
-    const held = p.themes.has(M);
-    return c.mu + KAPPA * salience(p, h) + (felt && held ? itchOf(p, M, h) - PHI * fullOf(p, M, h) : 0);
+    const held = p.themes.has(M), full = held ? fullOf(p, M, h) : 0;
+    const seen = salience(p, h) * (felt && c.retrievalBody ? 1 - c.rho * full : 1);
+    return c.mu + KAPPA * seen + (felt && held ? itchOf(p, M, h) - c.phi * full : 0);
   };
   const through = (own, method) => rand() < 1 / (1 + Math.exp((own - method) / T));
   const pulls = (p, h) => {
@@ -228,6 +231,10 @@ function main() {
     study("fullness scaled by exploration gain (as first designed)", { fullnessByGain: true }),
     study("a model leaning hard to the method (mu 0.4)", { mu: 0.4 }),
     study("a world of books only (themes in 2 sections)", { worldSections: 2 }),
+    // The felt-word probe (Nov 25): Sol hears "you have had your fill" but acts on it little.
+    study("felt words as weak as the probe found them (φ 0.1)", { phi: 0.1 }),
+    study("φ 0.1, with fullness thinning what comes to mind (ρ 0.7)", { phi: 0.1, retrievalBody: true }),
+    study("φ 0, with fullness thinning what comes to mind only", { phi: 0, retrievalBody: true }),
   ];
   const names = Object.keys(GENES);
   const last = (fn) => names.map((_, i) => mean(proposed.runs.map((r) => fn(r.series.at(-1), i))));

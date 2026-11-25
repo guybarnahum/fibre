@@ -104,7 +104,7 @@
     "model:usage": "node --env-file-if-exists=.env tools/model/model-usage.mjs",
     "model:captures": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-captures.mjs",
     "model:options": "node --disable-warning=ExperimentalWarning tools/model/model-options.mjs",
-    "model:felt-probe": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-felt-probe.mjs",
+    "model:felt-probe": "node tools/deployment/run-with-progress.mjs model:felt-probe node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-felt-probe.mjs",
     "model:quality": "node tools/deployment/run-with-progress.mjs model:quality node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-quality.mjs",
     "model:replay": "node tools/deployment/run-with-progress.mjs model:replay node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/model-replay.mjs",
     "inspect:db": "node --disable-warning=ExperimentalWarning tools/inspect/inspect-world-database.mjs",

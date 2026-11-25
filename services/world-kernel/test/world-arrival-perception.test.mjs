@@ -18,6 +18,13 @@ const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
 ));
 const AT="2026-10-18T14:00:00.000Z";
+// A book the catalogue cannot give is logged by World for operators; a test
+// that means to cause it keeps the log to itself.
+async function quietly(work){
+  const warn=console.warn;
+  console.warn=()=>{};
+  try{return await work();}finally{console.warn=warn;}
+}
 function setup(){
   const dir=mkdtempSync(join(tmpdir(),"fibre-arrival-witness-"));
   const storage=installedWorldStateStorage(join(dir,"world.sqlite"));
@@ -526,7 +533,7 @@ test("a Thread reads the actual pages from where it stopped, and its place in th
   }finally{ctx.close();}
 });
 
-test("the library keeps its own copy of a book, and its pages are read from it when the catalogue is down",async()=>{
+test("the library keeps its own copy of a book, and its pages are read from it when the catalogue is down",async()=>quietly(async()=>{
   const ctx=setup();
   try{
     const [holding,other]=await displayHoldings({venueRef:"venue_verified_cafe",
@@ -555,9 +562,9 @@ test("the library keeps its own copy of a book, and its pages are read from it w
     assert.ok(kept.results.every(item=>item.kept)&&kept.library.kept===kept.library.works,
       "keeping the library left books on its shelves without a copy");
   }finally{ctx.close();}
-});
+}));
 
-test("a book whose text cannot be had never keeps the library from keeping the others",async()=>{
+test("a book whose text cannot be had never keeps the library from keeping the others",async()=>quietly(async()=>{
   const ctx=setup();
   try{
     const holdings=await displayHoldings({venueRef:"venue_verified_cafe",
@@ -570,7 +577,7 @@ test("a book whose text cannot be had never keeps the library from keeping the o
     assert.equal(ctx.store.libraryKeeping().kept,new Set(holdings.map(h=>h.work.sourceId)).size-1,
       "one book without a text kept the library from keeping the others");
   }finally{ctx.close();}
-});
+}));
 
 test("a book a Thread has been reading is in its glance where it left it, and someone reading is seen with the book in hand",async()=>{
   const ctx=setup();
