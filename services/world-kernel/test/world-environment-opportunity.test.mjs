@@ -6,6 +6,7 @@ import { join } from "node:path";
 import test from "node:test";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
+import { localMoment } from "../src/appointments.mjs";
 import { createWorldEnvironmentOpportunity,worldStayOpportunityDueAt,worldAmbientScene } from "../src/world-environment-opportunity.mjs";
 
 const seed=JSON.parse(readFileSync(
@@ -60,7 +61,8 @@ test("World environment author sees observable activity but not private purpose"
           ref:"wpl_home",displayName:"Homework is done at a dining table or on a bed.",
         }),
         getPrivatePlace:(_threadId,ref)=>ref==="per:home_study:1"
-          ?{specificPlace:"A reading nook beside a private home's window."}:null,
+          ?{specificPlace:"A reading nook beside a private home's window.",
+            timeZone:"Africa/Addis_Ababa"}:null,
         listRecentCurrentSituations:()=>structuredClone(all),
       },
       worldReader:{getThread:(id)=>structuredClone(threads.get(id)??null)},
@@ -83,9 +85,11 @@ test("World environment author sees observable activity but not private purpose"
             assert.doesNotMatch(JSON.stringify(request.input),/important reunion|without expecting conversation/u,
               "another person's private plan entered World event cognition");
             if(request.input.initiatingSituation.situationId==="sit_arrival_a"){
-              assert.equal(request.input.initiatingSituation.sceneDescription,
+              assert.equal(request.input.place.name,
                 "A reading nook beside a private home's window.",
                 "World considered a private life without its actual setting");
+              assert.equal(request.input.localTime,localMoment(DUE,"Africa/Addis_Ababa"),
+                "World considered a place without its own hour");
               assert.equal(request.input.potentialObservers.length,1,
                 "private home incorrectly acquired a social observer");
             }

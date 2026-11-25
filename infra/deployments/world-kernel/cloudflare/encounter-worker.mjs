@@ -324,6 +324,7 @@ export class FibreWorldDurableObject extends BaseWorldDurableObject {
         worldReader:runtime.worldStore,
         semanticStateStore:openSemanticStateStore(runtime.worldStorage),
         memoryStore:openAutobiographicalMemoryStore(runtime.worldStorage),
+        situatedLifeStore:openSituatedLifeStore(runtime.worldStorage),
         modelAdapter:this.reasoningFor("encounter"),
         onExperienceQueued:this.experienceConsolidationWakeSchedulerForRequest(),
       };

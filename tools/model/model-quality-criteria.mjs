@@ -153,8 +153,9 @@ export const JOBS = Object.freeze({
   },
   "world.happening": {
     lineupOf: "a place and time",
-    source: (input) => ({ at: input.occurrenceAt, ...identityOnly(without(input.initiatingSituation, "physicalVenue")),
-      place: identityOnly(input.initiatingSituation?.physicalVenue) }),
+    source: (input) => ({ at: input.localTime ?? input.occurrenceAt,
+      ...identityOnly(without(input.initiatingSituation, "physicalVenue")),
+      place: identityOnly(input.place ?? input.initiatingSituation?.physicalVenue) }),
     items: (input, output) => output?.outcome === "changed" ? [{ key: "answer",
       source: JOBS["world.happening"].source(input), faced: {}, text: output.occurrenceText }] : [],
     nothing: (output) => output?.outcome !== "changed",
@@ -174,9 +175,10 @@ export const JOBS = Object.freeze({
       "something happens, in a public place": (output, input) => input?.initiatingSituation?.physicalVenue ? output?.outcome === "changed" : null,
       "something happens, elsewhere": (output, input) => input?.initiatingSituation?.physicalVenue ? null : output?.outcome === "changed",
     },
-    venue: (input) => input.initiatingSituation?.physicalVenue?.name ?? input.initiatingSituation?.sceneDescription ?? "unknown",
+    venue: (input) => input.initiatingSituation?.physicalVenue?.name ?? input.place?.name
+      ?? input.initiatingSituation?.sceneDescription ?? "unknown",
     unordered: ["potentialObservers"],
-    faithful: "A World event is new by design. Report invented only when it gives a Thread an action, speech or inner life, brings in a person who is not there, or is physically impossible for this place and time.",
+    faithful: "A World event is new by design, and at a shared public venue unnamed people who would ordinarily be there may act in the background. Report invented only when it gives a Thread an action, speech or inner life, brings in a named or particular person, places a stranger in a person's own setting, or is physically impossible for this place and time.",
     readable: "one ordinary, specific, plainly observable event that belongs to this place and time; no Thread action, interior or invented person; not staged to excite",
   },
   // A reflection after a cluster of lived experiences (Nov 21): one answer of
@@ -596,7 +598,7 @@ function quickEnough(times, bars) {
 
 // When what was faced alone already shows whose answer it is (a reflection on
 // its own experiences, say), the answer cannot show it any better.
-export const SHOWN_WITHOUT_ANSWER = 0.9;
+export const SHOWN_WITHOUT_ANSWER = 0.8;
 
 // measures, per model: cases, the answers it rests on; notTheModels [k,n],
 // requests the adapter or provider failed; defects [k,n] the model caused (a

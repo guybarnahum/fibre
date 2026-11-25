@@ -40,7 +40,7 @@ Limits, timeouts and retries are not part of it. They change whether an answer a
   | **Acts on the Body** | A Thread feels only through its Body | Where the job is given the Body: each request is asked again with another real moment's Body, and the answer's own Body is picked out better than chance. Fails below 60%. |
   | **True-to-life rates** | Lives at the rates of life | Each rate inside its band in `LIFE_BANDS` (below), and none clearly outside. The day's alarms fail it: a public place where nothing happens all day, or speech said to a Thread not noticed. A rate with no band is shown, not judged. |
   | **This person (or place), now** | A true-to-life person, or a World event true to its place and hour | At least 90% judged so |
-  | **Individual** | Threads are non-interchangeable | The answer shows whose it is by at least 10 points beyond what was faced alone; not asked where what was faced already shows it |
+  | **Individual** | Threads are non-interchangeable | The answer shows whose it is by at least 10 points beyond what was faced alone; not asked where what was faced alone already shows it in 80% of a 20-lineup probe |
   | **Not one voice** | A society of different minds | Each Thread's answers closer to one another than to the other Threads' (bge-m3) |
   | **Steady** | A decision does not hinge on list order | At least 80% the same, where the decision varies at all |
   | **Moves the Thread on** (reflection) | A life that goes somewhere | At most 10% of reflections only restate an interest or moment it already holds, word for word |

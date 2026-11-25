@@ -1,6 +1,9 @@
+import { localMoment } from "./appointments.mjs";
 import { promptRequest } from "./cognition-prompts.mjs";
+import { genesisPlaceLabel } from "./genesis-place-presentation.mjs";
 import { admitEncounterAttention } from "./lived-encounter-attention.mjs";
 import { createEncounterVisualization } from "./lived-encounter-visualization.mjs";
+import { placeForSituation } from "./lived-environmental-encounter.mjs";
 import {
   assertExactKeys,assertNonEmpty,assertPlainObject,canonicalJson,sha256,
 } from "./persistence-common.mjs";
@@ -11,6 +14,35 @@ const FOLLOWUP_MS=30*60_000;
 
 // Only the initiating Thread's private scene is available to this World
 // consideration. A private place never implies a shared venue or bystander.
+// What the World knows of a place, as an ordinary happening's ingredients
+// (Nov 25): its name, its kind, what people do there, its town and its civil
+// time. Only the World's own place records speak; a setting the World has no
+// record of is named as such, never guessed.
+const PLACE_KINDS=Object.freeze({
+  public_venue:"public venue",library_or_learning:"library or place of learning",
+  school:"school",market_or_commerce:"market or shops",
+  residence:"home",study:"place of study",work:"workplace",
+});
+
+function worldPlaceFacts({livedNowStore,situatedLifeStore,threadId,situation,origin}){
+  const lived=origin===null&&situatedLifeStore
+    ?placeForSituation(threadId,situation,situatedLifeStore,livedNowStore):null;
+  const named=origin?.displayName??origin?.specificPlace??lived?.displayName??null;
+  const label=genesisPlaceLabel(named);
+  const kind=PLACE_KINDS[origin?.placeKind??lived?.placeKind]
+    ??(label===null?null:label.toLowerCase());
+  return {
+    name:(label??named??"a setting the World has no record of").slice(0,320),
+    kind:kind??null,
+    shared:origin?.physicalVenue!=null,
+    affordances:[...(origin?.affordances??[])],
+    locality:origin?.locality??origin?.physicalVenue?.locality??lived?.location?.locality??null,
+    country:origin?.country??origin?.physicalVenue?.country??null,
+    timeZone:origin?.timeZone
+      ??livedNowStore.getWorldContext?.(threadId,{required:false})?.timeZone??null,
+  };
+}
+
 function observedPlace(livedNowStore,threadId,placeRef,initiatorThreadId){
   if(placeRef.startsWith("per:")){
     return threadId===initiatorThreadId
@@ -52,7 +84,7 @@ export function worldAmbientScene({situation,place,nextBoundaryAt}){
 // determines whether the particular occurrence can reach them.
 export function createWorldEnvironmentOpportunity({
   experienceStore,livedNowStore,worldReader,semanticStateStore,memoryStore,
-  modelAdapter,onExperienceQueued=null,now=()=>new Date().toISOString(),
+  modelAdapter,situatedLifeStore=null,onExperienceQueued=null,now=()=>new Date().toISOString(),
 }={}){
   for(const method of [
     "listDueEnvironmentalOpportunities","nextEnvironmentalOpportunityAt",
@@ -167,8 +199,13 @@ export function createWorldEnvironmentOpportunity({
               // independently present visitor can still observe this scene.
               const sceneWitness=opportunity.kind==="scene"&&physicalVenue!==null
                 ?venueObservers[0]:null;
+              const place=worldPlaceFacts({livedNowStore,situatedLifeStore,
+                threadId:opportunity.threadId,situation,origin});
               const input={
+                place,
                 occurrenceAt:opportunity.dueAt,
+                localTime:place.timeZone===null?null
+                  :localMoment(opportunity.dueAt,place.timeZone),
                 initiatingSituation:{
                   situationId:sceneWitness?.situationId??situation.situationId,
                   activity:(sceneWitness?.outwardActivity??situation.outwardActivity)?.slice(0,220)??null,
@@ -176,8 +213,6 @@ export function createWorldEnvironmentOpportunity({
                     ref:physicalVenue.ref,name:physicalVenue.displayName,
                     locality:physicalVenue.locality??null,country:physicalVenue.country??null,
                   },
-                  sceneDescription:(origin?.displayName??origin?.specificPlace
-                    ??"Ordinary lived setting").slice(0,320),
                 },
                 potentialObservers:candidateScenes,
               };

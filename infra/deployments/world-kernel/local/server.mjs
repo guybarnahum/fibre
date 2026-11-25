@@ -481,6 +481,7 @@ export async function startWorldKernelFromEnvironment(
     embodimentStore,
     semanticStateStore,
     memoryStore:autobiographicalMemoryStore,
+    situatedLifeStore,
     onExperienceQueued:(queued)=>experienceConsolidationWakeScheduler(queued),
     modelAdapter:{
       async invoke(request){

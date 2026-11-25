@@ -21,7 +21,7 @@ function requireMethod(name, value, method) {
   }
 }
 
-function placeForSituation(threadId, situation, situatedLifeStore, livedNowStore) {
+export function placeForSituation(threadId, situation, situatedLifeStore, livedNowStore) {
   if (situation.location?.kind !== "place") return null;
   const live = livedNowStore.getWorldPlace(
     threadId,

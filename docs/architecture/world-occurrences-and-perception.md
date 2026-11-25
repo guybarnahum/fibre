@@ -113,6 +113,22 @@ phenomena, inspect only bounded candidate exterior scenes and let World
 reason about actual perceptibility. If no actor could plausibly perceive an
 ambient change, do not invoke the authoring model or admit a change.
 
+**What World authoring is given (November 25).** A consideration stands for
+the time until someone's situation at the scene next changes, so a quiet
+answer silences the scene until then. World authoring therefore receives the
+ingredients an ordinary happening is made of, all from the World's own
+records: the place's name, its kind (public venue, library, school, market,
+home, place of study or work), whether it is a shared venue, what people do
+there (a public venue's affordances), its town and country, and its local
+weekday and time in the place's own time zone. A setting the World has no
+record of is named as such, never guessed. `world.happening` v2 asks for
+life's base rates: at a shared public venue something perceptible happens on
+most occasions; in a person's own setting, on some. Unnamed people who would
+ordinarily be at a public venue may act in the background; a named or
+particular person, a stranger inside a person's own setting, and any Thread's
+action or inner life remain outside World authority. The rates are certified
+against the true-to-life bands in [model certification](../validation/model-certification.md).
+
 A physical sleeper is not a computationally dormant Thread. A small ordinary
 event usually receives no waking attention; a sufficiently impactful event
 may cause an arousal opportunity via the established Body/attention mechanism
