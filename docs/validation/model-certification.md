@@ -60,6 +60,7 @@ Limits, timeouts and retries are not part of it. They change whether an answer a
   | Reflection | leaves things as they were | 10–40% |
   | Reflection | finds something new | 15–60% |
   | Attention | notices | 50–85% |
+  | Conversation | takes the other's words as friction: corrected, talked over, held ground against, overlooked | 5–20% |
 
   Every bar is met when the rate seen is on its side, and missed only when it is clearly on the other. Guy's blind verdicts, from the admin Model Quality page, ask the same question as "this person, now" and are compared with the judges' at every run.
 - **Speed, for live jobs** (`latency: live`: conversation turns, visitors' replies):
@@ -96,4 +97,5 @@ Limits, timeouts and retries are not part of it. They change whether an answer a
 - **A routed job does not fall back automatically when its provider fails.** It fails like any provider failure.
 - **Prices are a table in `tools/model/model-recorded-requests.mjs`.** A new model needs its price added.
 - **Only some jobs have criteria of their own** (attention, interoception, contact, World events, reflection, gists). Every other job is judged by its own instructions until a review shows it needs more.
-- **Bands exist for three jobs** (World events, reflection, attention). Other jobs show their rates unjudged until a band is set.
+- **Bands exist for four jobs** (World events, reflection, attention, conversation). Other jobs show their rates unjudged until a band is set.
+- **Can a Thread perceive friction at all?** `npm run model:regard-probe` asks recorded live turns again with the other person's words replaced by plain friction (a correction, holding ground, talking over, turning away) and counts how they are taken and whether the reply pushes back. On November 25 staging's 391 live turns held no friction at all; the probe tells whether the reader cannot see it or nobody gives it.

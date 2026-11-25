@@ -268,11 +268,20 @@ export const JOBS = Object.freeze({
 // to the Thread whose self it was given; no decision or "nothing" is assumed.
 const GENERAL_JOBS = new Map();
 const SPOKEN = /(^|\s)(SAY|INTRODUCE|PROPOSE|AGREE):/u;
+// How a Thread took the other person's last words or gesture: its private
+// reading, the second word of a live turn. Friction is ordinary in life
+// (Nov 25: staging's 391 turns held none).
+export const FRICTION_READINGS = new Set(["corrected", "corrected_publicly", "talked_over", "held_ground", "overlooked"]);
+export const readingOf = (text) => String(text ?? "").trim().split(/\s+/u)[1]?.toLowerCase() ?? null;
 const GENERAL_RATES = Object.freeze({
   "encounter.glance": { "takes something up": (output) => output?.focus !== null && output?.focus !== undefined },
   "social.live-turn": {
     speaks: (output) => SPOKEN.test(String(output?.text ?? "")),
     "finds something new": (output) => /^\W*(new|some_new)\b/u.test(String(output?.text ?? "")),
+    "takes the other's words as friction": (output) => {
+      const reading = readingOf(output?.text);
+      return reading === null || reading === "none" ? null : FRICTION_READINGS.has(reading);
+    },
   },
 });
 function generalJob(id) {
@@ -476,6 +485,7 @@ export const LIFE_BANDS = Object.freeze({
     "changes an interest": [0.05, 0.25], "a stance toward someone": [0.05, 0.25], "leaves things as they were": [0.10, 0.40],
     "finds something new": [0.15, 0.60] },
   "encounter.attention": { notices: [0.50, 0.85] },
+  "social.live-turn": { "takes the other's words as friction": [0.05, 0.20] },
 });
 
 // Whose a failed request is. The model's only when, after the adapter has
