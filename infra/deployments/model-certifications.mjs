@@ -14,7 +14,8 @@ export const EMPTY_CERTIFICATIONS = Object.freeze({ version: 1, certifications: 
 // cost: a certification holds for a model at these settings only. Limits,
 // timeouts and retries are left out; they change whether an answer arrives,
 // which a run's failures already show.
-export const COGNITION_SETTINGS = Object.freeze(["reasoningEffort", "thinkingLevel", "thinkingBudget", "thinking", "temperature", "topP"]);
+export const COGNITION_SETTINGS = Object.freeze(["reasoningEffort", "thinkingLevel", "thinkingBudget", "thinking", "temperature", "topP",
+  "structuredOutput"]);
 export function cognitionSettings(config = {}) {
   return Object.fromEntries(COGNITION_SETTINGS.filter((key) => config?.[key] !== undefined && config?.[key] !== null)
     .map((key) => [key, config[key]]));

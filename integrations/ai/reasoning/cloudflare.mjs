@@ -22,11 +22,18 @@ import {
 // The binding cannot cancel a request: one we stop waiting for still runs
 // and is billed. So a binding timeout is never retried, and cognition that
 // may take minutes is given minutes to answer.
+// A schema enforced by Workers AI's decoder lets a model stall: JSON allows
+// whitespace anywhere, so where the grammar forbids what the model wants
+// next (to close the answer before a required field, a value of another
+// kind) it writes whitespace to its output limit. Gemma 4 did so in three of
+// four reflections (Nov 24), minutes and 8,000 tokens each. So by default the
+// schema is given as an instruction and checked here ("checked"); the
+// decoder's grammar ("enforced") remains for a job that answers better with it.
 // Mechanical misses are the adapter's to repair, never the model's verdict:
 // JSON wrapped in a code fence or a sentence is read from inside it; a string
 // over its length is cut as for OpenAI (output-recovery); an answer that is
-// unreadable, cut off, or misses the schema is asked once more, and both
-// answers are billed and reported.
+// unreadable, cut off, or misses the schema is asked once more — when
+// checked, shown what it missed — and both answers are billed and reported.
 
 const ANSWER_ATTEMPTS = 2;
 const MECHANICAL = new Set(["UNPARSEABLE_MODEL_OUTPUT", "MODEL_INCOMPLETE_RESPONSE"]);
@@ -113,6 +120,18 @@ function withNullsRestored(value, schema) {
     } else result[name] = withNullsRestored(result[name], property);
   }
   return result;
+}
+
+// The answer's form, as an instruction, when the schema is checked here.
+function answerForm(schema) {
+  return `Answer with exactly one JSON object and nothing else: no code fence, no words before or after it. It must match this JSON Schema; a field that may be null may be written as null:\n${JSON.stringify(schema)}`;
+}
+// What a missed answer is told when asked again: its form only, never its content.
+function missedNote(error) {
+  const what = error.code === "MODEL_INCOMPLETE_RESPONSE" ? "was cut off before it ended"
+    : /missed the response schema at (.*)$/u.exec(error.message)?.[1]?.replace(/^/u, "does not match the schema at ")
+      ?? "is not one readable JSON object";
+  return `That answer ${what}. Give your whole answer again as exactly one JSON object matching the schema, and nothing else.`;
 }
 
 // The first complete JSON object in a text, wherever the model put it.
@@ -208,11 +227,14 @@ export function createCloudflareModelAdapter({
   retryDelayMs = DEFAULTS.retryDelayMs,
   temperature = null,
   thinking = false,
+  structuredOutput = "checked",
   fetchImpl = globalThis.fetch,
   observer = null,
   now = Date.now,
 } = {}) {
   assertNonEmpty("Workers AI modelId", modelId);
+  if (!["checked", "enforced"].includes(structuredOutput)) throw new TypeError("Workers AI structuredOutput must be checked or enforced");
+  const enforced = structuredOutput === "enforced";
   const viaBinding = typeof binding?.run === "function";
   if (!viaBinding && (typeof accountId !== "string" || typeof apiToken !== "string")) {
     throw new GuardianModelError("Workers AI needs the World's AI binding, or an account id and API token", {
@@ -223,7 +245,7 @@ export function createCloudflareModelAdapter({
     : `https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${modelId}`;
   const transport = viaBinding ? "workers-ai-binding" : "workers-ai-rest";
   const configuration = Object.freeze({ transport, maxOutputTokens, retryLimit, retryDelayMs, thinking,
-    temperature, structuredOutput:"json_schema-optional-nulls" });
+    temperature, structuredOutput:enforced ? "json_schema-optional-nulls" : "checked" });
   const circuit = createProviderCircuit({ now });
 
   async function run(body, signal) {
@@ -246,12 +268,19 @@ export function createCloudflareModelAdapter({
     return payload;
   }
 
-  const request = ({ systemPrompt, input, responseSchema = null }) => ({
-    messages:[{ role:"system", content:systemPrompt }, { role:"user", content:JSON.stringify(input) }],
+  // The job's prompt, the answer's form (when checked), this moment's input,
+  // and, asking again, the answer that missed with what it missed.
+  const request = ({ systemPrompt, input, responseSchema = null, repair = null }) => ({
+    messages:[
+      { role:"system", content:systemPrompt },
+      ...(responseSchema === null || enforced ? [] : [{ role:"system", content:answerForm(responseSchema) }]),
+      { role:"user", content:JSON.stringify(input) },
+      ...(repair === null ? [] : [{ role:"assistant", content:repair.answer }, { role:"user", content:repair.note }]),
+    ],
     max_tokens:maxOutputTokens,
     ...(temperature === null ? {} : { temperature }),
     chat_template_kwargs:{ enable_thinking:thinking },
-    ...(responseSchema === null ? {} : {
+    ...(responseSchema === null || !enforced ? {} : {
       response_format:{ type:"json_schema", json_schema:{ name:"fibre_cognition", schema:withOptionalNulls(responseSchema) } },
     }),
   });
@@ -308,13 +337,16 @@ export function createCloudflareModelAdapter({
       assertId("model clientRequestId", clientRequestId);
       const context = { inputDigest:digest(input), promptHash:digest(systemPrompt), responseSchemaHash:digest(responseSchema) };
       const missed = [], spent = [];
+      let repair = null, given = null;
       for (let answerAttempt = 1; ; answerAttempt += 1) {
         try {
           // Workers AI may itself refuse an answer that could not meet the schema.
+          given = null;
           const { answer, attemptNumber, operationalRetries } =
-            await attempt(request({ systemPrompt, input, responseSchema }), clientRequestId, context,
+            await attempt(request({ systemPrompt, input, responseSchema, repair }), clientRequestId, context,
               latency === "minutes" ? deferredTimeoutMs : timeoutMs);
           spent.push(answer.usage);
+          given = typeof answer.content === "string" ? answer.content : null;
           const { output, recoveries } = recoverModelOutput({
             output:withNullsRestored(parseOutput(answer.content, answer.finishReason), responseSchema), responseSchema });
           const miss = schemaMiss(output, responseSchema);
@@ -329,6 +361,7 @@ export function createCloudflareModelAdapter({
         } catch (error) {
           if (!(error instanceof GuardianModelError) || !MECHANICAL.has(error.code) || answerAttempt >= ANSWER_ATTEMPTS) throw error;
           missed.push({ code:error.code, message:error.message });
+          repair = enforced || given === null ? null : { answer:given.slice(0, 6000), note:missedNote(error) };
           notify(observer, { type:"operational_failure", provider:"cloudflare", modelId, clientRequestId, attempt:answerAttempt,
             maximumAttempts:ANSWER_ATTEMPTS, retrying:true, ...context,
             failure:{ code:error.code, message:error.message, retryable:true } });

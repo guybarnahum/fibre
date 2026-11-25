@@ -442,6 +442,17 @@ export function ratesOf(prompt, outputs) {
     [name, [outputs.filter((output) => does(output)).length, outputs.length]]));
 }
 
+// Whose a failed request is. The model's only when, after the adapter has
+// repaired what it could and asked again, there is still no answer in the
+// job's form; everything else (a timeout, the provider, an account limit, a
+// request we got wrong) is the adapter's or the provider's, and never counts
+// against the model.
+const MODEL_OWN_FAILURES = new Set(["UNPARSEABLE_MODEL_OUTPUT", "MODEL_INCOMPLETE_RESPONSE"]);
+export const failedBy = (code) => MODEL_OWN_FAILURES.has(code) ? "model" : "adapter";
+// Requests the adapter or provider failed: past this share, nothing is decided
+// until they are fixed and asked again.
+const NOT_THE_MODELS = 0.1;
+
 // Every candidate is scored by the same judges: those that read every model
 // compared. A judge that is itself a candidate never reads its own answers, so
 // letting it score the others would hold them to more judges than itself.
@@ -621,7 +632,9 @@ function quickEnough(times, bars) {
 export const SHOWN_WITHOUT_ANSWER = 0.9;
 
 // measures, per model, the reference's measured the same way:
-//   cases, the answers it rests on; defects [k,n] the model caused, and
+//   cases, the answers it rests on; notTheModels [k,n], requests the
+//   adapter or provider failed; defects [k,n] the model caused (a request it
+//   gave no answer to in the job's form among them), and
 //   ourDefects [k,n] our input caused; invented [k,n]; body [k,n] or null
 //   (the Body picked out); rates {name: [k,n]}; alarms [string];
 //   person [k,n] (true to this person now); gains [number] or, for a gist,
@@ -634,7 +647,11 @@ export function goodEnough(prompt, measures, reference = null, bars = BARS) {
   const gist = String(prompt).startsWith("experience.memory-gist");
   const shown = measures.unaided && measures.unaided[1] > 0 && measures.unaided[0] / measures.unaided[1] >= SHOWN_WITHOUT_ANSWER;
   const attribution = "individual: the answer shows whose it is";
+  const unasked = measures.notTheModels ?? [0, 0];
   const tests = [
+    ...(unasked[0] === 0 ? [] : [{ test: "measured fairly", value: null, bar: null,
+      verdict: unasked[0] / unasked[1] <= NOT_THE_MODELS ? "pass" : "undecided",
+      detail: `${unasked[0]} of ${unasked[1]} requests failed in the adapter or provider: not counted, asked again next run` }]),
     { ...atMost("nothing invented", measures.invented, bars.invented) },
     { ...atMost("no broken rules", measures.defects, bars.defects),
       ...(measures.ourDefects?.[0] > 0 ? { detail: `${measures.ourDefects[0]} more caused by our input, not counted` } : {}) },

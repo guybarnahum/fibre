@@ -326,6 +326,7 @@ export function selectReasoningIntegration(value, { environment = process.env, f
       retryDelayMs: chosen.config?.retryDelayMs,
       temperature: chosen.config?.temperature ?? null,
       thinking: chosen.config?.thinking === true,
+      ...(chosen.config?.structuredOutput ? { structuredOutput: chosen.config.structuredOutput } : {}),
     });
   }
   const apiKey = environmentValue("reasoning integration secrets", chosen.secrets, "apiKey", environment);

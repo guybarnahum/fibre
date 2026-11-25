@@ -26,7 +26,7 @@ import { captures, costOf, mean, pool } from "./model-recorded-requests.mjs";
 import { CERTIFICATIONS_PATH, EMPTY_CERTIFICATIONS, cognitionSettings, parseModelSpec, recordCertifications } from "../../infra/deployments/model-certifications.mjs";
 import { judgesFor } from "./model-judges.mjs";
 import { bodyLineup, bodyOf, dayAlarms, decision, defectText, goodEnough, interval, jobOf, lineup, modelCaused, otherBody,
-  perturbed, ratesOf, scopeOf, scoringJudges, SHOWN_WITHOUT_ANSWER, steadyDecision, withBody, withoutBody } from "./model-quality-criteria.mjs";
+  failedBy, perturbed, ratesOf, scopeOf, scoringJudges, SHOWN_WITHOUT_ANSWER, steadyDecision, withBody, withoutBody } from "./model-quality-criteria.mjs";
 import { centroid, closenessToOthers, meaningOf } from "../ops/thread-chain.mjs";
 import { createCloudflareEmbeddingAdapter } from "../../integrations/ai/embedding/cloudflare.mjs";
 import { agreement, readReview, readVerdicts, REVIEW_KIND, testReading } from "../../apps/admin-dashboard/model-quality-review.mjs";
@@ -91,7 +91,8 @@ async function main() {
     const file = join(cacheDir, `${digest(key)}.json`);
     if (!fresh) try { return { ...JSON.parse(await readFile(file, "utf8")), cached: true }; } catch {}
     const value = await work();
-    if (!value.error) await writeFile(file, JSON.stringify(value));
+    // A model's own failure is kept like an answer; an adapter's or provider's is asked again next run.
+    if (!value.error || value.own) await writeFile(file, JSON.stringify(value));
     return value;
   };
   const progress = (text) => console.log(JSON.stringify({ event: "model-quality-progress", progress: `${options.prompt} · ${text}` }));
@@ -149,7 +150,8 @@ async function main() {
         clientRequestId: `quality_${digest(input).slice(0, 24)}`, latency: "minutes" }))
       .then((result) => ({ output: result.output, cost: costOf(modelIdOf(model), result.provenance?.usage, result.provenance?.serviceTier),
         ...(live ? { firstWordsMs: result.firstWordsMs, totalMs: result.totalMs } : {}) }),
-        (error) => ({ error: String(error?.message ?? error).slice(0, 200) })),
+        (error) => ({ error: String(error?.message ?? error).slice(0, 200), code: error?.code ?? null,
+          ...(failedBy(error?.code) === "model" ? { own: true } : {}) })),
     { fresh: options.fresh.includes(model) });
   // Where the job is given the Body, each request is also asked felt with
   // another moment's Body: whether the answer changes with it is measured.
@@ -165,7 +167,7 @@ async function main() {
       const other = otherBody({ input: event.input, scope: scopeOf(options.prompt, event.input), requestKey, pool: bodyPool });
       const felt = other === null || original.error ? null : await ask(model, provider, withBody(event.input, other));
       progress(`answers ${model} ${++done}/${requests.length}`);
-      return { event, input: event.input, output: original.output, error: original.error, cost: original.cost,
+      return { event, input: event.input, output: original.output, error: original.error, own: original.own === true, cost: original.cost,
         firstWordsMs: original.firstWordsMs, perturbedOutput: shuffled?.output,
         body: felt?.output === undefined ? null : { own: bodyOf(event.input).lines, other, output: felt.output } };
     }));
@@ -218,6 +220,11 @@ async function main() {
   for (const { model } of options.models) {
     const answered = answers.get(model).filter((item) => !item.error);
     const failed = answers.get(model).length - answered.length;
+    // Failures are the model's only when, after the adapter repaired and asked
+    // again, it still gave no answer in the job's form. The rest were ours or
+    // the provider's: not counted, and asked again on the next run.
+    const ownFailures = answers.get(model).filter((item) => item.error && item.own).length;
+    const notTheModels = failed - ownFailures;
     const scorers = scoringJudges(judges.map((judge) => judge.model), options.models.map((m) => m.model), model);
     // Only judges whose verdicts count are asked, unless every reading is wanted.
     const readers = judges.filter((judge) => judge.model !== model && (options.allJudges || scorers.includes(judge.model)));
@@ -314,7 +321,8 @@ async function main() {
     const ours = defects.filter((list) => list.length > modelCaused(list).length).length;
     const measures = {
       cases: answered.length,
-      defects: [defects.filter((list) => modelCaused(list).length > 0).length, answered.length],
+      defects: [defects.filter((list) => modelCaused(list).length > 0).length + ownFailures, answered.length + ownFailures],
+      notTheModels: [notTheModels, answers.get(model).length],
       ourDefects: [ours, answered.length],
       invented: every("invented", true),
       body: bodyVotes.length === 0 ? null : [bodyVotes.filter(Boolean).length, bodyVotes.length],
@@ -330,7 +338,9 @@ async function main() {
     };
     report.models.push({
       model, answered: answered.length, failed, costPerCall: mean(answered.map((item) => item.cost)),
-      defectExamples: [...new Set(defects.flat().map(defectText))].slice(0, 5),
+      defectExamples: [...new Set([...(ownFailures ? ["no answer in the job's form, though asked again"] : []),
+        ...defects.flat().map(defectText)])].slice(0, 5),
+      ownFailures, notTheModels,
       invented, attributed, unaided, measures, scoredBy: scorers, readers: readers.map((judge) => judge.model),
       tooFew: answered.length < MIN_CASES,
       alsoRead: Object.fromEntries(readers.filter((judge) => !scorers.includes(judge.model))
@@ -356,9 +366,13 @@ async function main() {
     console.log(`\n${m.model}${isReference ? " — the reference: the model this job runs on now" : ""}${m.tooFew ? " — too few cases to decide" : ""}`);
     console.log(`  cost ${m.costPerCall === null ? "unknown" : `$${(m.costPerCall * 1000).toFixed(2)} per 1,000 calls`}${m.failed ? ` · ${m.failed} requests failed` : ""}`);
     // Why answers failed matters as much as how many: a timeout, the schema missed, an account limit.
-    const reasons = new Map();
-    for (const item of answers.get(m.model)) if (item.error) reasons.set(item.error, (reasons.get(item.error) ?? 0) + 1);
-    for (const [reason, count] of [...reasons].sort((a, b) => b[1] - a[1]).slice(0, 3)) console.log(`  failed ${count}×: ${reason}`);
+    for (const own of [true, false]) {
+      const reasons = new Map();
+      for (const item of answers.get(m.model)) if (item.error && item.own === own) reasons.set(item.error, (reasons.get(item.error) ?? 0) + 1);
+      for (const [reason, count] of [...reasons].sort((a, b) => b[1] - a[1]).slice(0, 3)) {
+        console.log(`  ${own ? "the model's failure" : "not the model's (adapter or provider), not counted"} ${count}×: ${reason}`);
+      }
+    }
     console.log(`  broken rules in ${share(measures.defects)}${m.defectExamples.length ? ` (${m.defectExamples.join("; ")})` : ""}`);
     for (const judge of m.readers) console.log(`  invented a fact (${judge}): ${share(m.invented[judge])}`);
     if (shownWithout === null) for (const judge of m.readers) console.log(`  shows whose answer (${judge}): ${share(m.attributed[judge])} · without the answer ${share(m.unaided[judge])} · chance ${percent(measures.chance)}`);
@@ -435,7 +449,7 @@ async function main() {
     rates: Object.fromEntries(Object.entries(m.measures.rates).map(([name, counts]) => [name, rate(counts)?.share ?? null])),
     costPer1000Calls: m.costPerCall === null ? null : Math.round(m.costPerCall * 1000 * 100) / 100,
     ...(m.firstWords ? { firstWords: m.firstWords } : {}),
-    requests: m.answered, failed: m.failed, certifiedAt: stamp.slice(0, 10), evidence: `quality-${options.prompt}-${stamp}.json`,
+    requests: m.answered, failedByModel: m.ownFailures, notAnswered: m.notTheModels, certifiedAt: stamp.slice(0, 10), evidence: `quality-${options.prompt}-${stamp}.json`,
   }))), null, 2) + "\n");
   console.log(`certifications: ${CERTIFICATIONS_PATH} updated (${measured.map((m) => `${m.model} ${m.tooFew ? "undecided" : m.goodEnough.overall}`).join(", ")}); commit it`);
   console.log(`\njudges spent ≈ $${judgeCost.toFixed(2)} this run (cached verdicts are free)`);

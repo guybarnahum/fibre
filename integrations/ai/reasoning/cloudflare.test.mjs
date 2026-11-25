@@ -12,7 +12,7 @@ const chat = (content, extra = {}) => ({ choices:[{ message:{ content }, finish_
 
 test("Workers AI thinks beside the World through its binding, asked for the job's schema, without hidden thinking", async () => {
   const sent = [];
-  const adapter = createCloudflareModelAdapter({ modelId:"@cf/google/gemma-4-26b-a4b-it",
+  const adapter = createCloudflareModelAdapter({ modelId:"@cf/google/gemma-4-26b-a4b-it", structuredOutput:"enforced",
     binding:{ run:async (model, body) => { sent.push({ model, body }); return chat("{\"noticed\":true}"); } } });
   const { output, provenance } = await ask(adapter);
   assert.deepEqual(output, { noticed:true });
@@ -62,7 +62,7 @@ test("what may be empty is asked as optional and read back as null, so a model n
       notes:{ type:"array", items:{ type:"object", additionalProperties:false, required:["text", "about"],
         properties:{ text:{ type:"string" }, about:{ type:["string", "null"] } } } } } };
   let asked = null;
-  const adapter = createCloudflareModelAdapter({ modelId:"@cf/m", binding:{ run:async (model, body) => {
+  const adapter = createCloudflareModelAdapter({ modelId:"@cf/m", structuredOutput:"enforced", binding:{ run:async (model, body) => {
     asked = body.response_format.json_schema.schema;
     return chat(JSON.stringify({ outcome:"noticed", experienceText:"I look up.", notes:[{ text:"a friend" }] }));
   } } });
@@ -119,4 +119,19 @@ test("a mechanical miss is the adapter's to repair, never the model's verdict: r
   const never = answering("{\"seen\":true}");
   await assert.rejects(ask(never.adapter), { code:"UNPARSEABLE_MODEL_OUTPUT" });
   assert.equal(never.calls(), 2, "a model that keeps missing the schema was asked more than once again");
+});
+
+test("by default the answer's form is an instruction checked here, never a grammar a model can stall in; a miss is shown what it missed", async () => {
+  const sent = [];
+  let calls = 0;
+  const adapter = createCloudflareModelAdapter({ modelId:"@cf/google/gemma-4-26b-a4b-it", retryLimit:0,
+    binding:{ run:async (model, body) => { sent.push(body); return chat(calls++ === 0 ? "{}" : "{\"noticed\":true}"); } } });
+  const { output } = await ask(adapter);
+  assert.deepEqual(output, { noticed:true });
+  assert.equal(sent[0].response_format, undefined, "the decoder was still held to a grammar");
+  assert.ok(sent[0].messages.some((message) => message.role === "system" && message.content.includes("\"noticed\"")),
+    "the model was not told the answer's form");
+  const again = sent[1].messages.at(-1).content;
+  assert.ok(again.includes("$.noticed") && again.includes("missing"), "the second ask did not say what was missed");
+  assert.equal(sent[1].messages.at(-2).content, "{}", "the answer that missed was not shown");
 });

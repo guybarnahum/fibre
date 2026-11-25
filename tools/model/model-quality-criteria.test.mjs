@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bodyLineup, bodyOf, dayAlarms, goodEnough, jobOf, lineup, modelCaused, otherBody, perturbed, scopeOf, scoringJudges, withBody,
+import { bodyLineup, bodyOf, dayAlarms, failedBy, goodEnough, jobOf, lineup, modelCaused, otherBody, perturbed, scopeOf, scoringJudges, withBody,
   withoutBody } from "./model-quality-criteria.mjs";
 import { promptFor } from "../../services/world-kernel/src/cognition-prompts.mjs";
 
@@ -198,4 +198,18 @@ test("a job without criteria of its own is judged by its own instructions, as th
   assert.deepEqual(item.source, { thread:{ name:"Habiba" } }, "the answer was not attributed to the Thread that gave it");
   assert.ok(item.text.includes("Walk to the library") && !item.text.includes("plc_1"), "the answer was not shown in its own words");
   assert.equal(jobOf("no.such-job@1"), null, "an unknown job was judged");
+});
+
+test("a failure of the adapter or provider never counts against the model; past a tenth of requests it leaves the model undecided", () => {
+  assert.equal(failedBy("UNPARSEABLE_MODEL_OUTPUT"), "model");
+  for (const code of ["MODEL_TIMEOUT", "MODEL_BILLING_QUOTA_EXHAUSTED", "MODEL_REQUEST_CONFIGURATION_ERROR", "MODEL_HTTP_ERROR", null]) {
+    assert.equal(failedBy(code), "adapter", `${code} was counted as the model's failure`);
+  }
+  const reference = measured();
+  assert.equal(goodEnough(REFLECTION, measured({ notTheModels: [5, 100] }), reference).overall, "pass",
+    "a few requests the provider dropped failed a model");
+  assert.equal(goodEnough(REFLECTION, measured({ notTheModels: [40, 140] }), reference).overall, "undecided",
+    "a model was decided while many requests had failed in the adapter");
+  assert.equal(goodEnough(REFLECTION, measured({ notTheModels: [40, 140], invented: [23, 100] }), reference).overall, "fail",
+    "what the answered requests clearly show was ignored");
 });
