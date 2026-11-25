@@ -28,9 +28,13 @@ const KAPPA = +(process.env.KAPPA ?? 0.6), PHI = +(process.env.PHI ?? 0.5);
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32); }
 
 export const TODAY = Object.freeze({ lensBody: false, reflectionBody: false, planBody: false, creditExpected: false, fullness: true,
-  fullnessByGain: false, mu: 0.1, phi: PHI, retrievalBody: false, rho: 0.7 });
+  fullnessByGain: false, mu: 0.1, kappa: KAPPA, phi: PHI, phiPlan: null, retrievalBody: false, rho: 0.7, thingPull: 0 });
 export const PROPOSED = Object.freeze({ lensBody: true, reflectionBody: true, planBody: true, creditExpected: true, fullness: true,
-  fullnessByGain: false, mu: 0.1, phi: PHI, retrievalBody: false, rho: 0.7 });
+  fullnessByGain: false, mu: 0.1, kappa: KAPPA, phi: PHI, phiPlan: null, retrievalBody: false, rho: 0.7, thingPull: 0 });
+// Calibrated to staging and the felt-word probe (Nov 25): today's lens about
+// 0.75; a felt line moves reading and talk by nothing and the day's plan by
+// about 10 points, and thinning what comes to mind the plan by about 7.
+export const MEASURED = Object.freeze({ ...PROPOSED, mu: -0.15, kappa: 0.55, phi: 0.02, phiPlan: 0.055, retrievalBody: true, rho: 0.075 });
 
 export function run({ days = 90, seed = 1, worldSections = SECTORS, ...config } = {}) {
   const c = { ...PROPOSED, ...config };
@@ -41,7 +45,8 @@ export function run({ days = 90, seed = 1, worldSections = SECTORS, ...config } 
     name, eg: 2 ** eg, ep, mg: 2 ** mg, mp, sg: 2 ** sg,
     // Today: the method held by all, long and deeply, and credited daily; nearly all they did went through it.
     themes: new Map([[M, { kind: "pursuit", met: Array.from({ length: 60 }, (_, i) => -i * 3), last: 0, since: -30 * DAY, lifts: [] }]]),
-    credits: Array.from({ length: 40 }, (_, i) => -i * 12), novelty: [], lens: Array.from({ length: 50 }, (_, i) => ({ at: -i * 3, m: true })),
+    // Staging, Nov 25: about three in four of what each cognition produced went through the method.
+    credits: Array.from({ length: 40 }, (_, i) => -i * 12), novelty: [], lens: Array.from({ length: 52 }, (_, i) => ({ at: -i * 3, m: i % 4 !== 3 })),
     planM: true,
   }));
   const satiety = (p, t, h) => bodyLevel({ at: at(h), events: p.themes.get(t).met.map((m) => ({ at: at(m), size: 0.35 })),
@@ -78,10 +83,10 @@ export function run({ days = 90, seed = 1, worldSections = SECTORS, ...config } 
   // where the Body reaches the cognition, the method's fullness against its itch.
   // With fullness thinning what comes to mind (retrieval, felt where context
   // is chosen), less of what the cognition sees is the method while it is full.
-  const methodPull = (p, h, felt) => {
+  const methodPull = (p, h, felt, phi = c.phi) => {
     const held = p.themes.has(M), full = held ? fullOf(p, M, h) : 0;
     const seen = salience(p, h) * (felt && c.retrievalBody ? 1 - c.rho * full : 1);
-    return c.mu + KAPPA * seen + (felt && held ? itchOf(p, M, h) - c.phi * full : 0);
+    return c.mu + c.kappa * seen + (felt && held ? itchOf(p, M, h) - phi * full : 0);
   };
   const through = (own, method) => rand() < 1 / (1 + Math.exp((own - method) / T));
   const pulls = (p, h) => {
@@ -119,14 +124,15 @@ export function run({ days = 90, seed = 1, worldSections = SECTORS, ...config } 
   for (let day = 0; day < days; day++) {
     // The day's plan: through the method or not, by the same pull; a plan
     // through the method frames the whole day's doing.
-    for (const p of people) p.planM = through(0.3, methodPull(p, day * DAY + 6, c.planBody));
+    for (const p of people) p.planM = through(0.3, methodPull(p, day * DAY + 6, c.planBody, c.phiPlan ?? c.phi));
     for (let slot = 0; slot < 8; slot++) {
       const h = day * DAY + 7 + slot * 2;
       for (const p of people) {
         const choice = choose(pulls(p, h));
         const t = choice.act === "explore" ? world[Math.floor(rand() * world.length)] : choice.theme;
         // What draws it to the thing itself: felt only where the Body reaches the cognition.
-        const own = 0.2 + (c.lensBody ? choice.pull : 0);
+        // A thing that is not a text to weigh (work, music, a market: F3) draws by itself more.
+        const own = 0.2 + (c.lensBody ? choice.pull : 0) + (choice.act === "explore" && sectorOf(t) >= 2 ? c.thingPull : 0);
         const viaMethod = through(own, methodPull(p, h, c.lensBody) + (p.planM ? 0.25 : 0));
         meet(p, t, h, viaMethod);
         // Talking about it with someone: they meet it the way it is told. One who
@@ -220,7 +226,15 @@ export function study(label, config, seeds = +(process.env.SEEDS ?? 30)) {
 
 function main() {
   const proposed = study("proposed: the Body felt where cognition chooses", PROPOSED);
+  const measured = { ...TODAY, mu: MEASURED.mu, kappa: MEASURED.kappa };
   const studies = [
+    study("today, calibrated to staging (lens 0.75)", measured),
+    study("as measured with Sol: words barely heard, the plan moved ~10 points, thinning ~7", MEASURED),
+    study("as measured, and a world with things that are not texts (F3)", { ...MEASURED, thingPull: 0.2 }),
+    study("as measured, without the Body in reflection", { ...MEASURED, reflectionBody: false }),
+    study("as measured, without the Body in the day's plan", { ...MEASURED, planBody: false }),
+    study("as measured, without thinning what comes to mind", { ...MEASURED, retrievalBody: false }),
+    study("today, calibrated, and a world with things that are not texts", { ...measured, thingPull: 0.2 }),
     study("today: no Body in any carrier, credit never expected", TODAY),
     proposed,
     study("without the Body in reading and talk (the lens)", { lensBody: false }),
@@ -236,9 +250,11 @@ function main() {
     study("φ 0.1, with fullness thinning what comes to mind (ρ 0.7)", { phi: 0.1, retrievalBody: true }),
     study("φ 0, with fullness thinning what comes to mind only", { phi: 0, retrievalBody: true }),
   ];
+  // Per Thread, as Sol was measured to act on the Body.
+  const realistic = studies[1];
   const names = Object.keys(GENES);
-  const last = (fn) => names.map((_, i) => mean(proposed.runs.map((r) => fn(r.series.at(-1), i))));
-  const at30 = (fn) => names.map((_, i) => mean(proposed.runs.map((r) => fn(r.series[29], i))));
+  const last = (fn) => names.map((_, i) => mean(realistic.runs.map((r) => fn(r.series.at(-1), i))));
+  const at30 = (fn) => names.map((_, i) => mean(realistic.runs.map((r) => fn(r.series[29], i))));
   const perThread = names.map((name, i) => ({ name, explorationGain: GENES[name][0], masteryGain: GENES[name][2], masteryPersistence: GENES[name][3],
     lensDay30: r2(at30((s, j) => s.lensShare[j])[i]), lensDay90: r2(last((s, j) => s.lensShare[j])[i]),
     methodPursuedDay90: r2(last((s, j) => s.method[j] === "pursuit" ? 1 : 0)[i]),

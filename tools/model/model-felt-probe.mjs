@@ -18,7 +18,7 @@
 //   all   thinned, felt and voiced.
 // --method names the method in the felt line (default: the Thread's own form of it).
 //
-//   npm run model:felt-probe -- --chain nov25 --prompts encounter.reading,encounter.glance,social.live-turn,interior.flight-plan
+//   npm run model:felt-probe -- --chain nov25 --prompts encounter.reading,encounter.glance,social.live-turn,interior.flight-plan,experience.consolidation
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createHash } from "node:crypto";
@@ -39,7 +39,7 @@ const VOICED = "It is how this person feels now, and people mostly act on how th
 const voiced = (text) => text.replaceAll("It is felt, not an order", VOICED);
 
 function args(argv) {
-  const o = { chain: null, env: "staging", prompts: ["encounter.reading", "encounter.glance", "social.live-turn", "interior.flight-plan"],
+  const o = { chain: null, env: "staging", prompts: ["encounter.reading", "encounter.glance", "social.live-turn", "interior.flight-plan", "experience.consolidation"],
     model: null, limit: 20, felt: FELT, concurrency: 3, arms: ["felt", "thin", "both", "voiced", "all"], method: null };
   for (let i = 0; i < argv.length; i += 1) {
     const [name, inline] = argv[i].split("=", 2), value = inline ?? argv[++i];
