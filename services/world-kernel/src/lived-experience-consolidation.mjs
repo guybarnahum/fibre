@@ -308,14 +308,15 @@ async function formDecision({
   return normalizeDecision(invocation.output);
 }
 
-// The others who acted in these experiences, as this Thread knows them, each
-// with the experiences that are its evidence about them.
+// The others who acted in these experiences, or wrote what reached it (a
+// message's sender), as this Thread knows them, each with the experiences
+// that are its evidence about them.
 function peopleIn({threadId,experiences,encounterStories,situation,at,
   worldReader,situatedLifeStore,embodimentStore,experienceStore}){
   const evidence=new Map();
   experiences.forEach((experience,index)=>{
     for(const beat of encounterStories[index]?.story?.beats??[]){
-      const other=beat.actorThreadId;
+      const other=beat.actorThreadId??beat.authorThreadId;
       if(typeof other!=="string"||other===threadId)continue;
       if(!evidence.has(other))evidence.set(other,new Set());
       evidence.get(other).add(experience.experienceId);

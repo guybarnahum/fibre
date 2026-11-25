@@ -25,6 +25,7 @@ The chain, each link able to fail on its own:
 4. **Between people:** it spoke of a subject it held and the other did not, and the other heard it as new (teaching). Also: whom it warms to, and who brings it something new.
 5. **Talk:** how its own talk reads to it (new, somewhat new, nothing new); World's meaning closeness of its exchanges to its earlier ones; how varied its talk is; how close its talk is to the others'.
 6. **Width:** subjects held and depth; new subjects. Also, by meaning, how varied its interests are and how far they stand from everyone else's (individuation).
+7. **The shared lens:** how much of what its cognition produced (talk, reading, the day's plan, reflection, noticing) went through a method most Threads share, by meaning. The method is found from the Threads' own interests: each Thread's interest nearest everyone else's, when those are close to one another (at least 0.6). A text goes through it when it is nearer the method than every one of the Thread's other ways in (its other interests, the books it read). The dry run's band: at most 0.5 for each Thread, about 0.3 on average (`claude/thematic-lens-design.md`).
 
 A good result at the end of the chain with a broken link before it is luck or drift, not the mechanism.
 

@@ -64,6 +64,8 @@ export function createThreadContactPerception({
             beats:[{
               actorThreadId:null,kind:"occurrence",
               text:`A private addressed message from ${claim.senderName} becomes available: ${message.messageText}`,
+              // Its sender is not there, but wrote it: someone the reader's regard may move toward.
+              authorThreadId:message.senderThreadId,
             }],
           };
           // An addressed message has no objective image, public place, or

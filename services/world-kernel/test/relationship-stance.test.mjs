@@ -65,6 +65,23 @@ function cafe(){
     assert.equal(run.failed,0,"a consolidation failed");
     return {experienceId:attention.experience.experienceId,result:run.results[0]};
   }
+  // A message from someone not there, read alone.
+  async function receive(minutes,from,name,words,stances){
+    const story={storyVersion:"encounter-story-v0.1",beats:[{actorThreadId:null,kind:"occurrence",authorThreadId:from,
+      text:`A private addressed message from ${name} becomes available: ${words}`}]};
+    const record=experience.recordEncounterStory({occurredAt:at(minutes),story,
+      threadPresence:[{threadId:SELF,situationId:SITUATION}],
+      visualization:createEncounterVisualization({occurredAt:at(minutes),story,
+        scene:"Private addressed message delivery.",sourceReferences:[SITUATION],depictedThreadRefs:[]})});
+    const attention=experience.recordThreadEncounterAttention({threadId:SELF,encounterRef:record.encounterId,
+      situationId:SITUATION,occurredAt:at(minutes),outcome:"noticed",experienceText:`${name} wrote to me.`});
+    experience.queueThreadExperienceConsolidation({experienceId:attention.experience.experienceId,queuedAt:at(minutes)});
+    outputs.push({journalEntry:null,afterthoughts:[],memory:NOT_REMEMBERED,stances});
+    clock=T0+(minutes+2)*60_000;
+    const run=await process.runOnce();
+    assert.equal(run.failed,0,"a consolidation failed");
+    return run.results[0];
+  }
   const regard=(other,aspect)=>semantic.listCurrentState(SELF).find(state=>
     state.domain==="relationship_attitude"&&state.dimension===aspect&&state.target.targetId===other)??null;
   const evidenceFacing=other=>selectDevelopedSelfEvidence({threadId:SELF,at:at(600),focusPartyId:other,
@@ -72,7 +89,7 @@ function cafe(){
       identityStore:{getCurrentIdentityView:threadId=>({threadId,assertions:[]})},
       situatedLifeStore:{listCurrentLifeRelations:()=>[]}}})
     .filter(item=>item.kind==="semantic_state");
-  return {meet,regard,semantic,evidenceFacing,close(){
+  return {meet,receive,regard,semantic,evidenceFacing,close(){
     semantic.close();memory.close();experience.close();world.close();
     rmSync(directory,{recursive:true,force:true});
   }};
@@ -105,5 +122,17 @@ test("a Thread's regard for a person forms, changes and leads its later cognitio
       "facing Noor, the Thread's regard for Noor did not come first");
     assert.equal(c.evidenceFacing(MINA)[0]?.ref,c.regard(MINA,"fondness").stateId,
       "facing Mina, the Thread's regard for Mina did not come first");
+  }finally{c.close();}
+});
+
+test("a message moves the reader's regard toward the one who wrote it, though the writer was not there",async()=>{
+  const c=cafe();
+  try{
+    const result=await c.receive(0,NOOR,"Noor Haddad","Shall we compare our notes tomorrow?",[
+      {personRef:NOOR,aspect:"attachment",regard:"Noor thinks of me even when we are apart; I feel closer to her."},
+    ]);
+    assert.equal(c.regard(NOOR,"attachment")?.state,"Noor thinks of me even when we are apart; I feel closer to her.",
+      "a stance toward the sender of a message was dropped as someone who was not there");
+    assert.equal(result.stancesDropped??0,0);
   }finally{c.close();}
 });

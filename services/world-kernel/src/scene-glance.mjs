@@ -254,10 +254,14 @@ export async function keepBookText({catalogue,experienceStore,holding,at}){
 }
 
 // One more book within reach the library has no copy of yet, kept now, so a
-// library comes to hold its own books over time.
+// library comes to hold its own books over time. Which one turns with the
+// hour, so a book whose text cannot be had (Nov 25: one 404 at every arrival)
+// never stands in front of all the others.
 export async function keepOneMoreBook({catalogue,experienceStore,holdings,at}){
-  const missing=holdings.find(holding=>experienceStore.keptBookText?.(workRefOf(holding.work))===null);
-  return missing===undefined?null:keepBookText({catalogue,experienceStore,holding:missing,at});
+  const missing=holdings.filter(holding=>experienceStore.keptBookText?.(workRefOf(holding.work))===null);
+  if(missing.length===0)return null;
+  const turn=Math.floor(Date.parse(at)/3_600_000)%missing.length;
+  return keepBookText({catalogue,experienceStore,holding:missing[turn],at});
 }
 
 // For an operator: keep the library's books now, a few at a time and spaced

@@ -165,6 +165,13 @@ function normalizeStory(candidate, participantIds) {
         if(beat.kind!=="action")throw new TypeError("only an action can take up a holding");
         assertId("encounter story beat.holdingRef",holdingRef);
       }
+      // What an occurrence delivers may have an author who is not there: the
+      // sender of a message. Named, so the one who reads it knows from whom.
+      const authorThreadId=beat.authorThreadId??null;
+      if(authorThreadId!==null){
+        if(beat.kind!=="occurrence")throw new TypeError("only an occurrence can carry an absent author's words");
+        assertId("encounter story beat.authorThreadId",authorThreadId);
+      }
       // A pause: a non-verbal moment in talk (a smile, a nod, a doubt).
       const pause=beat.pause??false;
       if(typeof pause!=="boolean"||(pause&&beat.kind!=="action"))
@@ -181,6 +188,7 @@ function normalizeStory(candidate, participantIds) {
         ...(meeting.length===0?{}:{[meeting[0]]:true}),
         ...(holdingRef===null?{}:{holdingRef}),
         ...(pause?{pause:true}:{}),
+        ...(authorThreadId===null?{}:{authorThreadId}),
       };
     }),
   };

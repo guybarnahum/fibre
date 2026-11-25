@@ -45,7 +45,7 @@ Before building any new or changed Body mechanism that claims an emergent behavi
    - **Ablations:** remove each piece of the mechanism in turn. Each must change something, or it is cut. Name what each one does, for example "without fullness, the shared theme stays and Threads converge".
    - **Failure modes:** runaway counts, convergence to one, oscillation, and dependence on a single seed.
 7. **Calibrate as species constants.** Thresholds and half-lives found by the dry run become species constants, recorded with their values. Staging evidence later adjusts them. Never fit a constant per Thread.
-8. **Say what it cannot prove.** In particular, whether the model behind each Thread acts on the felt words. That is link 2 of [`thread-chain.md`](thread-chain.md), measured on staging after the build. Also say what the World stand-in leaves out.
+8. **Say what it cannot prove.** In particular, whether the model behind each Thread acts on the felt words. Before building, probe it: `npm run model:felt-probe` asks recorded requests again with the felt line the mechanism would add, and compares the answers by meaning. After building, it is link 3 of [`thread-chain.md`](thread-chain.md), measured on staging. Also say what the World stand-in leaves out.
 9. **Record it.**
    - **In the design or ADR:** the chain, the state machine, the dry run's results with its ablations and gene correlations, what it changed in the design, and the command that reproduces it.
    - **Script:** under `tools/dry-run/<capability>.mjs`, named for the capability.

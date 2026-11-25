@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { bodyLink, captureDecisions, closenessToOthers, glanceDecisions, personUplift, rankCorrelation, spread,
+import { bodyLink, lensOf, sharedMethod, captureDecisions, closenessToOthers, glanceDecisions, personUplift, rankCorrelation, spread,
   tellings, turnOutput, uplift } from "./thread-chain.mjs";
 
 // The chain read per Thread: Body signals are the panel's levels at the last
@@ -83,4 +83,24 @@ test("meaning measures: variety, closeness to others, and genes read against a l
   assert.equal(closenessToOthers([1, 0], [[1, 0], [0, 1]]), 0.5);
   assert.equal(rankCorrelation([[0.1, 1], [0.2, 2], [0.3, 3], [0.4, 5]]).rho, 1);
   assert.equal(rankCorrelation([[0.1, 1], [0.2, 2]]), null, "a direction was claimed from two Threads");
+});
+
+test("the shared lens is found from the Threads' own interests, and a text goes through it only when nearer to it than to the Thread's other ways in", () => {
+  const vectors = {
+    "Testing claims: what the evidence supports": [1, 0, 0, 0.1], "Careful verification of claims": [0.95, 0.05, 0, 0.1],
+    "Stress-testing claims with examples": [0.97, 0, 0.05, 0.1], "Bees and their hives": [0, 1, 0, 0],
+    "Sea stories": [0, 0, 1, 0], "Twenty Thousand Leagues: submarines, sea stories": [0, 0.05, 1, 0],
+    "Marking where the passage supports a mechanism": [0.9, 0, 0.2, 0.1], "The Nautilus dives under the ice, and I hold my breath": [0.1, 0, 0.95, 0],
+  };
+  const vectorOf = (text) => vectors[text] ?? null;
+  const method = sharedMethod({ vectorOf, interestsByThread: { a: ["Testing claims: what the evidence supports", "Bees and their hives"],
+    b: ["Careful verification of claims"], c: ["Stress-testing claims with examples", "Sea stories"] } });
+  assert.ok(method !== null, "a method held by every Thread was not found");
+  assert.equal(method.members.a, "Testing claims: what the evidence supports", "a Thread's own form of the method was not its interest nearest the others'");
+  const lens = lensOf({ method, vectorOf, alternatives: ["Stress-testing claims with examples", "Sea stories", "Twenty Thousand Leagues: submarines, sea stories"],
+    texts: [{ carrier: "reading", text: "Marking where the passage supports a mechanism" },
+      { carrier: "reading", text: "The Nautilus dives under the ice, and I hold my breath" }] });
+  assert.deepEqual(lens.byCarrier.reading, [1, 2], "reading a book as itself was counted as reading it through the method, or the reverse");
+  assert.equal(sharedMethod({ vectorOf, interestsByThread: { a: ["Bees and their hives"], b: ["Sea stories"], c: ["Testing claims: what the evidence supports"] } }),
+    null, "Threads with nothing in common were said to share a method");
 });

@@ -332,7 +332,9 @@ async function main() {
       gains, correct: sum(scorers, attributed), chance,
       unaided: shownWithout ?? sum(scorers, unaided),
       voice: null,
-      invariant: decided.length === 0 ? null : invariant,
+      // A decision that never varies is trivially unchanged by reordering: not a measure of steadiness.
+      invariant: decided.length === 0 || new Set(decided.map((item) => steadyDecision(options.prompt, item.output))).size < 2
+        ? null : invariant,
       ...(live ? { firstWordsMs: answered.map((item) => item.firstWordsMs).filter(Number.isFinite) } : {}),
       paired,
     };

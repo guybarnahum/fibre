@@ -667,7 +667,7 @@ export function goodEnough(prompt, measures, reference = null, bars = BARS) {
           : meanNotWorse(attribution, measures.gains ?? [], reference?.gains ?? null, bars.margin),
     voiceNotCloser("not one voice", measures.voice ?? null, reference === null ? null : reference.voice ?? {}, bars.voiceMargin),
     measures.invariant === null || measures.invariant === undefined
-      ? { test: "steady", verdict: "n/a", value: null, bar: null }
+      ? { test: "steady", verdict: "n/a", value: null, bar: null, detail: "no decision to reorder, or one that never varies" }
       : compared("steady", "invariant", measures, reference, bars.margin),
     ...(measures.firstWordsMs === undefined ? [] : [quickEnough(measures.firstWordsMs, bars)]),
   ];

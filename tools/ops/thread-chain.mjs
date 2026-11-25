@@ -238,6 +238,75 @@ export async function meaningOf(texts, cachePath, embedder) {
   return (text) => cache[sha(text)] ?? null;
 }
 
+// ---- The shared lens (claude/thematic-lens-design.md) ----
+
+// Where a Thread's cognition chooses how to engage, by job: what it says,
+// reads, plans, and makes of what it lived.
+const CARRIERS = Object.freeze({ "social.live-turn": "talk", "contact.message": "talk", "interior.social-initiation": "talk",
+  "interior.social-initiation.company": "talk", "interior.social-initiation.ongoing-exchange": "talk", "interior.social-response": "talk",
+  "encounter.reading": "reading", "encounter.glance": "reading", "interior.flight-plan": "plan",
+  "experience.consolidation": "reflection", "encounter.experience": "noticing", "encounter.attention": "noticing" });
+const LENS_TEXT = 40;
+// Every sentence-length text an answer holds, record identities and times left out.
+export function textsIn(value, key = "") {
+  if (typeof value === "string") return value.length >= LENS_TEXT && !/(Ref|Id|At)$/u.test(key) ? [value.slice(0, 1200)] : [];
+  if (Array.isArray(value)) return value.flatMap((item) => textsIn(item, key));
+  if (value && typeof value === "object") return Object.entries(value).flatMap(([k, item]) => textsIn(item, k));
+  return [];
+}
+// What a Thread's cognition produced in the window, by carrier.
+export function lensTexts({ threadId, captures, utterances = [], from, to }) {
+  const texts = utterances.filter((text) => text.length >= LENS_TEXT).map((text) => ({ carrier: "talk", text }));
+  for (const event of captures) {
+    if (event.scope !== threadId || !within(event.at, from, to)) continue;
+    const carrier = CARRIERS[String(event.prompt).split("@")[0]];
+    if (!carrier) continue;
+    const capture = typeof event.capture === "string" ? JSON.parse(event.capture) : event.capture ?? event;
+    for (const text of textsIn(capture?.output)) texts.push({ carrier, text });
+  }
+  return texts;
+}
+
+// The method most Threads share, found from their own interests: each Thread's
+// interest closest to everyone else's, when those are close to one another.
+// Its probe is their centroid; any interest at least as close to it as its
+// farthest member is part of it.
+export function sharedMethod({ interestsByThread, vectorOf, cohesion = 0.6 }) {
+  const held = Object.entries(interestsByThread).map(([id, texts]) => [id, texts.map((text) => ({ text, v: vectorOf(text) })).filter((x) => x.v)])
+    .filter(([, list]) => list.length > 0);
+  if (held.length < 3) return null;
+  const members = held.map(([id, list]) => {
+    const others = held.filter(([other]) => other !== id);
+    const sharedness = (x) => others.reduce((sum, [, theirs]) => sum + Math.max(...theirs.map((y) => dot(norm(x.v), norm(y.v)))), 0) / others.length;
+    const best = list.map((x) => ({ ...x, s: sharedness(x) })).sort((a, b) => b.s - a.s)[0];
+    return { threadId: id, text: best.text, v: best.v, sharedness: best.s };
+  });
+  const together = members.flatMap((a, i) => members.slice(i + 1).map((b) => dot(norm(a.v), norm(b.v))));
+  const closeness = together.reduce((a, b) => a + b, 0) / together.length;
+  if (closeness < cohesion) return null;
+  const probe = centroid(members.map((m) => m.v));
+  return { probe, closeness: round(closeness, 3), edge: Math.min(...members.map((m) => dot(norm(m.v), probe))),
+    members: Object.fromEntries(members.map((m) => [m.threadId, m.text])) };
+}
+
+// The share of a Thread's texts made through the method: each text goes to
+// the nearest of the method and the Thread's other ways in (its interests not
+// part of the method, the books it read). By carrier, as [through, of].
+export function lensOf({ texts, method, alternatives, vectorOf }) {
+  const others = alternatives.map(vectorOf).filter(Boolean).map(norm).filter((v) => dot(v, method.probe) < method.edge);
+  const byCarrier = {};
+  for (const { carrier, text } of texts) {
+    const v = vectorOf(text);
+    if (!v) continue;
+    const u = norm(v), toMethod = dot(u, method.probe);
+    const through = others.every((other) => dot(u, other) < toMethod);
+    const tally = byCarrier[carrier] ??= [0, 0];
+    tally[0] += through ? 1 : 0; tally[1] += 1;
+  }
+  const all = Object.values(byCarrier).reduce(([k, n], [k2, n2]) => [k + k2, n + n2], [0, 0]);
+  return { share: all[1] ? round(all[0] / all[1]) : null, of: all[1], byCarrier };
+}
+
 // ---- Genes, and reading genes against a link across Threads ----
 
 export function genesOf(genetics) {
@@ -349,6 +418,7 @@ async function main(argv) {
     };
   }
 
+  let lensMethod = null;
   if (args.meaning) {
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID, apiToken = process.env.CLOUDFLARE_AI_API_TOKEN ?? process.env.CLOUDFLARE_API_TOKEN;
     if (!accountId || !apiToken) throw new Error("meaning needs CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AI_API_TOKEN (or --no-meaning)");
@@ -361,6 +431,22 @@ async function main(argv) {
       card.talk.spread = spread(talk); card.width.interestSpread = spread(minds);
       talkCentre[id] = centroid(talk); interestCentre[id] = centroid(minds);
     }
+    // The shared lens: the method most Threads hold, and how much of what each
+    // one's cognition produced in the window went through it.
+    const lensInput = Object.fromEntries(Object.entries(cards).map(([id, card]) => [id, {
+      texts: lensTexts({ threadId: id, captures, utterances: card.texts.utterances, from, to }),
+      books: (lives[id].o.readings ?? []).map((item) => item.title).filter(Boolean)
+        .map((title) => `${title}: ${(lives[id].b.knowledge?.subjects ?? []).map((item) => item.subject).slice(0, 6).join(", ")}`) }]));
+    const lensVector = await meaningOf([...Object.values(lensInput).flatMap((item) => [...item.texts.map((x) => x.text), ...item.books])],
+      resolve(out, "meaning-cache.json"), embedder);
+    const method = sharedMethod({ interestsByThread: Object.fromEntries(Object.entries(cards).map(([id, card]) => [id, card.texts.interests])),
+      vectorOf: lensVector });
+    for (const [id, card] of Object.entries(cards)) {
+      card.lens = method === null ? null : { sharedInterest: method.members[id] ?? null,
+        ...lensOf({ texts: lensInput[id].texts, method, vectorOf: lensVector,
+          alternatives: [...card.texts.interests, ...lensInput[id].books] }) };
+    }
+    lensMethod = method === null ? null : { closeness: method.closeness, members: method.members };
     for (const [id, card] of Object.entries(cards)) {
       card.talk.closenessToOthers = closenessToOthers(talkCentre[id], ids.filter((other) => other !== id).map((other) => talkCentre[other]));
       const near = closenessToOthers(interestCentre[id], ids.filter((other) => other !== id).map((other) => interestCentre[other]));
@@ -391,7 +477,7 @@ async function main(argv) {
     "attachment persistence ~ warmth→lookedTo": rankCorrelation(Object.values(cards).map((card) => [gene(card, "attachment_proximity", "persistence"), coupled(card, "warmth", "lookedTo")])),
   };
 
-  const saved = { label: args.label, env: args.env, from, to, cards, across, rows };
+  const saved = { label: args.label, env: args.env, from, to, cards, across, rows, lensMethod };
   writeFileSync(resolve(out, `${args.env}-${args.label}.json`), JSON.stringify(saved) + "\n");
 
   // Earlier runs, for each Thread's own trend.
@@ -420,9 +506,16 @@ async function main(argv) {
     const w = card.width;
     console.log(`  5 width: holds ${w.held} subjects (deepest ${w.depth}); new today ${w.newSubjects.length}${w.newSubjects.length ? ` (${w.newSubjects.slice(0, 4).join(" | ")})` : ""}; `
       + `${w.interests} interests, spread ${w.interestSpread ?? "—"}, individuation ${w.individuation ?? "—"}`);
+    if (card.lens) console.log(`  6 lens: ${card.lens.share ?? "—"} of ${card.lens.of} texts through the shared method (${Object.entries(card.lens.byCarrier)
+      .map(([carrier, [k, n]]) => `${carrier} ${k}/${n}`).join(", ") || "none"}); its own form of it: ${String(card.lens.sharedInterest ?? "—").slice(0, 70)}`);
     if (history.length > 1) console.log(`  trend: held ${trend(id, (c) => c.width.held)} · felt novel ${trend(id, (c) => c.talk.feltNovel)} · `
-      + `talk spread ${trend(id, (c) => c.talk.spread)} · individuation ${trend(id, (c) => c.width.individuation)}`);
+      + `talk spread ${trend(id, (c) => c.talk.spread)} · individuation ${trend(id, (c) => c.width.individuation)} · lens ${trend(id, (c) => c.lens?.share)}`);
   }
+  if (lensMethod) {
+    const shares = Object.values(cards).map((card) => card.lens?.share).filter((value) => value !== null && value !== undefined);
+    console.log(`\n--- The shared lens: a method held by ${Object.keys(lensMethod.members).length} Threads (their forms of it ${lensMethod.closeness} close); `
+      + `mean lens ${shares.length ? round(shares.reduce((a, b) => a + b, 0) / shares.length) : "—"} (dry run: today 1.0; cured ≤ 0.5 each, ~0.3 mean) ---`);
+  } else if (args.meaning) console.log("\n--- The shared lens: no method shared by most Threads ---");
   console.log("\n--- Genes against links, across Threads (direction only, few Threads) ---");
   for (const [what, value] of Object.entries(across)) console.log(`  ${what}: ${value === null ? "not enough yet" : `ρ ${value.rho} (n ${value.n})`}`);
   console.log(`\nEvidence: ${resolve(out, `${args.env}-${args.label}.json`)}`);

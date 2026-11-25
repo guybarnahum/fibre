@@ -557,6 +557,21 @@ test("the library keeps its own copy of a book, and its pages are read from it w
   }finally{ctx.close();}
 });
 
+test("a book whose text cannot be had never keeps the library from keeping the others",async()=>{
+  const ctx=setup();
+  try{
+    const holdings=await displayHoldings({venueRef:"venue_verified_cafe",
+      catalogue:{async listWorks(){return WORKS;}},experienceStore:ctx.store,at:AT});
+    const lost=holdings[0].work.sourceId;
+    const catalogue={async fetchText({sourceId}){if(sourceId===lost)throw new Error("book text 404");
+      return {bytes:new TextEncoder().encode("A short book."),fetchedFrom:"gutenberg.pglaf.org"};}};
+    for(let hour=0;hour<holdings.length*2;hour+=1)
+      await keepOneMoreBook({catalogue,experienceStore:ctx.store,holdings,at:new Date(Date.parse(AT)+hour*3_600_000).toISOString()});
+    assert.equal(ctx.store.libraryKeeping().kept,new Set(holdings.map(h=>h.work.sourceId)).size-1,
+      "one book without a text kept the library from keeping the others");
+  }finally{ctx.close();}
+});
+
 test("a book a Thread has been reading is in its glance where it left it, and someone reading is seen with the book in hand",async()=>{
   const ctx=setup();
   try{
