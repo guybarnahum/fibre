@@ -8,7 +8,7 @@
 import { pathToFileURL } from "node:url";
 import { bodyLevel, HOUR_MS, inheritedHalfLife } from "#core/src/body-level.mjs";
 
-const GENES = { // exploration gain/persist, mastery gain/persist, social gain (staging, Nov 24)
+export const GENES = { // exploration gain/persist, mastery gain/persist, social gain (staging, Nov 24)
   Kadir:[-0.92,-0.71,-0.09,0.98,0.12], Hassan:[0.97,-0.93,-0.09,0.98,0.94], Nathan:[0.87,0.38,-0.62,0.46,0.12],
   Mikias:[-0.92,-0.71,-0.62,0.46,-0.14], Surafel:[-0.23,0.98,-0.72,0.2,0.3], Kaleb:[0.06,0.43,-0.98,-0.56,-0.49],
   Habiba:[-0.23,0.98,0.25,0.26,-0.14], Bontu:[0.97,-0.93,0.3,-0.23,0.35] };
@@ -20,7 +20,7 @@ const GLOW = +(process.env.GLOW ?? 3.5), LIKE = +(process.env.LIKE ?? 1.2), HABI
 function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32); }
 
 export function run({ days = 90, seed = 1, fullness = true, itch = true, bodyInReflection = true, social = true,
-  habituation = HABITUATION_DEFAULT } = {}) {
+  habituation = HABITUATION_DEFAULT, fullnessByGain = process.env.FULLNESS_BY_GAIN === "1" } = {}) {
   const HABITUATION = habituation;
   const rand = rng(seed);
   const at = (h) => h * HOUR_MS;
@@ -50,7 +50,8 @@ export function run({ days = 90, seed = 1, fullness = true, itch = true, bodyInR
     const hunger = novelty < FLOOR ? 0.5 * (FLOOR - novelty) / FLOOR * p.eg : 0;
     const options = [{ act: "explore", pull: 0.05 + hunger }];
     for (const [t, theme] of p.themes) {
-      const full = fullness ? satiety(p, t, h) * p.eg : 0;
+      // Fullness is felt by everyone; exploration gain sets only the appetite for new (Nov 25).
+      const full = fullness ? satiety(p, t, h) * (fullnessByGain ? p.eg : 1) : 0;
       const want = theme.kind === "pursuit" ? (itch ? itchOf(p, t, h) : 0.25) : 0.2 * p.eg * (1 - satiety(p, t, h));
       options.push({ act: "engage", theme: t, pull: Math.max(0, want * (1 - (fullness ? satiety(p, t, h) : 0)) - 0.5 * full) });
     }
