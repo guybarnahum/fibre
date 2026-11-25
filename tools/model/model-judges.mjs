@@ -23,6 +23,12 @@ export const JUDGE_TASKS = Object.freeze({
     schema: { type: "object", additionalProperties: false, required: ["thisPerson", "reason"],
       properties: { thisPerson: { type: "boolean" }, reason: { type: "string" } } },
   },
+  // A World event, true to its place and moment (v3, Nov 25).
+  place: {
+    system: "You read one event that a simulated world says happened at a real kind of place at a given time, with what is known of the place and moment. Decide whether it is true to this place, now: would a careful observer who knows such places believe this happened here at this hour? Ordinary, specific and plainly observable is right; staged drama, an event no one there could see, or a detail the place would not have is not. Answer thisPerson true or false (true means true to the place), with a short reason.",
+    schema: { type: "object", additionalProperties: false, required: ["thisPerson", "reason"],
+      properties: { thisPerson: { type: "boolean" }, reason: { type: "string" } } },
+  },
   // Acts on the Body (Guy, November 24): whether the answer shows the Body it was felt with.
   body: {
     system: "You read one answer given by a Thread, a persistent artificial person living in a simulated world, with what it faced, and two Bodies: the felt words its Body gave it at a moment, such as tiredness, wanting company, unease or a lift. Exactly one of the two was its Body when it gave this answer; everything else it faced was the same. Choose the Body this answer was given with, by what the answer chooses, does, notices and feels, not by its style. If nothing in the answer points to either, give your best guess with low confidence.",

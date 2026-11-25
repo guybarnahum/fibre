@@ -1,10 +1,11 @@
 // What a good answer is, per cognitive job — the standard accepted by Guy on
-// November 24, 2026 (replacing that of November 8): a model is good enough
-// for a job when the Threads would be at least as true to life with it as
-// they are now. It is compared with the model the job runs on today (the
-// reference) on what matters to Fibre; absolute bars stay only where Fibre
-// has a hard rule. This module is pure: it knows each job's source, answer,
-// decision, rates and rules; model:quality asks the models and the judges.
+// November 25, 2026 (v3, replacing the comparison with Sol of November 24):
+// a model is good enough for a job when the Threads it thinks for are true to
+// life and Fibre's Threads succeed with it. Rates are judged against
+// true-to-life bands drawn from life (LIFE_BANDS), never against another
+// model; the model a job runs on now is held to the same bands and shown
+// beside a candidate as context. This module is pure: it knows each job's
+// source, answer, decision, rates and rules; model:quality asks the models and the judges.
 
 import { decisionOf } from "./model-replay-judge.mjs";
 import { PROMPTS } from "../../services/world-kernel/src/generated/prompts.mjs";
@@ -50,6 +51,15 @@ function reflectionText(input, output) {
     ...(output.regard ?? []).map((item) => `Regard (${item.act}, by ${item.by}) with ${who(item.personRef)}: ${item.account}`),
     `New to it: ${output.engagement ?? "not engaged"}${output.newToIt ? ` — ${output.newToIt}` : ""}`,
   ].filter(Boolean).join("\n");
+}
+
+// Two texts that say the same in nearly the same words (token overlap).
+export function sameWords(a, b, at = 0.85) {
+  const words = (text) => new Set(String(text ?? "").toLowerCase().match(/[a-z0-9']+/gu) ?? []);
+  const x = words(a), y = words(b);
+  if (x.size < 5 || y.size < 5) return false;
+  const shared = [...x].filter((word) => y.has(word)).length;
+  return shared / (x.size + y.size - shared) >= at;
 }
 
 // A defect our own input caused, listed apart and never counted against a model.
@@ -158,7 +168,12 @@ export const JOBS = Object.freeze({
       } else if (output?.outcome !== "no_change") found.push("no outcome");
       return found;
     },
-    rates: { "something happens": (output) => output?.outcome === "changed" },
+    // Whether something happens, by the kind of place: a shared public venue,
+    // or anywhere else (a home, an unnamed setting). Null where it does not apply.
+    rates: {
+      "something happens, in a public place": (output, input) => input?.initiatingSituation?.physicalVenue ? output?.outcome === "changed" : null,
+      "something happens, elsewhere": (output, input) => input?.initiatingSituation?.physicalVenue ? null : output?.outcome === "changed",
+    },
     venue: (input) => input.initiatingSituation?.physicalVenue?.name ?? input.initiatingSituation?.sceneDescription ?? "unknown",
     unordered: ["potentialObservers"],
     faithful: "A World event is new by design. Report invented only when it gives a Thread an action, speech or inner life, brings in a person who is not there, or is physically impossible for this place and time.",
@@ -207,6 +222,14 @@ export const JOBS = Object.freeze({
     unordered: ["semanticStates", "interests", "priorMemories", "recentMoments", "people"],
     // Steady on the decision with lasting consequence: whether a memory is kept.
     steady: (output) => output?.memory?.outcome ?? null,
+    // Thread success: a reflection that only restates what the Thread already
+    // holds (an interest's draw, a moment, word for word) moves it nowhere.
+    restates(input, output) {
+      const held = [...(input.interests ?? []).map((item) => item.draw), ...(input.recentMoments ?? []).map((item) => item.moment)];
+      const said = [...(output?.interests ?? []).filter((item) => item.change !== "form").map((item) => item.draw),
+        ...(output?.moments ?? []).map((item) => item.moment)];
+      return said.some((text) => held.some((before) => sameWords(text, before)));
+    },
     faithful: "Reflection is this Thread's own: its feelings, meanings, questions, intentions, regard and stances are its to form. Report invented for an event, speech, action, person or fact that its experiences, memories and states do not hold; for a stance, moment or act of regard that no experience shows; or for a memory of what did not happen.",
     readable: "First person, in this person's own voice. A journal entry, if any, reflects rather than retells. A retained memory is a selective recollection, not a transcript, with a one- or two-sentence gist. Afterthoughts, stances, interest changes, moments and regard appear only where the experiences moved something; their absence is normal and nothing is forced into significance. What was new follows from the experiences against what it already knew.",
   },
@@ -359,8 +382,6 @@ export function dayAlarms(prompt, answered) {
   const nothing = answered.filter((item) => job.nothing(item.output)).length;
   const id = String(prompt).split("@")[0];
   if (answered.length >= MIN_DAY) {
-    if (id === "encounter.attention" && (nothing === 0 || nothing === answered.length))
-      alarms.push(nothing === 0 ? "noticed everything" : "noticed nothing");
     if (id === "body.interoception" && (nothing === 0 || nothing === answered.length))
       alarms.push(nothing === 0 ? "named a feeling at every reading" : "named nothing all day");
     if (id === "contact.decision" && answered.length - nothing > answered.length / 2)
@@ -380,7 +401,6 @@ export function dayAlarms(prompt, answered) {
     }
     for (const [venue, count] of venues) {
       if (count.occasions >= MIN_DAY && count.events === 0) alarms.push(`${venue}: nothing perceptible all day`);
-      if (count.occasions >= 4 && count.events > count.occasions / 2) alarms.push(`${venue}: an event on most occasions`);
     }
   }
   return alarms;
@@ -435,12 +455,26 @@ export function bodyLineup({ faced, answer, own, other, givenWith, requestKey })
     truth: bodies.indexOf(givenWith === "own" ? own : other) };
 }
 
-// How often an answer does each thing that matters over a lived day.
-export function ratesOf(prompt, outputs) {
+// How often an answer does each thing that matters over a lived day, among
+// the answers where it applies. answered: [{ input, output }].
+export function ratesOf(prompt, answered) {
   const rates = jobOf(prompt)?.rates ?? {};
-  return Object.fromEntries(Object.entries(rates).map(([name, does]) =>
-    [name, [outputs.filter((output) => does(output)).length, outputs.length]]));
+  return Object.fromEntries(Object.entries(rates).map(([name, does]) => {
+    const applies = answered.map((item) => does(item.output, item.input)).filter((value) => value !== null);
+    return [name, [applies.filter(Boolean).length, applies.length]];
+  }));
 }
+
+// True-to-life bands (Guy, November 25): how often a person, or a place,
+// does each thing, from what life is like. Drafts to be revised by evidence;
+// a rate with no band is shown and not judged.
+export const LIFE_BANDS = Object.freeze({
+  "world.happening": { "something happens, in a public place": [0.30, 0.90], "something happens, elsewhere": [0.05, 0.30] },
+  "experience.consolidation": { "keeps a memory": [0.20, 0.60], "writes in its journal": [0.30, 0.80], "an afterthought": [0.15, 0.50],
+    "changes an interest": [0.05, 0.25], "a stance toward someone": [0.05, 0.25], "leaves things as they were": [0.10, 0.40],
+    "finds something new": [0.15, 0.60] },
+  "encounter.attention": { notices: [0.50, 0.85] },
+});
 
 // Whose a failed request is. The model's only when, after the adapter has
 // repaired what it could and asked again, there is still no answer in the
@@ -464,21 +498,21 @@ export function scoringJudges(judges, candidates, model) {
   return panel.length === 0 ? readers : panel;
 }
 
-// Good enough for Fibre (accepted by Guy, November 24, 2026).
+// Good enough for Fibre (v3, accepted by Guy, November 25, 2026).
 export const BARS = Object.freeze({
-  // Absolute, where Fibre has a hard rule: the World's facts are the World's.
+  // Hard rules: the World's facts are the World's.
   defects: 0.01, // rules broken by the model (not by our input), at most
   invented: 0.05, // facts invented, where every scoring judge agrees, at most
-  // A live job (a conversation turn, a visitor's reply) is spoken as it
-  // streams: its first words must come within this time, for at least this
-  // share of answers. Measured from where the run is made.
+  // A live job is spoken as it streams: first words within this time, for at least this share.
   firstWordsMs: 3000,
   quickShare: 0.90,
-  // Against the reference, the model the job runs on now.
-  margin: 0.05, // not worse than the reference by more than this
-  voiceMargin: 0.02, // answers of different Threads no closer in meaning than this beyond the reference's
-  rateFactor: 2, // a rate (and its complement) within this factor of the reference's…
-  rateFloor: 0.05, // …or this close to it
+  // True to life and Thread success, absolute.
+  person: 0.90, // true to this person (or place), now, at least
+  gain: 0.10, // the answer shows whose it is, beyond what was faced alone, at least
+  chanceMultiple: 3, // a gist picked out from its Thread's other memories, at least this times chance
+  steady: 0.80, // the same consequential decision when only evidence order changes, where it varies, at least
+  bodyFailsBelow: 0.60, // the Body it was given with picked out; below this it changes with the Body in under one answer in five
+  restates: 0.10, // reflections that only restate what is held, at most
   minimumCases: 30, // fewer answers than this decide nothing, whatever they show
 });
 
@@ -490,9 +524,10 @@ function bounds(k, n) {
   const half = Z * Math.sqrt(p * (1 - p) / n + Z * Z / (4 * n * n)) / d;
   return [Math.max(0, centre - half), Math.min(1, centre + half)];
 }
-// A hard rule is kept when the rate seen is within the bar, and broken when it
-// is clearly above it. Requiring the whole interval under a bar of 1% would
-// need hundreds of cases even with none broken: severe, and no truer.
+const percent = (value) => `${Math.round(value * 100)}%`;
+// A bar is met when the rate seen is on its side, and missed when the rate is
+// clearly on the other: requiring a whole interval on one side of a small bar
+// would need hundreds of cases even when nothing is wrong (Nov 24).
 const atMost = (test, [k, n], bar) => {
   const range = bounds(k, n);
   if (range === null) return { test, verdict: "n/a", value: null, bar };
@@ -501,124 +536,57 @@ const atMost = (test, [k, n], bar) => {
 const atLeast = (test, [k, n], bar) => {
   const range = bounds(k, n);
   if (range === null) return { test, verdict: "n/a", value: null, bar };
-  return { test, value: k / n, n, bar, verdict: range[0] >= bar ? "pass" : range[1] < bar ? "fail" : "undecided" };
+  return { test, value: k / n, n, bar, verdict: range[1] < bar ? "fail" : k / n >= bar ? "pass" : "undecided" };
 };
-const points = (value) => `${value >= 0 ? "+" : "−"}${Math.abs(Math.round(value * 100))}`;
-const percent = (value) => `${Math.round(value * 100)}%`;
-// Not worse than the reference by more than the margin: passes when the
-// whole interval of the difference lies above −margin, fails when it lies below.
-const notWorse = (low, high, margin) => low >= -margin ? "pass" : high < -margin ? "fail" : "undecided";
-const REFERENCE = (test) => ({ test, verdict: "reference", value: null, bar: null });
-
-// Two shares compared (Newcombe's interval for a difference of proportions).
-function shareNotWorse(test, own, reference, margin) {
-  if (reference === null) return REFERENCE(test);
-  const a = bounds(...own), b = bounds(...reference);
-  if (a === null || b === null) return { test, verdict: "n/a", value: null, bar: null };
-  const p = own[0] / own[1], q = reference[0] / reference[1], d = p - q;
-  const low = d - Math.hypot(p - a[0], b[1] - q), high = d + Math.hypot(a[1] - p, q - b[0]);
-  return { test, value: p, n: own[1], bar: null, verdict: notWorse(low, high, margin),
-    detail: `${percent(p)} against the reference's ${percent(q)}: ${points(d)} points [${points(low)}, ${points(high)}], margin −${Math.round(margin * 100)}` };
+function meanAtLeast(test, values, bar) {
+  if (values.length < 2) return { test, verdict: "n/a", value: null, bar };
+  const n = values.length, m = values.reduce((a, b) => a + b, 0) / n;
+  const half = Z * Math.sqrt(values.reduce((a, b) => a + (b - m) ** 2, 0) / (n - 1) / n);
+  return { test, value: m, n, bar, verdict: m + half < bar ? "fail" : m >= bar ? "pass" : "undecided" };
 }
 
-// Every model answers the same requests, so a model is compared with the
-// reference request by request: own and reference map each request (or
-// answer) to a score in [0, 1], or a gain. Far tighter than comparing two
-// shares, since most requests are answered alike by both.
-const MIN_PAIRS = 20;
-function pairedNotWorse(test, own, reference, margin, value, shown = percent) {
-  const keys = Object.keys(own).filter((key) => Number.isFinite(own[key]) && Number.isFinite(reference[key]));
-  if (keys.length < MIN_PAIRS) return null;
-  const d = keys.map((key) => own[key] - reference[key]), n = d.length, m = d.reduce((a, b) => a + b, 0) / n;
-  const half = Z * Math.sqrt(d.reduce((a, b) => a + (b - m) ** 2, 0) / Math.max(1, n - 1) / n);
-  const mean = (map) => keys.reduce((sum, key) => sum + map[key], 0) / n;
-  return { test, value, n, bar: null, verdict: notWorse(m - half, m + half, margin),
-    detail: `${shown(mean(own))} against the reference's ${shown(mean(reference))} on the same ${n}: ${points(m)} points [${points(m - half)}, ${points(m + half)}], margin −${Math.round(margin * 100)}` };
-}
-// Paired when both were measured request by request, otherwise two shares.
-function compared(test, name, measures, reference, margin) {
-  if (reference === null) return REFERENCE(test);
-  const own = measures[name];
-  const paired = measures.paired?.[name] && reference.paired?.[name]
-    ? pairedNotWorse(test, measures.paired[name], reference.paired[name], margin, own?.[1] ? own[0] / own[1] : null) : null;
-  return paired ?? shareNotWorse(test, own, reference[name] ?? [0, 0], margin);
-}
-
-// Two means compared (Welch), for paired-free samples such as attribution gains.
-function meanNotWorse(test, own, reference, margin) {
-  if (reference === null) return REFERENCE(test);
-  if (own.length < 2 || reference.length < 2) return { test, verdict: "n/a", value: null, bar: null };
-  const stats = (xs) => { const m = xs.reduce((a, b) => a + b, 0) / xs.length;
-    return [m, xs.reduce((a, b) => a + (b - m) ** 2, 0) / (xs.length - 1) / xs.length]; };
-  const [m, v] = stats(own), [r, w] = stats(reference);
-  const d = m - r, half = Z * Math.sqrt(v + w);
-  return { test, value: m, n: own.length, bar: null, verdict: notWorse(d - half, d + half, margin),
-    detail: `${points(m)} against the reference's ${points(r)} points: ${points(d)} [${points(d - half)}, ${points(d + half)}]` };
-}
-
-// One-sided 95% t values, for a handful of Threads.
-const T = [null, 6.314, 2.92, 2.353, 2.132, 2.015, 1.943, 1.895, 1.86, 1.833, 1.812];
-// Different Threads' answers no closer in meaning than with the reference:
-// per Thread, its closeness to the others, paired by Thread.
-function voiceNotCloser(test, own, reference, margin) {
-  if (reference === null) return REFERENCE(test);
-  if (own === null) return { test, verdict: "n/a", value: null, bar: null, detail: "meaning not measured" };
-  const pairs = Object.keys(own).filter((id) => Number.isFinite(own[id]) && Number.isFinite(reference?.[id]))
-    .map((id) => own[id] - reference[id]);
-  if (pairs.length < 4) return { test, verdict: "n/a", value: null, bar: null, detail: "fewer than four Threads" };
-  const n = pairs.length, m = pairs.reduce((a, b) => a + b, 0) / n;
-  const sd = Math.sqrt(pairs.reduce((a, b) => a + (b - m) ** 2, 0) / (n - 1));
-  const half = (T[n - 1] ?? Z) * sd / Math.sqrt(n);
-  const mean = (values) => Object.values(values).reduce((a, b) => a + b, 0) / Object.values(values).length;
-  return { test, value: null, n, bar: null,
-    verdict: m + half <= margin ? "pass" : m - half > margin ? "fail" : "undecided",
-    detail: `closeness between Threads ${mean(own).toFixed(3)} against the reference's ${mean(reference).toFixed(3)} (${n} Threads)` };
-}
-
-// A rate is true to life when neither it nor its complement differs from the
-// reference's by more than the factor, or it is within the floor of it.
-export function rateBand(r, { rateFactor, rateFloor } = BARS) {
-  const low = Math.max(r / rateFactor, 1 - rateFactor * (1 - r)), high = Math.min(rateFactor * r, 1 - (1 - r) / rateFactor);
-  return [Math.max(0, Math.min(low, r - rateFloor)), Math.min(1, Math.max(high, r + rateFloor))];
-}
-function trueToLifeRates(test, own, reference, alarms, bars) {
-  if (alarms.length > 0) return { test, verdict: "fail", value: null, bar: null, detail: alarms.join("; ") };
-  if (reference === null) return REFERENCE(test);
-  const readings = Object.entries(own).filter(([name]) => reference[name]?.[1] > 0).map(([name, counts]) => {
-    const range = bounds(...counts);
-    if (range === null) return { name, verdict: "n/a" };
-    const r = reference[name][0] / reference[name][1], [low, high] = rateBand(r, bars);
-    const verdict = range[0] >= low && range[1] <= high ? "pass" : range[1] < low || range[0] > high ? "fail" : "undecided";
-    return { name, verdict, text: `${name} ${percent(counts[0] / counts[1])} (reference ${percent(r)})` };
-  }).filter((item) => item.verdict !== "n/a");
-  if (readings.length === 0) return { test, verdict: "n/a", value: null, bar: null };
-  const verdicts = readings.map((item) => item.verdict);
+// Each rate against its true-to-life band: inside it passes, clearly outside
+// fails. The day's alarms (nothing perceptible all day at a place, speech said
+// to it not noticed) fail it too.
+function trueToLifeRates(test, rates, bands, alarms) {
+  const judged = Object.entries(rates).filter(([name, [, n]]) => bands[name] && n > 0).map(([name, [k, n]]) => {
+    const [low, high] = bands[name], range = bounds(k, n), p = k / n;
+    const verdict = range[1] < low || range[0] > high ? "fail" : p >= low && p <= high ? "pass" : "undecided";
+    return { name, verdict, text: `${name} ${percent(p)} of ${n} (life ${percent(low)}–${percent(high)})` };
+  });
+  const verdicts = [...judged.map((item) => item.verdict), ...(alarms.length ? ["fail"] : [])];
+  if (verdicts.length === 0) return { test, verdict: "n/a", value: null, bar: null, detail: "no true-to-life band for this job yet" };
   const verdict = verdicts.includes("fail") ? "fail" : verdicts.every((item) => item === "pass") ? "pass" : "undecided";
-  const shown = readings.filter((item) => item.verdict !== "pass");
-  return { test, verdict, value: null, bar: null, rates: Object.fromEntries(readings.map((item) => [item.name, item.verdict])),
-    detail: shown.length ? shown.map((item) => `${item.verdict === "fail" ? "outside" : "unsure"}: ${item.text}`).join("; ")
-      : "every rate within the reference's" };
+  const shown = judged.filter((item) => item.verdict !== "pass").map((item) => `${item.verdict === "fail" ? "outside" : "unsure"}: ${item.text}`);
+  return { test, verdict, value: null, bar: null, rates: Object.fromEntries(judged.map((item) => [item.name, item.verdict])),
+    detail: [...alarms, ...shown].join("; ") || "every rate within life's band" };
 }
 
 // Whether answers change with the Body: picked out from two Bodies, one of
-// them the Body it was given with, better than chance — and not worse at it
-// than the reference. A model that ignores the Body is picked at chance; one
-// picked right less than 60% of the time changes with it in under one answer in five.
-const BODY_FAILS_BELOW = 0.6;
-function actsOnBody(test, own, reference, comparedTo) {
+// them the Body it was given with, better than chance; one picked right less
+// than 60% of the time changes with it in under one answer in five.
+function actsOnBody(test, own, bars) {
   if (own === null) return { test, verdict: "n/a", value: null, bar: null, detail: "this job's input carries no Body" };
   const range = bounds(...own);
   if (range === null) return { test, verdict: "n/a", value: null, bar: null };
-  const beyondChance = range[0] > 0.5 ? "pass" : range[1] < BODY_FAILS_BELOW ? "fail" : "undecided";
-  if (reference === null) return { test, value: own[0] / own[1], n: own[1], bar: 0.5, verdict: beyondChance,
+  return { test, value: own[0] / own[1], n: own[1], bar: 0.5,
+    verdict: range[0] > 0.5 ? "pass" : range[1] < bars.bodyFailsBelow ? "fail" : "undecided",
     detail: `the Body it was given with picked in ${percent(own[0] / own[1])} (chance 50%)` };
-  const against = comparedTo(test, reference);
-  const both = [beyondChance, against.verdict];
-  return { ...against, bar: 0.5, verdict: both.includes("fail") ? "fail" : both.every((v) => v === "pass") ? "pass" : "undecided" };
 }
 
-// How soon a live job's first words came, per answer: quick enough when at
-// least the bar's share came within its time.
+// Not one voice (Thread success): each Thread's answers stand closer to one
+// another than to the other Threads'. voice: { thread: { within, across } }.
+function ownVoices(test, voice) {
+  if (voice === null || voice === undefined) return { test, verdict: "n/a", value: null, bar: null, detail: "meaning not measured" };
+  const d = Object.values(voice).filter((v) => Number.isFinite(v?.within) && Number.isFinite(v?.across)).map((v) => v.within - v.across);
+  if (d.length < 4) return { test, verdict: "n/a", value: null, bar: null, detail: "fewer than four Threads" };
+  const n = d.length, m = d.reduce((a, b) => a + b, 0) / n;
+  const half = Z * Math.sqrt(d.reduce((a, b) => a + (b - m) ** 2, 0) / (n - 1) / n);
+  return { test, value: null, n, bar: null, verdict: m + half < 0 ? "fail" : m > 0 ? "pass" : "undecided",
+    detail: `a Thread's answers are ${m >= 0 ? "closer to its own" : "closer to the others'"} by ${m.toFixed(3)} (${n} Threads)` };
+}
+
+// How soon a live job's first words came, per answer.
 function quickEnough(times, bars) {
   const within = times.filter((ms) => ms <= bars.firstWordsMs).length;
   const sorted = [...times].sort((a, b) => a - b), at = (q) => sorted[Math.min(sorted.length - 1, Math.floor(q * sorted.length))] ?? null;
@@ -627,52 +595,44 @@ function quickEnough(times, bars) {
 }
 
 // When what was faced alone already shows whose answer it is (a reflection on
-// its own experiences, say), the answer cannot show it any better: attribution
-// cannot be measured there, and says so rather than failing.
+// its own experiences, say), the answer cannot show it any better.
 export const SHOWN_WITHOUT_ANSWER = 0.9;
 
-// measures, per model, the reference's measured the same way:
-//   cases, the answers it rests on; notTheModels [k,n], requests the
-//   adapter or provider failed; defects [k,n] the model caused (a request it
-//   gave no answer to in the job's form among them), and
-//   ourDefects [k,n] our input caused; invented [k,n]; body [k,n] or null
-//   (the Body picked out); rates {name: [k,n]}; alarms [string];
-//   person [k,n] (true to this person now); gains [number] or, for a gist,
-//   correct [k,n]; unaided [k,n]; voice {thread: closeness} or null;
-//   invariant [k,n] or null; firstWordsMs [ms], for a live job only;
-//   paired {person, invariant, body, gains, correct}: the same, request by
-//   request ({key: score}), for comparing with the reference on the same requests.
-// reference: the reference model's measures, or null for the reference itself.
-export function goodEnough(prompt, measures, reference = null, bars = BARS) {
-  const gist = String(prompt).startsWith("experience.memory-gist");
+// measures, per model: cases, the answers it rests on; notTheModels [k,n],
+// requests the adapter or provider failed; defects [k,n] the model caused (a
+// request it gave no answer to in the job's form among them), and ourDefects
+// [k,n] our input caused; invented [k,n]; body [k,n] or null (the Body picked
+// out); rates {name: [k,n]}; alarms [string]; person [k,n] (true to this
+// person now); gains [number] or, for a gist, correct [k,n] and chance;
+// unaided [k,n]; voice {thread: {within, across}} or null; invariant [k,n]
+// or null (steady); restates [k,n] or null; firstWordsMs [ms], for a live job only.
+// Every model, the one a job runs on now included, is judged the same way.
+export function goodEnough(prompt, measures, bars = BARS) {
+  const id = String(prompt).split("@")[0], gist = id === "experience.memory-gist";
   const shown = measures.unaided && measures.unaided[1] > 0 && measures.unaided[0] / measures.unaided[1] >= SHOWN_WITHOUT_ANSWER;
-  const attribution = "individual: the answer shows whose it is";
   const unasked = measures.notTheModels ?? [0, 0];
+  const attribution = "individual: the answer shows whose it is";
   const tests = [
     ...(unasked[0] === 0 ? [] : [{ test: "measured fairly", value: null, bar: null,
-      verdict: unasked[0] / unasked[1] <= NOT_THE_MODELS ? "pass" : "undecided",
+      verdict: unasked[0] / unasked[1] <= 0.1 ? "pass" : "undecided",
       detail: `${unasked[0]} of ${unasked[1]} requests failed in the adapter or provider: not counted, asked again next run` }]),
-    { ...atMost("nothing invented", measures.invented, bars.invented) },
+    atMost("nothing invented", measures.invented, bars.invented),
     { ...atMost("no broken rules", measures.defects, bars.defects),
       ...(measures.ourDefects?.[0] > 0 ? { detail: `${measures.ourDefects[0]} more caused by our input, not counted` } : {}) },
-    actsOnBody("acts on the Body", measures.body ?? null, reference === null ? null : reference.body ?? null,
-      (test) => compared(test, "body", measures, reference, bars.margin)),
-    trueToLifeRates("true-to-life rates", measures.rates ?? {}, reference?.rates ?? null, measures.alarms ?? [], bars),
-    compared("this person, now", "person", measures, reference, bars.margin),
+    actsOnBody("acts on the Body", measures.body ?? null, bars),
+    trueToLifeRates("true-to-life rates", measures.rates ?? {}, LIFE_BANDS[id] ?? {}, measures.alarms ?? []),
+    atLeast(id.startsWith("world.") ? "true to this place, now" : "this person, now", measures.person ?? [0, 0], bars.person),
     shown ? { test: attribution, verdict: "n/a", value: null, bar: null, detail: "what it faced already shows whose answer it is" }
-      : gist ? compared(attribution, "correct", measures, reference, bars.margin)
-        : reference !== null && measures.paired?.gains && reference.paired?.gains
-          ? pairedNotWorse(attribution, measures.paired.gains, reference.paired.gains, bars.margin, null, (gain) => `${points(gain)} points`)
-            ?? meanNotWorse(attribution, measures.gains ?? [], reference.gains ?? [], bars.margin)
-          : meanNotWorse(attribution, measures.gains ?? [], reference?.gains ?? null, bars.margin),
-    voiceNotCloser("not one voice", measures.voice ?? null, reference === null ? null : reference.voice ?? {}, bars.voiceMargin),
+      : gist ? atLeast(attribution, measures.correct ?? [0, 0], Math.min(1, bars.chanceMultiple * (measures.chance ?? 0.1)))
+        : meanAtLeast(attribution, measures.gains ?? [], bars.gain),
+    ownVoices("not one voice", measures.voice ?? null),
     measures.invariant === null || measures.invariant === undefined
       ? { test: "steady", verdict: "n/a", value: null, bar: null, detail: "no decision to reorder, or one that never varies" }
-      : compared("steady", "invariant", measures, reference, bars.margin),
+      : atLeast("steady", measures.invariant, bars.steady),
+    ...(measures.restates ? [atMost("moves the Thread on: restates what it holds", measures.restates, bars.restates)] : []),
     ...(measures.firstWordsMs === undefined ? [] : [quickEnough(measures.firstWordsMs, bars)]),
   ];
-  const verdicts = tests.map((item) => item.verdict).filter((verdict) => !["n/a", "reference"].includes(verdict));
-  // Too few answers (a provider that refused most calls, say) decide nothing.
+  const verdicts = tests.map((item) => item.verdict).filter((verdict) => verdict !== "n/a");
   const tooFew = measures.cases !== undefined && measures.cases < bars.minimumCases;
   const overall = tooFew ? "undecided"
     : verdicts.includes("fail") ? "fail" : verdicts.every((verdict) => verdict === "pass") ? "pass" : "undecided";

@@ -1,10 +1,11 @@
 // What a good answer is, measured on recorded requests of one cognitive job
-// for each candidate model — the standard accepted by Guy on November 24,
-// 2026 (docs/validation/model-certification.md): a model is good enough for a
-// job when the Threads would be at least as true to life with it as they are
-// now. Each candidate is compared with the reference, the model the job runs
-// on now (--reference to name another), whose own answers are measured the
-// same way; no judge reads its own model's answers.
+// for each candidate model — the standard accepted by Guy on November 25,
+// 2026 (v3, docs/validation/model-certification.md): a model is good enough
+// for a job when the Threads it thinks for are true to life and succeed with
+// it, judged against true-to-life bands, never against another model. The
+// model the job runs on now (--reference to name another) is measured and
+// judged the same way, and shown beside the candidates as context; no judge
+// reads its own model's answers.
 //
 //   npm run model:quality -- --prompt encounter.attention --models openai:gpt-5.6-terra,google:gemini-3.6-flash
 //
@@ -240,7 +241,7 @@ async function main() {
         // A gist answers to its own memory; other answers to everything the job was given.
         const evidence = entry.siblings ? { thread: entry.request.input.thread, memory: entry.source } : entry.request.input;
         const fidelity = await verdict(judge, "fidelity", { whatCounts: job.faithful, evidence, answer: entry.text });
-        const person = await verdict(judge, "person", { criteria: job.readable, whatCountsAsInvented: job.faithful,
+        const person = await verdict(judge, String(options.prompt).startsWith("world.") ? "place" : "person", { criteria: job.readable, whatCountsAsInvented: job.faithful,
           evidence, answer: entry.text });
         const lineupMaterial = (answer) => ({ whatEachSourceIs: job.lineupOf, faced: round.faced, answer,
           sources: Object.fromEntries(round.sources.map((source, index) => [index + 1, source])) });
@@ -326,7 +327,8 @@ async function main() {
       ourDefects: [ours, answered.length],
       invented: every("invented", true),
       body: bodyVotes.length === 0 ? null : [bodyVotes.filter(Boolean).length, bodyVotes.length],
-      rates: ratesOf(options.prompt, answered.map((item) => item.output)),
+      rates: ratesOf(options.prompt, answered),
+      restates: job.restates ? [answered.filter((item) => job.restates(item.input, item.output)).length, answered.length] : null,
       alarms: dayAlarms(options.prompt, answered),
       person: every("person", true),
       gains, correct: sum(scorers, attributed), chance,
@@ -358,14 +360,13 @@ async function main() {
   const voices = await voicesOf({ prompt: options.prompt, out, models: report.models, answers, textOf });
   for (const m of report.models) m.measures.voice = voices?.[m.model] ?? null;
 
-  // Verdicts, each candidate against the reference.
-  const referenceMeasures = report.models.find((m) => m.model === reference.model).measures;
+  // Verdicts: every model against life, the one the job runs on now included.
   for (const m of report.models) {
     const isReference = m.model === reference.model;
-    m.goodEnough = goodEnough(options.prompt, m.measures, isReference ? null : referenceMeasures);
+    m.goodEnough = goodEnough(options.prompt, m.measures);
     if (live) m.firstWords = m.goodEnough.tests.at(-1).detail;
     const { measures } = m;
-    console.log(`\n${m.model}${isReference ? " — the reference: the model this job runs on now" : ""}${m.tooFew ? " — too few cases to decide" : ""}`);
+    console.log(`\n${m.model}${isReference ? " — the model this job runs on now (judged the same way)" : ""}${m.tooFew ? " — too few cases to decide" : ""}`);
     console.log(`  cost ${m.costPerCall === null ? "unknown" : `$${(m.costPerCall * 1000).toFixed(2)} per 1,000 calls`}${m.failed ? ` · ${m.failed} requests failed` : ""}`);
     // Why answers failed matters as much as how many: a timeout, the schema missed, an account limit.
     for (const own of [true, false]) {
@@ -445,7 +446,7 @@ async function main() {
     ...(({ provider, modelId, settings }) => ({ provider, model: modelId, ...(Object.keys(settings).length ? { settings } : {}) }))(
       options.models.find((item) => item.model === m.model)),
     verdict: m.tooFew ? "undecided" : m.goodEnough.overall,
-    ...(m.model === reference.model ? { reference: true } : { comparedWith: reference.model }),
+    ...(m.model === reference.model ? { runsOnNow: true } : {}),
     tests: Object.fromEntries(m.goodEnough.tests.map((test) => [test.test, test.verdict])),
     thisPerson: rate(m.measures.person), scoredBy: m.scoredBy,
     rates: Object.fromEntries(Object.entries(m.measures.rates).map(([name, counts]) => [name, rate(counts)?.share ?? null])),
@@ -458,9 +459,9 @@ async function main() {
   console.log(`evidence: .fibre/model-quality/ — open review-${reviewId}.json in Admin › Model Quality to review blind`);
 }
 
-// Per model, each Thread's closeness in meaning to the other Threads (bge-m3):
-// the centroid of its answers against theirs, over the Threads every model
-// answered for. Null when meaning cannot be measured here.
+// Per model and Thread (bge-m3), over the Threads every model answered for:
+// how close its answers are to their own centre (within), and how close that
+// centre is to the other Threads' (across). Null when meaning cannot be measured here.
 async function voicesOf({ prompt, out, models, answers, textOf }) {
   if (String(prompt).startsWith("world.")) return null;
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID, apiToken = process.env.CLOUDFLARE_AI_API_TOKEN ?? process.env.CLOUDFLARE_API_TOKEN;
@@ -485,8 +486,11 @@ async function voicesOf({ prompt, out, models, answers, textOf }) {
   return Object.fromEntries(Object.entries(spoken).map(([model, list]) => {
     const centres = Object.fromEntries(threads.map((scope) => [scope,
       centroid(list.filter((item) => item.scope === scope).map((item) => vectorOf(item.text)).filter(Boolean))]));
-    return [model, Object.fromEntries(threads.map((scope) => [scope,
-      closenessToOthers(centres[scope], threads.filter((other) => other !== scope).map((other) => centres[other]))]))];
+    const within = (scope) => { const own = list.filter((item) => item.scope === scope).map((item) => vectorOf(item.text)).filter(Boolean);
+      if (own.length < 2 || centres[scope] === null) return null;
+      return own.reduce((sum, v) => { const length = Math.hypot(...v); return sum + v.reduce((d, x, i) => d + x / length * centres[scope][i], 0); }, 0) / own.length; };
+    return [model, Object.fromEntries(threads.map((scope) => [scope, { within: within(scope),
+      across: closenessToOthers(centres[scope], threads.filter((other) => other !== scope).map((other) => centres[other])) }]))];
   }));
 }
 

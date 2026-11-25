@@ -59,15 +59,15 @@ test("answers that break a job's rules are defects", () => {
     "a memory kept without a recollection passed");
 });
 
-test("a day that ignores what is said to a Thread, or is busy at every turn, raises an alarm", () => {
+test("a day that ignores what is said to a Thread, or a public place where nothing ever happens, raises an alarm", () => {
   const answered = people.map((who) => ({ input: request(who), output: { outcome: "not_noticed", passedReason: "absorbed" } }));
   assert.ok(dayAlarms(ATTENTION, answered).some((alarm) => /speech said to it/u.test(alarm)),
     "unnoticed speech said to a Thread raised no alarm");
   const occasion = (index) => ({ input: { occurrenceAt: `2026-11-08T0${index}:00:00Z`,
     initiatingSituation: { physicalVenue: { name: "Abrehot Library" } }, potentialObservers: [] },
-    output: { outcome: "changed", occurrenceText: "A cart rolls past." } });
-  assert.ok(dayAlarms("world.happening@1", [1, 2, 3, 4].map(occasion)).some((alarm) => /most occasions/u.test(alarm)),
-    "a place with an event at every turn raised no alarm");
+    output: { outcome: "no_change", occurrenceText: null } });
+  assert.ok(dayAlarms("world.happening@1", [1, 2, 3, 4, 5, 6, 7, 8].map(occasion)).some((alarm) => /nothing perceptible all day/u.test(alarm)),
+    "a public place where nothing ever happened raised no alarm");
 });
 
 test("a meaningless change reorders evidence and nothing else", () => {
@@ -78,70 +78,65 @@ test("a meaningless change reorders evidence and nothing else", () => {
   assert.deepEqual(input.semanticStates[0].dimension, "interest", "the recorded request was modified");
 });
 
-// One model's measures over 100 answers, as model:quality takes them, with
-// the same outcomes request by request (two models alike answer alike).
-const outcomes = ([k, n]) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`r${i}`, i < k ? 1 : 0]));
-const measured = (over = {}) => {
-  const m = { cases: 100, defects: [0, 100], ourDefects: [0, 100], invented: [1, 100], body: null,
-    rates: { "leaves things as they were": [12, 100], "keeps a memory": [29, 100] }, alarms: [], person: [95, 100],
-    gains: Array.from({ length: 100 }, (_, i) => (i % 2 ? 0.3 : 0.2)), correct: [0, 0], unaided: [30, 100],
-    voice: null, invariant: [85, 100], ...over };
-  return { ...m, paired: { person: outcomes(m.person), ...(m.invariant ? { invariant: outcomes(m.invariant) } : {}),
-    ...(m.body ? { body: outcomes(m.body) } : {}), gains: Object.fromEntries(m.gains.map((gain, i) => [`r${i}`, gain])) } };
-};
+// One model's measures over 100 reflections, as model:quality takes them.
+const measured = (over = {}) => ({ cases: 100, defects: [0, 100], ourDefects: [0, 100], invented: [1, 100], body: null,
+  rates: { "leaves things as they were": [20, 100], "keeps a memory": [35, 100], "changes an interest": [15, 100] },
+  alarms: [], person: [95, 100], gains: Array.from({ length: 100 }, (_, i) => (i % 2 ? 0.3 : 0.2)), correct: [0, 0],
+  unaided: [30, 100], voice: null, invariant: [85, 100], restates: [2, 100], ...over });
 const REFLECTION = "experience.consolidation@8";
 const verdictOf = (result, name) => result.tests.find((item) => item.test.startsWith(name)).verdict;
 
-test("a model as true to life as the one Threads run on now is good enough; the reference is held only to Fibre's hard rules", () => {
-  const reference = measured();
-  assert.equal(goodEnough(REFLECTION, measured(), reference).overall, "pass", "a model that matches the reference was not good enough");
-  const itself = goodEnough(REFLECTION, reference, null);
-  assert.equal(itself.overall, "pass", "the model Threads live on now failed against itself");
-  assert.equal(verdictOf(itself, "this person, now"), "reference", "the reference was compared with itself");
-  assert.equal(goodEnough(REFLECTION, measured({ invented: [23, 100] }), reference).overall, "fail", "a model that invents facts passed");
-  assert.equal(goodEnough(REFLECTION, measured({ person: [61, 100] }), reference).overall, "fail",
-    "a model far less true to the person than the reference passed");
-  assert.equal(goodEnough(REFLECTION, measured({ cases: 7 }), reference).overall, "undecided", "seven answers decided a model");
-  assert.equal(goodEnough(REFLECTION, measured({ cases: 0, invented: [0, 0], person: [0, 0], gains: [], invariant: null }), reference)
-    .overall, "undecided", "a model that gave no answer at all was called good enough");
+test("a model is judged against life, never against another model: the one Threads run on now can fail too", () => {
+  assert.equal(goodEnough(REFLECTION, measured()).overall, "pass", "a reflection true to life was not good enough");
+  assert.equal(goodEnough(REFLECTION, measured({ invented: [23, 100] })).overall, "fail", "a model that invents facts passed");
+  assert.equal(goodEnough(REFLECTION, measured({ person: [61, 100] })).overall, "fail", "a model far from true to the person passed");
+  assert.equal(goodEnough(REFLECTION, measured({ cases: 7 })).overall, "undecided", "seven answers decided a model");
+  const dead = goodEnough("world.happening@1", { ...measured(), restates: null,
+    rates: { "something happens, in a public place": [0, 100], "something happens, elsewhere": [0, 100] } });
+  assert.equal(verdictOf(dead, "true-to-life rates"), "fail", "a World where nothing ever happens passed because Sol made it so");
+  assert.ok(dead.tests.some((item) => item.test === "true to this place, now"), "a World event was judged as a person");
 });
 
-test("a model that changes something after every experience is not true to life, however well it writes", () => {
-  const reference = measured();
-  const restless = goodEnough(REFLECTION, measured({ rates: { "leaves things as they were": [0, 100], "keeps a memory": [64, 100] } }), reference);
+test("a reflection that changes something after every experience, or only restates what it holds, is not true to life", () => {
+  const restless = goodEnough(REFLECTION, measured({ rates: { "leaves things as they were": [0, 100], "keeps a memory": [100, 100] } }));
   assert.equal(verdictOf(restless, "true-to-life rates"), "fail", "never leaving things as they were passed as true to life");
-  assert.equal(restless.overall, "fail");
-  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ rates: { "leaves things as they were": [10, 100], "keeps a memory": [33, 100] } }),
-    reference), "true-to-life rates"), "pass", "rates close to the reference's were not true to life");
-  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ rates: {}, alarms: ["noticed nothing"] }), reference), "true-to-life rates"),
-    "fail", "a dead day passed");
+  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ restates: [40, 100] })), "moves the Thread on"), "fail",
+    "a model that copies what the Thread already holds passed");
+  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ rates: { "a rate with no band": [99, 100] } })), "true-to-life rates"), "n/a",
+    "a rate with no true-to-life band was judged");
+});
+
+test("a reflection restating a held interest word for word is caught, and one that says something new is not", () => {
+  const job = jobOf(REFLECTION);
+  const input = { interests: [{ interestRef: "int_1", draw: "I am drawn to how captions shape what a reader believes about a photograph." }],
+    recentMoments: [] };
+  assert.equal(job.restates(input, { interests: [{ interestRef: "int_1", change: "deepen",
+    draw: "I am drawn to how captions shape what a reader believes about a photograph." }] }), true);
+  assert.equal(job.restates(input, { interests: [{ interestRef: "int_1", change: "revise",
+    draw: "Lately the sea stories pull me more than captions do; I read Verne for the danger and the dark water." }] }), false);
 });
 
 test("a model that ignores the Body fails, and one with no Body to act on is not asked", () => {
-  const reference = measured({ body: [150, 200] });
-  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ body: [101, 200] }), reference), "acts on the Body"), "fail",
+  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ body: [101, 200] })), "acts on the Body"), "fail",
     "a model that picks out its own Body only by chance acted on it");
-  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ body: [148, 200] }), reference), "acts on the Body"), "pass",
-    "a model that follows the Body as the reference does failed");
-  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ body: [101, 200] }), null), "acts on the Body"), "fail",
-    "a reference that ignores the Body was not caught");
-  assert.equal(verdictOf(goodEnough(REFLECTION, measured(), measured()), "acts on the Body"), "n/a");
+  assert.equal(verdictOf(goodEnough(ATTENTION, measured({ body: [150, 200] })), "acts on the Body"), "pass");
+  assert.equal(verdictOf(goodEnough(REFLECTION, measured()), "acts on the Body"), "n/a");
 });
 
-test("answers of different Threads may not grow closer to one voice than with the reference", () => {
-  const spread = { a: 0.5, b: 0.52, c: 0.48, d: 0.5, e: 0.51 };
-  const one = Object.fromEntries(Object.entries(spread).map(([id, value]) => [id, value + 0.12]));
-  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ voice: one }), measured({ voice: spread })), "not one voice"), "fail",
+test("each Thread's answers must stand closer to its own than to the others': not one voice", () => {
+  const own = Object.fromEntries(["a", "b", "c", "d", "e"].map((id, i) => [id, { within: 0.8 + i * 0.01, across: 0.6 }]));
+  const one = Object.fromEntries(["a", "b", "c", "d", "e"].map((id, i) => [id, { within: 0.6, across: 0.8 + i * 0.01 }]));
+  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ voice: own })), "not one voice"), "pass");
+  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ voice: one })), "not one voice"), "fail",
     "a model that makes every Thread sound alike passed");
-  assert.equal(verdictOf(goodEnough(REFLECTION, measured({ voice: spread }), measured({ voice: spread })), "not one voice"), "pass");
 });
 
 test("a live job is judged on how soon its first words come, and only a live job", () => {
-  const quick = measured({ firstWordsMs: Array(100).fill(900) });
-  assert.equal(goodEnough("social.live-turn@13", quick, measured()).overall, "pass", "a good model that speaks at once did not pass");
-  assert.equal(goodEnough("social.live-turn@13", measured({ firstWordsMs: Array(100).fill(6000) }), measured()).overall, "fail",
+  const live = (over) => measured({ restates: null, rates: {}, ...over });
+  assert.equal(goodEnough("social.live-turn@13", live({ firstWordsMs: Array(100).fill(900) })).overall, "pass", "a good model that speaks at once did not pass");
+  assert.equal(goodEnough("social.live-turn@13", live({ firstWordsMs: Array(100).fill(6000) })).overall, "fail",
     "a model too slow to speak live passed");
-  assert.ok(!goodEnough(ATTENTION, measured(), measured()).tests.some((item) => item.test.startsWith("quick enough")),
+  assert.ok(!goodEnough(ATTENTION, measured()).tests.some((item) => item.test.startsWith("quick enough")),
     "a job that is not spoken live was held to a speaking time");
 });
 
@@ -205,11 +200,10 @@ test("a failure of the adapter or provider never counts against the model; past 
   for (const code of ["MODEL_TIMEOUT", "MODEL_BILLING_QUOTA_EXHAUSTED", "MODEL_REQUEST_CONFIGURATION_ERROR", "MODEL_HTTP_ERROR", null]) {
     assert.equal(failedBy(code), "adapter", `${code} was counted as the model's failure`);
   }
-  const reference = measured();
-  assert.equal(goodEnough(REFLECTION, measured({ notTheModels: [5, 100] }), reference).overall, "pass",
+  assert.equal(goodEnough(REFLECTION, measured({ notTheModels: [5, 100] })).overall, "pass",
     "a few requests the provider dropped failed a model");
-  assert.equal(goodEnough(REFLECTION, measured({ notTheModels: [40, 140] }), reference).overall, "undecided",
+  assert.equal(goodEnough(REFLECTION, measured({ notTheModels: [40, 140] })).overall, "undecided",
     "a model was decided while many requests had failed in the adapter");
-  assert.equal(goodEnough(REFLECTION, measured({ notTheModels: [40, 140], invented: [23, 100] }), reference).overall, "fail",
+  assert.equal(goodEnough(REFLECTION, measured({ notTheModels: [40, 140], invented: [23, 100] })).overall, "fail",
     "what the answered requests clearly show was ignored");
 });

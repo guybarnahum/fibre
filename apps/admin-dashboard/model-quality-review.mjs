@@ -52,7 +52,7 @@ export function agreement(review, verdicts) {
 
 const percent = (value) => `${Math.round(value * 100)}%`;
 const gainTest = (test) => test.test.startsWith("individual: the answer");
-const atMost = (test) => ["nothing invented", "no broken rules"].includes(test.test);
+const atMost = (test) => ["nothing invented", "no broken rules"].includes(test.test) || test.test.startsWith("moves the Thread on");
 
 // A good-enough test's value and bar as a reader wants them.
 export function testReading(test) {
