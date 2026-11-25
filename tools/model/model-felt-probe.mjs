@@ -10,8 +10,8 @@
 // Arms, each against the request as it was:
 //   felt  the felt line added to the Body;
 //   thin  what comes to mind thinned as a full Body's retrieval would thin it:
-//         of the memories, states, interests and other evidence as close to the
-//         method as its own forms are, only the first is kept;
+//         in each list of memories, states and other evidence, the half closest
+//         to the method (and at least 0.6 close) is left out, but for its first;
 //   both  the two together;
 //   voiced the felt line, with the prompts' "It is felt, not an order"
 //         saying instead that people mostly act on how they feel, though not always;
@@ -67,12 +67,20 @@ export function feltWith(input, line) {
 }
 
 // What comes to mind, thinned: in each list of the request (and the Thread's
-// own intentions), items as close to the method as its edge are left out
-// after the first. closeTo(item) says whether an item is that close.
-export function thinned(input, closeTo) {
+// own intentions), the half of its items closest to the method, and at least
+// floor close, is left out but for the first of them. closeness(item) is how
+// close an item is to the method, or null when unknown. A memory is long and
+// mixed, so its closeness is read against its own list, never against the
+// method's own short statements.
+export function thinned(input, closeness, floor = 0.6) {
   const copy = structuredClone(input);
-  const thin = (list) => { let kept = false;
-    return list.filter((item) => { if (!closeTo(item)) return true; if (kept) return false; kept = true; return true; }); };
+  const thin = (list) => {
+    const values = list.map(closeness), known = values.filter((v) => v !== null).sort((a, b) => a - b);
+    if (known.length === 0) return list;
+    const cut = Math.max(floor, known[Math.floor(known.length / 2)]);
+    let kept = false;
+    return list.filter((_, i) => { if (values[i] === null || values[i] < cut) return true; if (kept) return false; kept = true; return true; });
+  };
   for (const [key, value] of Object.entries(copy)) if (Array.isArray(value)) copy[key] = thin(value);
   if (Array.isArray(copy.thread?.unresolvedIntentions)) copy.thread.unresolvedIntentions = thin(copy.thread.unresolvedIntentions);
   return copy;
@@ -116,7 +124,7 @@ async function main() {
   console.log(`the shared method: ${Object.keys(method.members).length} Threads, their forms of it ${method.closeness} close · model ${spec.label} · felt "${o.felt}"`);
 
   const report = { chain: o.chain, model: spec.label, felt: o.felt, jobs: {} };
-  for (const id of o.prompts) {
+  for (const id of o.prompts) try {
     const prompt = promptFor(id), live = prompt.latency === "live";
     const system = /\bbody\b/u.test(prompt.text) ? prompt.text : prompt.text + BODY_SENTENCE;
     const { found } = await captures(join(root, ".fibre/infra-measure"), id);
@@ -136,8 +144,8 @@ async function main() {
       ...(event.input.thread?.unresolvedIntentions ?? [])].map(itemText).filter((text) => text.length >= 20));
     const itemVector = o.arms.some((arm) => arm !== "felt")
       ? await meaningOf(itemTexts, join(out, "meaning-cache.json"), embedder) : () => null;
-    const closeTo = (item) => { const v = itemVector(itemText(item)); if (!v) return false;
-      const length = Math.hypot(...v); return v.reduce((sum, x, i) => sum + x / length * method.probe[i], 0) >= method.edge; };
+    const closeTo = (item) => { const v = itemVector(itemText(item)); if (!v) return null;
+      const length = Math.hypot(...v); return v.reduce((sum, x, i) => sum + x / length * method.probe[i], 0); };
     let done = 0;
     const answered = await pool(requests, o.concurrency, async (event) => {
       const threadId = event.input.thread.threadId;
@@ -164,9 +172,12 @@ async function main() {
       const mean = (k) => pairs.length ? pairs.reduce((sum, pair) => sum + pair[k], 0) / pairs.length : null;
       const change = pairedChange(pairs);
       report.jobs[id].arms[arm] = { compared: pairs.length, asWas: mean(0), arm: mean(1), change };
-      console.log(`  ${arm.padEnd(5)} through the method: as it was ${pct(mean(0))} · ${pct(mean(1))}`
+      console.log(`  ${arm.padEnd(6)} through the method: as it was ${pct(mean(0))} · ${pct(mean(1))}`
         + (change ? ` · change ${Math.round(change.change * 100)} points [${Math.round(change.low * 100)}, ${Math.round(change.high * 100)}]` : ""));
     }
+  } catch (error) {
+    // A passing failure (the network) ends this job, not the run; what was asked is cached for the next.
+    console.log(`\n${id}: not finished (${String(error?.message ?? error).slice(0, 120)}); run again to continue from the cache`);
   }
   const stamp = new Date().toISOString().replaceAll(":", "-");
   await writeFile(join(out, `felt-probe-${o.chain}-${stamp}.json`), JSON.stringify(report, null, 2));

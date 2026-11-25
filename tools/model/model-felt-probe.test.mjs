@@ -18,13 +18,15 @@ test("the change is read request by request: a fall shows only when the same req
   assert.ok(same.low < 0 && same.high > 0, "no change was shown as a change");
 });
 
-test("thinning what comes to mind keeps one item close to the method in each list, and everything else", () => {
+test("thinning what comes to mind leaves out the method-heavy half of each list but for its first, and nothing else", () => {
   const input = { thread: { threadId: "thr_a", unresolvedIntentions: ["test the claim", "call my sister"] },
-    autobiographicalMemories: [{ gist: "test a claim" }, { gist: "a swim" }, { gist: "test another claim" }], reading: { passage: "test" } };
-  const close = (item) => JSON.stringify(item).includes("test");
-  const thin = thinned(input, close);
-  assert.deepEqual(thin.autobiographicalMemories, [{ gist: "test a claim" }, { gist: "a swim" }]);
+    autobiographicalMemories: [{ gist: "a" }, { gist: "b" }, { gist: "c" }, { gist: "d" }], reading: { passage: "test" } };
+  const close = { a: 0.75, b: 0.5, c: 0.7, d: 0.66, "test the claim": 0.8, "call my sister": 0.3 };
+  const closeness = (item) => close[typeof item === "string" ? item : item.gist] ?? null;
+  const thin = thinned(input, closeness);
+  assert.deepEqual(thin.autobiographicalMemories, [{ gist: "a" }, { gist: "b" }, { gist: "d" }], "the method-heavy half was not thinned, or the first was lost");
   assert.deepEqual(thin.thread.unresolvedIntentions, ["test the claim", "call my sister"]);
   assert.deepEqual(thin.reading, input.reading, "what is faced now was thinned");
-  assert.equal(input.autobiographicalMemories.length, 3, "the recorded request was changed");
+  assert.equal(input.autobiographicalMemories.length, 4, "the recorded request was changed");
+  assert.deepEqual(thinned({ memories: [{ gist: "x" }, { gist: "y" }] }, () => 0.5).memories.length, 2, "items far from the method were thinned");
 });
