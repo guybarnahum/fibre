@@ -329,6 +329,74 @@
       "failed": 0,
       "certifiedAt": "2026-11-24",
       "evidence": "quality-experience.consolidation-2026-11-24T22-20-21.456Z.json"
+    },
+    {
+      "prompt": "world.happening",
+      "promptVersion": 1,
+      "provider": "cloudflare",
+      "model": "@cf/google/gemma-4-26b-a4b-it",
+      "settings": {
+        "temperature": 0.3
+      },
+      "verdict": "fail",
+      "comparedWith": "gpt-5.6-sol",
+      "tests": {
+        "nothing invented": "pass",
+        "no broken rules": "pass",
+        "acts on the Body": "n/a",
+        "true-to-life rates": "fail",
+        "this person, now": "n/a",
+        "individual: the answer shows whose it is": "n/a",
+        "not one voice": "n/a",
+        "steady": "fail"
+      },
+      "thisPerson": {
+        "share": 0.944,
+        "of": 18
+      },
+      "scoredBy": [
+        "claude-opus-5-5"
+      ],
+      "rates": {
+        "something happens": 0.18
+      },
+      "costPer1000Calls": 0.12,
+      "requests": 100,
+      "failedByModel": 0,
+      "notAnswered": 0,
+      "certifiedAt": "2026-11-25",
+      "evidence": "quality-world.happening-2026-11-25T17-37-10.236Z.json"
+    },
+    {
+      "prompt": "world.happening",
+      "promptVersion": 1,
+      "provider": "openai",
+      "model": "gpt-5.6-sol",
+      "verdict": "fail",
+      "reference": true,
+      "tests": {
+        "nothing invented": "n/a",
+        "no broken rules": "pass",
+        "acts on the Body": "n/a",
+        "true-to-life rates": "fail",
+        "this person, now": "reference",
+        "individual: the answer shows whose it is": "reference",
+        "not one voice": "reference",
+        "steady": "reference"
+      },
+      "thisPerson": null,
+      "scoredBy": [
+        "claude-opus-5-5"
+      ],
+      "rates": {
+        "something happens": 0
+      },
+      "costPer1000Calls": 2.15,
+      "requests": 100,
+      "failedByModel": 0,
+      "notAnswered": 0,
+      "certifiedAt": "2026-11-25",
+      "evidence": "quality-world.happening-2026-11-25T17-37-10.236Z.json"
     }
   ]
 }
