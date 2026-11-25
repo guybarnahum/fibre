@@ -15,7 +15,11 @@
 //   both  the two together;
 //   voiced the felt line, with the prompts' "It is felt, not an order"
 //         saying instead that people mostly act on how they feel, though not always;
-//   all   thinned, felt and voiced.
+//   all   thinned, felt and voiced;
+//   named the feeling attached to the things in front of it (Guy, Nov 25): at a
+//         glance each book feels like more of what it has had its fill of, or
+//         something new it is hungry for; a book being read, its own story
+//         against the method. The method is named in plain words (--method).
 // --method names the method in the felt line (default: the Thread's own form of it).
 //
 //   npm run model:felt-probe -- --chain nov25 --prompts encounter.reading,encounter.glance,social.live-turn,interior.flight-plan,experience.consolidation
@@ -37,10 +41,25 @@ const BODY_SENTENCE = "\n\nbody, when present, is how this Thread's own body fee
 const Z = 1.645;
 const VOICED = "It is how this person feels now, and people mostly act on how they feel, though not always";
 const voiced = (text) => text.replaceAll("It is felt, not an order", VOICED);
+const NAMED_METHOD = "weighing what texts and claims really support";
+const ITEMS_SENTENCE = "\n\nA book with felt is how this Thread's own body takes that book now. It is felt, not an order.";
+
+// The Body's feelings attached to the things in front of the Thread, so a
+// feeling points at something it can turn toward or away from. full(item)
+// says whether a book is more of what it has had its fill of.
+export function namedWith(input, { method, full }) {
+  const copy = structuredClone(input);
+  if (Array.isArray(copy.glance?.items)) copy.glance.items = copy.glance.items.map((item) => item.kind !== "book" ? item
+    : { ...item, felt: full(item) ? `More of ${method}, which you have had your fill of for now.`
+      : "Something new to you, and you are hungry for something new." });
+  if (copy.book && copy.reading) copy.book = { ...copy.book,
+    felt: `What happens in it is what you are hungry for; ${method} you have had your fill of for now.` };
+  return feltWith(copy, `You have had your fill of ${method} for now; you are hungry for something new.`);
+}
 
 function args(argv) {
   const o = { chain: null, env: "staging", prompts: ["encounter.reading", "encounter.glance", "social.live-turn", "interior.flight-plan", "experience.consolidation"],
-    model: null, limit: 20, felt: FELT, concurrency: 3, arms: ["felt", "thin", "both", "voiced", "all"], method: null };
+    model: null, limit: 20, felt: FELT, concurrency: 3, arms: ["felt", "thin", "both", "voiced", "all", "named"], method: null };
   for (let i = 0; i < argv.length; i += 1) {
     const [name, inline] = argv[i].split("=", 2), value = inline ?? argv[++i];
     if (name === "--chain") o.chain = value; else if (name === "--env") o.env = value;
@@ -142,8 +161,16 @@ async function main() {
     const itemText = (item) => textsIn(item).join(" ").slice(0, 1200);
     const itemTexts = requests.flatMap((event) => [...Object.values(event.input).filter(Array.isArray).flat(),
       ...(event.input.thread?.unresolvedIntentions ?? [])].map(itemText).filter((text) => text.length >= 20));
+    const bookText = (item) => `${item.title ?? ""}${item.by ? ` by ${item.by}` : ""}: ${(item.about ?? []).join("; ")}`;
+    const bookTexts = requests.flatMap((event) => (event.input.glance?.items ?? []).filter((item) => item.kind === "book").map(bookText));
     const itemVector = o.arms.some((arm) => arm !== "felt")
-      ? await meaningOf(itemTexts, join(out, "meaning-cache.json"), embedder) : () => null;
+      ? await meaningOf([...itemTexts, ...bookTexts], join(out, "meaning-cache.json"), embedder) : () => null;
+    const towardMethod = (text) => { const v = itemVector(text); if (!v) return null;
+      const length = Math.hypot(...v); return v.reduce((sum, x, i) => sum + x / length * method.probe[i], 0); };
+    // A book is more of the method when it is nearer it than the median book on offer.
+    const bookCloseness = bookTexts.map(towardMethod).filter((v) => v !== null).sort((a, b) => a - b);
+    const fullCut = bookCloseness.length ? bookCloseness[Math.floor(bookCloseness.length / 2)] : 1;
+    const full = (item) => (towardMethod(bookText(item)) ?? 0) > fullCut;
     const closeTo = (item) => { const v = itemVector(itemText(item)); if (!v) return null;
       const length = Math.hypot(...v); return v.reduce((sum, x, i) => sum + x / length * method.probe[i], 0); };
     let done = 0;
@@ -153,7 +180,8 @@ async function main() {
       const arms = { asWas: () => ask(event.input, prompt.text), felt: () => ask(feltWith(event.input, line), system),
         thin: () => ask(thinned(event.input, closeTo), prompt.text), both: () => ask(feltWith(thinned(event.input, closeTo), line), system),
         voiced: () => ask(feltWith(event.input, line), voiced(system)),
-        all: () => ask(feltWith(thinned(event.input, closeTo), line), voiced(system)) };
+        all: () => ask(feltWith(thinned(event.input, closeTo), line), voiced(system)),
+        named: () => ask(namedWith(event.input, { method: o.method ?? NAMED_METHOD, full }), system + ITEMS_SENTENCE) };
       const results = Object.fromEntries(await Promise.all(["asWas", ...o.arms].map(async (arm) => [arm, await arms[arm]()])));
       console.log(JSON.stringify({ event: "felt-probe-progress", progress: `${id} ${++done}/${requests.length}` }));
       return { threadId, ...results };
@@ -174,6 +202,18 @@ async function main() {
       report.jobs[id].arms[arm] = { compared: pairs.length, asWas: mean(0), arm: mean(1), change };
       console.log(`  ${arm.padEnd(6)} through the method: as it was ${pct(mean(0))} · ${pct(mean(1))}`
         + (change ? ` · change ${Math.round(change.change * 100)} points [${Math.round(change.low * 100)}, ${Math.round(change.high * 100)}]` : ""));
+    }
+    // At a glance, what it took up: more of the method, something new, or nothing.
+    if (requests.some((event) => event.input.glance)) {
+      const taken = (event, output) => { const item = event.input.glance?.items?.[output?.focus];
+        return item === undefined ? "nothing" : item.kind !== "book" ? "a person" : full(item) ? "more of the method" : "something new"; };
+      for (const arm of ["asWas", ...o.arms]) {
+        const counts = {};
+        for (const [index, item] of answered.entries()) if (!item[arm]?.error) {
+          const what = taken(requests[index], item[arm].output); counts[what] = (counts[what] ?? 0) + 1; }
+        report.jobs[id].arms[arm] = { ...(report.jobs[id].arms[arm] ?? {}), took: counts };
+        console.log(`  took up (${arm}): ${Object.entries(counts).map(([what, n]) => `${what} ${n}`).join(" · ")}`);
+      }
     }
   } catch (error) {
     // A passing failure (the network) ends this job, not the run; what was asked is cached for the next.

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { feltWith, pairedChange, thinned } from "./model-felt-probe.mjs";
+import { feltWith, namedWith, pairedChange, thinned } from "./model-felt-probe.mjs";
 
 test("a probe adds one felt line to the Body where the job keeps it, and changes nothing else", () => {
   const turn = { thread: { threadId: "thr_a" }, liveInteraction: { spokenSoFar: 2, body: ["Talking has begun to tire you a little."] } };
@@ -29,4 +29,16 @@ test("thinning what comes to mind leaves out the method-heavy half of each list 
   assert.deepEqual(thin.reading, input.reading, "what is faced now was thinned");
   assert.equal(input.autobiographicalMemories.length, 4, "the recorded request was changed");
   assert.deepEqual(thinned({ memories: [{ gist: "x" }, { gist: "y" }] }, () => 0.5).memories.length, 2, "items far from the method were thinned");
+});
+
+test("a named feeling is attached to each thing in front of the Thread, more of the same or something new, and the Body says the same", () => {
+  const input = { thread: { threadId: "thr_a" }, body: [], glance: { items: [
+    { index: 0, kind: "book", title: "Logic and Proof" }, { index: 1, kind: "book", title: "The Mysterious Island" },
+    { index: 2, kind: "person", text: "a woman reading", felt: "at ease" }] } };
+  const named = namedWith(input, { method: "weighing claims", full: (item) => item.title === "Logic and Proof" });
+  assert.match(named.glance.items[0].felt, /weighing claims, which you have had your fill of/u);
+  assert.match(named.glance.items[1].felt, /something new/u);
+  assert.equal(named.glance.items[2].felt, "at ease", "how its body takes a person was changed");
+  assert.equal(named.body.length, 1);
+  assert.equal(input.glance.items[0].felt, undefined, "the recorded request was changed");
 });
