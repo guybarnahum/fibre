@@ -35,6 +35,51 @@
     {
       "prompt": "experience.consolidation",
       "promptVersion": 8,
+      "provider": "cloudflare",
+      "model": "@cf/google/gemma-4-26b-a4b-it",
+      "settings": {
+        "temperature": 0.3
+      },
+      "verdict": "fail",
+      "comparedWith": "gpt-5.6-sol",
+      "tests": {
+        "nothing invented": "fail",
+        "no broken rules": "fail",
+        "acts on the Body": "n/a",
+        "true-to-life rates": "fail",
+        "this person, now": "fail",
+        "individual: the answer shows whose it is": "n/a",
+        "not one voice": "pass",
+        "steady": "pass"
+      },
+      "thisPerson": {
+        "share": 0.222,
+        "of": 99
+      },
+      "scoredBy": [
+        "claude-opus-5-5"
+      ],
+      "rates": {
+        "leaves things as they were": 0,
+        "keeps a memory": 1,
+        "writes in its journal": 0.98,
+        "an afterthought": 0.99,
+        "changes an interest": 0.576,
+        "a stance toward someone": 0.737,
+        "a moment with someone": 0.535,
+        "regard shown": 0.242,
+        "finds something new": 0.737
+      },
+      "costPer1000Calls": 1.05,
+      "requests": 99,
+      "failedByModel": 1,
+      "notAnswered": 0,
+      "certifiedAt": "2026-11-25",
+      "evidence": "quality-experience.consolidation-2026-11-25T17-12-49.325Z.json"
+    },
+    {
+      "prompt": "experience.consolidation",
+      "promptVersion": 8,
       "provider": "google",
       "model": "gemini-3.6-flash",
       "verdict": "fail",
@@ -239,9 +284,10 @@
       },
       "costPer1000Calls": 23.47,
       "requests": 100,
-      "failed": 0,
-      "certifiedAt": "2026-11-24",
-      "evidence": "quality-experience.consolidation-2026-11-24T22-20-21.456Z.json"
+      "failedByModel": 0,
+      "notAnswered": 0,
+      "certifiedAt": "2026-11-25",
+      "evidence": "quality-experience.consolidation-2026-11-25T17-12-49.325Z.json"
     },
     {
       "prompt": "experience.consolidation",
