@@ -424,6 +424,17 @@ export function createLivedExperienceTables(database) {
     ) STRICT;
     CREATE INDEX IF NOT EXISTS exchange_meanings_by_time ON exchange_meanings(at);
 
+    -- The ground a Thread keeps coming back to (Body-drives plan C1): where
+    -- its recent exchanges cluster by meaning, and the few words in which it
+    -- named that ground itself. A derived index, latest only, never memory.
+    CREATE TABLE IF NOT EXISTS thread_repeated_ground (
+      thread_id TEXT PRIMARY KEY,
+      named_at TEXT NOT NULL,
+      centre_ref TEXT NOT NULL,
+      vector TEXT NOT NULL,
+      name TEXT NOT NULL
+    ) STRICT;
+
     -- Appointments two Threads agreed in conversation: where and when, who
     -- proposed, and the Story in which it was agreed. Its outcome is a
     -- separate, once-only World fact read from where both actually were.

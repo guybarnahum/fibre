@@ -5,7 +5,7 @@
 // result through its own urge loci and decides for itself what to do.
 
 import { bodyLevel, DAY_MS, fade, HOUR_MS, inheritedHalfLife } from "#core/src/body-level.mjs";
-import { tookItsMind } from "./engagement.mjs";
+import { talksOf, tookItsMind } from "./engagement.mjs";
 
 const days=(from,to)=>(Date.parse(to)-Date.parse(from))/DAY_MS;
 
@@ -316,19 +316,15 @@ const VALUED_HALF_LIFE_MS=7*DAY_MS;
 const PROMISE_HALF_LIFE_MS=3*DAY_MS;
 const FELT_WITH=Object.freeze({new:1,some_new:0.5,nothing_new:-0.3});
 const VALUED_BY=Object.freeze({credited:0.3,asked_advice:0.3});
-const turnOf=(reading)=>Number(String(reading.sourceRef??"").split(":").at(-1))||0;
 function talksFelt({experienceStore,threadId,contacts,at}){
   const together=new Set(contacts.filter(contact=>contact.kind!=="message").map(contact=>contact.at));
   if(together.size===0)return [];
   const since=[...together].reduce((first,when)=>when<first?when:first,at);
-  const byTalk=new Map();
-  for(const item of experienceStore.listEngagementReadings?.(threadId,{since,until:at,limit:96})??[]){
-    if(item.sourceKind!=="turn"||!together.has(item.at)||FELT_WITH[item.reading]===undefined)continue;
-    byTalk.set(item.at,[...(byTalk.get(item.at)??[]),item]);
-  }
-  return [...byTalk].map(([when,readings])=>{
-    const peak=Math.max(...readings.map(item=>FELT_WITH[item.reading]));
-    const end=FELT_WITH[readings.reduce((last,item)=>turnOf(item)>=turnOf(last)?item:last).reading];
+  const readings=(experienceStore.listEngagementReadings?.(threadId,{since,until:at,limit:96})??[])
+    .filter(item=>together.has(item.at)&&FELT_WITH[item.reading]!==undefined);
+  return talksOf(readings).map(({at:when,readings:turns})=>{
+    const peak=Math.max(...turns.map(item=>FELT_WITH[item.reading]));
+    const end=FELT_WITH[turns.at(-1).reading];
     return {at:when,peak,tone:(peak+end)/2};
   });
 }

@@ -13,6 +13,7 @@ import {
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 import { wearinessOf } from "./engagement.mjs";
 import { competenceLevel, latelyLearned, learningMoments, noveltyLevel, unfinishedLearning } from "./knowledge.mjs";
+import { repeatedGroundName } from "./repeated-ground.mjs";
 import { bondOf, conversationDepletion, expectedRegard, longingOf, missingMoments, moodOf, regardOf, regardShown, reunionJoy, selfStanding,
   SLIGHT_GAP, stingHalfLife,
   socialEnergyEvidence } from "./social-body.mjs";
@@ -432,10 +433,13 @@ const masteryPercept=({competence,unfinished})=>competence===0&&unfinished.lengt
 // called, and what it last learned from (ADR-0041), so a pull to tell has
 // something to tell. World facts, not feelings: whether they are felt is the
 // drives' to say.
-const withTitles=(frame,{unfinished=[],lately=null}={})=>frame===null||(unfinished.length===0&&lately===null)?frame
+// And the ground it keeps coming back to, in its own words (C1), so that
+// having had enough of it says of what.
+const withTitles=(frame,{unfinished=[],lately=null}={},ground=null)=>frame===null
+  ||(unfinished.length===0&&lately===null&&ground===null)?frame
   :Object.freeze({...frame,
     ...(unfinished.length===0?{}:{unfinishedTitles:Object.freeze(Object.fromEntries(unfinished.map(item=>[`work:${item.workRef}`,item.title])))}),
-    ...(lately===null?{}:{lately})});
+    ...(lately===null?{}:{lately}),...(ground===null?{}:{repeatedGround:ground})});
 
 // One evidence-driven Body projection for planning and social attention.
 // No extra model call, time tick, or family-specific consumer path.
@@ -502,7 +506,8 @@ export function livedRegulationForLivedHistory({
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
   });
-  return withTitles(frame,{unfinished,lately});
+  return withTitles(frame,{unfinished,lately},experienceStore===null?null
+    :repeatedGroundName({experienceStore,threadId:thread.threadId,at:asOf}));
 }
 
 // The social Body during a live conversation: the battery where it stood
@@ -510,7 +515,7 @@ export function livedRegulationForLivedHistory({
 // the other is known and trusted. How far it trusts them is felt too, and
 // someone hardly known is a pull for a Body inherited to seek new people.
 export function socialBodyInConversation({thread,start,regard,turns,asOf,other,self=null,talkedOverNow=0,
-  heardNow=[],weariness=0,learning={competence:0,unfinished:[]},mood=null}){
+  heardNow=[],weariness=0,learning={competence:0,unfinished:[]},mood=null,ground=null}){
   const evidenceRefs=[...(start?.evidenceRefs??[]),`self:conversation-turns:${turns}`];
   // Being cut off in this very talk, and how the other's words just landed
   // (ADR-0037 C3b), are felt at once.
@@ -530,7 +535,7 @@ export function socialBodyInConversation({thread,start,regard,turns,asOf,other,s
     runtimeBaselines:thread.genome?.runtimeBaselines??{},
     urgeProjection:thread.genome?.urgeProjection??null,
     organismPolicy,
-  }),learning);
+  }),learning,ground);
 }
 
 // Where a conversation's battery starts, and how known and trusted the other
@@ -545,6 +550,7 @@ export function socialBodyBeforeTalk({thread,otherThreadId,experienceStore,asOf}
     learning:learningOf({thread,experienceStore,at:asOf}),
     // The mood it brings to the talk; what happens in it spills afterward.
     mood:moodFor({thread,experienceStore,at:asOf,self}),
+    ground:repeatedGroundName({experienceStore,threadId:thread.threadId,at:asOf}),
   };
 }
 

@@ -7,7 +7,7 @@ Each file is the fixed system prompt of one cognitive job, named `<domain>.<job>
 | `social` | speaking in a live conversation; understanding one's own proposal to meet; choosing whom to be near |
 | `interior` | Thread-owned judgment over its own developed self: social initiation and response, the Flight Plan, Commons, paid work. Each `interior.*` prompt `extends: interior.base` |
 | `encounter` | noticing, experiencing and, later, journaling or remembering an encounter |
-| `experience` | delayed reflection over a cluster of experiences (journal, memory, afterthoughts, stances), and a Thread's first account of its interests and of its livelihood |
+| `experience` | delayed reflection over a cluster of experiences (journal, memory, afterthoughts, stances), a Thread's first account of its interests and of its livelihood, and naming the ground it keeps coming back to |
 | `contact` | deciding to reach someone, and the message |
 | `body` | interpreting the Body's regulation signals as felt states |
 | `world` | World-authored happenings and their continuations (not a Thread's voice) |

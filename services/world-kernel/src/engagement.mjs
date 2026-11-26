@@ -92,9 +92,22 @@ function habituationEvents({experienceStore,threadId,at}){
   return events;
 }
 
+// A talk is felt as a whole, as people remember one (peak and end): its
+// turns' readings grouped by the talk they belong to (turns of one live talk
+// share its start), in turn order.
+export const turnOf=(reading)=>Number(String(reading.sourceRef??"").split(":").at(-1))||0;
+export function talksOf(readings){
+  const talks=new Map();
+  for(const item of readings)if(item.sourceKind==="turn")talks.set(item.at,[...(talks.get(item.at)??[]),item]);
+  return [...talks].map(([at,items])=>({at,readings:items.slice().sort((a,b)=>turnOf(a)-turnOf(b))}));
+}
+
 // Weariness as a Body level: habituation as its baseline, its own readings
 // as spikes, each fading with the hours, more slowly the more persistent its
-// exploration locus. 0 none, toward 1 thoroughly weary.
+// exploration locus. 0 none, toward 1 thoroughly weary. A talk counts once,
+// by its freshest moment and how it ended (Nov 25: counted turn by turn, one
+// dull talk of ten turns filled it, and it read 1 all day on staging, so it
+// said nothing).
 export function wearinessLevel({experienceStore,threadId,at,persistence=0}){
   const readings=experienceStore?.listEngagementReadings?.(threadId,{
     since:new Date(Date.parse(at)-RECENT_MS).toISOString(),until:at})??[];
@@ -104,7 +117,10 @@ export function wearinessLevel({experienceStore,threadId,at,persistence=0}){
   const halfLife=inheritedHalfLife(WEARINESS_HALF_LIFE_HOURS*HOUR_MS,persistence);
   const level=bodyLevel({at,
     events:[...habituationEvents({experienceStore,threadId,at}),
-      ...readings.filter(item=>WEIGHT[item.reading]!==undefined).map(item=>({at:item.at,size:WEIGHT[item.reading]})),
+      ...readings.filter(item=>item.sourceKind!=="turn"&&WEIGHT[item.reading]!==undefined)
+        .map(item=>({at:item.at,size:WEIGHT[item.reading]})),
+      ...talksOf(readings.filter(item=>WEIGHT[item.reading]!==undefined)).map(({at:when,readings:turns})=>({at:when,
+        size:(Math.min(...turns.map(item=>WEIGHT[item.reading]))+WEIGHT[turns.at(-1).reading])/2})),
       ...discoveries.map(item=>({at:item.at,size:WEIGHT.new}))],
     halfLife,baseline:{accumulate:{share:0,halfLife}},bound:{saturate:WEARINESS_SCALE}});
   const saturated=(value)=>1-2**(-Math.max(0,value)/WEARINESS_SCALE);

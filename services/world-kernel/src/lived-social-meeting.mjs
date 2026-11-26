@@ -611,11 +611,11 @@ export function createSocialMeetingService({
     // The social Body in this talk: where the battery stood when it began,
     // how known the other is, and each turn spoken or heard since.
     const feltBodyFor=(self,other,heard)=>{
-      const {start,regard,self:standing,weariness,learning,mood}=socialBodyBeforeTalk({thread:self.thread,
+      const {start,regard,self:standing,weariness,learning,mood,ground}=socialBodyBeforeTalk({thread:self.thread,
         otherThreadId:other.thread.threadId,experienceStore,asOf:at});
       const person={threadId:other.thread.threadId,evidenceRef:other.situation.situationId};
       return (story)=>feltSocialBody(socialBodyInConversation({thread:self.thread,start,regard,asOf:at,
-        other:person,turns:story.beats.filter(beat=>beat.kind==="utterance").length,self:standing,weariness,learning,mood,
+        other:person,turns:story.beats.filter(beat=>beat.kind==="utterance").length,self:standing,weariness,learning,mood,ground,
         heardNow:heard,
         // Cut off by the other in this very talk.
         talkedOverNow:story.beats.filter(beat=>beat.actorThreadId===self.thread.threadId

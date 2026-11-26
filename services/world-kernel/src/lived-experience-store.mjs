@@ -2895,6 +2895,26 @@ export class LivedExperienceStore {
       .run(new Date(Date.parse(newest)-7*86_400_000).toISOString());
   }
 
+  // The ground this Thread keeps coming back to, as it last named it.
+  getRepeatedGround(threadId){
+    assertId("repeated ground threadId",threadId);
+    if(!worldTableExists(this.#database,"thread_repeated_ground"))return null;
+    const row=this.#database.prepare(`SELECT named_at AS at,centre_ref AS centreRef,vector,name
+      FROM thread_repeated_ground WHERE thread_id=?`).get(threadId);
+    return row===undefined?null:Object.freeze({...row,vector:decodeMeaning(row.vector)});
+  }
+  recordRepeatedGround({threadId,at,centreRef,vector,name}){
+    assertId("repeated ground threadId",threadId);
+    assertIsoTimestamp("repeated ground at",at);
+    assertNonEmpty("repeated ground centre",centreRef);
+    assertNonEmpty("repeated ground vector",vector);
+    assertNonEmpty("repeated ground name",name);
+    if(name.length>120)throw new TypeError("repeated ground name must be a few words");
+    this.#database.prepare(`INSERT INTO thread_repeated_ground(thread_id,named_at,centre_ref,vector,name)
+      VALUES (?,?,?,?,?) ON CONFLICT(thread_id) DO UPDATE SET named_at=excluded.named_at,
+      centre_ref=excluded.centre_ref,vector=excluded.vector,name=excluded.name`).run(threadId,at,centreRef,vector,name);
+  }
+
   // What this Thread's recent exchanges said, newest first: the words of the
   // conversations it spoke in and of the messages it sent or received.
   // Facts, for measuring how much a new exchange repeats them.
