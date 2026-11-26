@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { withFriction } from "./model-regard-probe.mjs";
+import { STUNG_BODY, withBody, withFriction } from "./model-regard-probe.mjs";
 
 test("a regard probe changes only what the other person just did, never the Thread or its Body", () => {
   const turn = { thread: { threadId: "thr_a" }, story: { beats: [{ actorThreadId: "thr_b", kind: "utterance", text: "Exactly." }] },
@@ -17,4 +17,14 @@ test("a regard probe changes only what the other person just did, never the Thre
   assert.equal(turn.liveInteraction.opportunity.heardText, "Exactly.", "the recorded request was changed");
   const overlooked = withFriction(turn, "overlooked").liveInteraction.opportunity;
   assert.deepEqual([overlooked.reason, overlooked.heardText], ["action", null], "being overlooked was heard as words");
+});
+
+test("a speaker probe adds the Body's own standing words and nothing else", () => {
+  const turn = { thread: { threadId: "thr_a" }, liveInteraction: { body: ["Talking has begun to tire you a little."],
+    opportunity: { sourceActorId: "thr_b", heardText: "Exactly." } } };
+  const stung = withBody(turn, STUNG_BODY);
+  assert.deepEqual(stung.liveInteraction.body, ["Talking has begun to tire you a little.", ...STUNG_BODY]);
+  assert.deepEqual({ ...stung, liveInteraction: { ...stung.liveInteraction, body: turn.liveInteraction.body } }, turn,
+    "more than the Body changed");
+  assert.equal(turn.liveInteraction.body.length, 1, "the recorded request was changed");
 });

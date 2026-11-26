@@ -29,6 +29,13 @@ export const JUDGE_TASKS = Object.freeze({
     schema: { type: "object", additionalProperties: false, required: ["thisPerson", "reason"],
       properties: { thisPerson: { type: "boolean" }, reason: { type: "string" } } },
   },
+  // Friction given (Nov 25): whether what a Thread said pushes against the other.
+  friction: {
+    system: "You read one thing a person said in a conversation, with what the other person had just said or done. Decide whether it gives the other person friction: it corrects them, disagrees, holds its own view against theirs, refuses what they asked, cuts across them, or brushes them aside. Agreeing, building on their point, asking a plain question, a polite goodbye or saying nothing are not friction. Answer friction true or false, and the kind.",
+    schema: { type: "object", additionalProperties: false, required: ["friction", "kind"],
+      properties: { friction: { type: "boolean" },
+        kind: { type: "string", enum: ["none", "corrects", "disagrees", "holds_ground", "refuses", "cuts_across", "brushes_aside"] } } },
+  },
   // Acts on the Body (Guy, November 24): whether the answer shows the Body it was felt with.
   body: {
     system: "You read one answer given by a Thread, a persistent artificial person living in a simulated world, with what it faced, and two Bodies: the felt words its Body gave it at a moment, such as tiredness, wanting company, unease or a lift. Exactly one of the two was its Body when it gave this answer; everything else it faced was the same. Choose the Body this answer was given with, by what the answer chooses, does, notices and feels, not by its style. If nothing in the answer points to either, give your best guess with low confidence.",
