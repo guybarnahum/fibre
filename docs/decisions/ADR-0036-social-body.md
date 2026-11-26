@@ -159,12 +159,6 @@ On staging (November 13) S5b was inert: the Threads reworded one subject, so wor
 
 Deferred: embedding reading sessions (the books Threads read); embedding memories and interests for retrieval; topic tracking across the World. Exchanges no cognition has yet measured add nothing to habituation.
 
-**November 25 (Body-drives plan C5 and C1, approved by Guy):**
-
-- **A talk counts once.** Counted turn by turn, one dull talk of ten turns filled weariness, and on staging it read near 1 all day, so it said nothing. A talk is now felt as a whole, by its freshest moment and how it ended (peak and end, as affective association already reads a talk): `(min + last) / 2` of its turns' weights. Reflection's readings count as before. The grouping (`talksOf`) is shared with affective association.
-- **What it keeps coming back to, named (`repeated-ground.mjs`).** World finds where the Thread's recent exchanges cluster by meaning: the exchange with the most others within the closeness World already calls "ground you have covered" (cosine 0.65), and at least two of them. After each reflection, when that ground has moved (cosine under 0.85 from the last one named) or its name is three days old, the Thread names it in at most eight plain words, from its own words there and never from an interest's label (`experience.repeated-ground` v1). The name is kept as a derived index (`thread_repeated_ground`, latest only, never memory).
-- **Weariness says of what.** "You have had enough of this for now" becomes "You have had enough of <its own name for that ground> for now", wherever the Body's general words reach cognition. A vague feeling did not move Sol; a feeling that names what is in front of it did (`npm run model:felt-probe`, named arm).
-
 ## Presence as built (November 12): going over, being among people, messages that ease
 
 On November 12, two pairs of friends sat in the same library and exchanged 22 messages without speaking. Contact decisions treated every recipient as absent. Messages kept the need for company just under the level that offers another chance to approach, yet never eased what the Body said. And being among people eased nothing, even for a Body whose words asked for exactly that. The design is in the project (`claude/presence-design.md`); Guy's decisions, November 12, are below.

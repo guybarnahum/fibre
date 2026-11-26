@@ -20,9 +20,6 @@ const cosine=(a,b)=>{
   return sum;
 };
 
-// How close two meanings are: the cosine of their unit vectors.
-export const closeness=(a,b)=>cosine(a,b);
-
 // Stored compactly: a unit vector as signed bytes, base64.
 export function encodeMeaning(vector){
   const bytes=Uint8Array.from(unit(vector).map(value=>Math.round(value*127)&0xff));

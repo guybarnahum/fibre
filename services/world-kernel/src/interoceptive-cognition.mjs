@@ -452,9 +452,7 @@ export function feltSocialBody(regulationFrame){
   }
   const weary=regulationFrame.drives.find(item=>item.family==="exploration"&&item.targetRef==="self:weariness"
     &&item.felt!==false&&item.pressure>0)??null;
-  // Of what, when it has named what it keeps coming back to (C1).
-  const of=(line)=>regulationFrame.repeatedGround?line.replace("enough of this",`enough of ${regulationFrame.repeatedGround}`):line;
-  if(weary!==null)lines.push(of(WEARY[weary.inheritedDirection]??WEARY_ANY));
+  if(weary!==null)lines.push(WEARY[weary.inheritedDirection]??WEARY_ANY);
   const learned=learningFelt(regulationFrame);
   if(learned.share!==null)lines.push(learned.share,...(learned.onMind===null?[]:[learned.onMind]));
   if(learned.lift!==null)lines.push(learned.lift);

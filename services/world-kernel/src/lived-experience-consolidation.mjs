@@ -13,7 +13,6 @@ import {formLivelihood} from "./thread-livelihood.mjs";
 import {REGARD_SCHEMA,admitRegard,normalizeRegard} from "./perceived-regard.mjs";
 import {ENGAGEMENT_READINGS,RECORDED_READINGS} from "./engagement.mjs";
 import {createExchangeMeaning} from "./exchange-meaning.mjs";
-import {createRepeatedGroundNaming} from "./repeated-ground.mjs";
 import {
   AUTOBIOGRAPHICAL_MEMORY_FORMAT_V2,
   AUTOBIOGRAPHICAL_MEMORY_POLICY,
@@ -502,8 +501,6 @@ export function createExperienceConsolidationProcess({
     throw new TypeError("experience consolidation clocks must be functions");
 
   const meaning=createExchangeMeaning({embedder,experienceStore,log});
-  // What it keeps coming back to, named again when that has moved (C1).
-  const groundNaming=createRepeatedGroundNaming({experienceStore,modelAdapter,log});
 
   function claimGroups(limit,atMs){
     const claimed=[];
@@ -701,8 +698,6 @@ export function createExperienceConsolidationProcess({
         regardRefs:regard.admitted,
       },
     });
-
-    await groundNaming.refresh({threadId:consolidation.threadId,at:consolidation.startedAt});
 
     let afterthoughtDelivery=Object.freeze({attempted:false,ok:true,result:null});
     if(decision.afterthoughts.length>0&&onAfterthoughts!==null){
