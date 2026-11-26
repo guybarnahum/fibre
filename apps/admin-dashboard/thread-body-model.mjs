@@ -5,6 +5,8 @@
 export const BODY_STATES=Object.freeze([
   Object.freeze({key:"frustration",baselineKey:"frustrationBaseline",label:"Frustration",range:[0,1],events:"regard",
     note:"dashed: its baseline, the gap it will not reconcile; spikes from slights fade back to it"}),
+  Object.freeze({key:"mood",baselineKey:"moodBaseline",label:"Mood",range:[-1,1],events:"regard",
+    note:"dashed: how life has been going; a slight or a lift spills into it and fades back in hours"}),
   Object.freeze({key:"battery",label:"Spent by talk",range:[0,1],events:"exposures"}),
   Object.freeze({key:"weariness",baselineKey:"wearinessBaseline",label:"Weary of the same",range:[0,1],events:"readings",
     note:"dashed: habituation, how much its talk repeats itself by meaning; what was new to it moves it"}),

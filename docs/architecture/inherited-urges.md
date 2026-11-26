@@ -92,6 +92,15 @@ alone carries a fourth position, `selfRegard`: an inherited lean in how the Body
 places itself. New births draw all 18 families; v4 stays frozen (digest
 `sha256:3295cb326cb6094b957fb0e90c7bdd60dfebb1ccb8d9da6349e976c1b20467c9`), and
 late expression gives existing Threads the three new loci from their own genome.
+**Library v6** ([ADR-0037](../decisions/ADR-0037-status-and-conflict.md) C3b)
+adds `stubbornness` to `standing` alone (digest
+`sha256:df9c5db80da0c53eaf00f87589a7b6b8c65b5fe2d37374fb47dc96576624d06f`).
+**Library v7** ([ADR-0038](../decisions/ADR-0038-body-levels.md) B5) is v6 plus
+`mood`, ten reviewed loci ([review](../validation/mood-urge-library-review.md)):
+G how far a feeling spreads into a general tone, T how soon a mood is noticed,
+P how long it lingers, and its direction what moves it most (`people`, `doing`
+or `everything`). New births draw all 19 families; late expression gives
+existing Threads the mood locus from their own genome.
 Textual nuances beyond the orientation/positions remain meaning-bearing source
 but **are not claimed as additional operational differences**. Frozen parameters
 are author-reviewed, not inferred by a model at runtime. No sex, ancestry,

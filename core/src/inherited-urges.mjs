@@ -2,8 +2,8 @@ import {createHash} from "node:crypto";
 
 // Every published library stays immutable birth authority for the Threads
 // born from it. v3 changed only exploration_01's text; v4 adds the social
-// Body's two families (ADR-0036). Births draw from the current version.
-export const URGE_LIBRARY_VERSION="6";
+// Body's two families (ADR-0036); v7 adds mood (ADR-0038 B5). Births draw from the current version.
+export const URGE_LIBRARY_VERSION="7";
 export const URGE_LIBRARY_V2_FAMILIES=Object.freeze([
   Object.freeze({
     family:"social_contact",kind:"directional",
@@ -318,9 +318,32 @@ const URGE_LIBRARY_V5_FAMILIES=Object.freeze([...URGE_LIBRARY_V4_FAMILIES,...STA
 // Body may be reasonable, a modest one stubborn.
 const STUBBORNNESS=Object.freeze({standing_01:0.86,standing_02:-0.3,standing_03:-0.05,standing_04:0.45,
   standing_05:-0.3,standing_06:-0.65,standing_07:0.25,standing_08:0.1,standing_09:-0.9,standing_10:0.62});
-export const URGE_FAMILIES=Object.freeze(URGE_LIBRARY_V5_FAMILIES.map(family=>family.family!=="standing"?family
+const URGE_LIBRARY_V6_FAMILIES=Object.freeze(URGE_LIBRARY_V5_FAMILIES.map(family=>family.family!=="standing"?family
   :Object.freeze({...family,variants:Object.freeze(family.variants.map(variant=>Object.freeze({...variant,
     positions:Object.freeze({...variant.positions,stubbornness:STUBBORNNESS[variant.variantId]})})))})));
+// Library v7 (ADR-0038 B5, Guy, November 25): mood, the wide effect of a
+// feeling. What is felt toward someone or something also spills, in part,
+// into a general tone that colours what comes next and fades back in hours.
+// G is how far a feeling spreads, T how soon a mood is noticed, P how long
+// it lingers; the direction is what this Body's mood is most moved by: what
+// happens with people, what it does and learns, or everything alike.
+const MOOD_FAMILY=Object.freeze({
+  family:"mood",kind:"directional",
+  orientations:Object.freeze(["people","doing","everything"]),
+  variants:Object.freeze([
+    Object.freeze({variantId:"mood_01",orientation:"people",text:"A cold word from one person in the morning still weighs on the body at a meal with others hours later.",positions:Object.freeze({gain:0.9,feltThreshold:-0.4,persistence:0.3})}),
+    Object.freeze({variantId:"mood_02",orientation:"people",text:"After a warm exchange, the body carries a lightness into whatever comes next.",positions:Object.freeze({gain:-0.5,feltThreshold:0.25,persistence:-0.6})}),
+    Object.freeze({variantId:"mood_03",orientation:"people",text:"A slight from one person leaves the body braced against the next person too.",positions:Object.freeze({gain:0.3,feltThreshold:0.9,persistence:-0.2})}),
+    Object.freeze({variantId:"mood_04",orientation:"people",text:"Being met kindly by someone loosens the body toward everyone else nearby.",positions:Object.freeze({gain:-0.6,feltThreshold:-0.7,persistence:0.88})}),
+    Object.freeze({variantId:"mood_05",orientation:"doing",text:"When something one is doing goes well, the lift of it stays in the body through the rest of the day.",positions:Object.freeze({gain:-0.5,feltThreshold:0.25,persistence:-0.6})}),
+    Object.freeze({variantId:"mood_06",orientation:"doing",text:"A task that goes wrong leaves a heaviness in the body that colours what follows.",positions:Object.freeze({gain:0.7,feltThreshold:-0.92,persistence:-0.88})}),
+    Object.freeze({variantId:"mood_07",orientation:"doing",text:"Learning something new brightens the body in a way that spills over onto other things.",positions:Object.freeze({gain:-0.3,feltThreshold:0.6,persistence:0.15})}),
+    Object.freeze({variantId:"mood_08",orientation:"everything",text:"A good or bad turn of any kind settles over the body for some hours afterward.",positions:Object.freeze({gain:0.45,feltThreshold:-0.15,persistence:0.62})}),
+    Object.freeze({variantId:"mood_09",orientation:"everything",text:"Whatever has just happened, pleasant or not, lingers in the body as a general tone.",positions:Object.freeze({gain:-0.88,feltThreshold:0.45,persistence:-0.3})}),
+    Object.freeze({variantId:"mood_10",orientation:"everything",text:"The body's general tone shifts with each small event of the day and then drifts back.",positions:Object.freeze({gain:0.2,feltThreshold:-0.33,persistence:0.55})}),
+  ]),
+});
+export const URGE_FAMILIES=Object.freeze([...URGE_LIBRARY_V6_FAMILIES,MOOD_FAMILY]);
 const libraryDigest=families=>"sha256:"+createHash("sha256")
   .update(JSON.stringify(families)).digest("hex");
 export const URGE_LIBRARY_V2_DIGEST=libraryDigest(URGE_LIBRARY_V2_FAMILIES);
@@ -330,7 +353,8 @@ export const URGE_LIBRARIES=Object.freeze({
   "3":Object.freeze({families:URGE_LIBRARY_V3_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V3_FAMILIES)}),
   "4":Object.freeze({families:URGE_LIBRARY_V4_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V4_FAMILIES)}),
   "5":Object.freeze({families:URGE_LIBRARY_V5_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V5_FAMILIES)}),
-  "6":Object.freeze({families:URGE_FAMILIES,digest:URGE_LIBRARY_DIGEST}),
+  "6":Object.freeze({families:URGE_LIBRARY_V6_FAMILIES,digest:libraryDigest(URGE_LIBRARY_V6_FAMILIES)}),
+  "7":Object.freeze({families:URGE_FAMILIES,digest:URGE_LIBRARY_DIGEST}),
 });
 export const URGE_FAMILY_BY_NAME=new Map(URGE_FAMILIES.map(family=>[family.family,family]));
 export const SPECIES_STANDARD_ORIENTATION=Object.freeze(Object.fromEntries(

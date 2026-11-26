@@ -15,25 +15,32 @@ const frame=(availability={})=>({
 });
 const social=reg=>reg.drives.find(d=>d.family==="social_contact");
 
-test("current authored urge library binds 18 family kinds, origin provenance and stable replay",()=>{
-  assert.equal(URGE_FAMILIES.length,18);
+test("current authored urge library binds 19 family kinds, origin provenance and stable replay",()=>{
+  assert.equal(URGE_FAMILIES.length,19);
   assert.ok(URGE_FAMILIES.every(f=>f.variants.length===10));
   const a=selectedUrgesForBirth("newborn-inherited-urges");
   assert.deepEqual(a,selectedUrgesForBirth("newborn-inherited-urges"),"birth must replay");
-  assert.equal(a.values.length,18);
+  assert.equal(a.values.length,19);
   const genome=buildDeNovoSymbolicGenome({
     threadId:"thr_inherited_urges_test",genesisId:"genesis_inherited_urges_test",
     values:a.values,originMaterial:a.originMaterial,createdAt:"2026-10-28T12:00:00Z",
   });
-  assert.equal(urgeVariantsFromGenome(genome).length,18,"origin must bind all families");
+  assert.equal(urgeVariantsFromGenome(genome).length,19,"origin must bind all families");
   assert.ok(!JSON.stringify(genome).includes("orientationUnrelated"));
   const tampered=structuredClone(genome);
   tampered.loci[0].value="unrelated bodily urge";
   assert.throws(()=>urgeVariantsFromGenome(tampered),/frozen library/,"origin must bind the actual textual loci");
 });
 
-test("published libraries stay frozen; v4 only adds the social Body, v5 only status and conflict, v6 only stubbornness, and every locus is atomic",()=>{
-  assert.equal(URGE_LIBRARY_VERSION,"6");
+test("published libraries stay frozen; v4 only adds the social Body, v5 only status and conflict, v6 only stubbornness, v7 only mood, and every locus is atomic",()=>{
+  assert.equal(URGE_LIBRARY_VERSION,"7");
+  assert.equal(URGE_LIBRARIES["6"].digest,
+    "sha256:df9c5db80da0c53eaf00f87589a7b6b8c65b5fe2d37374fb47dc96576624d06f","historical v6 library changed");
+  assert.deepEqual(URGE_LIBRARIES["7"].families.slice(0,18),URGE_LIBRARIES["6"].families,"v7 changed a v6 family");
+  assert.deepEqual(URGE_LIBRARIES["7"].families.slice(18).map(f=>f.family),["mood"]);
+  for(const variant of URGE_LIBRARIES["7"].families[18].variants){
+    assert.doesNotThrow(()=>assertAtomicGenomeLocus(variant.text),`${variant.variantId} is not an atomic locus`);
+  }
   assert.equal(URGE_LIBRARIES["5"].digest,
     "sha256:98fe294551cc68a7480753f046d8c8a007c595f3c19211990fef65d2ef524453","historical v5 library changed");
   const strip=(family)=>({...family,variants:family.variants.map(({positions:{stubbornness,...positions},...variant})=>

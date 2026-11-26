@@ -3,7 +3,8 @@
 // from World records, read once when the panel opens and sliced in memory
 // to evaluate earlier moments; nothing is stored and nothing runs unasked.
 import { HOUR_MS, DAY_MS } from "#core/src/body-level.mjs";
-import { bondOf, longingOf, missingMoments, regardOf, selfStanding, socialEnergyEvidence } from "./social-body.mjs";
+import { bondOf, longingOf, missingMoments, moodOf, regardOf, selfStanding, socialEnergyEvidence } from "./social-body.mjs";
+import { learningMoments } from "./knowledge.mjs";
 import { wearinessLevel } from "./engagement.mjs";
 import { learningBodyAt, socialBodyLoci } from "./lived-now-regulation.mjs";
 import { learningFelt } from "./interoceptive-cognition.mjs";
@@ -85,6 +86,8 @@ export function bodyObservatory({thread,experienceStore,memoryStore=null,at,name
   const attachment=loci.attachment;
   const pointAt=(instant)=>{
     const standing=selfStanding({experienceStore:records,threadId,at:instant,standingLocus:loci.standing});
+    const mood=moodOf({people:standing.felt,doing:learningMoments({experienceStore:records,threadId,at:instant}),
+      at:instant,moodLocus:loci.mood});
     const weariness=wearinessLevel({experienceStore:records,threadId,at:instant,
       persistence:loci.exploration?.persistence??0});
     const moments=missingMoments({experienceStore:records,memoryStore:records,threadId,at:instant});
@@ -101,6 +104,7 @@ export function bodyObservatory({thread,experienceStore,memoryStore=null,at,name
       weariness:round(weariness.level),wearinessBaseline:round(weariness.baseline),
       self:round(standing.self),gap:standing.gap===null?null:round(standing.gap),
       frustration:round(standing.frustration.level),frustrationBaseline:round(standing.frustration.baseline),
+      mood:round(mood.level),moodBaseline:round(mood.baseline),
       people:Object.freeze(Object.fromEntries(people.map(person=>{
         const seen=regardOf({experienceStore:records,threadId,otherThreadId:person,at:instant,
           trustLocus:loci.trust,standingLocus:loci.standing,attachmentLocus:loci.attachment});

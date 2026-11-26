@@ -7,10 +7,15 @@
 // loop (a sour day breeds sour exchanges), so its bound and fade are checked
 // here before anything is built (docs/validation/mechanism-dry-run.md).
 //
-// Genes: the living staging Threads' (Body panel, Nov 25). A spill takes the
-// size and fade of the family it comes from: a sting the standing locus's, a
-// warmth the trust locus's. Cognition stand-in: an approach is likelier the
-// warmer the mood, never certain.
+// Genes: the living staging Threads' social genes (Body panel, Nov 25), and a
+// mood locus each from urge library v7 (`mood`: G how far a feeling spreads,
+// P how long a mood lingers, its direction what moves it most). The Threads'
+// own mood loci are drawn from their genome digests when the library is
+// expressed; until then each is given a different variant, so the dry run
+// spans the range. As built: a spill fades at the mood locus's persistence;
+// the tint and the words follow how far the mood has moved from how life has
+// been going, times how far it spreads. Cognition stand-in: an approach is
+// likelier the warmer the mood, never certain.
 //
 // Staging's own society (Nov 25: no slights, Threads credited 4–10 times a day):
 //   STING=0.01 WARMTH=0.6 npm run dry-run:mood
@@ -24,17 +29,24 @@ export const GENES = {
   Surafel: [0.3, 0.45, -0.7, -0.3, 0.27], Kaleb: [-0.49, 0.88, 0.3, -0.3, 0.27],
   Habiba: [-0.14, 0.95, -0.25, 0.58, -0.52], Bontu: [0.35, -0.7, 0.62, 0.44, -0.15],
 };
+// The stand-in mood loci, [gain, persistence, direction], from library v7.
+export const MOOD = {
+  Kadir: [0.9, 0.3, "people"], Hassan: [-0.5, -0.6, "people"], Nathan: [0.3, -0.2, "people"],
+  Mikias: [-0.6, 0.88, "people"], Surafel: [0.7, -0.88, "doing"], Kaleb: [-0.3, 0.15, "doing"],
+  Habiba: [0.45, 0.62, "everything"], Bontu: [-0.88, -0.3, "everything"],
+};
+const SHARE = { people: { people: 1, doing: 0.4 }, doing: { people: 0.4, doing: 1 }, everything: { people: 0.7, doing: 0.7 } };
 const NAMES = Object.keys(GENES);
 const WAKE = 7, SLEEP = 23;
 
 // Species constants proposed for the build; the dry run checks them.
 export const SPECIES = {
-  moodHalfLife: 6 * HOUR_MS,          // a spill fades in hours, by its family's persistence
+  moodHalfLife: 6 * HOUR_MS,          // a spill fades in hours, by the mood locus's persistence
   baselineRate: +(process.env.RATE ?? 0.05), // each spill moves how life has been going this far toward itself
   sting: -0.5, rebuff: -0.3, warmth: 0.3, lift: 0.2, letdown: -0.2,
   approach: 0.12,                     // per waking hour, before the social gain
   accept: 0.85, stingChance: +(process.env.STING ?? 0.07), warmthChance: +(process.env.WARMTH ?? 0.3),
-  tintApproach: 0.6,                  // a mood of −1 approaches 40% as often
+  tintApproach: 0.6,                  // a mood of −1 approaches half as often (bounded 0.5–1.5, as built)
   tintTaken: 0.8,                     // a sour mood takes words amiss more easily
   tintGiven: 0.8,                     // and answers more curtly
 };
@@ -48,36 +60,39 @@ export function run({ days = 42, seed = 1, k = SPECIES, tint = true, baseline = 
   adaptation = process.env.ADAPT !== "0" } = {}) {
   const rand = rng(seed);
   const people = NAMES.map((name) => {
-    const [sg, stg, stp, trg, trp] = genes ? GENES[name] : [0, 0, 0, 0, 0];
-    return { name, sg: 2 ** sg, stg: 2 ** stg, stp, trg: 2 ** trg, trp, events: [], approaches: [], stings: [] };
+    const [sg] = genes ? GENES[name] : [0];
+    const [mg, mp, direction] = genes ? MOOD[name] : [0, 0, "everything"];
+    return { name, sg: 2 ** sg, spread: 2 ** mg, half: inheritedHalfLife(k.moodHalfLife, mp), share: SHARE[direction],
+      events: [], approaches: [], stings: [] };
   });
   const levelAt = (p, h) => bodyLevel({ at: h * HOUR_MS, events: p.events,
     halfLife: k.moodHalfLife, bound: { min: -1, max: 1 },
     baseline: baseline ? { track: { rate: k.baselineRate } } : null });
   const moodAt = (p, h) => !spill ? 0 : levelAt(p, h).level;
+  // What is felt and what tints: how far the mood has moved from its usual, as far as it spreads.
+  const tone = (p, h) => { if (!spill) return 0; const m = levelAt(p, h); return clamp((m.level - m.baseline) * p.spread, -1, 1); };
   // A spill fades back toward how life has been going, and moves it a little.
   // Adaptation: it is felt as far as it differs from how life has been going,
   // so a warmth in a warm life lifts less than in a cold one.
-  const feel = (p, h, value, halfLife) => p.events.push({ at: h * HOUR_MS, value, halfLife,
-    size: adaptation ? value - levelAt(p, h - 1e-6).baseline : value });
-  const stingHalf = (p) => inheritedHalfLife(k.moodHalfLife, p.stp);
-  const warmHalf = (p) => inheritedHalfLife(k.moodHalfLife, p.trp);
+  const feel = (p, h, raw, from) => { const value = raw * p.share[from];
+    p.events.push({ at: h * HOUR_MS, value, halfLife: p.half,
+      size: adaptation ? value - levelAt(p, h - 1e-6).baseline : value }); };
   const t = (on, x) => (tint && on ? x : 0);
   const series = [];
   for (let h = 0; h < days * 24; h += 1) {
     const hour = h % 24;
-    const mood = people.map((p) => moodAt(p, h));
-    if (hour === 12) series.push(mood.slice());
+    const mood = people.map((p) => tone(p, h));
+    if (hour === 12) series.push(people.map((p) => moodAt(p, h)));
     if (hour < WAKE || hour >= SLEEP) continue;
     for (const [i, p] of people.entries()) {
       // A day has its own small lifts and letdowns that have nothing to do with people.
-      if (rand() < 0.05) feel(p, h, k.lift, k.moodHalfLife);
-      if (rand() < 0.03) feel(p, h, k.letdown, k.moodHalfLife);
-      if (rand() >= k.approach * p.sg * clamp(1 + t(true, k.tintApproach * mood[i]), 0.1, 2)) continue;
+      if (rand() < 0.05) feel(p, h, k.lift, "doing");
+      if (rand() < 0.03) feel(p, h, k.letdown, "doing");
+      if (rand() >= k.approach * p.sg * clamp(1 + t(true, k.tintApproach * mood[i]), 0.5, 1.5)) continue;
       const j = (i + 1 + Math.floor(rand() * (people.length - 1))) % people.length, q = people[j];
       p.approaches.push({ h, to: j });
       if (rand() >= k.accept * clamp(1 + t(true, 0.3 * mood[j]), 0.3, 1.15)) {
-        feel(p, h, k.rebuff * p.stg, stingHalf(p)); p.stings.push({ h, from: j });
+        feel(p, h, k.rebuff, "people"); p.stings.push({ h, from: j });
         continue;
       }
       // Each side may take something amiss, or feel warmed: likelier when it
@@ -87,8 +102,8 @@ export function run({ days = 42, seed = 1, k = SPECIES, tint = true, baseline = 
         const sting = k.stingChance * (1 + t(true, k.tintGiven * sour(oi))) * (1 + t(true, k.tintTaken * sour(si)));
         const warm = k.warmthChance * (1 + t(true, k.tintGiven * sweet(oi))) * (1 + t(true, k.tintTaken * sweet(si)));
         const r = rand();
-        if (r < sting) { feel(self, h, k.sting * self.stg, stingHalf(self)); self.stings.push({ h, from: oi }); }
-        else if (r < sting + warm) feel(self, h, k.warmth * self.trg, warmHalf(self));
+        if (r < sting) { feel(self, h, k.sting, "people"); self.stings.push({ h, from: oi }); }
+        else if (r < sting + warm) feel(self, h, k.warmth, "people");
       }
     }
   }
@@ -153,11 +168,10 @@ function main() {
     study("four times the tint", { k: strong(2.4) }),
     study("a mood that lasts a day", { k: { ...SPECIES, moodHalfLife: 24 * HOUR_MS } }),
   ];
-  const g = (j) => NAMES.map((n) => GENES[n][j]);
+  const g = (j) => NAMES.map((n) => MOOD[n][j]);
   const genes = {
-    "standing persistence ~ dip at 24 h (more negative)": r2(spearman(g(2), proposed.per.map((p) => -p.dip24))),
-    "standing gain ~ dip at 6 h (more negative)": r2(spearman(g(1), proposed.per.map((p) => -p.dip6))),
-    "standing gain ~ spillover (fewer approaches)": r2(spearman(g(1), proposed.per.map((p) => -p.spill))),
+    "mood persistence ~ dip at 24 h (more negative)": r2(spearman(g(1), proposed.per.map((p) => -p.dip24))),
+    "mood gain (spread) ~ spillover (fewer approaches)": r2(spearman(g(0), proposed.per.map((p) => -p.spill))),
   };
   const summary = (s) => ({ label: s.label, last14: s.last14, lowShare: s.lowShare, spirals: s.spirals, spill: s.spill, dip24: s.dip24 });
   console.log(JSON.stringify({ species: SPECIES, proposed: { ...summary(proposed), daily: proposed.daily, per: proposed.per },

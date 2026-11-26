@@ -62,6 +62,15 @@ export function noveltyLevel({experienceStore,threadId,at,persistence=0}){
     halfLife:inheritedHalfLife(NOVELTY_HALF_LIFE_HOURS*HOUR_MS,persistence)}).level*1e6)/1e6;
 }
 
+// What learning lately did for this Thread, as felt moments its mood takes
+// a share of (ADR-0038 B5): a subject new to it lifts it most, going deeper
+// in one it holds a little.
+const LIFT_OF=Object.freeze({discovery:0.2,depth:0.1});
+export function learningMoments({experienceStore,threadId,at}){
+  return Object.freeze(learningOf({experienceStore,threadId,at}).filter(item=>LIFT_OF[item.learning]!==undefined)
+    .map(item=>Object.freeze({at:item.at,value:LIFT_OF[item.learning]})));
+}
+
 // How much going deeper in what it knows has lately satisfied it, as a Body
 // level for its `mastery_itch` urge, fading with the hours as its inheritance
 // makes it.

@@ -1,7 +1,7 @@
 ---
 id: adr-0038-body-levels
 status: accepted
-last-reviewed: 2026-11-13
+last-reviewed: 2026-11-25
 canonical: true
 ---
 
@@ -44,7 +44,7 @@ Guy, November 13: "World events spike frustration from the base level and it sho
 | B2 | frustration; stings and recognition fade by persistence |
 | B3 | missing someone: a baseline rising to a bond-set plateau, spikes from memories and reminders, eased by absorption and messages, joy at relief in proportion to the bond |
 | B4 | the battery's chronic floor; the need for company as relief fading to chronic isolation |
-| B5 | mood |
+| B5 | mood (built November 25, urge library v7) |
 | B6 | anger: provocation, ADR-0037 C4 |
 | B7 | remorse, ADR-0037 C5 |
 
@@ -122,6 +122,50 @@ Longing reaches cognition where it did before: contact decisions (toward everyon
 
 **The Body panel** adds the people the Thread has relations with, up to four beyond the six it lived most with. For each it shows missing over the day, the baseline dashed beneath it, and ticks when a memory of them came back to mind.
 
+## B5 as built (November 25): mood, the wide effect of a feeling
+
+Guy, November 25: "Body urges / feelings are focused toward something, but also leak into a general universal attitude. A bad experience with one person may color the whole day. So the effect is both narrow but has a secondary wide effect that is less focused on someone specific." He accepted mood as its own inherited urge (option (a) of `claude/mood-design.md`) the same day.
+
+**A new urge family, `mood`, in urge library v7.** Ten reviewed loci ([review](../validation/mood-urge-library-review.md)):
+- **gain:** how far a feeling spreads into a general tone;
+- **felt threshold:** how soon a mood is noticed;
+- **persistence:** how long it lingers;
+- **direction:** what moves it most: `people`, `doing` or `everything`.
+
+Living Threads receive their locus by late expression from their own genome digest; births draw all 19 families. The organism policy enables `mood`.
+
+**Mood is a Body level** (`moodOf`, `social-body.mjs`):
+- **Moments:** each felt moment of the last week, from people and from what the Thread does, gives the mood a share by the direction (1, 0.7 or 0.4).
+  - **From people:** the same moments that move frustration, signed for mood: a slight or an approach turned down lowers it, recognition lifts it.
+  - **From what it does:** a discovery (+0.2) or going deeper (+0.1).
+- **Baseline: how life has been going.** A running average of those moments (each moves it 5% of the way), starting from the species temperament, 0.
+- **Adaptation:** a moment is felt as far as it differs from how life has been going. A warmth in a warm life lifts little, as with people.
+- **Fade:** half in 6 hours, scaled by the mood locus's persistence, back to the baseline. The level stays within −1 and 1.
+
+**In the regulation core:**
+- `perceptFrame.mood` gives the level and the baseline. The mood drive (`self:mood`) is how far the mood has moved from how life has been going: sour (avoid) or light (approach). A mood at its usual is not felt.
+- **Mood-congruent appraisal.** The mood, times how far it spreads in this Body, tints the other drives before the genome shapes them:
+  - it scales the pulls toward people and toward the new (attachment, the social contact pulls, curiosity toward a person, hunger for something new) by up to half again or down to half;
+  - it scales wariness of each person the other way.
+
+  It acts whether or not the mood is noticed, and never touches a need it does not concern.
+
+**Felt in words** among the social Body's general lines (glance, contact decisions, live turns):
+- sour: "Something from earlier still sits a little badly with you" / "…sits badly with you and colours everything" / "Something from earlier has soured your whole day";
+- good: "You are in good spirits" / "You are in high spirits" / "Everything feels lighter today".
+
+A live turn uses the mood the Thread brought to the talk; what happens in it spills afterward.
+
+**Dry run** (`npm run dry-run:mood`):
+- **Two flaws found before building:**
+  - "how life has been going" as a sum ran mood up to +0.94;
+  - without adaptation, staging's warm society sat in constant good spirits (+0.75).
+- **As built:** mood settles at +0.04 (mixed world) and +0.12 (staging's). After a sting from one person, approaches to others fall 13–14% over the next 12 waking hours, and the mood is back within two days.
+- **Genes:** mood persistence sets how long it lingers (ρ 0.83–0.86).
+- **The fade:** a mood that lasts a day breeds sour spells, so the fade is hours.
+
+**The Body panel** shows mood over the day, with how life has been going dashed beneath it.
+
 ## Status of what this excludes
 
 | Capability | Status | Extension path |
@@ -133,5 +177,9 @@ Longing reaches cognition where it did before: contact decisions (toward everyon
 | Joy at a message from someone missed | deferred | a reunion-joy spike in the reading of an incoming message |
 | Missing parents and caregivers who are not live Threads | deferred | the same level toward a household relation, once family persons are World parties |
 | Every return of a memory to mind (only its latest is kept) | deferred | an availability history, if staging shows recalls cluster |
+| Mood fed by reunion joy, a kept or broken appointment, a World event, fullness or unmet hunger | deferred | more moments into `moodOf`, each a World fact already measured |
+| A sting in a live talk souring the rest of that talk's mood | deferred | the talk's fresh acts as moments, as frustration takes them |
+| Mood in the day's plan, reading and reflection | deferred | the Body's words where those jobs receive the Body (Body-drives plan C3) |
+| A temperament gene: a baseline other than 0 | deferred | a library position when staging shows Threads differ in it |
 
 No permanent constraint.

@@ -355,6 +355,17 @@ const PLACE=Object.freeze({
 });
 // Frustration risen above its baseline by something lately (body levels B2):
 // less patience, with anyone.
+// Mood (ADR-0038 B5): a general tone, felt whatever caused it.
+const SOUR=Object.freeze([
+  [0.3,"Something from earlier still sits a little badly with you."],
+  [0.6,"Something from earlier still sits badly with you and colours everything."],
+  [1.01,"Something from earlier has soured your whole day."],
+]);
+const SPIRITS=Object.freeze([
+  [0.3,"You are in good spirits."],
+  [0.6,"You are in high spirits."],
+  [1.01,"Everything feels lighter today."],
+]);
 const PATIENCE=Object.freeze([
   [0.5,"You are a little short on patience."],
   [0.8,"You are short on patience today."],
@@ -426,6 +437,8 @@ export function feltSocialBody(regulationFrame){
     lines.push(band(BATTERY,battery.pressure));
     if(RESTORES[battery.inheritedDirection])lines.push(RESTORES[battery.inheritedDirection]);
   }
+  const mood=felt("mood");
+  if(mood!==null)lines.push(band(mood.orientation==="avoid"?SOUR:SPIRITS,mood.pressure));
   lines.push(...[...feltTowardPeople(regulationFrame).values()].flat());
   const place=regulationFrame.drives.find(item=>item.family==="standing"&&item.targetRef==="self:standing")??null;
   if(place!==null){

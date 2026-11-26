@@ -263,7 +263,38 @@ export function selfStanding({experienceStore,threadId,at,standingLocus=null}){
     baseline:{given:gap!==null&&count>=3&&gap< -FRUSTRATION_CALM?Math.min(1,-2*gap):0},bound:{min:0,max:1}});
   return Object.freeze({self:rounded(self),gap:gap===null?null:rounded(gap),acts:count,
     frustration:Object.freeze({level:rounded(frustration.level),baseline:rounded(frustration.baseline)}),
+    // The same moments, as what they did to its mood: a slight or a refusal
+    // lowers it, recognition lifts it.
+    felt:Object.freeze(spikes.map(({at:when,size})=>Object.freeze({at:when,value:-size}))),
     evidenceRefs:Object.freeze(records.slice(0,4).map(record=>record.regardId))});
+}
+
+// Mood (ADR-0038 B5, Guy, November 25: "A bad experience with one person may
+// color the whole day"): what is felt toward someone or something also
+// spills into a general tone. Each felt moment of the last week, from people
+// (a slight, recognition, an approach turned down) and from what it does (a
+// discovery, going deeper), moves the mood, the most from what this Body's
+// mood is inherited to be moved by. It fades back in hours, at this Body's
+// mood persistence, to how life has been going: a running average of those
+// moments. A moment is felt as far as it differs from how life has been going
+// (adaptation): a warmth in a warm life lifts little, so a society of kind
+// words does not rise into constant good spirits (npm run dry-run:mood). How
+// far a mood spreads, and when it is noticed, are the regulation core's.
+const MOOD_HALF_LIFE_MS=6*HOUR_MS,MOOD_DAYS=7,MOOD_BASELINE_RATE=0.05;
+const MOOD_SHARE=Object.freeze({people:{people:1,doing:0.4},doing:{people:0.4,doing:1},everything:{people:0.7,doing:0.7}});
+export function moodOf({people=[],doing=[],at,moodLocus=null}){
+  const share=MOOD_SHARE[moodLocus?.orientation]??MOOD_SHARE.everything;
+  const moments=[...people.map(item=>({at:item.at,value:share.people*item.value})),
+    ...doing.map(item=>({at:item.at,value:share.doing*item.value}))]
+    .filter(item=>item.at<=at&&days(item.at,at)<=MOOD_DAYS).sort((a,b)=>a.at.localeCompare(b.at));
+  const halfLife=inheritedHalfLife(MOOD_HALF_LIFE_MS,moodLocus?.persistence??0);
+  const level=(events,when)=>bodyLevel({at:when,events,halfLife,
+    baseline:{track:{rate:MOOD_BASELINE_RATE}},bound:{min:-1,max:1}});
+  const events=[];
+  for(const moment of moments)
+    events.push({at:moment.at,value:moment.value,size:moment.value-level(events,moment.at).baseline});
+  const mood=level(events,at);
+  return Object.freeze({level:rounded(mood.level),baseline:rounded(mood.baseline)});
 }
 const rounded=(value)=>Math.round(value*1e6)/1e6;
 

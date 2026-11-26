@@ -400,6 +400,16 @@ function normalizeSocialCue(value, index) {
   };
 }
 
+// Mood (ADR-0038 B5), as World measured it: its level and how life has been
+// going, each from -1 (sour) to 1 (good spirits). Unknown is no mood.
+function normalizeMood(value) {
+  if (value === undefined) return null;
+  plainObject("perceptFrame.mood", value);
+  const signed = (name, x) => { const v = finite(name, x); if (v < -1 || v > 1) throw new TypeError(`${name} must be -1..1`); return v; };
+  return { level:signed("perceptFrame.mood.level", value.level), baseline:signed("perceptFrame.mood.baseline", value.baseline),
+    evidenceRefs:normalizeRefs("perceptFrame.mood.evidenceRefs", value.evidenceRefs) };
+}
+
 export function normalizePerceptFrame(value) {
   plainObject("perceptFrame", value);
   const social = value.social ?? [];
@@ -415,6 +425,7 @@ export function normalizePerceptFrame(value) {
     trust: normalizeTrust(value.trust),
     bonds: normalizeBonds(value.bonds),
     standing: normalizeStanding(value.standing),
+    mood: normalizeMood(value.mood),
     urgeAvailability:normalizeUrgeAvailability(value.urgeAvailability??{}),
     urgeTriggers:normalizeUrgeTriggers(value.urgeTriggers??[]),
     social: social.map(normalizeSocialCue),
@@ -748,6 +759,21 @@ function basalDrives(percept, profile) {
       ...(person.recognition===null?{}:{recognition:person.recognition.act})});
   }
 
+  // A mood is how far the Body's general tone has moved from how life has
+  // been going: felt as a sour or a light tone, whatever caused it.
+  if (percept.mood !== null) {
+    const moved = percept.mood.level - percept.mood.baseline;
+    drives.push({...drive({
+      family:"mood",
+      targetRef:"self:mood",
+      orientation:moved < 0 ? "avoid" : "approach",
+      pressure:Math.abs(moved),
+      urgency:Math.abs(moved),
+      progressError:moved,
+      evidenceRefs:[...new Set([...evidenceRefs,...percept.mood.evidenceRefs])],
+    }), mood:{ level:percept.mood.level, baseline:percept.mood.baseline }});
+  }
+
   // Time-supported lack of observed reciprocal contact is a Body signal,
   // never itself a feeling, semantic loneliness, or a consent decision.
   if (percept.contact !== null) {
@@ -856,6 +882,26 @@ function socialResonance(percept, profile) {
   };
 }
 
+// Mood-congruent appraisal (ADR-0038 B5): a sour mood makes people and the
+// new less inviting and others' guardedness weigh more; a good one the
+// reverse. It scales the pulls toward people and the new, and wariness the
+// other way; never a need it does not touch, and never past half again or
+// below half (npm run dry-run:mood: a stronger tint breeds sour spells).
+const MOOD_TINT=0.6;
+function moodTinted(drives,mood){
+  const toward=Math.min(1.5,Math.max(0.5,1+MOOD_TINT*mood)),wary=Math.min(1.5,Math.max(0.5,1-MOOD_TINT*mood));
+  const scaled=(item,factor)=>({...item,pressure:round(Math.min(1,item.pressure*factor)),
+    urgency:round(Math.min(1,item.urgency*factor))});
+  return drives.map(item=>{
+    if(item.family==="trust"&&item.targetRef.startsWith("person:"))return scaled(item,wary);
+    if(item.attained||item.orientation!=="approach")return item;
+    if(["attachment_proximity","social_contact"].includes(item.family)
+      ||(item.family==="exploration"&&(item.targetRef.startsWith("person:")||item.targetRef==="world:novelty")))
+      return scaled(item,toward);
+    return item;
+  });
+}
+
 export function evaluateIntrinsicRegulation({
   perceptFrame,targets=[],runtimeBaselines={},urgeProjection=null,
   organismPolicy=null,previousUrges=[],
@@ -906,8 +952,14 @@ export function evaluateIntrinsicRegulation({
         evidenceRefs:previous.evidenceRefs}),
       triggerKind:previous.triggerKind,
     }));
-  const enabled=policy===null?basal:basal.concat(triggered,rememberedTriggers)
+  const untinted=policy===null?basal:basal.concat(triggered,rememberedTriggers)
     .filter(item=>policy.enabledFamilies.includes(item.family));
+  // Mood colours how everything else is felt (mood-congruent appraisal), by
+  // how far it spreads in this Body, noticed or not.
+  const moodDrive=untinted.find(item=>item.family==="mood")??null;
+  const spread=moodDrive===null?null:policy===null?moodDrive
+    :feltUrges({drives:[moodDrive],policy,urgeProjection,asOf:percept.asOf})[0];
+  const enabled=spread===null?untinted:moodTinted(untinted,Math.sign(spread.progressError)*Math.min(1,spread.pressure));
   const drives=policy===null?enabled:feltUrges({
     drives:enabled,policy,urgeProjection,previousUrges,asOf:percept.asOf,
   }).map(item=>{

@@ -12,8 +12,8 @@ import {
 } from "./interoceptive-cognition.mjs";
 import { regulationOrganismTrace } from "./regulation-cycle.mjs";
 import { wearinessOf } from "./engagement.mjs";
-import { competenceLevel, latelyLearned, noveltyLevel, unfinishedLearning } from "./knowledge.mjs";
-import { bondOf, conversationDepletion, expectedRegard, longingOf, missingMoments, regardOf, regardShown, reunionJoy, selfStanding,
+import { competenceLevel, latelyLearned, learningMoments, noveltyLevel, unfinishedLearning } from "./knowledge.mjs";
+import { bondOf, conversationDepletion, expectedRegard, longingOf, missingMoments, moodOf, regardOf, regardShown, reunionJoy, selfStanding,
   SLIGHT_GAP, stingHalfLife,
   socialEnergyEvidence } from "./social-body.mjs";
 
@@ -275,7 +275,7 @@ function locusOf(thread,family){
 // The loci the social Body reads, for an operator's view of it.
 export function socialBodyLoci(thread){
   return Object.freeze({trust:locusOf(thread,"trust"),standing:locusOf(thread,"standing"),
-    exploration:locusOf(thread,"exploration"),attachment:locusOf(thread,"attachment_proximity")});
+    exploration:locusOf(thread,"exploration"),attachment:locusOf(thread,"attachment_proximity"),mood:locusOf(thread,"mood")});
 }
 const trustLocus=(thread)=>locusOf(thread,"trust");
 const standingLocus=(thread)=>locusOf(thread,"standing");
@@ -284,6 +284,16 @@ const wearyOf=({thread,experienceStore,at})=>wearinessOf({experienceStore,thread
   persistence:locusOf(thread,"exploration")?.persistence??0});
 const selfOf=({thread,experienceStore,at})=>selfStanding({experienceStore,threadId:thread.threadId,at,
   standingLocus:standingLocus(thread)});
+
+// Mood (ADR-0038 B5): the share of what this Body felt lately, toward people
+// and in what it did, that spilled into a general tone.
+function moodFor({thread,experienceStore,at,self}){
+  const mood=moodOf({people:self?.felt??[],doing:learningMoments({experienceStore,threadId:thread.threadId,at}),
+    at,moodLocus:locusOf(thread,"mood")});
+  return mood.level===0&&mood.baseline===0?null:mood;
+}
+const moodFrame=(mood,self)=>mood===null?{}:{mood:{level:mood.level,baseline:mood.baseline,
+  evidenceRefs:self?.evidenceRefs?.length>0?[...self.evidenceRefs]:["self:mood"]}};
 
 // Status felt toward each person (ADR-0037): where they stand, and the
 // regard their latest acts showed against what this Body expected of them.
@@ -458,12 +468,13 @@ export function livedRegulationForLivedHistory({
   // weary it is of what it has been going over (S5b).
   const self=experienceStore===null?null:selfOf({thread,experienceStore,at:asOf});
   const weariness=experienceStore===null?0:wearyOf({thread,experienceStore,at:asOf});
+  const mood=experienceStore===null?null:moodFor({thread,experienceStore,at:asOf,self});
   const people=experienceStore===null||perceivedPeople.length===0?null:peoplePercept({
     thread,people:perceivedPeople,experienceStore,memoryStore,at:asOf,self,
   });
   const {novelty=continuity.grounded?0:undefined,competence,unfinished,lately}=learningOf({thread,experienceStore,at:asOf});
   if(!continuity.grounded&&contact===null&&socialEnergy===null&&people===null&&self?.gap==null
-    &&weariness===0&&novelty===undefined&&competence===0&&unfinished.length===0)return null;
+    &&weariness===0&&novelty===undefined&&competence===0&&unfinished.length===0&&mood===null)return null;
   const frame=evaluateIntrinsicRegulation({
     perceptFrame:{
       asOf,
@@ -483,6 +494,7 @@ export function livedRegulationForLivedHistory({
       ...(people===null?{}:{trust:people.trust}),
       ...(people?.bonds===undefined?{}:{bonds:people.bonds}),
       ...standingFrame({self,people}),
+      ...moodFrame(mood,self),
       ...(contact===null?{}:{contact}),
       ...(socialEnergy===null?{}:{socialEnergy}),
     },
@@ -498,7 +510,7 @@ export function livedRegulationForLivedHistory({
 // the other is known and trusted. How far it trusts them is felt too, and
 // someone hardly known is a pull for a Body inherited to seek new people.
 export function socialBodyInConversation({thread,start,regard,turns,asOf,other,self=null,talkedOverNow=0,
-  heardNow=[],weariness=0,learning={competence:0,unfinished:[]}}){
+  heardNow=[],weariness=0,learning={competence:0,unfinished:[]},mood=null}){
   const evidenceRefs=[...(start?.evidenceRefs??[]),`self:conversation-turns:${turns}`];
   // Being cut off in this very talk, and how the other's words just landed
   // (ADR-0037 C3b), are felt at once.
@@ -513,7 +525,7 @@ export function socialBodyInConversation({thread,start,regard,turns,asOf,other,s
     perceptFrame:{asOf,evidenceRefs,
       socialEnergy:{depletion:conversationDepletion({start,turns,...regard,weariness,
         frustration:self?.frustration?.level??0}),evidenceRefs},
-      ...people,...standingFrame({self,people:{standingPeople,urgeTriggers}}),
+      ...people,...standingFrame({self,people:{standingPeople,urgeTriggers}}),...moodFrame(mood,self),
       ...(Object.keys(exploration).length===0?{}:{exploration}),...masteryPercept(learning)},
     runtimeBaselines:thread.genome?.runtimeBaselines??{},
     urgeProjection:thread.genome?.urgeProjection??null,
@@ -524,12 +536,15 @@ export function socialBodyInConversation({thread,start,regard,turns,asOf,other,s
 // Where a conversation's battery starts, and how known and trusted the other
 // is, for this Thread's Body.
 export function socialBodyBeforeTalk({thread,otherThreadId,experienceStore,asOf}){
+  const self=selfOf({thread,experienceStore,at:asOf});
   return {
     start:socialEnergyEvidence({threadId:thread.threadId,experienceStore,asOf,trustLocus:trustLocus(thread)}),
     regard:regardWithDoors({thread,otherThreadId,experienceStore,at:asOf}),
-    self:selfOf({thread,experienceStore,at:asOf}),
+    self,
     weariness:wearyOf({thread,experienceStore,at:asOf}),
     learning:learningOf({thread,experienceStore,at:asOf}),
+    // The mood it brings to the talk; what happens in it spills afterward.
+    mood:moodFor({thread,experienceStore,at:asOf,self}),
   };
 }
 
