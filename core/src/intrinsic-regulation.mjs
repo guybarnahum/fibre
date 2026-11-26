@@ -759,10 +759,13 @@ function basalDrives(percept, profile) {
       ...(person.recognition===null?{}:{recognition:person.recognition.act})});
   }
 
-  // A mood is how far the Body's general tone has moved from how life has
-  // been going: felt as a sour or a light tone, whatever caused it.
+  // A mood is the Body's general tone, felt as sour or light whatever caused
+  // it, less the part of how life has been going it has adapted to: most of
+  // a good life, less of a hard one (people adapt to good fortune more fully
+  // than to hardship; review, Nov 25). A long hardship is still felt.
   if (percept.mood !== null) {
-    const moved = percept.mood.level - percept.mood.baseline;
+    const { level, baseline } = percept.mood;
+    const moved = level - (baseline > 0 ? MOOD_ADAPTED.good : MOOD_ADAPTED.bad) * baseline;
     drives.push({...drive({
       family:"mood",
       targetRef:"self:mood",
@@ -888,6 +891,7 @@ function socialResonance(percept, profile) {
 // other way; never a need it does not touch, and never past half again or
 // below half (npm run dry-run:mood: a stronger tint breeds sour spells).
 const MOOD_TINT=0.6;
+const MOOD_ADAPTED=Object.freeze({good:0.8,bad:0.4});
 function moodTinted(drives,mood){
   const toward=Math.min(1.5,Math.max(0.5,1+MOOD_TINT*mood)),wary=Math.min(1.5,Math.max(0.5,1-MOOD_TINT*mood));
   const scaled=(item,factor)=>({...item,pressure:round(Math.min(1,item.pressure*factor)),

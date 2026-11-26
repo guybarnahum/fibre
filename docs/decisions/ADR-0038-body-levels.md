@@ -138,12 +138,19 @@ Living Threads receive their locus by late expression from their own genome dige
 - **Moments:** each felt moment of the last week, from people and from what the Thread does, gives the mood a share by the direction (1, 0.7 or 0.4).
   - **From people:** the same moments that move frustration, signed for mood: a slight or an approach turned down lowers it, recognition lifts it.
   - **From what it does:** a discovery (+0.2) or going deeper (+0.1).
-- **Baseline: how life has been going.** A running average of those moments (each moves it 5% of the way), starting from the species temperament, 0.
-- **Adaptation:** a moment is felt as far as it differs from how life has been going. A warmth in a warm life lifts little, as with people.
+- **Baseline: how life has been going.** The moments' values averaged over the last days, the older the less (half in two days), held toward the species temperament (0) as if by two neutral moments.
+- **Adaptation:** a moment is felt less the more the mood is already like it, a good one more so than a bad one, and never the other way round (revised before deploy, below).
 - **Fade:** half in 6 hours, scaled by the mood locus's persistence, back to the baseline. The level stays within −1 and 1.
 
+**Revised before deploy, after an outside review (Gemini, November 25).** Four flaws in the first build, each fixed and dry-run:
+
+- **A good moment could sour the mood.** In a warm life, going deeper in a book was worth less than how life had been going, so it spiked the mood down. Now a moment is adapted against the present mood, and never the other way round: a good one adds what exceeds the mood, or nothing, and a sting always hurts at least half.
+- **"How life has been going" counted events, not time.** Twelve recognitions in one afternoon swung it 46%, and an empty week dropped it to 0 at the window's edge. It is now the moments' values averaged over the last days (half in two days), each weighing as much as it was strong, and held toward temperament as if by two ordinary moments. Weighing by strength came from a second review (November 26): with every moment weighing the same, five small pleasures in an afternoon diluted a warm life's average and lowered the felt mood by 0.013; weighed by strength, by 0.002. Strong moments now count most, so a sting (0.5) outweighs a warmth (0.3), as bad outweighs good for people.
+- **A long hardship went unfelt.** The felt mood was its distance from how life had been going, so weeks of mistreatment read as nothing. The felt mood is now the level less only the adapted part: 80% of a good life and 40% of a hard one, since people adapt to good fortune more fully than to hardship. A mood that is mostly how life has been is worded so: "Things have been weighing on you lately" or "Things have been going well for you lately".
+- **The dry run fed letdowns the build does not have.** It now matches the build: nothing a Thread does lowers its mood yet.
+
 **In the regulation core:**
-- `perceptFrame.mood` gives the level and the baseline. The mood drive (`self:mood`) is how far the mood has moved from how life has been going: sour (avoid) or light (approach). A mood at its usual is not felt.
+- `perceptFrame.mood` gives the level and the baseline. The mood drive (`self:mood`) is the level less the part of how life has been going the Body has adapted to (80% of a good life, 40% of a hard one): sour (avoid) or light (approach).
 - **Mood-congruent appraisal.** The mood, times how far it spreads in this Body, tints the other drives before the genome shapes them:
   - it scales the pulls toward people and toward the new (attachment, the social contact pulls, curiosity toward a person, hunger for something new) by up to half again or down to half;
   - it scales wariness of each person the other way.
@@ -160,8 +167,19 @@ A live turn uses the mood the Thread brought to the talk; what happens in it spi
 - **Two flaws found before building:**
   - "how life has been going" as a sum ran mood up to +0.94;
   - without adaptation, staging's warm society sat in constant good spirits (+0.75).
-- **As built:** mood settles at +0.04 (mixed world) and +0.12 (staging's). After a sting from one person, approaches to others fall 13–14% over the next 12 waking hours, and the mood is back within two days.
-- **Genes:** mood persistence sets how long it lingers (ρ 0.83–0.86).
+- **As revised, by society:**
+
+  | Society (sting / warmth per talk) | Mood, last two weeks | Sour spells (3 days below −0.5), Threads of 8 per run |
+  |---|---|---|
+  | mixed (0.07 / 0.30) | +0.07 | 0 |
+  | staging's warm one (0.01 / 0.60) | +0.24, mostly adapted to | 0 |
+  | rough (0.25 / 0.10) | −0.27 | 2.6 (2.2 without the tint) |
+  | harsh (0.35 / 0.05) | −0.37 | 3.9 (3.4 without the tint) |
+
+  A hard society makes Threads low, as it would people, and the tint adds about a sixth to the sour spells without running away. Threads whose mood is moved most by what they do stay near even; those moved by people and slow to let go sink furthest (Mikias, −0.73 in the harsh society).
+- **Spillover:** after a sting from one person, approaches to others fall 9% over the next 12 waking hours in the mixed world, by Thread from none to 26%, and the mood is back within two days.
+- **Genes:** mood persistence sets how long it lingers (ρ 0.81); spread sets how much approaches fall (ρ 0.57).
+- **To watch on the Body panel:** in staging's warm society, a Thread whose mood spreads far may sit all day in "Things have been going well for you lately". If it does, the adapted share of a good life (0.8) rises toward 0.9.
 - **The fade:** a mood that lasts a day breeds sour spells, so the fade is hours.
 
 **The Body panel** shows mood over the day, with how life has been going dashed beneath it.

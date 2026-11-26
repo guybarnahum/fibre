@@ -275,25 +275,43 @@ export function selfStanding({experienceStore,threadId,at,standingLocus=null}){
 // (a slight, recognition, an approach turned down) and from what it does (a
 // discovery, going deeper), moves the mood, the most from what this Body's
 // mood is inherited to be moved by. It fades back in hours, at this Body's
-// mood persistence, to how life has been going: a running average of those
-// moments. A moment is felt as far as it differs from how life has been going
-// (adaptation): a warmth in a warm life lifts little, so a society of kind
-// words does not rise into constant good spirits (npm run dry-run:mood). How
-// far a mood spreads, and when it is noticed, are the regulation core's.
-const MOOD_HALF_LIFE_MS=6*HOUR_MS,MOOD_DAYS=7,MOOD_BASELINE_RATE=0.05;
+// mood persistence, to how life has been going.
+//   How life has been going: the moments' values averaged over the last days,
+//   the older the less (half in two days), each weighing as much as it was
+//   strong, so a small pleasure barely moves it (review, Nov 26), and held
+//   toward the species temperament (0) as if by two ordinary moments, so a
+//   few moments cannot swing it and an empty week returns it gradually.
+//   Adaptation (revised Nov 25 after review): a moment is felt less the more
+//   the mood is already like it, a good one more so than a bad one (people
+//   adapt to good fortune more fully than to hardship), and never the other
+//   way round: a good moment in good spirits adds little or nothing and never
+//   lowers the mood; a sting when already low still hurts at least half.
+// How far a mood spreads, and when it is noticed, are the regulation core's
+// (npm run dry-run:mood).
+const MOOD_HALF_LIFE_MS=6*HOUR_MS,MOOD_DAYS=7,LIFE_HALF_LIFE_MS=2*DAY_MS,TEMPERAMENT_WEIGHT=0.4;
+const ADAPTS=Object.freeze({good:0.6,bad:0.3});
 const MOOD_SHARE=Object.freeze({people:{people:1,doing:0.4},doing:{people:0.4,doing:1},everything:{people:0.7,doing:0.7}});
+function lifeSoFar(moments,when){
+  const lived=moments.filter(item=>item.at<=when);
+  const values=bodyLevel({at:when,events:lived.map(item=>({at:item.at,size:item.value*Math.abs(item.value)})),halfLife:LIFE_HALF_LIFE_MS}).level;
+  const weight=bodyLevel({at:when,events:lived.map(item=>({at:item.at,size:Math.abs(item.value)})),halfLife:LIFE_HALF_LIFE_MS}).level;
+  return values/(TEMPERAMENT_WEIGHT+weight);
+}
 export function moodOf({people=[],doing=[],at,moodLocus=null}){
   const share=MOOD_SHARE[moodLocus?.orientation]??MOOD_SHARE.everything;
   const moments=[...people.map(item=>({at:item.at,value:share.people*item.value})),
     ...doing.map(item=>({at:item.at,value:share.doing*item.value}))]
-    .filter(item=>item.at<=at&&days(item.at,at)<=MOOD_DAYS).sort((a,b)=>a.at.localeCompare(b.at));
+    .filter(item=>item.at<=at&&days(item.at,at)<=MOOD_DAYS&&item.value!==0).sort((a,b)=>a.at.localeCompare(b.at));
   const halfLife=inheritedHalfLife(MOOD_HALF_LIFE_MS,moodLocus?.persistence??0);
-  const level=(events,when)=>bodyLevel({at:when,events,halfLife,
-    baseline:{track:{rate:MOOD_BASELINE_RATE}},bound:{min:-1,max:1}});
-  const events=[];
-  for(const moment of moments)
-    events.push({at:moment.at,value:moment.value,size:moment.value-level(events,moment.at).baseline});
-  const mood=level(events,at);
+  const moodAt=(spikes,when,lived)=>bodyLevel({at:when,events:spikes,halfLife,
+    baseline:{given:lifeSoFar(lived,when)},bound:{min:-1,max:1}});
+  const spikes=[];
+  moments.forEach((moment,index)=>{
+    const now=moodAt(spikes,moment.at,moments.slice(0,index)).level;
+    spikes.push({at:moment.at,size:moment.value>0?Math.max(0,moment.value-ADAPTS.good*Math.max(0,now))
+      :Math.min(0.5*moment.value,moment.value-ADAPTS.bad*Math.min(0,now))});
+  });
+  const mood=moodAt(spikes,at,moments);
   return Object.freeze({level:rounded(mood.level),baseline:rounded(mood.baseline)});
 }
 const rounded=(value)=>Math.round(value*1e6)/1e6;

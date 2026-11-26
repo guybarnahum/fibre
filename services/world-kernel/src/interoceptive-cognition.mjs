@@ -361,6 +361,8 @@ const SOUR=Object.freeze([
   [0.6,"Something from earlier still sits badly with you and colours everything."],
   [1.01,"Something from earlier has soured your whole day."],
 ]);
+// A mood that is how life has been lately, more than anything just now.
+const LATELY=Object.freeze({sour:"Things have been weighing on you lately.",good:"Things have been going well for you lately."});
 const SPIRITS=Object.freeze([
   [0.3,"You are in good spirits."],
   [0.6,"You are in high spirits."],
@@ -438,7 +440,10 @@ export function feltSocialBody(regulationFrame){
     if(RESTORES[battery.inheritedDirection])lines.push(RESTORES[battery.inheritedDirection]);
   }
   const mood=felt("mood");
-  if(mood!==null)lines.push(band(mood.orientation==="avoid"?SOUR:SPIRITS,mood.pressure));
+  if(mood!==null){
+    const lately=Math.abs((mood.mood?.level??0)-(mood.mood?.baseline??0))<0.15;
+    lines.push(lately?LATELY[mood.orientation==="avoid"?"sour":"good"]:band(mood.orientation==="avoid"?SOUR:SPIRITS,mood.pressure));
+  }
   lines.push(...[...feltTowardPeople(regulationFrame).values()].flat());
   const place=regulationFrame.drives.find(item=>item.family==="standing"&&item.targetRef==="self:standing")??null;
   if(place!==null){

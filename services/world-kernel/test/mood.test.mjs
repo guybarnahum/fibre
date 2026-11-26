@@ -53,5 +53,19 @@ test("a sour mood makes the Body less drawn to others and warier of someone who 
   assert.ok(feltSocialBody(sour).some((line) => /sits badly|soured/u.test(line)), "a sour mood was not felt in words");
   assert.ok(!feltSocialBody(calm).some((line) => /sits badly|soured|spirits|lighter/u.test(line)), "a mood was felt with none");
   const usual = frame({ level:0.2, baseline:0.2 });
-  assert.equal(usual.drives.find((item) => item.family === "mood").pressure, 0, "a mood at its usual was felt as a mood");
+  assert.ok(usual.drives.find((item) => item.family === "mood").pressure < 0.05, "a good life it has adapted to was felt as high spirits");
+  const hard = frame({ level:-0.4, baseline:-0.4 });
+  assert.ok(feltSocialBody(hard).includes("Things have been weighing on you lately."), "a long hardship went unfelt");
+});
+
+test("a good moment never sours the mood, and a run of them does not carry it away (review, Nov 25)", () => {
+  const warm = Array.from({ length: 30 }, (_, i) => ({ at:hoursBefore(160 - i * 5), value:0.3 }));
+  const felt = (mood) => mood.level - 0.8 * Math.max(0, mood.baseline);
+  const before = moodOf({ people:warm, at }), after = moodOf({ people:warm, doing:[{ at:hoursBefore(0.5), value:0.1 }], at });
+  assert.ok(felt(after) >= felt(before) - 0.002, "going deeper in a book soured a warm Thread's mood");
+  const burst = moodOf({ people:Array.from({ length: 12 }, (_, i) => ({ at:hoursBefore(4 - i * 0.2), value:0.25 })), at });
+  assert.ok(burst.level < 0.5, `a chatty afternoon of recognition carried the mood to ${burst.level}`);
+  const hardWeek = Array.from({ length: 30 }, (_, i) => ({ at:hoursBefore(160 - i * 5), value:-0.4 }));
+  assert.ok(moodOf({ people:[...hardWeek, { at:hoursBefore(1), value:-0.5 }], at }).level < moodOf({ people:hardWeek, at }).level - 0.15,
+    "a sting in a hard life was hardly felt");
 });

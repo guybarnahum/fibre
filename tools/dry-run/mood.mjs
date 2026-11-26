@@ -42,8 +42,9 @@ const WAKE = 7, SLEEP = 23;
 // Species constants proposed for the build; the dry run checks them.
 export const SPECIES = {
   moodHalfLife: 6 * HOUR_MS,          // a spill fades in hours, by the mood locus's persistence
-  baselineRate: +(process.env.RATE ?? 0.05), // each spill moves how life has been going this far toward itself
-  sting: -0.5, rebuff: -0.3, warmth: 0.3, lift: 0.2, letdown: -0.2,
+  lifeHalfLife: 2 * 24 * HOUR_MS,     // how life has been going: the last days, the older the less
+  sting: -0.5, rebuff: -0.3, warmth: 0.3, lift: 0.2,
+  letdown: +(process.env.LETDOWN ?? 0),  // as built, nothing a Thread does lowers its mood yet
   approach: 0.12,                     // per waking hour, before the social gain
   accept: 0.85, stingChance: +(process.env.STING ?? 0.07), warmthChance: +(process.env.WARMTH ?? 0.3),
   tintApproach: 0.6,                  // a mood of −1 approaches half as often (bounded 0.5–1.5, as built)
@@ -63,20 +64,28 @@ export function run({ days = 42, seed = 1, k = SPECIES, tint = true, baseline = 
     const [sg] = genes ? GENES[name] : [0];
     const [mg, mp, direction] = genes ? MOOD[name] : [0, 0, "everything"];
     return { name, sg: 2 ** sg, spread: 2 ** mg, half: inheritedHalfLife(k.moodHalfLife, mp), share: SHARE[direction],
-      events: [], approaches: [], stings: [] };
+      events: [], moments: [], approaches: [], stings: [] };
   });
-  const levelAt = (p, h) => bodyLevel({ at: h * HOUR_MS, events: p.events,
-    halfLife: k.moodHalfLife, bound: { min: -1, max: 1 },
-    baseline: baseline ? { track: { rate: k.baselineRate } } : null });
+  // As built (social-body.mjs moodOf, revised Nov 25 after review): how life
+  // has been going is the moments' values averaged over the last days (half in
+  // two days), each weighing as much as it was strong, held toward temperament 0 as if by two ordinary moments.
+  const lifeAt = (p, h) => !baseline ? 0
+    : bodyLevel({ at: h * HOUR_MS, events: p.moments.map((m) => ({ at: m.at, size: m.value * Math.abs(m.value) })), halfLife: k.lifeHalfLife }).level
+      / (0.4 + bodyLevel({ at: h * HOUR_MS, events: p.moments.map((m) => ({ at: m.at, size: Math.abs(m.value) })), halfLife: k.lifeHalfLife }).level);
+  const levelAt = (p, h) => bodyLevel({ at: h * HOUR_MS, events: p.events, halfLife: p.half, bound: { min: -1, max: 1 },
+    baseline: { given: lifeAt(p, h) } });
   const moodAt = (p, h) => !spill ? 0 : levelAt(p, h).level;
-  // What is felt and what tints: how far the mood has moved from its usual, as far as it spreads.
-  const tone = (p, h) => { if (!spill) return 0; const m = levelAt(p, h); return clamp((m.level - m.baseline) * p.spread, -1, 1); };
-  // A spill fades back toward how life has been going, and moves it a little.
-  // Adaptation: it is felt as far as it differs from how life has been going,
-  // so a warmth in a warm life lifts less than in a cold one.
-  const feel = (p, h, raw, from) => { const value = raw * p.share[from];
-    p.events.push({ at: h * HOUR_MS, value, halfLife: p.half,
-      size: adaptation ? value - levelAt(p, h - 1e-6).baseline : value }); };
+  // What is felt and what tints (the core): the mood less the part of how
+  // life has been going it has adapted to (most of a good life, less of a
+  // hard one), as far as it spreads.
+  const tone = (p, h) => { if (!spill) return 0; const m = levelAt(p, h);
+    return clamp((m.level - (m.baseline > 0 ? 0.8 : 0.4) * m.baseline) * p.spread, -1, 1); };
+  // Adaptation: a moment is felt less the more the mood is already like it,
+  // a good one more so; a good moment never lowers the mood, a sting always hurts at least half.
+  const feel = (p, h, raw, from) => { const value = raw * p.share[from], now = levelAt(p, h - 1e-6).level;
+    const size = !adaptation ? value : value > 0 ? Math.max(0, value - 0.6 * Math.max(0, now))
+      : Math.min(0.5 * value, value - 0.3 * Math.min(0, now));
+    p.moments.push({ at: h * HOUR_MS, value }); p.events.push({ at: h * HOUR_MS, size }); };
   const t = (on, x) => (tint && on ? x : 0);
   const series = [];
   for (let h = 0; h < days * 24; h += 1) {
@@ -87,7 +96,7 @@ export function run({ days = 42, seed = 1, k = SPECIES, tint = true, baseline = 
     for (const [i, p] of people.entries()) {
       // A day has its own small lifts and letdowns that have nothing to do with people.
       if (rand() < 0.05) feel(p, h, k.lift, "doing");
-      if (rand() < 0.03) feel(p, h, k.letdown, "doing");
+      if (k.letdown < 0 && rand() < 0.03) feel(p, h, k.letdown, "doing");
       if (rand() >= k.approach * p.sg * clamp(1 + t(true, k.tintApproach * mood[i]), 0.5, 1.5)) continue;
       const j = (i + 1 + Math.floor(rand() * (people.length - 1))) % people.length, q = people[j];
       p.approaches.push({ h, to: j });
@@ -156,7 +165,12 @@ function spearman(xs, ys) {
   return num / Math.sqrt(a.reduce((s, x) => s + (x - ma) ** 2, 0) * b.reduce((s, y) => s + (y - mb) ** 2, 0));
 }
 
+// Societies, by how often a talk stings and warms (staging's: Nov 25).
+const WORLDS = { "mixed": { stingChance: 0.07, warmthChance: 0.3 }, "staging's warm one": { stingChance: 0.01, warmthChance: 0.6 },
+  "rough": { stingChance: 0.25, warmthChance: 0.1 }, "harsh": { stingChance: 0.35, warmthChance: 0.05 } };
+
 function main() {
+  const worlds = Object.entries(WORLDS).map(([name, rates]) => study(`as built, ${name} world`, { k: { ...SPECIES, ...rates } }));
   const proposed = study("proposed", {});
   const strong = (x) => ({ ...SPECIES, tintApproach: x, tintTaken: x * 1.33, tintGiven: x * 1.33 });
   const studies = [
@@ -175,7 +189,8 @@ function main() {
   };
   const summary = (s) => ({ label: s.label, last14: s.last14, lowShare: s.lowShare, spirals: s.spirals, spill: s.spill, dip24: s.dip24 });
   console.log(JSON.stringify({ species: SPECIES, proposed: { ...summary(proposed), daily: proposed.daily, per: proposed.per },
-    genes, studies: studies.map(summary) }, null, 1));
+    genes, worlds: worlds.map((w) => ({ ...summary(w), per: w.per.map((p) => [p.name, p.mood, p.spill]) })),
+    studies: studies.map(summary) }, null, 1));
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
