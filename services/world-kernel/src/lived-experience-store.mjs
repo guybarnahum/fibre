@@ -2,6 +2,7 @@ import {
   assertId,
   assertIsoTimestamp,
   assertNonEmpty,
+  assertPlainObject,
   canonicalJson,
   sha256,
 } from "./persistence-common.mjs";
@@ -825,6 +826,34 @@ export class LivedExperienceStore {
     `).get(key);
     if(recorded?.decision_json!==body)throw new TypeError("World initial decision conflicts");
     return Object.freeze(JSON.parse(body));
+  }
+
+  // The ambience the World described of a place, kept for each Thread
+  // present then (World events v3).
+  recordAmbience({at,placeRef,ambience,present}){
+    assertIsoTimestamp("ambience at",at);
+    assertNonEmpty("ambience place",placeRef);
+    assertPlainObject("ambience",ambience);
+    if(!Array.isArray(present)||present.length>8)throw new TypeError("ambience presence must be bounded");
+    if(!worldTableExists(this.#database,"world_ambience_records"))return;
+    const insert=this.#database.prepare(`INSERT OR IGNORE INTO world_ambience_records(thread_id,at,place_ref,situation_id,ambience_json)
+      VALUES (?,?,?,?,?)`);
+    for(const {threadId,situationId} of present){
+      assertId("ambience Thread",threadId);
+      assertId("ambience situation",situationId);
+      insert.run(threadId,at,placeRef,situationId,canonicalJson(ambience));
+    }
+  }
+  // The ambience of the places this Thread was in, newest first.
+  listAmbience(threadId,{since,until,limit=24}={}){
+    assertId("ambience threadId",threadId);
+    assertIsoTimestamp("ambience since",since);
+    assertIsoTimestamp("ambience until",until);
+    if(!Number.isSafeInteger(limit)||limit<1||limit>48)throw new TypeError("ambience must be bounded");
+    if(!worldTableExists(this.#database,"world_ambience_records"))return Object.freeze([]);
+    return Object.freeze(this.#database.prepare(`SELECT at,place_ref AS placeRef,situation_id AS situationId,ambience_json
+      FROM world_ambience_records WHERE thread_id=? AND at>=? AND at<=? ORDER BY at DESC LIMIT ?`)
+      .all(threadId,since,until,limit).map(({ambience_json,...row})=>Object.freeze({...row,...JSON.parse(ambience_json)})));
   }
 
   completeEnvironmentalOpportunity({situationId,sceneRef=null,resultEncounterRef=null,completedAt,kind="arrival"}){

@@ -11,6 +11,59 @@ import {
 const FRESH_MS=60*60_000;
 const AMBIENT_MINUTE_MS=60_000;
 const FOLLOWUP_MS=30*60_000;
+const LATELY_MS=24*60*60_000;
+
+// The ambience of a place now (Guy, November 26: "how ambience affects the
+// body"): World fact authored with each occasion, never a feeling. Kept with
+// the occasion's decision for its Body to feel through the inherited urges
+// that answer it (sensory_load, thermal_comfort, ambient company), once that
+// wiring is dry-run; until then it is recorded and shown, not felt.
+export const AMBIENCE=Object.freeze({
+  sound:Object.freeze(["silent","quiet","murmur","lively","loud"]),
+  crowding:Object.freeze(["alone","few","some","busy","crowded"]),
+  light:Object.freeze(["dark","dim","soft","bright","glaring"]),
+  warmth:Object.freeze(["cold","cool","mild","warm","hot"]),
+});
+const AMBIENCE_SCHEMA=Object.freeze({type:"object",additionalProperties:false,
+  required:["texture","sound","crowding","light","warmth"],
+  properties:{texture:{type:"string",minLength:1,maxLength:240},
+    ...Object.fromEntries(Object.entries(AMBIENCE).map(([key,values])=>[key,{type:"string",enum:[...values]}]))}});
+// What the World answers for one occasion (world.happening): how likely a
+// happening is here now, the one that would come, who could perceive it, and
+// the place's ambience.
+export const HAPPENING_SCHEMA=Object.freeze({type:"object",additionalProperties:false,
+  required:["likelihood","occurrenceText","potentialObserverThreadIds","ambience"],
+  properties:{
+    likelihood:{type:"number",minimum:0,maximum:1},
+    occurrenceText:{type:"string",minLength:1,maxLength:800},
+    potentialObserverThreadIds:{type:"array",maxItems:2,items:{type:"string"}},
+    ambience:AMBIENCE_SCHEMA,
+  }});
+
+// Whether the happening comes is chance (World events v4, Nov 27). Asked once
+// per occasion whether something happens "now and then", a model answers
+// always or never (v3 replay: 0 of 39 at home, 15 of 16 in public), so it says
+// how likely a happening is and the World draws. The draw is fixed by the
+// occasion, so the same occasion always comes out the same way.
+export function happeningChance(input){
+  return Number.parseInt(sha256(`${input?.initiatingSituation?.situationId}|${input?.occurrenceAt}`).slice(0,13),16)/2**52;
+}
+// What came of an occasion; answers under an earlier prompt chose it
+// themselves. A happening nobody present could perceive does not come.
+export function happeningOutcome(input,output){
+  if(output?.outcome!==undefined)return output.outcome;
+  return Number.isFinite(output?.likelihood)&&(output.potentialObserverThreadIds?.length??0)>0
+    &&happeningChance(input)<output.likelihood?"changed":"no_change";
+}
+function ambienceOf(value){
+  assertPlainObject("World ambience",value);
+  assertExactKeys("World ambience",value,["texture","sound","crowding","light","warmth"]);
+  assertNonEmpty("World ambience texture",value.texture);
+  for(const [key,values] of Object.entries(AMBIENCE))
+    if(!values.includes(value[key]))throw new TypeError(`World ambience ${key} is invalid`);
+  return {texture:value.texture.trim().slice(0,240),sound:value.sound,crowding:value.crowding,
+    light:value.light,warmth:value.warmth};
+}
 
 // Only the initiating Thread's private scene is available to this World
 // consideration. A private place never implies a shared venue or bystander.
@@ -41,6 +94,16 @@ function worldPlaceFacts({livedNowStore,situatedLifeStore,threadId,situation,ori
     timeZone:origin?.timeZone
       ??livedNowStore.getWorldContext?.(threadId,{required:false})?.timeZone??null,
   };
+}
+
+// The World's own happenings this person was present for in the past day,
+// newest first, at most five.
+export function latelyShown({experienceStore,threadId,at}){
+  return (experienceStore.listEncounterStories?.(threadId,{limit:12})??[])
+    .filter(story=>story!==null&&Date.parse(story.occurredAt)<=Date.parse(at)
+      &&Date.parse(at)-Date.parse(story.occurredAt)<=LATELY_MS)
+    .flatMap(story=>(story.story?.beats??[]).filter(beat=>beat.kind==="occurrence"&&beat.actorThreadId===null)
+      .map(beat=>String(beat.text).slice(0,200))).slice(0,5);
 }
 
 function observedPlace(livedNowStore,threadId,placeRef,initiatorThreadId){
@@ -201,6 +264,9 @@ export function createWorldEnvironmentOpportunity({
                 ?venueObservers[0]:null;
               const place=worldPlaceFacts({livedNowStore,situatedLifeStore,
                 threadId:opportunity.threadId,situation,origin});
+              // What the World has already shown this person in the past day,
+              // so the same rooster is not news twice (World events v3, Nov 26).
+              const lately=latelyShown({experienceStore,threadId:opportunity.threadId,at:opportunity.dueAt});
               const input={
                 place,
                 occurrenceAt:opportunity.dueAt,
@@ -215,45 +281,27 @@ export function createWorldEnvironmentOpportunity({
                   },
                 },
                 potentialObservers:candidateScenes,
+                lately,
               };
               const result=await modelAdapter.invoke({
                 ...promptRequest("world.happening"),
                 input,
-                responseSchema:{
-                  type:"object",additionalProperties:false,
-                  required:["outcome","occurrenceText","potentialObserverThreadIds"],
-                  properties:{
-                    outcome:{type:"string",enum:["no_change","changed"]},
-                    occurrenceText:{anyOf:[
-                      {type:"string",minLength:1,maxLength:800},{type:"null"},
-                    ]},
-                    potentialObserverThreadIds:{
-                      type:"array",maxItems:2,items:{type:"string"},
-                    },
-                  },
-                },
+                responseSchema:HAPPENING_SCHEMA,
                 clientRequestId:`world-initial-opportunity_${sha256(canonicalJson(input))}`,
               });
               assertPlainObject("World initial opportunity output",result.output);
               assertExactKeys("World initial opportunity output",result.output,[
-                "outcome","occurrenceText","potentialObserverThreadIds",
+                "likelihood","occurrenceText","potentialObserverThreadIds","ambience",
               ]);
               const output=result.output;
-              if(!["changed","no_change"].includes(output.outcome)
+              if(typeof output.likelihood!=="number"||!(output.likelihood>=0&&output.likelihood<=1)
                 ||!Array.isArray(output.potentialObserverThreadIds)){
                 throw new TypeError("World initial outcome is invalid");
               }
-              if(output.outcome==="changed"){
-                assertNonEmpty("World initial occurrence",output.occurrenceText);
-                if(output.potentialObserverThreadIds.length===0)throw new TypeError(
-                  "World initial event has no potentially perceiving observer",
-                );
-              }else if(output.occurrenceText!==null
-                ||output.potentialObserverThreadIds.length!==0){
-                throw new TypeError("World no-change may not claim observers");
-              }
+              assertNonEmpty("World initial occurrence",output.occurrenceText);
+              const outcome=happeningOutcome(input,output);
               const byId=new Map(candidateScenes.map((scene)=>[scene.threadId,scene]));
-              const selected=output.potentialObserverThreadIds.map((id)=>{
+              const selected=(outcome==="changed"?output.potentialObserverThreadIds:[]).map((id)=>{
                 const scene=byId.get(id);
                 if(scene===undefined)throw new TypeError("World selected an unknown observer");
                 return {threadId:id,situationId:scene.situationId};
@@ -262,10 +310,21 @@ export function createWorldEnvironmentOpportunity({
                 throw new TypeError("World repeated an initial event observer");
               }
               decision={
-                outcome:output.outcome,
-                occurrenceText:output.outcome==="changed"?output.occurrenceText.trim():null,
+                outcome,
+                occurrenceText:outcome==="changed"?output.occurrenceText.trim():null,
                 presence:selected,occurredAt:opportunity.dueAt,
+                ambience:ambienceOf(output.ambience),likelihood:output.likelihood,
               };
+              // Everyone present at the place shares its ambience: at a shared
+              // venue each visitor there now, elsewhere the person alone; one
+              // row each, never overwritten (review, Nov 26).
+              const venueRef=physicalVenue?.ref??null;
+              const present=venueRef===null
+                ?[{threadId:opportunity.threadId,situationId:situation.situationId}]
+                :candidateScenes.filter(item=>item.physicalVenueRef===venueRef)
+                  .map(item=>({threadId:item.threadId,situationId:item.situationId}));
+              experienceStore.recordAmbience?.({at:opportunity.dueAt,
+                placeRef:venueRef??situation.location.placeRef,ambience:decision.ambience,present});
             }
             decision=experienceStore.recordEnvironmentalOpportunityDecision({
               situationId:opportunity.situationId,sceneRef:opportunity.sceneRef,

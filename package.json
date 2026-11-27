@@ -137,6 +137,7 @@
     "dry-run:mood": "node tools/deployment/run-with-progress.mjs dry-run:mood node --disable-warning=ExperimentalWarning tools/dry-run/mood.mjs",
     "library:keep": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/library-keep.mjs",
     "thread:chain": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/thread-chain.mjs",
+    "world:happening-replay": "node tools/deployment/run-with-progress.mjs world:happening-replay node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/model/world-happening-replay.mjs",
     "world-observatory": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/ops/world-observatory.mjs",
     "world-social:candidates": "node tools/deployment/run-with-progress.mjs world-social:candidates node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/validation/world-social-candidates.mjs",
     "world-place": "node --env-file-if-exists=.env --disable-warning=ExperimentalWarning tools/world/world-place.mjs",

@@ -9,6 +9,7 @@
 
 import { decisionOf } from "./model-replay-judge.mjs";
 import { PROMPTS } from "../../services/world-kernel/src/generated/prompts.mjs";
+import { happeningOutcome } from "../../services/world-kernel/src/world-environment-opportunity.mjs";
 
 const without = (object, ...keys) => Object.fromEntries(Object.entries(object ?? {})
   .filter(([key]) => !keys.includes(key)));
@@ -156,24 +157,26 @@ export const JOBS = Object.freeze({
     source: (input) => ({ at: input.localTime ?? input.occurrenceAt,
       ...identityOnly(without(input.initiatingSituation, "physicalVenue")),
       place: identityOnly(input.place ?? input.initiatingSituation?.physicalVenue) }),
-    items: (input, output) => output?.outcome === "changed" ? [{ key: "answer",
+    // Since v4 the model says how likely a happening is and the World draws.
+    items: (input, output) => happeningOutcome(input, output) === "changed" ? [{ key: "answer",
       source: JOBS["world.happening"].source(input), faced: {}, text: output.occurrenceText }] : [],
-    nothing: (output) => output?.outcome !== "changed",
+    nothing: (output, input) => happeningOutcome(input, output) !== "changed",
     defects(input, output) {
       const found = [];
       const observers = new Set((input.potentialObservers ?? []).map((item) => item.threadId));
-      if (output?.outcome === "changed") {
+      if (output?.outcome === undefined && !Number.isFinite(output?.likelihood)) found.push("no outcome");
+      else if (happeningOutcome(input, output) === "changed") {
         if (!output.occurrenceText) found.push("changed without an event");
         if ((output.potentialObserverThreadIds ?? []).some((id) => !observers.has(id))) found.push("an observer who was not there");
         if ((output.potentialObserverThreadIds ?? []).length > 2) found.push("more than two observers");
-      } else if (output?.outcome !== "no_change") found.push("no outcome");
+      } else if (happeningOutcome(input, output) !== "no_change") found.push("no outcome");
       return found;
     },
     // Whether something happens, by the kind of place: a shared public venue,
     // or anywhere else (a home, an unnamed setting). Null where it does not apply.
     rates: {
-      "something happens, in a public place": (output, input) => input?.initiatingSituation?.physicalVenue ? output?.outcome === "changed" : null,
-      "something happens, elsewhere": (output, input) => input?.initiatingSituation?.physicalVenue ? null : output?.outcome === "changed",
+      "something happens, in a public place": (output, input) => input?.initiatingSituation?.physicalVenue ? happeningOutcome(input, output) === "changed" : null,
+      "something happens, elsewhere": (output, input) => input?.initiatingSituation?.physicalVenue ? null : happeningOutcome(input, output) === "changed",
     },
     venue: (input) => input.initiatingSituation?.physicalVenue?.name ?? input.place?.name
       ?? input.initiatingSituation?.sceneDescription ?? "unknown",
@@ -390,7 +393,7 @@ export function dayAlarms(prompt, answered) {
   const job = jobOf(prompt);
   if (job === null) return [];
   const alarms = [];
-  const nothing = answered.filter((item) => job.nothing(item.output)).length;
+  const nothing = answered.filter((item) => job.nothing(item.output, item.input)).length;
   const id = String(prompt).split("@")[0];
   if (answered.length >= MIN_DAY) {
     if (id === "body.interoception" && (nothing === 0 || nothing === answered.length))
@@ -408,7 +411,7 @@ export function dayAlarms(prompt, answered) {
       const venue = job.venue(item.input);
       if (!venues.has(venue)) venues.set(venue, { occasions: 0, events: 0 });
       venues.get(venue).occasions += 1;
-      if (!job.nothing(item.output)) venues.get(venue).events += 1;
+      if (!job.nothing(item.output, item.input)) venues.get(venue).events += 1;
     }
     for (const [venue, count] of venues) {
       if (count.occasions >= MIN_DAY && count.events === 0) alarms.push(`${venue}: nothing perceptible all day`);

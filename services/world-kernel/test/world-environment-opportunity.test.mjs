@@ -7,7 +7,7 @@ import test from "node:test";
 import { openWorldStore } from "../src/persistence.mjs";
 import { openLivedExperienceStore } from "../src/lived-experience-store.mjs";
 import { localMoment } from "../src/appointments.mjs";
-import { createWorldEnvironmentOpportunity,worldStayOpportunityDueAt,worldAmbientScene } from "../src/world-environment-opportunity.mjs";
+import { createWorldEnvironmentOpportunity,happeningOutcome,latelyShown,worldStayOpportunityDueAt,worldAmbientScene } from "../src/world-environment-opportunity.mjs";
 
 const seed=JSON.parse(readFileSync(
   new URL("../../../fixtures/threads/mina.thread.json",import.meta.url),"utf8",
@@ -95,9 +95,10 @@ test("World environment author sees observable activity but not private purpose"
             }
             const isFirst=request.input.initiatingSituation.situationId==="sit_arrival_a";
             return {output:{
-              outcome:isFirst?"changed":"no_change",
-              occurrenceText:isFirst?"A gust rattles the nearby window.":null,
-              potentialObserverThreadIds:isFirst?[all[0].threadId]:[],
+              likelihood:isFirst?1:0,
+              occurrenceText:"A gust rattles the nearby window.",
+              potentialObserverThreadIds:[all[0].threadId],
+              ambience:{texture:"A quiet room; traffic murmurs outside.",sound:"quiet",crowding:"few",light:"soft",warmth:"mild"},
             }};
           }
           if(request.clientRequestId.startsWith("encounter-attention_")){
@@ -129,6 +130,8 @@ test("World environment author sees observable activity but not private purpose"
     )?.outcome,"noticed","World occurrence did not become private attention");
     assert.equal(experience.listEncounterStories(all[1].threadId).length,0,
       "a no-change decision fabricated objective history");
+    assert.equal(experience.listAmbience(all[1].threadId,{since:"2026-01-01T00:00:00.000Z",until:"2030-01-01T00:00:00.000Z"})[0]?.sound,
+      "quiet","the place's ambience was lost when nothing happened");
     assert.equal(experience.nextEnvironmentalOpportunityAt(),null,
       "completed World opportunity left a polling wake");
     const noScene=experience.enqueueEnvironmentalOpportunity({
@@ -229,9 +232,10 @@ test("a scene has one sparse ambient consideration with independently perceiving
             const changed=true;
             assert.equal(request.input.initiatingSituation.situationId,first.situationId);
             return {output:{
-              outcome:"changed",
+              likelihood:1,
               occurrenceText:"A sudden shower patters against the café windows.",
               potentialObserverThreadIds:people,
+              ambience:{texture:"A quiet room; traffic murmurs outside.",sound:"quiet",crowding:"few",light:"soft",warmth:"mild"},
             }};
           }
           if(request.clientRequestId.startsWith("encounter-attention_")){
@@ -268,6 +272,9 @@ test("a scene has one sparse ambient consideration with independently perceiving
       "not_noticed","second person was forced to notice the rain");
     assert.equal(store.getThreadEncounterAttention(people[1],stories[0].encounterId)?.experience,
       null,"a missed event became a private experience");
+    const window={since:"2026-01-01T00:00:00.000Z",until:"2030-01-01T00:00:00.000Z"};
+    assert.deepEqual(people.map(id=>store.listAmbience(id,window).length),[1,1],
+      "a visitor present at a shared place did not share its ambience");
     assert.equal(new Set(queued).size,1,
       "one noticed Experience produced multiple selective aftermath identities");
     assert.equal(invoked.filter(id=>id.startsWith("world-initial-opportunity_")).length,1,
@@ -343,7 +350,8 @@ test("the shared World scene stays observable after its first visitor leaves",as
           ?.physicalVenueRef,"venue_elsewhere",
           "World moved the departed visitor back into the café");
         return {output:{
-          outcome:"no_change",occurrenceText:null,potentialObserverThreadIds:[],
+          likelihood:0,occurrenceText:"A cup clinks on a saucer.",potentialObserverThreadIds:[],
+          ambience:{texture:"A quiet room; traffic murmurs outside.",sound:"quiet",crowding:"few",light:"soft",warmth:"mild"},
         }};
       }},
       now:()=>at,
@@ -357,4 +365,32 @@ test("the shared World scene stays observable after its first visitor leaves",as
     assert.equal(store.nextEnvironmentalOpportunityAt(),null,
       "a quiet scene remained on a polling clock");
   }finally{store.close();rmSync(directory,{recursive:true,force:true});}
+});
+
+test("the World knows what it has already shown a person today, so the same rooster is not news twice", () => {
+  const at = "2026-11-26T08:00:00.000Z";
+  const story = (hoursAgo, beats) => ({ occurredAt:new Date(Date.parse(at) - hoursAgo * 3_600_000).toISOString(), story:{ beats } });
+  const experienceStore = { listEncounterStories:() => [
+    story(2, [{ actorThreadId:null, kind:"occurrence", text:"A rooster crows outside." }]),
+    story(3, [{ actorThreadId:"thr_a", kind:"utterance", text:"Good morning." }]),
+    story(30, [{ actorThreadId:null, kind:"occurrence", text:"Rain begins to fall." }]),
+  ] };
+  assert.deepEqual(latelyShown({ experienceStore, threadId:"thr_a", at }), ["A rooster crows outside."],
+    "the World's recent happenings for this person were not what it was told, or a Thread's own words were among them");
+});
+
+// World events v4 (Nov 27): asked per occasion, a model made something happen
+// always or never; it now says how likely a happening is and the World draws.
+test("a World happening comes about as often as its likelihood, and the same occasion always comes out the same way",()=>{
+  const occasions=Array.from({length:2000},(_,i)=>({initiatingSituation:{situationId:`sit_${i%40}`},
+    occurrenceAt:new Date(Date.parse(DUE)+i*600_000).toISOString()}));
+  const rate=(likelihood)=>occasions.filter(input=>happeningOutcome(input,{likelihood,potentialObserverThreadIds:["thr_a"]})==="changed").length/occasions.length;
+  assert.ok(Math.abs(rate(0.1)-0.1)<0.03,"a rare happening came far more or less often than its likelihood");
+  assert.ok(Math.abs(rate(0.6)-0.6)<0.04,"a likely happening came far more or less often than its likelihood");
+  assert.equal(rate(0),0,"a happening the World judged impossible came");
+  const half={likelihood:0.5,potentialObserverThreadIds:["thr_a"]};
+  assert.ok(occasions.every(input=>happeningOutcome(input,half)===happeningOutcome(structuredClone(input),half)),
+    "the same occasion came out differently");
+  assert.equal(happeningOutcome(occasions[0],{likelihood:1,potentialObserverThreadIds:[]}),"no_change",
+    "a happening nobody could perceive came");
 });

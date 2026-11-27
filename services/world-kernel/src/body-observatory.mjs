@@ -134,6 +134,8 @@ export function bodyObservatory({thread,experienceStore,memoryStore=null,at,name
         ...(item.note?{note:item.note}:{})})),
       regard:regard.filter(item=>item.asOf>=iso(from)).map(item=>({at:item.asOf,act:item.act,
         person:item.personThreadId,by:item.actorThreadId===threadId?"me":"them"})),
+      // The ambience the World described where it was (recorded, not yet felt).
+      ambience:experienceStore.listAmbience?.(threadId,{since:iso(from),until:at})??[],
       // What it came to know in the window: discoveries and steps deeper (ADR-0041).
       learning:typeof experienceStore.listLearning==="function"
         ?records.listLearning(threadId,{since:iso(from),until:at}).map(item=>({at:item.at,learning:item.learning,

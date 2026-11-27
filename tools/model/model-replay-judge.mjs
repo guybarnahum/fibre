@@ -15,7 +15,13 @@ export function decisionOf(prompt, output) {
   const id = String(prompt).split("@")[0];
   if (output === null || typeof output !== "object") return null;
   // Whether anything happens at all is a decision; what happens is text.
-  if (id === "encounter.attention" || id.startsWith("world.")) return output.outcome ?? null;
+  if (id === "encounter.attention" || id.startsWith("world.")) {
+    // Since World events v4 a World answer says how likely a happening is; the
+    // World draws, so the decision is the likelihood, in fifths.
+    if (output.outcome === undefined && Number.isFinite(output.likelihood))
+      return `likelihood ${Math.min(4, Math.floor(output.likelihood * 5)) / 5}`;
+    return output.outcome ?? null;
+  }
   if (id === "contact.decision") return `${output.decision}:${output.recipientPartyId ?? ""}`;
   // A reflection's decision: whether it keeps a memory, and what was new to it.
   if (id === "experience.consolidation") return `${output.memory?.outcome ?? "none"}:${output.engagement ?? "none"}`;

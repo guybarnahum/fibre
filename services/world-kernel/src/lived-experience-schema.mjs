@@ -424,6 +424,20 @@ export function createLivedExperienceTables(database) {
     ) STRICT;
     CREATE INDEX IF NOT EXISTS exchange_meanings_by_time ON exchange_meanings(at);
 
+    -- The ambience of a place as World described it (World events v3):
+    -- one row for each Thread present then, never overwritten. World fact,
+    -- for its Body to feel once that is wired; read by Thread and time.
+    CREATE TABLE IF NOT EXISTS world_ambience_records (
+      thread_id TEXT NOT NULL,
+      at TEXT NOT NULL,
+      place_ref TEXT NOT NULL,
+      situation_id TEXT NOT NULL,
+      ambience_json TEXT NOT NULL CHECK (json_valid(ambience_json)),
+      PRIMARY KEY (thread_id,at,place_ref),
+      FOREIGN KEY (thread_id) REFERENCES threads(thread_id)
+    ) STRICT;
+    CREATE INDEX IF NOT EXISTS world_ambience_by_place ON world_ambience_records(place_ref,at);
+
     -- Appointments two Threads agreed in conversation: where and when, who
     -- proposed, and the Story in which it was agreed. Its outcome is a
     -- separate, once-only World fact read from where both actually were.
